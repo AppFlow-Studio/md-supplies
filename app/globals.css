@@ -22,3 +22,11 @@ body {
   color: #0b172b;
   font-family: var(--font-sans), sans-serif;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
