@@ -56,14 +56,6 @@ export const GET_PRODUCT = `#graphql
         name
         values
       }
-      metafields(identifiers: [
-        { namespace: "specs", key: "datasheet_url" }
-        { namespace: "specs", key: "dimensions" }
-      ]) {
-        key
-        value
-        namespace
-      }
     }
   }
 `;
