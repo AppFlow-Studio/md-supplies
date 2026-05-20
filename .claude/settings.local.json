@@ -5,7 +5,18 @@
       "Bash(python *)",
       "mcp__plugin_figma_figma__get_screenshot",
       "PowerShell(Invoke-WebRequest -Uri \"https://www.figma.com/api/mcp/asset/564273d6-7d63-488f-a44d-fafad402f9e7\" -OutFile \"$env:TEMP\\\\homepage.png\"; Invoke-WebRequest -Uri \"https://www.figma.com/api/mcp/asset/7de00e22-0881-4bb7-8a9e-28192a9d8b61\" -OutFile \"$env:TEMP\\\\product.png\"; Invoke-WebRequest -Uri \"https://www.figma.com/api/mcp/asset/01a4d833-4e3e-4352-856b-f2a3f863a0bb\" -OutFile \"$env:TEMP\\\\category.png\"; Invoke-WebRequest -Uri \"https://www.figma.com/api/mcp/asset/1900a8e8-cc01-47e9-8dd3-9f3f79fa92db\" -OutFile \"$env:TEMP\\\\colors.png\"; Write-Output \"done\")",
-      "Skill(superpowers:brainstorming)"
+      "Skill(superpowers:brainstorming)",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\app\")",
+      "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\lib\\\\shopify\")",
+      "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\components\")",
+      "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\lib\\\\shopify\\\\queries\")",
+      "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\components\\\\product\")",
+      "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\components\\\\store\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\app\\\\product\\\\[slug]\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\app\\\\search\")"
     ]
   }
 }
