@@ -44,12 +44,20 @@ export function VariantSelector({ options, variants, selectedVariant, onSelect }
               const isSelected = selectedVariant?.selectedOptions.some(
                 (so) => so.name === option.name && so.value === value,
               )
+              const otherSelected = selectedVariant?.selectedOptions.filter(
+                (so) => so.name !== option.name,
+              ) ?? []
               const variantForValue = variants.find((v) =>
                 v.selectedOptions.some(
                   (so) => so.name === option.name && so.value === value,
+                ) &&
+                otherSelected.every((other) =>
+                  v.selectedOptions.some(
+                    (so) => so.name === other.name && so.value === other.value,
+                  ),
                 ),
               )
-              const available = variantForValue?.availableForSale ?? true
+              const available = variantForValue?.availableForSale ?? false
 
               return (
                 <button

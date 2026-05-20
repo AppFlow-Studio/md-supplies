@@ -345,59 +345,59 @@ export function ProductView({ product, relatedProducts }: Props) {
 
       {/* Related products */}
       {relatedProducts.length > 0 && (
-        <>
-          <section className="bg-white border-t border-gray-200">
-            <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
-              <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px] mb-8">
-                Commonly Purchased With
-              </h2>
-              <div className="flex flex-col sm:flex-row gap-[23px]">
-                {relatedProducts.slice(0, 4).map((p) => (
-                  <RelatedProductCard key={p.id} product={p} />
-                ))}
-              </div>
+        <section className="bg-white border-t border-gray-200">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
+            <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px] mb-8">
+              Commonly Purchased With
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-[23px]">
+              {relatedProducts.slice(0, 4).map((p) => (
+                <RelatedProductCard key={p.id} product={p} />
+              ))}
             </div>
-          </section>
+          </div>
+        </section>
+      )}
 
-          <section className="bg-[#f9fafc] border-t border-gray-200">
-            <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
-              <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px] mb-8">
-                You May Also Need
-              </h2>
-              <div className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch">
-                {relatedProducts.slice(4).map((item, i, arr) => (
-                  <div key={item.id} className="flex items-stretch">
-                    <div className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
-                      <div className="bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                        {item.images.nodes[0] && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.images.nodes[0].url}
-                            alt={item.images.nodes[0].altText ?? item.title}
-                            className="size-full object-contain"
-                          />
-                        )}
-                      </div>
-                      <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
-                        <p className="text-black text-[13px] font-semibold leading-5 line-clamp-2">
-                          {item.title}
-                        </p>
-                        <span className="text-black text-[16px] font-bold">
-                          ${parseFloat(item.priceRange.minVariantPrice.amount).toFixed(2)}
-                        </span>
-                      </div>
+      {relatedProducts.length > 4 && (
+        <section className="bg-[#f9fafc] border-t border-gray-200">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
+            <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px] mb-8">
+              You May Also Need
+            </h2>
+            <div className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch">
+              {relatedProducts.slice(4).map((item, i, arr) => (
+                <div key={item.id} className="flex items-stretch">
+                  <div className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
+                    <div className="bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
+                      {item.images.nodes[0] && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.images.nodes[0].url}
+                          alt={item.images.nodes[0].altText ?? item.title}
+                          className="size-full object-contain"
+                        />
+                      )}
                     </div>
-                    {i < arr.length - 1 && (
-                      <div className="flex items-center justify-center w-[40px] shrink-0">
-                        <span className="text-navy-900 text-[20px] font-semibold">+</span>
-                      </div>
-                    )}
+                    <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
+                      <p className="text-black text-[13px] font-semibold leading-5 line-clamp-2">
+                        {item.title}
+                      </p>
+                      <span className="text-black text-[16px] font-bold">
+                        ${parseFloat(item.priceRange.minVariantPrice.amount).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  {i < arr.length - 1 && (
+                    <div className="flex items-center justify-center w-[40px] shrink-0">
+                      <span className="text-navy-900 text-[20px] font-semibold">+</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </section>
-        </>
+          </div>
+        </section>
       )}
     </>
   )
