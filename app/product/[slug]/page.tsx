@@ -40,6 +40,7 @@ export default async function ProductPage({ params }: Props) {
   ])
 
   if (!productData.product) notFound()
+  if (productData.product.variants.nodes.length === 0) notFound()
 
   const relatedProducts = relatedData.products.nodes.filter(
     (p) => p.handle !== slug,

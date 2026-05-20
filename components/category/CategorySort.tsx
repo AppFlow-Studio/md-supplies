@@ -28,7 +28,8 @@ export function CategorySort({ currentSort, activeFilters }: Props) {
     const params = new URLSearchParams()
     if (value !== 'COLLECTION_DEFAULT') params.set('sort', value)
     activeFilters.forEach((f) => params.append('filter', f))
-    router.push(`${pathname}?${params.toString()}`)
+    const qs = params.toString()
+    router.push(qs ? `${pathname}?${qs}` : pathname)
     setOpen(false)
   }
 

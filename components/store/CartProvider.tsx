@@ -33,19 +33,31 @@ export function CartProvider({
   const [isOpen, setIsOpen] = useState(false)
 
   const addItem = useCallback(async (variantId: string, qty: number) => {
-    const updated = await addToCart(variantId, qty)
-    setCart(updated)
-    setIsOpen(true)
+    try {
+      const updated = await addToCart(variantId, qty)
+      setCart(updated)
+      setIsOpen(true)
+    } catch (err) {
+      console.error('[CartProvider] addItem failed:', err)
+    }
   }, [])
 
   const removeItem = useCallback(async (lineId: string) => {
-    const updated = await removeFromCart(lineId)
-    setCart(updated)
+    try {
+      const updated = await removeFromCart(lineId)
+      setCart(updated)
+    } catch (err) {
+      console.error('[CartProvider] removeItem failed:', err)
+    }
   }, [])
 
   const updateItem = useCallback(async (lineId: string, qty: number) => {
-    const updated = await updateCartLine(lineId, qty)
-    setCart(updated)
+    try {
+      const updated = await updateCartLine(lineId, qty)
+      setCart(updated)
+    } catch (err) {
+      console.error('[CartProvider] updateItem failed:', err)
+    }
   }, [])
 
   return (
