@@ -7,6 +7,7 @@ export const SEARCH_PRODUCTS = `#graphql
           id
           title
           handle
+          vendor
           availableForSale
           priceRange {
             minVariantPrice { amount currencyCode }
@@ -19,6 +20,7 @@ export const SEARCH_PRODUCTS = `#graphql
             nodes {
               id
               price { amount currencyCode }
+              compareAtPrice { amount currencyCode }
               availableForSale
             }
           }

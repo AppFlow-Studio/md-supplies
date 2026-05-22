@@ -65,6 +65,7 @@ export type CollectionProduct = {
   id: string;
   title: string;
   handle: string;
+  vendor: string;
   availableForSale: boolean;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };

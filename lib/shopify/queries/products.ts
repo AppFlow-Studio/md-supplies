@@ -3,6 +3,7 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
     id
     title
     handle
+    vendor
     availableForSale
     priceRange {
       minVariantPrice { amount currencyCode }
@@ -20,7 +21,7 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
       }
     }
   }
-`;
+`
 
 export const GET_PRODUCT = `#graphql
   query GetProduct($handle: String!) {
@@ -54,14 +55,6 @@ export const GET_PRODUCT = `#graphql
         id
         name
         values
-      }
-      metafields(identifiers: [
-        { namespace: "specs", key: "datasheet_url" }
-        { namespace: "specs", key: "dimensions" }
-      ]) {
-        key
-        value
-        namespace
       }
     }
   }

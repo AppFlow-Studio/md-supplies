@@ -39,6 +39,7 @@ export const GET_COLLECTION = `#graphql
           id
           title
           handle
+          vendor
           availableForSale
           priceRange {
             minVariantPrice { amount currencyCode }
