@@ -28,7 +28,7 @@ const COMPANY_HELP = [
   { label: "FAQ", href: "/faq" },
   { label: "Contact Us", href: "/contact" },
   { label: "Wholesale / B2B", href: "/b2b" },
-  { label: "My Account", href: "/account" },
+  { label: "My Account", href: "/b2b" },
   { label: "Order Tracking", href: "/tracking" },
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Terms of Service", href: "/terms" },
