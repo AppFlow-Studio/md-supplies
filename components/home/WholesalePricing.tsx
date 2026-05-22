@@ -1,0 +1,157 @@
+"use client";
+
+import { useState } from "react";
+import { Check } from "lucide-react";
+
+const BENEFITS = [
+  "Volume discounts up to 25%",
+  "Net 30 payment terms",
+  "Dedicated account manager",
+  "Priority same-day shipping",
+];
+
+const FACULTY_TYPES = [
+  "Urgent Care Center",
+  "Hospital / Health System",
+  "HRT / Wellness Clinic",
+  "Home Care Agency",
+  "EMS / First Responder",
+  "Pharmacy",
+  "Physical Therapy",
+  "Other",
+];
+
+export function WholesalePricing() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    facultyType: "",
+  });
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // TODO: wire up to backend / email service
+    alert("Application submitted! We'll be in touch shortly.");
+  }
+
+  return (
+    <section className="w-full bg-neutral-50 overflow-hidden">
+      <div className="max-w-360 mx-auto flex flex-col lg:flex-row min-h-[580px]">
+
+        {/* ── Left: teal panel ── */}
+        <div className="bg-teal-500 flex-1 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center gap-6">
+
+          {/* Badge */}
+          <div className="inline-flex items-center self-start bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-2">
+            <span className="text-[13px] font-semibold tracking-[0.06em] text-white uppercase">
+              For Healthcare Professionals
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="text-[38px] sm:text-[45px] font-bold text-white leading-[1.15] tracking-[0.9px] max-w-[460px]">
+            Get exclusive Wholesale Pricing
+          </h2>
+
+          {/* Description */}
+          <p className="text-white text-[15px] font-normal leading-[1.9] max-w-[490px]">
+            Apply for a professional account and volume discounts, priority support, and net terms.
+          </p>
+
+          {/* Benefits */}
+          <ul className="flex flex-col gap-3">
+            {BENEFITS.map((item) => (
+              <li key={item} className="flex items-center gap-3 text-white text-[15px]">
+                <Check size={12} className="shrink-0 text-white" strokeWidth={3} />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+        </div>
+
+        {/* ── Right: form panel ── */}
+        <div className="bg-white lg:w-[560px] xl:w-[642px] shrink-0 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+                Faculty Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
+                placeholder="Dr. Jane Smith"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+                Your Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
+                placeholder="jane@clinic.com"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
+                placeholder="+1 (555) 000-0000"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+                Select Faculty Type
+              </label>
+              <select
+                name="facultyType"
+                value={form.facultyType}
+                onChange={handleChange}
+                required
+                className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="" disabled>Choose a type…</option>
+                {FACULTY_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="mt-2 bg-navy-900 text-white text-[18px] font-semibold tracking-[0.04em] py-4 hover:bg-navy-950 transition-colors"
+            >
+              Submit Application
+            </button>
+
+          </form>
+        </div>
+
+      </div>
+    </section>
+  );
+}
