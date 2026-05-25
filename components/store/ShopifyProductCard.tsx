@@ -11,6 +11,9 @@ export function ShopifyProductCard({ product }: { product: CollectionProduct }) 
   const image = product.images.nodes[0]
   const hasDiscount = compareAt !== null && compareAt > price
 
+  const stockQty = variant?.quantityAvailable ?? null
+  const isLowStock = product.availableForSale && stockQty !== null && stockQty <= 9 && stockQty > 0
+
   return (
     <Link href={`/product/${product.handle}`} className="group bg-white flex flex-col">
       {/* Image */}
@@ -28,12 +31,20 @@ export function ShopifyProductCard({ product }: { product: CollectionProduct }) 
           </div>
         )}
 
+        {/* Stock badge — top-left corner */}
+        {isLowStock && (
+          <span className="absolute top-2 left-2 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 tracking-[0.2px] uppercase">
+            Low Stock
+          </span>
+        )}
         {!product.availableForSale && (
-          <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-            <span className="text-gray-500 text-[13px] font-semibold tracking-[0.26px]">
-              Out of Stock
-            </span>
-          </div>
+          <span className="absolute top-2 left-2 bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 tracking-[0.2px] uppercase">
+            Out of Stock
+          </span>
+        )}
+
+        {!product.availableForSale && (
+          <div className="absolute inset-0 bg-white/60" />
         )}
 
         {/* Add to cart hover overlay */}

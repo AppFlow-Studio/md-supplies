@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CurrencySwitcher } from "./CurrencySwitcher";
+import type { AvailableCountry } from "@/lib/shopify/types";
 
 const TOP_CATEGORIES = [
   "Gloves",
@@ -69,7 +71,12 @@ const SOCIAL = [
   },
 ];
 
-export function Footer() {
+interface FooterProps {
+  availableCountries?: AvailableCountry[]
+  currentCountry?: string
+}
+
+export function Footer({ availableCountries = [], currentCountry = 'US' }: FooterProps) {
   return (
     <footer className="bg-neutral-50 border-t border-blue-50 pt-14 pb-0">
       <div className="max-w-360 mx-auto px-4 md:px-8">
@@ -176,6 +183,14 @@ export function Footer() {
           <p className="text-xs text-gray-500">
             © {new Date().getFullYear()} MDSupplies. All rights reserved.
           </p>
+
+          {availableCountries.length > 1 && (
+            <CurrencySwitcher
+              availableCountries={availableCountries}
+              currentIsoCode={currentCountry}
+            />
+          )}
+
           <Link
             href="/b2b"
             className="bg-teal-500 text-white text-sm font-semibold px-7 py-3 rounded-full hover:bg-[#006d92] transition-colors"
