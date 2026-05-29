@@ -18,7 +18,7 @@ export default function ProductLoading() {
           <div className="w-full lg:w-[520px] shrink-0 flex flex-col gap-3">
             <Skeleton className="aspect-square w-full" />
             <div className="flex gap-2">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="w-[70px] h-[70px]" />
               ))}
             </div>
@@ -47,7 +47,7 @@ export default function ProductLoading() {
         </div>
 
         {/* Tabs bar */}
-        <div className="flex gap-8 mt-12 border-b border-gray-200">
+        <div className="flex gap-8 mt-12 border-b border-gray-200 overflow-x-auto">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-5 w-28 mb-3" />
           ))}
@@ -63,7 +63,7 @@ export default function ProductLoading() {
 
       {/* Related products */}
       <section className="bg-white border-t border-gray-200 mt-10">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
           <Skeleton className="h-7 w-48 mb-8" />
           <div className="flex gap-4 overflow-hidden">
             {Array.from({ length: 4 }).map((_, i) => (
