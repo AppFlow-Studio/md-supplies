@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCTS, GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
-import { slugifyVendor, unslugifyVendor } from '@/lib/brands'
+import { unslugifyVendor } from '@/lib/brands'
 import { WholesalePricing } from '@/components/home/WholesalePricing'
 import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
 import { CategorySort } from '@/components/category/CategorySort'
@@ -27,7 +27,7 @@ function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
   }
 }
 
-async function getVendorName(slug: string): Promise<string | undefined> {
+async function resolveVendorName(slug: string): Promise<string | undefined> {
   const data = await storefrontFetch<{ products: { nodes: CollectionProduct[] } }>(
     GET_PRODUCTS,
     { first: 250 },
@@ -38,7 +38,8 @@ async function getVendorName(slug: string): Promise<string | undefined> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const vendor = await getVendorName(slug)
+  // Note: This is a separate server function call, so the fetch is not deduplicated with the page component
+  const vendor = await resolveVendorName(slug)
   if (!vendor) return { title: 'Brand | MD Supplies' }
   return {
     title: `${vendor} Products | MD Supplies`,
@@ -50,7 +51,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
   const { slug } = await params
   const sp = await searchParams
 
-  const vendor = await getVendorName(slug)
+  const vendor = await resolveVendorName(slug)
   if (!vendor) notFound()
 
   const { sortKey, reverse } = parseSortKey(sp.sort)
@@ -94,7 +95,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 w-full">
           <h1 className="text-white text-[28px] sm:text-[36px] font-bold leading-tight">{vendor}</h1>
           <p className="text-white/70 text-[15px] mt-2">
-            {products.length === 24 ? '24+' : products.length} products
+            {pageInfo.hasNextPage ? '24+' : products.length} products
           </p>
         </div>
       </div>
