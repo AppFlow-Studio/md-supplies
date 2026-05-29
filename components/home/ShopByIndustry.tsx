@@ -1,28 +1,5 @@
-import Link from "next/link";
-
-// Figma asset URLs — replace with permanent CDN once available
-const INDUSTRIES = [
-  {
-    name: "Urgent Care",
-    href: "/industries/urgent-care",
-    img: "https://www.figma.com/api/mcp/asset/bce9ec8d-dd4e-4faf-85b1-f47ce6d1124c",
-  },
-  {
-    name: "EMS",
-    href: "/industries/ems",
-    img: "https://www.figma.com/api/mcp/asset/b6de8838-e64a-4bf2-9ef1-cff96d90b28d",
-  },
-  {
-    name: "Pharmacy",
-    href: "/industries/pharmacy",
-    img: "https://www.figma.com/api/mcp/asset/46383ec7-9c26-4ab3-9a2a-66fed0db01d5",
-  },
-  {
-    name: "Physical Therapy",
-    href: "/industries/physical-therapy",
-    img: "https://www.figma.com/api/mcp/asset/f5c0d0c8-247d-4cbb-8cf5-c2756abc5171",
-  },
-];
+import Link from 'next/link'
+import { INDUSTRIES } from '@/lib/industries'
 
 export function ShopByIndustry() {
   return (
@@ -42,15 +19,15 @@ export function ShopByIndustry() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {INDUSTRIES.map(({ name, href, img }) => (
+          {INDUSTRIES.slice(0, 4).map(({ name, slug, image }) => (
             <Link
-              key={name}
-              href={href}
+              key={slug}
+              href={`/industries/${slug}`}
               className="group relative overflow-hidden aspect-[314/390]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={img}
+                src={image}
                 alt={name}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
@@ -64,5 +41,5 @@ export function ShopByIndustry() {
 
       </div>
     </section>
-  );
+  )
 }
