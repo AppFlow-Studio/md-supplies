@@ -1,9 +1,10 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 
 interface FadeInProps {
-  children: React.ReactNode
+  children: ReactNode
   delay?: number
   className?: string
 }
