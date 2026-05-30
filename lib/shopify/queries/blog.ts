@@ -12,7 +12,8 @@ export const GET_BLOGS_WITH_ARTICLES = `#graphql
             excerpt
             publishedAt
             author { name }
-            image { url altText width height }
+            image { id url altText width height }
+            tags
           }
         }
       }
