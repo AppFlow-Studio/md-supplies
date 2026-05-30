@@ -1,32 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { FadeIn } from "@/components/ui/FadeIn";
 
 const BRANDS = [
-  {
-    name: "Cardinal Health",
-    img: "/images/brands/cardinal-health.png",
-  },
-  {
-    name: "Medline",
-    img: "/images/brands/medline.png",
-  },
-  {
-    name: "Covidien",
-    img: "/images/brands/covidien.png",
-  },
-  {
-    name: "McKesson",
-    img: "/images/brands/mc-kesson.png",
-  },
-  {
-    name: "Dynarex",
-    img: "/images/brands/dynarex.png",
-  },
-  {
-    name: "BD",
-    img: "/images/brands/bd.png",
-  },
+  { name: "Cardinal Health", img: "/images/brands/cardinal-health.png" },
+  { name: "Medline",         img: "/images/brands/medline.png" },
+  { name: "Covidien",        img: "/images/brands/covidien.png" },
+  { name: "McKesson",        img: "/images/brands/mc-kesson.png" },
+  { name: "Dynarex",         img: "/images/brands/dynarex.png" },
+  { name: "BD",              img: "/images/brands/bd.png" },
 ];
 
 function BrandLogo({ name, img }: { name: string; img: string }) {
@@ -54,13 +37,10 @@ function BrandLogo({ name, img }: { name: string; img: string }) {
 export function TrustedBrands() {
   return (
     <section className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]">
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 md:py-10">
-
+      <FadeIn className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 md:py-10">
         <p className="text-center text-[12px] sm:text-[13px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-7">
           Trusted Brands We Carry
         </p>
-
-        {/* Horizontal scroll on mobile, evenly spaced on desktop */}
         <div className="flex items-center gap-8 sm:gap-4 overflow-x-auto sm:overflow-visible sm:justify-between pb-1 sm:pb-0 scrollbar-hide">
           {BRANDS.map((brand) => (
             <div key={brand.name} className="shrink-0 sm:shrink-0 flex items-center justify-center min-w-25 sm:flex-1">
@@ -68,8 +48,7 @@ export function TrustedBrands() {
             </div>
           ))}
         </div>
-
-      </div>
+      </FadeIn>
     </section>
   );
 }
