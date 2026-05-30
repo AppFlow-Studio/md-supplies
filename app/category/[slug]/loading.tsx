@@ -18,7 +18,7 @@ export default function CategoryLoading() {
       {/* Main layout */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 flex gap-0 items-start">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:block w-[280px] shrink-0 pr-10">
+        <aside className="hidden lg:block w-[280px] shrink-0 pr-10 sticky top-[140px]">
           <Skeleton className="h-5 w-20 mb-6" />
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="mb-7">
@@ -41,9 +41,9 @@ export default function CategoryLoading() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[23px]">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="flex flex-col bg-neutral-50">
+              <div key={i} className="flex flex-col bg-white">
                 <Skeleton className="aspect-square w-full" />
-                <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
+                <div className="px-[22px] pt-[19px] pb-[22px] flex flex-col gap-2">
                   <Skeleton className="h-3 w-12" />
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-3/4" />
