@@ -10,7 +10,7 @@ import {
 import { useCart } from '@/components/store/CartProvider'
 
 const NAV_ITEMS = [
-  { label: 'Categories', href: '#', hasDropdown: true },
+  { label: 'Categories', href: '/categories', hasDropdown: true },
   { label: 'OCC', href: '#' },
   { label: 'Home Care', href: '#', hasDropdown: true },
   { label: 'Mobility', href: '#', hasDropdown: true },

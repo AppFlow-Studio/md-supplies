@@ -227,6 +227,7 @@ export type BlogArticleSummary = {
   publishedAt: string;
   author: { name: string };
   image: ProductImage | null;
+  tags: string[];
 };
 
 export type BlogArticle = BlogArticleSummary & {
