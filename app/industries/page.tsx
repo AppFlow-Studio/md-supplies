@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/4cc83b0b-dc84-4fc6-82cc-35f7d6930005'
 
 const STATS = [
-  { value: '1,000+', label: 'ACTIVE ACCOUNT' },
+  { value: '1,000+', label: 'ACTIVE ACCOUNTS' },
   { value: '4,000+', label: 'PRODUCTS' },
   { value: 'Fast', label: 'FULFILLMENT' },
   { value: '24-48 hr', label: 'FAST SUPPORT' },
@@ -59,7 +59,7 @@ export default function IndustriesPage() {
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
-                href="/collection/all"
+                href="/categories"
                 className="bg-navy-900 text-white text-[18px] font-semibold px-8 h-[59px] flex items-center justify-center hover:bg-navy-950 transition-colors"
               >
                 Shop All Products
