@@ -12,6 +12,7 @@ import { CategoryPagination } from '@/components/category/CategoryPagination'
 import { FilterDrawer } from '@/components/category/FilterDrawer'
 import { buildMetadata } from '@/lib/seo'
 import { ROUTES } from '@/lib/routes'
+import { getSiblingSubcategories } from '@/lib/category-utils'
 
 export const revalidate = 30
 
@@ -51,8 +52,6 @@ function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
   })
 }
 
-// TODO(data-team): replace with real related links from Shopify metafields
-const RELATED_STUBS: { label: string; catSlug: string; subSlug: string }[] = []
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug, sub } = await params
@@ -119,14 +118,17 @@ export default async function SubcategoryPage({ params, searchParams }: Props) {
   const currentPage = parseInt(sp.page ?? '1', 10)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
 
-  const data = await storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
-    handle,
-    first: 9,
-    after: sp.after ?? null,
-    sortKey,
-    reverse,
-    filters: parseFilters(activeFilterStrings),
-  })
+  const [data, siblings] = await Promise.all([
+    storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
+      handle,
+      first: 9,
+      after: sp.after ?? null,
+      sortKey,
+      reverse,
+      filters: parseFilters(activeFilterStrings),
+    }),
+    getSiblingSubcategories(slug, sub),
+  ])
 
   if (!data.collection) notFound()
 
@@ -282,14 +284,14 @@ export default async function SubcategoryPage({ params, searchParams }: Props) {
         </div>
       </div>
 
-      {/* Related subcategory links — hidden until data team populates RELATED_STUBS */}
-      {RELATED_STUBS.length > 0 && (
+      {/* Sibling subcategories — derived from Shopify collection handles (${slug}-* pattern) */}
+      {siblings.length > 0 && (
         <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
           <h2 className="text-navy-900 text-[18px] font-semibold mb-4">
             Related Subcategories
           </h2>
           <div className="flex flex-wrap gap-3">
-            {RELATED_STUBS.map((r) => (
+            {siblings.map((r) => (
               <Link
                 key={r.subSlug}
                 href={ROUTES.subcategory(r.catSlug, r.subSlug)}

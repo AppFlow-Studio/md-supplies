@@ -12,6 +12,7 @@ import { CategoryPagination } from '@/components/category/CategoryPagination'
 import { FilterDrawer } from '@/components/category/FilterDrawer'
 import { buildMetadata } from '@/lib/seo'
 import { ROUTES } from '@/lib/routes'
+import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 
 export const revalidate = 30
 
@@ -51,10 +52,6 @@ function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
   })
 }
 
-// TODO(data-team): replace with real subcategory list from Shopify metafields
-const SUBCATEGORY_STUBS: { label: string; slug: string }[] = []
-// TODO(data-team): replace with real related category list from Shopify metafields
-const RELATED_CATEGORY_STUBS: { label: string; slug: string }[] = []
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
@@ -117,14 +114,18 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const currentPage = parseInt(sp.page ?? '1', 10)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
 
-  const data = await storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
-    handle: slug,
-    first: 9,
-    after: sp.after ?? null,
-    sortKey,
-    reverse,
-    filters: parseFilters(activeFilterStrings),
-  })
+  const [data, subcategories, relatedCategories] = await Promise.all([
+    storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
+      handle: slug,
+      first: 9,
+      after: sp.after ?? null,
+      sortKey,
+      reverse,
+      filters: parseFilters(activeFilterStrings),
+    }),
+    getSubcategories(slug),
+    getRelatedCategories(slug),
+  ])
 
   if (!data.collection) notFound()
 
@@ -273,14 +274,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </div>
       </div>
 
-      {/* Subcategory grid — hidden until data team populates SUBCATEGORY_STUBS */}
-      {SUBCATEGORY_STUBS.length > 0 && (
+      {/* Subcategory grid — derived from Shopify collection handles (${slug}-* pattern) */}
+      {subcategories.length > 0 && (
         <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 border-t border-gray-200">
           <h2 className="text-navy-900 text-[20px] font-semibold mb-6">
             Browse by Subcategory
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {SUBCATEGORY_STUBS.map((sub) => (
+            {subcategories.map((sub) => (
               <Link
                 key={sub.slug}
                 href={ROUTES.subcategory(slug, sub.slug)}
@@ -293,14 +294,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </section>
       )}
 
-      {/* Related categories — hidden until data team populates RELATED_CATEGORY_STUBS */}
-      {RELATED_CATEGORY_STUBS.length > 0 && (
+      {/* Related categories — other collections from Shopify */}
+      {relatedCategories.length > 0 && (
         <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
           <h2 className="text-navy-900 text-[18px] font-semibold mb-4">
             Related Categories
           </h2>
           <div className="flex flex-wrap gap-3">
-            {RELATED_CATEGORY_STUBS.map((cat) => (
+            {relatedCategories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={ROUTES.category(cat.slug)}
