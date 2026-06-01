@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { FadeIn } from "@/components/ui/FadeIn";
 
 const BENEFITS = [
   "Volume discounts up to 25%",
@@ -21,6 +23,16 @@ const FACULTY_TYPES = [
   "Other",
 ];
 
+const leftContainerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1 } },
+};
+
+const leftItemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
+};
+
 export function WholesalePricing() {
   const [form, setForm] = useState({
     name: "",
@@ -35,7 +47,6 @@ export function WholesalePricing() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire up to backend / email service
     alert("Application submitted! We'll be in touch shortly.");
   }
 
@@ -44,39 +55,39 @@ export function WholesalePricing() {
       <div className="max-w-360 mx-auto flex flex-col lg:flex-row min-h-[580px]">
 
         {/* ── Left: teal panel ── */}
-        <div className="bg-teal-500 flex-1 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center gap-6">
-
-          {/* Badge */}
-          <div className="inline-flex items-center self-start bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-2">
+        <motion.div
+          className="bg-teal-500 flex-1 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center gap-6"
+          variants={leftContainerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+        >
+          <motion.div variants={leftItemVariants} className="inline-flex items-center self-start bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-2">
             <span className="text-[13px] font-semibold tracking-[0.06em] text-white uppercase">
               For Healthcare Professionals
             </span>
-          </div>
+          </motion.div>
 
-          {/* Headline */}
-          <h2 className="text-[38px] sm:text-[45px] font-bold text-white leading-[1.15] tracking-[0.9px] max-w-[460px]">
+          <motion.h2 variants={leftItemVariants} className="text-[38px] sm:text-[45px] font-bold text-white leading-[1.15] tracking-[0.9px] max-w-[460px]">
             Get exclusive Wholesale Pricing
-          </h2>
+          </motion.h2>
 
-          {/* Description */}
-          <p className="text-white text-[15px] font-normal leading-[1.9] max-w-[490px]">
+          <motion.p variants={leftItemVariants} className="text-white text-[15px] font-normal leading-[1.9] max-w-[490px]">
             Apply for a professional account and volume discounts, priority support, and net terms.
-          </p>
+          </motion.p>
 
-          {/* Benefits */}
-          <ul className="flex flex-col gap-3">
+          <motion.ul variants={leftItemVariants} className="flex flex-col gap-3">
             {BENEFITS.map((item) => (
               <li key={item} className="flex items-center gap-3 text-white text-[15px]">
                 <Check size={12} className="shrink-0 text-white" strokeWidth={3} />
                 {item}
               </li>
             ))}
-          </ul>
-
-        </div>
+          </motion.ul>
+        </motion.div>
 
         {/* ── Right: form panel ── */}
-        <div className="bg-white lg:w-[560px] xl:w-[642px] shrink-0 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center">
+        <FadeIn delay={0.2} className="bg-white lg:w-[560px] xl:w-[642px] shrink-0 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center">
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
 
             <div className="flex flex-col gap-1.5">
@@ -149,7 +160,7 @@ export function WholesalePricing() {
             </button>
 
           </form>
-        </div>
+        </FadeIn>
 
       </div>
     </section>

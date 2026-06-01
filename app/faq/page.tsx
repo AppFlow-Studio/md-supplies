@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { FaqAccordion }    from "@/components/faq/FaqAccordion";
 import { WholesalePricing } from "@/components/home/WholesalePricing";
+import { FadeIn } from "@/components/ui/FadeIn";
 
 export const metadata: Metadata = {
   title: "FAQ | MD Supplies",
@@ -20,36 +21,46 @@ export default function FaqPage() {
             {/* Left info panel */}
             <div className="lg:w-77 xl:w-90 shrink-0 flex flex-col gap-5">
 
-              <p className="text-teal-500 text-[13px] sm:text-[15px] font-semibold tracking-[0.75px] uppercase">
-                Support
-              </p>
+              <FadeIn delay={0}>
+                <p className="text-teal-500 text-[13px] sm:text-[15px] font-semibold tracking-[0.75px] uppercase">
+                  Support
+                </p>
+              </FadeIn>
 
-              <h1 className="text-[40px] sm:text-[50px] font-semibold text-navy-900 leading-[1.1] tracking-tight">
-                Frequently
-                <br />
-                Asked
-                <br />
-                Questions
-              </h1>
+              <FadeIn delay={0.1}>
+                <h1 className="text-[40px] sm:text-[50px] font-semibold text-navy-900 leading-[1.1] tracking-tight">
+                  Frequently
+                  <br />
+                  Asked
+                  <br />
+                  Questions
+                </h1>
+              </FadeIn>
 
-              <p className="text-gray-500 text-[15px] leading-[1.65] max-w-80">
-                For wholesale inquiries, bulk orders, or questions not answered
-                below, our support team responds within 2 hours.
-              </p>
+              <FadeIn delay={0.2}>
+                <p className="text-gray-500 text-[15px] leading-[1.65] max-w-80">
+                  For wholesale inquiries, bulk orders, or questions not answered
+                  below, our support team responds within 2 hours.
+                </p>
+              </FadeIn>
 
-              <a
-                href="mailto:support@mdsupplies.com"
-                className="text-teal-500 text-[13px] sm:text-[15px] font-semibold tracking-[0.75px] uppercase hover:underline break-all"
-              >
-                SUPPORT@MDSUPPLIES.COM
-              </a>
+              <FadeIn delay={0.3}>
+                <a
+                  href="mailto:support@mdsupplies.com"
+                  className="text-teal-500 text-[13px] sm:text-[15px] font-semibold tracking-[0.75px] uppercase hover:underline break-all"
+                >
+                  SUPPORT@MDSUPPLIES.COM
+                </a>
+              </FadeIn>
 
             </div>
 
             {/* Right: accordion on white card */}
-            <div className="flex-1 bg-white min-w-0">
-              <FaqAccordion />
-            </div>
+            <FadeIn delay={0.1} className="flex-1 min-w-0">
+              <div className="bg-white">
+                <FaqAccordion />
+              </div>
+            </FadeIn>
 
           </div>
         </div>

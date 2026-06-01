@@ -11,6 +11,8 @@ import {
 } from "@/lib/shopify/queries/blog";
 import type { BlogArticle, ShopifyBlog, BlogArticleSummary } from "@/lib/shopify/types";
 import { WholesalePricing } from "@/components/home/WholesalePricing";
+import { FadeIn } from "@/components/ui/FadeIn";
+import { MoreArticles } from "@/components/blog/MoreArticles";
 import { RelatedArticles } from "@/components/blog/RelatedArticles";
 
 export const revalidate = 3600;
@@ -126,23 +128,25 @@ export default async function ArticlePage({ params }: Props) {
 
       {/* Hero image */}
       {article.image && (
-        <div className="w-full bg-navy-900 overflow-hidden h-[280px] sm:h-[380px] relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={article.image.url}
-            alt={article.image.altText ?? article.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-40"
-          />
-          <div className="relative max-w-360 mx-auto px-4 sm:px-8 lg:px-14 h-full flex flex-col justify-end pb-10">
-            <h1 className="text-white text-[26px] sm:text-[36px] font-bold leading-tight max-w-[720px]">
-              {article.title}
-            </h1>
+        <FadeIn delay={0} className="w-full">
+          <div className="bg-navy-900 overflow-hidden h-[280px] sm:h-[380px] relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={article.image.url}
+              alt={article.image.altText ?? article.title}
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
+            />
+            <div className="relative max-w-360 mx-auto px-4 sm:px-8 lg:px-14 h-full flex flex-col justify-end pb-10">
+              <h1 className="text-white text-[26px] sm:text-[36px] font-bold leading-tight max-w-[720px]">
+                {article.title}
+              </h1>
+            </div>
           </div>
-        </div>
+        </FadeIn>
       )}
 
       {/* Article content */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
+      <FadeIn delay={0.1} className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
         <div className="max-w-[760px]">
           {/* Meta row */}
           <div className="flex items-center gap-5 mb-8 flex-wrap">
@@ -196,9 +200,11 @@ export default async function ArticlePage({ params }: Props) {
             </Link>
           </div>
         </div>
-      </div>
+      </FadeIn>
 
-      <RelatedArticles articles={moreArticles} />
+      {/* More articles */}
+      <MoreArticles articles={moreArticles} />
+
 
       <WholesalePricing />
     </main>
