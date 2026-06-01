@@ -90,7 +90,9 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
         pageType: 'category',
         title,
         description: description || undefined,
-        canonical: `${base}/category/${slug}?page=${currentPage}&after=${sp.after ?? ''}`,
+        canonical: sp.after
+          ? `${base}/category/${slug}?page=${currentPage}&after=${sp.after}`
+          : `${base}/category/${slug}`,
       })
     }
 
