@@ -37,9 +37,36 @@ export type ProductVariant = {
   id: string;
   title: string;
   availableForSale: boolean;
+  quantityAvailable: number | null;
   selectedOptions: SelectedOption[];
   price: Money;
   compareAtPrice: Money | null;
+};
+
+export type ProductMetafields = {
+  brandName: string | null;
+  unitsPerOrder: string | null;
+  quantityOfUnits: string | null;
+  orderSize: string | null;
+  material: string | null;
+  use: string | null;
+  features: string | null;
+  color: string | null;
+  sterility: string | null;
+  thickness: string | null;
+  gloveSize: string | null;
+  needleGauge: string | null;
+  needleLength: string | null;
+  sizeLength: string | null;
+  estimatedRestockDate: string | null;
+  testsFor: string | null;
+  detectableDrugs: string | null;
+  adulterants: string | null;
+  otherFeatures: string | null;
+  typeList: string | null;
+  customBadge1: string | null;
+  customBadge2: string | null;
+  customBadge3: string | null;
 };
 
 export type Product = {
@@ -58,8 +85,7 @@ export type Product = {
   images: { nodes: ProductImage[] };
   variants: { nodes: ProductVariant[] };
   options: ProductOption[];
-  metafields?: Array<{ key: string; value: string; namespace: string }>;
-};
+} & ProductMetafields;
 
 export type CollectionProduct = {
   id: string;
@@ -69,7 +95,7 @@ export type CollectionProduct = {
   availableForSale: boolean;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
-  variants: { nodes: Pick<ProductVariant, 'id' | 'price' | 'compareAtPrice' | 'availableForSale'>[] };
+  variants: { nodes: Pick<ProductVariant, 'id' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
 };
 
 export type CollectionFilter = {
@@ -175,6 +201,44 @@ export type Order = {
   shippingAddress?: Address;
   lineItems: { nodes: OrderLineItem[] };
   fulfillments: Fulfillment[];
+};
+
+export type MarketCurrency = {
+  isoCode: string;
+  symbol: string;
+};
+
+export type AvailableCountry = {
+  isoCode: string;
+  name: string;
+  currency: MarketCurrency;
+};
+
+export type LocalizationData = {
+  country: AvailableCountry;
+  availableCountries: AvailableCountry[];
+};
+
+export type BlogArticleSummary = {
+  id: string;
+  handle: string;
+  title: string;
+  excerpt: string | null;
+  publishedAt: string;
+  author: { name: string };
+  image: ProductImage | null;
+  tags: string[];
+};
+
+export type BlogArticle = BlogArticleSummary & {
+  contentHtml: string;
+  tags: string[];
+};
+
+export type ShopifyBlog = {
+  handle: string;
+  title: string;
+  articles: { nodes: BlogArticleSummary[] };
 };
 
 export type Customer = {

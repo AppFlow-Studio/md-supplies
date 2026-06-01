@@ -8,6 +8,8 @@ import {
 import type { Product, CollectionProduct, ProductVariant } from '@/lib/shopify/types'
 import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
+import { RelatedArticles } from '@/components/blog/RelatedArticles'
+import type { BlogArticleSummary } from '@/lib/shopify/types'
 
 type Tab = 'DESCRIPTION' | 'SPECIFICATIONS' | 'ORDERING INFO' | 'REVIEWS'
 const TABS: Tab[] = ['DESCRIPTION', 'SPECIFICATIONS', 'ORDERING INFO', 'REVIEWS']
@@ -46,13 +48,14 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
 interface Props {
   product: Product
   relatedProducts: CollectionProduct[]
+  relatedArticles?: BlogArticleSummary[]
 }
 
-export function ProductView({ product, relatedProducts }: Props) {
+export function ProductView({ product, relatedProducts, relatedArticles = [] }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     () => getDefaultVariant(product.variants.nodes),
   )
-  const [qty, setQty] = useState(1)
+  const [orderQty, setOrderQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
   const [activeTab, setActiveTab] = useState<Tab>('DESCRIPTION')
 
@@ -66,10 +69,40 @@ export function ProductView({ product, relatedProducts }: Props) {
       ? Math.round(((compareAt - price) / compareAt) * 100)
       : null
 
-  const specsMeta = product.metafields?.reduce<Record<string, string>>((acc, m) => {
-    if (m) acc[m.key] = m.value
-    return acc
-  }, {}) ?? {}
+  const qty = selectedVariant.quantityAvailable ?? null
+  const restockDate = product.estimatedRestockDate
+    ? new Date(product.estimatedRestockDate).toLocaleDateString('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric',
+      })
+    : null
+
+  const stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' | 'backordered' = (() => {
+    if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
+    if (qty !== null && qty <= 9) return 'low_stock'
+    return 'in_stock'
+  })()
+
+  const SPEC_ROWS: { label: string; value: string | null }[] = [
+    { label: 'Brand',            value: product.brandName },
+    { label: 'Material',         value: product.material },
+    { label: 'Color',            value: product.color },
+    { label: 'Sterility',        value: product.sterility },
+    { label: 'Thickness',        value: product.thickness },
+    { label: 'Glove Size',       value: product.gloveSize },
+    { label: 'Needle Gauge',     value: product.needleGauge },
+    { label: 'Needle Length',    value: product.needleLength },
+    { label: 'Size / Length',    value: product.sizeLength },
+    { label: 'Use',              value: product.use },
+    { label: 'Features',         value: product.features },
+    { label: 'Other Features',   value: product.otherFeatures },
+    { label: 'Type',             value: product.typeList },
+    { label: 'Tests For',        value: product.testsFor },
+    { label: 'Detectable Drugs', value: product.detectableDrugs },
+    { label: 'Adulterants',      value: product.adulterants },
+    { label: 'Units Per Order',  value: product.unitsPerOrder },
+    { label: 'Quantity of Units',value: product.quantityOfUnits },
+    { label: 'Order Size',       value: product.orderSize },
+  ].filter((r) => r.value != null)
 
   return (
     <>
@@ -151,14 +184,38 @@ export function ProductView({ product, relatedProducts }: Props) {
 
             {/* Availability */}
             <div className="flex items-center gap-2">
-              <span
-                className={`size-[8px] rounded-full shrink-0 ${
-                  selectedVariant.availableForSale ? 'bg-green-500' : 'bg-red-400'
-                }`}
-              />
-              <span className="text-gray-500 text-[13px] tracking-[0.26px]">
-                {selectedVariant.availableForSale ? 'In Stock – Ships Same Day' : 'Out of Stock'}
-              </span>
+              {stockStatus === 'in_stock' && (
+                <>
+                  <span className="size-[8px] rounded-full shrink-0 bg-green-500" />
+                  <span className="text-gray-500 text-[13px] tracking-[0.26px]">
+                    {qty !== null ? `In Stock – ${qty} available` : 'In Stock – Ships Same Day'}
+                  </span>
+                </>
+              )}
+              {stockStatus === 'low_stock' && (
+                <>
+                  <span className="size-[8px] rounded-full shrink-0 bg-amber-400" />
+                  <span className="text-amber-600 text-[13px] font-semibold tracking-[0.26px]">
+                    Low Stock – only {qty} left
+                  </span>
+                </>
+              )}
+              {stockStatus === 'backordered' && (
+                <>
+                  <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
+                  <span className="text-orange-600 text-[13px] font-semibold tracking-[0.26px]">
+                    Back-ordered – ships {restockDate ?? 'soon'}
+                  </span>
+                </>
+              )}
+              {stockStatus === 'out_of_stock' && (
+                <>
+                  <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
+                  <span className="text-red-500 text-[13px] font-semibold tracking-[0.26px]">
+                    Out of Stock
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="h-px bg-gray-200" />
@@ -192,17 +249,17 @@ export function ProductView({ product, relatedProducts }: Props) {
             <div className="flex gap-3 flex-wrap sm:flex-nowrap">
               <div className="flex border border-[rgba(102,102,100,0.5)] h-[56px] w-[167px] shrink-0">
                 <button
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  onClick={() => setOrderQty((q) => Math.max(1, q - 1))}
                   className="flex-1 flex items-center justify-center text-navy-900 hover:bg-neutral-50 transition-colors"
                   aria-label="Decrease quantity"
                 >
                   <Minus size={16} />
                 </button>
                 <div className="flex items-center justify-center w-[55px] border-x border-[rgba(102,102,100,0.5)] text-navy-900 text-[16px] font-semibold">
-                  {qty}
+                  {orderQty}
                 </div>
                 <button
-                  onClick={() => setQty((q) => q + 1)}
+                  onClick={() => setOrderQty((q) => q + 1)}
                   className="flex-1 flex items-center justify-center text-navy-900 hover:bg-neutral-50 transition-colors"
                   aria-label="Increase quantity"
                 >
@@ -212,7 +269,7 @@ export function ProductView({ product, relatedProducts }: Props) {
 
               <AddToCartButton
                 variantId={selectedVariant.id}
-                quantity={qty}
+                quantity={orderQty}
                 availableForSale={selectedVariant.availableForSale}
               />
             </div>
@@ -270,7 +327,7 @@ export function ProductView({ product, relatedProducts }: Props) {
 
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-6">
-                {product.options.length > 0 && (
+                {(product.options.length > 0 || SPEC_ROWS.length > 0) ? (
                   <table className="w-full max-w-[600px]">
                     <tbody>
                       {product.options.map((opt, i) => (
@@ -283,32 +340,37 @@ export function ProductView({ product, relatedProducts }: Props) {
                           </td>
                         </tr>
                       ))}
-                      {specsMeta.dimensions && (
-                        <tr className={product.options.length % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}>
-                          <td className="py-3 px-4 text-[14px] font-semibold text-navy-900">Dimensions</td>
-                          <td className="py-3 px-4 text-[14px] text-gray-500">{specsMeta.dimensions}</td>
-                        </tr>
-                      )}
-                      {specsMeta.datasheet_url && (
-                        <tr className={(product.options.length + (specsMeta.dimensions ? 1 : 0)) % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}>
-                          <td className="py-3 px-4 text-[14px] font-semibold text-navy-900">Datasheet</td>
-                          <td className="py-3 px-4 text-[14px] text-gray-500">
-                            <a
-                              href={specsMeta.datasheet_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-teal-500 hover:underline"
-                            >
-                              Download PDF
-                            </a>
+                      {SPEC_ROWS.map(({ label, value }, i) => (
+                        <tr
+                          key={label}
+                          className={(product.options.length + i) % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}
+                        >
+                          <td className="py-3 px-4 text-[14px] font-semibold text-navy-900 w-[200px]">
+                            {label}
                           </td>
+                          <td className="py-3 px-4 text-[14px] text-gray-500">{value}</td>
                         </tr>
-                      )}
+                      ))}
                     </tbody>
                   </table>
-                )}
-                {product.options.length === 0 && !specsMeta.dimensions && !specsMeta.datasheet_url && (
+                ) : (
                   <p className="text-gray-500 text-[15px]">No specifications available.</p>
+                )}
+
+                {/* Badges */}
+                {(product.customBadge1 || product.customBadge2 || product.customBadge3) && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {[product.customBadge1, product.customBadge2, product.customBadge3]
+                      .filter(Boolean)
+                      .map((badge) => (
+                        <span
+                          key={badge}
+                          className="bg-teal-50 text-teal-700 text-[12px] font-semibold px-3 py-1 border border-teal-200"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                  </div>
                 )}
               </div>
             )}
@@ -399,6 +461,7 @@ export function ProductView({ product, relatedProducts }: Props) {
           </div>
         </section>
       )}
+      <RelatedArticles articles={relatedArticles} heading="From Our Blog" />
     </>
   )
 }

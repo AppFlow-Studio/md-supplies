@@ -68,3 +68,30 @@ export const GET_PRODUCTS = `#graphql
     }
   }
 `;
+
+export const GET_PRODUCTS_BY_VENDOR = `#graphql
+  ${PRODUCT_CARD_FRAGMENT}
+  query GetProductsByVendor(
+    $query: String!
+    $first: Int!
+    $after: String
+    $sortKey: ProductSortKeys
+    $reverse: Boolean
+  ) {
+    products(
+      first: $first
+      after: $after
+      sortKey: $sortKey
+      reverse: $reverse
+      query: $query
+    ) {
+      nodes { ...ProductCard }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;

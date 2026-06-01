@@ -23,6 +23,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const { q } = await searchParams
   return {
     title: q ? `"${q}" — Search | MD Supplies` : 'Search | MD Supplies',
+    robots: { index: false, follow: false },
   }
 }
 
