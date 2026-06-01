@@ -46,6 +46,7 @@ export const GET_PRODUCT = `#graphql
           id
           title
           availableForSale
+          quantityAvailable
           selectedOptions { name value }
           price { amount currencyCode }
           compareAtPrice { amount currencyCode }
@@ -56,6 +57,29 @@ export const GET_PRODUCT = `#graphql
         name
         values
       }
+      brandName:          metafield(namespace: "custom", key: "brand_name")                          { value }
+      unitsPerOrder:      metafield(namespace: "custom", key: "units_per_order")                     { value }
+      quantityOfUnits:    metafield(namespace: "custom", key: "quantity_of_units")                   { value }
+      orderSize:          metafield(namespace: "custom", key: "order_size")                          { value }
+      material:           metafield(namespace: "custom", key: "material")                            { value }
+      use:                metafield(namespace: "custom", key: "use")                                 { value }
+      features:           metafield(namespace: "custom", key: "features")                            { value }
+      color:              metafield(namespace: "custom", key: "color")                               { value }
+      sterility:          metafield(namespace: "custom", key: "sterility")                           { value }
+      thickness:          metafield(namespace: "custom", key: "thickness")                           { value }
+      gloveSize:          metafield(namespace: "custom", key: "glove_size")                          { value }
+      needleGauge:        metafield(namespace: "custom", key: "needle_gauge")                        { value }
+      needleLength:       metafield(namespace: "custom", key: "needle_length")                       { value }
+      sizeLength:         metafield(namespace: "custom", key: "size_length_")                        { value }
+      estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+      testsFor:           metafield(namespace: "custom", key: "tests_for")                           { value }
+      detectableDrugs:    metafield(namespace: "custom", key: "detectable_drugs")                    { value }
+      adulterants:        metafield(namespace: "custom", key: "adulterants")                         { value }
+      otherFeatures:      metafield(namespace: "custom", key: "other_features")                      { value }
+      typeList:           metafield(namespace: "custom", key: "type")                                { value }
+      customBadge1:       metafield(namespace: "custom", key: "custom_badge_1")                      { value }
+      customBadge2:       metafield(namespace: "custom", key: "custom_badge_2")                      { value }
+      customBadge3:       metafield(namespace: "custom", key: "custom_badge_3")                      { value }
     }
   }
 `;
