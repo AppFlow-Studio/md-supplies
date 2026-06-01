@@ -14,9 +14,13 @@ interface BuildMetadataOptions {
 
 export function buildMetadata(opts: BuildMetadataOptions): Metadata {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mdsupplies.com'
+  // slug-derived fallback only works for pageType:'category' (path is /category/<slug>).
+  // For subcategory/product/page, always pass canonical explicitly.
   const canonical =
     opts.canonical ??
-    (opts.slug ? `${base}/${opts.pageType}/${opts.slug}` : base)
+    (opts.pageType === 'category' && opts.slug
+      ? `${base}/category/${opts.slug}`
+      : base)
   return {
     title: `${opts.title} | MD Supplies`,
     description: opts.description,
