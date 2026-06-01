@@ -45,7 +45,12 @@
       "Bash(cat next.config.js)",
       "Bash(cat next.config.mjs)",
       "Bash(ls *.ts *.js *.mjs)",
-      "Bash(dir /B *.ts *.js *.mjs)"
+      "Bash(dir /B *.ts *.js *.mjs)",
+      "mcp__plugin_figma_figma__get_design_context",
+      "Bash(scripts/start-server.sh *)",
+      "Bash(Select-Object Name)",
+      "Bash(xargs grep -l \"ProductGrid\")",
+      "Bash(npm list *)"
     ]
   }
 }
