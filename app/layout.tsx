@@ -9,7 +9,8 @@ import { CartPopup } from '@/components/store/CartPopup'
 import { getCart } from '@/app/actions/cart'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_LOCALIZATION } from '@/lib/shopify/queries/markets'
-import type { LocalizationData, AvailableCountry } from '@/lib/shopify/types'
+import { GET_COLLECTIONS_SLIM } from '@/lib/shopify/queries/collections'
+import type { LocalizationData, AvailableCountry, SlimCollection } from '@/lib/shopify/types'
 
 const manrope = Manrope({
   variable: '--font-manrope',
@@ -27,22 +28,28 @@ export default async function RootLayout({
   const cookieStore = await cookies()
   const currentCountry = cookieStore.get('market_country')?.value ?? 'US'
 
-  const [initialCart, localization] = await Promise.all([
+  const [initialCart, localization, collectionsData] = await Promise.all([
     getCart(),
-    storefrontFetch<{ localization: LocalizationData }>(GET_LOCALIZATION).catch(
-      () => null,
-    ),
+    storefrontFetch<{ localization: LocalizationData }>(GET_LOCALIZATION).catch(() => null),
+    storefrontFetch<{ collections: { nodes: SlimCollection[] } }>(
+      GET_COLLECTIONS_SLIM,
+      { first: 50 },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { next: { revalidate: 3600 } } as any,
+    ).catch(() => ({ collections: { nodes: [] as SlimCollection[] } })),
   ])
 
   const availableCountries: AvailableCountry[] = localization?.localization.availableCountries ?? []
+  const collections: SlimCollection[] = collectionsData.collections.nodes
 
   return (
     <html lang="en" className={`${manrope.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <CartProvider initialCart={initialCart}>
-          <Header />
+          <Header collections={collections} />
           {children}
           <Footer
+            collections={collections}
             availableCountries={availableCountries}
             currentCountry={currentCountry}
           />
