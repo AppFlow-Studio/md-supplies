@@ -6,6 +6,7 @@ const STOREFRONT_API_URL = `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2026
 export async function storefrontFetch<T>(
   query: string,
   variables?: Record<string, unknown>,
+  fetchOptions?: RequestInit,
 ): Promise<T> {
   let country = 'US';
   try {
@@ -27,6 +28,7 @@ export async function storefrontFetch<T>(
     method: 'POST',
     headers,
     body: JSON.stringify({ query, variables }),
+    ...fetchOptions,
   });
 
   if (!res.ok) {
