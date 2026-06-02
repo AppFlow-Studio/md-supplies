@@ -1,3 +1,5 @@
+import { safeJsonLd } from '@/lib/safe-json-ld'
+
 interface BreadcrumbItem {
   name: string
   item: string
@@ -21,7 +23,7 @@ export function BreadcrumbSchema({ items }: Props) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   )
 }

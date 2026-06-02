@@ -1,3 +1,5 @@
+import { safeJsonLd } from '@/lib/safe-json-ld'
+
 interface Props {
   name: string
   description: string
@@ -58,7 +60,7 @@ export function ProductSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   )
 }
