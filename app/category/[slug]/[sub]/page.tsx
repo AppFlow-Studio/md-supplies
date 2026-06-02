@@ -10,6 +10,7 @@ import { CategorySort } from '@/components/category/CategorySort'
 import { ProductGrid } from '@/components/category/ProductGrid'
 import { CategoryPagination } from '@/components/category/CategoryPagination'
 import { FilterDrawer } from '@/components/category/FilterDrawer'
+import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { buildMetadata } from '@/lib/seo'
 import { ROUTES } from '@/lib/routes'
 import { getSiblingSubcategories } from '@/lib/category-utils'
@@ -158,20 +159,12 @@ export default async function SubcategoryPage({ params, searchParams }: Props) {
     <main className="bg-[#f9fafc] min-h-screen">
       {/* Breadcrumb — parent slug displayed as formatted text until data team provides parent title */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
-          <Link href={ROUTES.home} className="text-gray-500 hover:text-navy-900 transition-colors">
-            Home
-          </Link>
-          <span className="text-gray-500">›</span>
-          <Link
-            href={ROUTES.category(slug)}
-            className="text-gray-500 hover:text-navy-900 transition-colors capitalize"
-          >
-            {slug.replace(/-/g, ' ')}
-          </Link>
-          <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold">{collection.title}</span>
-        </nav>
+        <Breadcrumb
+          items={[
+            { label: slug.replace(/-/g, ' '), href: ROUTES.category(slug) },
+            { label: collection.title },
+          ]}
+        />
       </div>
 
       {/* Hero — with image */}

@@ -10,6 +10,7 @@ import { CategorySort } from '@/components/category/CategorySort'
 import { ProductGrid } from '@/components/category/ProductGrid'
 import { CategoryPagination } from '@/components/category/CategoryPagination'
 import { FilterDrawer } from '@/components/category/FilterDrawer'
+import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { buildMetadata } from '@/lib/seo'
 import { ROUTES } from '@/lib/routes'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
@@ -155,13 +156,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     <main className="bg-[#f9fafc] min-h-screen">
       {/* Breadcrumb */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
-          <Link href={ROUTES.home} className="text-gray-500 hover:text-navy-900 transition-colors">
-            Home
-          </Link>
-          <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold">{collection.title}</span>
-        </nav>
+        <Breadcrumb items={[{ label: collection.title }]} />
       </div>
 
       {/* Hero — with image */}
