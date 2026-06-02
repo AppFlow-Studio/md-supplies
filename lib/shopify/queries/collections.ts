@@ -73,3 +73,14 @@ export const GET_COLLECTION = `#graphql
     }
   }
 `;
+
+export const GET_COLLECTIONS_SLIM = `#graphql
+  query GetCollectionsSlim($first: Int!) {
+    collections(first: $first) {
+      nodes {
+        handle
+        title
+      }
+    }
+  }
+`;
