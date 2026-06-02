@@ -1,43 +1,20 @@
 'use client'
 
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { FadeIn } from "@/components/ui/FadeIn";
-
-const INDUSTRIES = [
-  {
-    name: "Urgent Care",
-    href: "/industries/urgent-care",
-    img: "https://www.figma.com/api/mcp/asset/bce9ec8d-dd4e-4faf-85b1-f47ce6d1124c",
-  },
-  {
-    name: "EMS",
-    href: "/industries/ems",
-    img: "https://www.figma.com/api/mcp/asset/b6de8838-e64a-4bf2-9ef1-cff96d90b28d",
-  },
-  {
-    name: "Pharmacy",
-    href: "/industries/pharmacy",
-    img: "https://www.figma.com/api/mcp/asset/46383ec7-9c26-4ab3-9a2a-66fed0db01d5",
-  },
-  {
-    name: "Physical Therapy",
-    href: "/industries/physical-therapy",
-    img: "https://www.figma.com/api/mcp/asset/f5c0d0c8-247d-4cbb-8cf5-c2756abc5171",
-  },
-];
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { FadeIn } from '@/components/ui/FadeIn'
 import { INDUSTRIES } from '@/lib/industries'
+import { ROUTES } from '@/lib/routes'
 
 const containerVariants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08 } },
-};
+}
 
 const itemVariants = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-};
+}
 
 export function ShopByIndustry() {
   return (
@@ -49,7 +26,7 @@ export function ShopByIndustry() {
             Shop By Industry
           </h2>
           <Link
-            href="/industries"
+            href={ROUTES.industries}
             className="text-[15px] font-semibold text-gray-500 hover:text-navy-900 transition-colors whitespace-nowrap"
           >
             All Industries →
@@ -63,15 +40,15 @@ export function ShopByIndustry() {
           whileInView="show"
           viewport={{ once: true }}
         >
-          {INDUSTRIES.map(({ name, href, img }) => (
-            <motion.div key={name} variants={itemVariants}>
+          {INDUSTRIES.map(({ name, slug, image }) => (
+            <motion.div key={slug} variants={itemVariants}>
               <Link
-                href={href}
+                href={ROUTES.industry(slug)}
                 className="group relative overflow-hidden aspect-[314/390] block"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={img}
+                  src={image}
                   alt={name}
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />

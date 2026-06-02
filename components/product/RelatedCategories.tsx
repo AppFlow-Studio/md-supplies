@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ROUTES } from '@/lib/routes'
 import type { RelatedCollection } from '@/types/product'
 
 interface Props {
@@ -17,7 +18,7 @@ export function RelatedCategories({ collections }: Props) {
         {collections.map((col) => (
           <li key={col.handle}>
             <Link
-              href={`/category/${col.handle}`}
+              href={ROUTES.category(col.handle)}
               className="inline-block px-4 py-2 text-sm font-medium text-teal-500 border border-teal-500 rounded-full hover:bg-teal-500 hover:text-white transition-colors"
             >
               {col.title}

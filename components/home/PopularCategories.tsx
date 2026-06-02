@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { ROUTES } from '@/lib/routes';
 
 interface CollectionSummary {
   id: string;
@@ -35,7 +36,7 @@ export function PopularCategories({ collections }: Props) {
             Popular Categories
           </h2>
           <Link
-            href="/shop"
+            href={ROUTES.categories}
             className="text-[15px] font-semibold text-gray-500 hover:text-navy-900 transition-colors whitespace-nowrap"
           >
             Browse all categories →
