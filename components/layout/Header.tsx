@@ -356,6 +356,20 @@ export function Header({ collections }: HeaderProps) {
               {/* Subcategory dropdown items mobile */}
               {DROPDOWN_NAV_ITEMS.map((item) => {
                 const subs = getSubsFromCollections(collections, item.prefix)
+
+                if (subs.length === 0) {
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="text-gray-500 text-sm py-2.5 border-b border-gray-200 hover:text-navy-900 transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                }
+
                 return (
                   <div key={item.label}>
                     <button
