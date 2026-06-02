@@ -23,7 +23,7 @@ export const mockPartners: Partner[] = [
       { handle: 'personal-care', title: 'Personal Care' },
       { handle: 'hygiene', title: 'Hygiene Supplies' },
     ],
-    seoTitle: 'Dawn Mist Products — MDSupplies Partner',
+    seoTitle: 'Dawn Mist Products',
     seoDescription: 'Browse Dawn Mist personal care and hygiene products available at wholesale prices through MDSupplies.',
   },
   {
