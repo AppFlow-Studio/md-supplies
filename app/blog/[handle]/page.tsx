@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params
   try {
     const found = await findArticle(handle)
-    if (!found) return {}
+    if (!found) return { title: 'Article | MD Supplies Blog' }
     const { article } = found
     return buildMetadata({
       pageType: 'blog-article',
@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       image: article.image?.url,
     })
   } catch {
-    return {}
+    return { title: 'Article | MD Supplies Blog' }
   }
 }
 

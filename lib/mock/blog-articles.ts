@@ -1,6 +1,6 @@
 import type { BlogArticle } from '@/types/blog'
 
-const sutulesArticleSummary = {
+const suturesArticleSummary = {
   slug: 'types-of-sutures',
   title: 'Types of Sutures: A Complete Guide for Healthcare Professionals',
   featuredImage: {
@@ -82,7 +82,7 @@ export const mockBlogArticles: BlogArticle[] = [
 </ul>
 <p>Browse our complete selection of <a href="/category/needles">suture needles</a> and <a href="/category/sutures">suture materials</a> at wholesale prices for licensed healthcare facilities.</p>
 `,
-    relatedArticles: [sutulesArticleSummary],
+    relatedArticles: [suturesArticleSummary],
     relatedProducts: [
       { handle: 'nitrile-exam-gloves-powder-free', title: 'Nitrile Exam Gloves', image: 'https://placehold.co/400x400/e5eff7/0086b1?text=Gloves', price: 2499 },
     ],
@@ -94,7 +94,7 @@ export const mockBlogArticles: BlogArticle[] = [
     seoDescription: 'Learn the differences between cutting, taper, and blunt suture needles, how needle sizing works, and how to choose the right needle for your procedure.',
   },
   {
-    ...sutulesArticleSummary,
+    ...suturesArticleSummary,
     publisher: 'MDSupplies',
     tableOfContents: [
       { id: 'absorbable-sutures', text: 'Absorbable Sutures', level: 2 },
@@ -189,7 +189,7 @@ export const mockBlogArticles: BlogArticle[] = [
 <h2 id="otc-essentials">OTC Essentials</h2>
 <p>Stock adequate quantities of bandages, antiseptics, and common OTC medications. High-velocity items like exam gloves and hand sanitizer should have standing reorder points.</p>
 <p>Browse our full <a href="/category/prescription-supplies">pharmacy supplies catalog</a>.</p>`,
-    relatedArticles: [sutulesArticleSummary, needlesArticleSummary],
+    relatedArticles: [suturesArticleSummary, needlesArticleSummary],
     relatedCategories: [
       { handle: 'prescription-supplies', title: 'Prescription Supplies' },
       { handle: 'compounding', title: 'Compounding Supplies' },
@@ -215,7 +215,7 @@ export const mockBlogArticles: BlogArticle[] = [
 <h2 id="wound-care">Wound Care Supplies</h2>
 <p>Maintain suture kits, staple removers, sterile gauze, adhesive bandages, antiseptic solution, and wound closure strips. Suture needles and thread in common sizes (3-0, 4-0 nylon) should be stocked in quantity.</p>
 <p>Browse our <a href="/category/exam-room">exam room supplies</a> and <a href="/category/wound-care">wound care catalog</a>.</p>`,
-    relatedArticles: [sutulesArticleSummary, needlesArticleSummary],
+    relatedArticles: [suturesArticleSummary, needlesArticleSummary],
     relatedCategories: [
       { handle: 'exam-room', title: 'Exam Room Supplies' },
       { handle: 'wound-care', title: 'Wound Care' },
