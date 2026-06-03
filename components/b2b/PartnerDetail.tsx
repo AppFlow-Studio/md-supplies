@@ -30,12 +30,14 @@ export function PartnerDetail({ partner }: Props) {
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px] mb-10">
-          <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link>
-          <span className="text-gray-500">›</span>
-          <Link href="/partners" className="text-gray-500 hover:text-navy-900 transition-colors">Partners</Link>
-          <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold">{partner.name}</span>
+        <nav aria-label="Breadcrumb" className="mb-10">
+          <ol className="flex items-center gap-2 text-[15px] tracking-[0.3px]">
+            <li><Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link></li>
+            <li aria-hidden="true" className="text-gray-500">›</li>
+            <li><Link href="/partners" className="text-gray-500 hover:text-navy-900 transition-colors">Partners</Link></li>
+            <li aria-hidden="true" className="text-gray-500">›</li>
+            <li aria-current="page" className="text-navy-900 font-semibold">{partner.name}</li>
+          </ol>
         </nav>
 
         {/* Header: logo + name + type badge + intro */}

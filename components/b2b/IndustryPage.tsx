@@ -49,12 +49,14 @@ export function IndustryPage({ industry }: Props) {
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px] mb-8">
-          <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link>
-          <span className="text-gray-500">›</span>
-          <span className="text-gray-500">Industries</span>
-          <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold">{industry.name}</span>
+        <nav aria-label="Breadcrumb" className="mb-8">
+          <ol className="flex items-center gap-2 text-[15px] tracking-[0.3px]">
+            <li><Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link></li>
+            <li aria-hidden="true" className="text-gray-500">›</li>
+            <li className="text-gray-500">Industries</li>
+            <li aria-hidden="true" className="text-gray-500">›</li>
+            <li aria-current="page" className="text-navy-900 font-semibold">{industry.name}</li>
+          </ol>
         </nav>
 
         {/* H1 only when no hero image (hero already shows H1) */}
