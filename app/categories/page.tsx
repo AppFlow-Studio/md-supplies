@@ -1,5 +1,5 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
+import { buildMetadata } from '@/lib/seo'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
@@ -8,10 +8,10 @@ import { ShopByIndustry } from '@/components/home/ShopByIndustry'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'All Medical Supply Categories | MD Supplies',
+export const metadata = buildMetadata({
+  pageType: 'categories-hub',
   description: 'Browse all medical supply categories at wholesale prices — gloves, wound care, needles, IV therapy, and more. Serving clinics, urgent care, and B2B buyers.',
-}
+})
 
 type CollectionNode = {
   id: string

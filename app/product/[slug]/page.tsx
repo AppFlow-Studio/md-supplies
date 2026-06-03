@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
@@ -53,15 +54,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   try {
     const data = await storefrontFetch<{ product: RawProduct | null }>(GET_PRODUCT, { handle: slug })
-    if (!data.product) return { title: 'Product | MD Supplies' }
+    if (!data.product) return { title: 'Product | MDSupplies' }
     const product = normalizeProduct(data.product)
     const brand = product.brandName ?? product.vendor
-    return {
-      title: `${product.title} | MD Supplies`,
+    return buildMetadata({
+      pageType: 'product',
+      title: product.title,
       description: `${brand} — ${product.description.slice(0, 155)}`,
-    }
+      slug,
+      image: product.images.nodes[0]?.url,
+    })
   } catch {
-    return { title: 'Product | MD Supplies' }
+    return { title: 'Product | MDSupplies' }
   }
 }
 

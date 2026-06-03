@@ -1,10 +1,10 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
+import { buildMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Partners | MD Supplies',
+export const metadata = buildMetadata({
+  pageType: 'partners',
   description: 'Our network of trusted medical supply manufacturers and partners.',
-}
+})
 
 const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/47a5d306-8846-4a5e-8cbe-637497fa0d5f'
 

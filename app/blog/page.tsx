@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import { BlogGrid } from "@/components/blog/BlogGrid";
+import { buildMetadata } from '@/lib/seo'
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { storefrontFetch } from "@/lib/shopify/storefront";
@@ -8,11 +8,10 @@ import type { ShopifyBlog, BlogArticleSummary } from "@/lib/shopify/types";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Blog | MD Supplies",
-  description:
-    "Tips, guides, and industry updates for healthcare professionals and facility managers.",
-};
+export const metadata = buildMetadata({
+  pageType: 'blog-hub',
+  description: 'Tips, guides, and industry updates for healthcare professionals and facility managers.',
+})
 
 export default async function BlogPage() {
   let articles: BlogArticleSummary[] = [];

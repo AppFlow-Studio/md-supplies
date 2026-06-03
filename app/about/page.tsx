@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import { buildCanonical } from '@/lib/seo'
 import { ShieldCheck, Package, Headphones } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 
@@ -8,11 +8,12 @@ const IMG_BRANDS    = "https://www.figma.com/api/mcp/asset/b6e08a8d-383d-4c7e-b7
 const IMG_WAREHOUSE = "https://www.figma.com/api/mcp/asset/72760d7f-cb6d-4f98-8e44-196f9e85cdf9";
 const IMG_PRODUCTS  = "https://www.figma.com/api/mcp/asset/e2b4a902-bc73-43d5-973c-02103610a20a";
 
-export const metadata: Metadata = {
-  title: "About Us | MD Supplies",
-  description:
-    "MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing, same-day shipping, and trusted brands.",
-};
+export const metadata = {
+  title: 'About Us | MDSupplies',
+  description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing, same-day shipping, and trusted brands.',
+  robots: 'index,follow',
+  alternates: { canonical: buildCanonical({ path: '/about' }) },
+}
 
 export default function AboutPage() {
   return (

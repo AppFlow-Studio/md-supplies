@@ -1,12 +1,14 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { INDUSTRIES } from '@/lib/industries'
+import { buildCanonical } from '@/lib/seo'
 
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: 'Shop by Industry | MD Supplies',
+export const metadata = {
+  title: 'Shop by Industry | MDSupplies',
   description: 'Medical supplies curated for your specialty — urgent care, EMS, pharmacy, physical therapy, and more.',
+  robots: 'index,follow',
+  alternates: { canonical: buildCanonical({ path: '/industries' }) },
 }
 
 const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/4cc83b0b-dc84-4fc6-82cc-35f7d6930005'

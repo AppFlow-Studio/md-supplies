@@ -9,6 +9,7 @@ import { storefrontFetch } from '@/lib/shopify/storefront';
 import { GET_PRODUCTS } from '@/lib/shopify/queries/products';
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections';
 import type { CollectionProduct } from '@/lib/shopify/types';
+import { buildMetadata } from '@/lib/seo'
 
 interface CollectionSummary {
   id: string;
@@ -16,6 +17,8 @@ interface CollectionSummary {
   handle: string;
   image: { url: string; altText: string | null } | null;
 }
+
+export const metadata = buildMetadata({ pageType: 'homepage' })
 
 export default async function Home() {
   const [productsData, collectionsData] = await Promise.all([

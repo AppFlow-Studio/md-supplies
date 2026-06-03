@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import { FaqAccordion }    from "@/components/faq/FaqAccordion";
+import { buildCanonical } from '@/lib/seo'
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
 
-export const metadata: Metadata = {
-  title: "FAQ | MD Supplies",
-  description:
-    "Frequently asked questions about MD Supplies — shipping, returns, product authenticity, and wholesale pricing.",
-};
+export const metadata = {
+  title: 'FAQ | MDSupplies',
+  description: 'Frequently asked questions about MD Supplies — shipping, returns, product authenticity, and wholesale pricing.',
+  robots: 'index,follow',
+  alternates: { canonical: buildCanonical({ path: '/faq' }) },
+}
 
 export default function FaqPage() {
   return (

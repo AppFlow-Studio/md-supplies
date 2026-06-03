@@ -1,9 +1,9 @@
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'OCC Program | MD Supplies',
+export const metadata = buildMetadata({
+  pageType: 'occ',
   description: 'Free shipping on all OCC-eligible medical supplies for qualifying facilities.',
-}
+})
 
 export default function OccPage() {
   return (

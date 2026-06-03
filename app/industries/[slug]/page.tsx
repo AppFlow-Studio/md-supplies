@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { X, ChevronRight } from 'lucide-react'
@@ -54,11 +55,13 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const industry = INDUSTRIES.find((i) => i.slug === slug)
-  if (!industry) return { title: 'Industry | MD Supplies' }
-  return {
-    title: `${industry.name} Supplies | MD Supplies`,
+  if (!industry) return { title: 'Industry | MDSupplies' }
+  return buildMetadata({
+    pageType: 'industry',
+    title: industry.name,
     description: industry.description,
-  }
+    slug,
+  })
 }
 
 export default async function IndustryPage({ params, searchParams }: Props) {
