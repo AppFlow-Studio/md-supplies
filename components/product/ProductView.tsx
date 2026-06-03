@@ -73,9 +73,8 @@ export function ProductView({ product, relatedProducts }: Props) {
       })
     : null
 
-  const stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' | 'backordered' = (() => {
+  const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
-    if (qty !== null && qty <= 9) return 'low_stock'
     return 'in_stock'
   })()
 
