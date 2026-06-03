@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { CartProvider } from '@/components/store/CartProvider'
 import { CartPopup } from '@/components/store/CartPopup'
+import { SkipLink } from '@/components/a11y/SkipLink'
 import { getCart } from '@/app/actions/cart'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_LOCALIZATION } from '@/lib/shopify/queries/markets'
@@ -39,6 +40,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <SkipLink />
         <CartProvider initialCart={initialCart}>
           <Header />
           {children}
