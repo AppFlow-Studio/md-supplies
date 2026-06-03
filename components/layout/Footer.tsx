@@ -123,7 +123,7 @@ export function Footer({ availableCountries = [], currentCountry = 'US' }: Foote
                 placeholder="Enter your email"
                 className="flex-1 bg-transparent border-b border-gray-200 text-sm text-navy-900 placeholder:text-gray-200 pb-2.5 focus:outline-none focus:border-teal-500 transition-colors"
               />
-              <button className="bg-navy-900 text-white text-sm font-semibold px-6 py-2.5 hover:bg-navy-950 transition-colors shrink-0">
+              <button type="button" className="bg-navy-900 text-white text-sm font-semibold px-6 py-2.5 hover:bg-navy-950 transition-colors shrink-0">
                 Subscribe
               </button>
             </div>

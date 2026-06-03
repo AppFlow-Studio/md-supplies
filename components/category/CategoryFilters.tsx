@@ -14,6 +14,7 @@ interface Props {
 function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <button
+      type="button"
       role="checkbox"
       aria-checked={checked}
       onClick={onChange}
@@ -46,6 +47,7 @@ function FilterGroup({
   return (
     <div className="mb-7">
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between mb-3"
       >
@@ -107,6 +109,7 @@ export function CategoryFilters({ filters, activeFilters, currentSort }: Props) 
     <div className="flex flex-col">
       {hasActive && (
         <button
+          type="button"
           onClick={clearAll}
           className="text-teal-500 text-[13px] font-medium tracking-[0.26px] self-start mb-5 hover:underline"
         >

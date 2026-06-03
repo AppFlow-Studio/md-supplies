@@ -36,6 +36,7 @@ export function CategorySort({ currentSort, activeFilters }: Props) {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2"
       >
@@ -56,6 +57,7 @@ export function CategorySort({ currentSort, activeFilters }: Props) {
             {SORT_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
+                type="button"
                 onClick={() => handleSelect(opt.value)}
                 className={`w-full text-left px-4 py-3 text-[14px] hover:bg-neutral-50 transition-colors ${
                   opt.value === selected.value

@@ -121,6 +121,7 @@ export function Header() {
             </Link>
 
             <button
+              type="button"
               aria-label="Search"
               onClick={openSearch}
               className="text-gray-500 hover:text-navy-900 transition-colors p-1"
@@ -137,6 +138,7 @@ export function Header() {
             </Link>
 
             <button
+              type="button"
               aria-label={`Cart (${cartCount} items)`}
               onClick={openCart}
               className="relative text-gray-500 hover:text-navy-900 transition-colors p-1"
@@ -151,6 +153,7 @@ export function Header() {
 
             {/* Mobile toggle */}
             <button
+              type="button"
               aria-label="Toggle menu"
               className="md:hidden text-gray-500 hover:text-navy-900 transition-colors p-1"
               onClick={() => setMobileOpen((v) => !v)}

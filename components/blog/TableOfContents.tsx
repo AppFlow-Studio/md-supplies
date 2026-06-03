@@ -14,6 +14,7 @@ export function TableOfContents({ entries }: Props) {
     <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
       {/* Mobile toggle — hidden on lg+ */}
       <button
+        type="button"
         className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-navy-900 lg:hidden"
         onClick={() => setOpen(!open)}
         aria-expanded={open}

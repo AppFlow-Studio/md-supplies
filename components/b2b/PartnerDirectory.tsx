@@ -21,6 +21,7 @@ export function PartnerDirectory({ partners }: Props) {
         {(['all', 'brand', 'vendor'] as Filter[]).map((f) => (
           <button
             key={f}
+            type="button"
             onClick={() => setFilter(f)}
             aria-pressed={filter === f}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
