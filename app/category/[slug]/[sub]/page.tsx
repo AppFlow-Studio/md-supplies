@@ -13,7 +13,7 @@ import { FilterDrawer } from '@/components/category/FilterDrawer'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { buildMetadata } from '@/lib/seo'
 import { ROUTES } from '@/lib/routes'
-import { buildCollectionPageSchema, buildBreadcrumbListSchema } from '@/lib/schema'
+import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { getSiblingSubcategories } from '@/lib/category-utils'
 
@@ -318,7 +318,7 @@ export default async function SubcategoryPage({ params, searchParams }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: jsonLdSafe(
             buildCollectionPageSchema({
               name: collection.title,
               url: `${SITE_URL}/category/${slug}/${sub}`,
@@ -331,7 +331,7 @@ export default async function SubcategoryPage({ params, searchParams }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: jsonLdSafe(
             buildBreadcrumbListSchema(
               [
                 {

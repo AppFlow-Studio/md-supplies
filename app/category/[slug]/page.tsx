@@ -12,7 +12,7 @@ import { CategoryPagination } from '@/components/category/CategoryPagination'
 import { FilterDrawer } from '@/components/category/FilterDrawer'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { buildMetadata } from '@/lib/seo'
-import { buildCollectionPageSchema, buildBreadcrumbListSchema } from '@/lib/schema'
+import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
@@ -329,7 +329,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: jsonLdSafe(
             buildCollectionPageSchema({
               name: collection.title,
               url: `${SITE_URL}/category/${slug}`,
@@ -342,7 +342,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: jsonLdSafe(
             buildBreadcrumbListSchema(
               [{ label: collection.title }],
               `${SITE_URL}/category/${slug}`,

@@ -10,7 +10,7 @@ import { getCart } from '@/app/actions/cart'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_LOCALIZATION } from '@/lib/shopify/queries/markets'
 import { GET_COLLECTIONS_SLIM } from '@/lib/shopify/queries/collections'
-import { buildOrganizationSchema } from '@/lib/schema'
+import { buildOrganizationSchema, jsonLdSafe } from '@/lib/schema'
 import type { LocalizationData, AvailableCountry, SlimCollection } from '@/lib/shopify/types'
 
 const manrope = Manrope({
@@ -48,7 +48,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildOrganizationSchema()) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildOrganizationSchema()) }}
         />
         <CartProvider initialCart={initialCart}>
           <Header collections={collections} />
