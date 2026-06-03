@@ -1,9 +1,9 @@
-import { buildCanonical } from '@/lib/seo'
+import { buildCanonical, buildRobots } from '@/lib/seo'
 
 export const metadata = {
   title: 'Contact Us | MDSupplies',
   description: 'Get in touch with the MD Supplies team for wholesale inquiries.',
-  robots: 'index,follow',
+  robots: buildRobots({ pageType: 'homepage' }),
   alternates: { canonical: buildCanonical({ path: '/contact' }) },
 }
 

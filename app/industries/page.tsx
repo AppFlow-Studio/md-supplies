@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import { INDUSTRIES } from '@/lib/industries'
-import { buildCanonical } from '@/lib/seo'
+import { buildCanonical, buildRobots } from '@/lib/seo'
 
 export const revalidate = 3600
 
 export const metadata = {
   title: 'Shop by Industry | MDSupplies',
   description: 'Medical supplies curated for your specialty — urgent care, EMS, pharmacy, physical therapy, and more.',
-  robots: 'index,follow',
+  robots: buildRobots({ pageType: 'homepage' }),
   alternates: { canonical: buildCanonical({ path: '/industries' }) },
 }
 

@@ -26,7 +26,7 @@ function resolvePath(pageType: PageType, slug?: string, parentSlug?: string): st
     case 'partners':       return '/partners'
     case 'partner-detail': return slug ? `/partners/${slug}` : '/partners'
     case 'industry':       return slug ? `/industries/${slug}` : '/industries'
-    case 'occ':            return '/occ'
+    case 'occ':            return '/solutions/occ'
     case 'blog-hub':       return '/blog'
     case 'blog-article':   return slug ? `/blog/${slug}` : '/blog'
     case 'utility':        return slug ? `/${slug}` : '/'

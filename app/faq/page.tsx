@@ -1,12 +1,12 @@
 import { FaqAccordion }    from "@/components/faq/FaqAccordion";
-import { buildCanonical } from '@/lib/seo'
+import { buildCanonical, buildRobots } from '@/lib/seo'
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
 
 export const metadata = {
   title: 'FAQ | MDSupplies',
   description: 'Frequently asked questions about MD Supplies — shipping, returns, product authenticity, and wholesale pricing.',
-  robots: 'index,follow',
+  robots: buildRobots({ pageType: 'homepage' }),
   alternates: { canonical: buildCanonical({ path: '/faq' }) },
 }
 

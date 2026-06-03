@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { buildCanonical } from '@/lib/seo'
+import { buildCanonical, buildRobots } from '@/lib/seo'
 import { ShieldCheck, Package, Headphones } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 
@@ -11,7 +11,7 @@ const IMG_PRODUCTS  = "https://www.figma.com/api/mcp/asset/e2b4a902-bc73-43d5-97
 export const metadata = {
   title: 'About Us | MDSupplies',
   description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing, same-day shipping, and trusted brands.',
-  robots: 'index,follow',
+  robots: buildRobots({ pageType: 'homepage' }),
   alternates: { canonical: buildCanonical({ path: '/about' }) },
 }
 
