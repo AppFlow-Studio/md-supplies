@@ -10,6 +10,7 @@ import { GET_PRODUCTS } from '@/lib/shopify/queries/products';
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections';
 import type { CollectionProduct } from '@/lib/shopify/types';
 import { buildMetadata } from '@/lib/seo'
+import { buildWebSiteSchema } from '@/lib/schema'
 
 interface CollectionSummary {
   id: string;
@@ -33,6 +34,10 @@ export default async function Home() {
 
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebSiteSchema()) }}
+      />
       <HeroSection />
       <TrustedBrands />
       <ShopByIndustry />
