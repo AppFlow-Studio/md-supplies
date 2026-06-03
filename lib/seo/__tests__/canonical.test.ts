@@ -10,7 +10,7 @@ describe('buildCanonical', () => {
       expect(buildCanonical({ path: '/category/gloves' })).toBe(`${BASE}/category/gloves`)
     })
 
-    it('includes query string (self strategy does not strip params)', () => {
+    it('preserves non-tracking query params (e.g. sort=price)', () => {
       expect(buildCanonical({ path: '/category/gloves?sort=price', strategy: 'self' })).toBe(
         `${BASE}/category/gloves?sort=price`,
       )
