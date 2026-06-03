@@ -12,6 +12,8 @@ import { CategoryPagination } from '@/components/category/CategoryPagination'
 import { FilterDrawer } from '@/components/category/FilterDrawer'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { buildMetadata } from '@/lib/seo'
+import { buildCollectionPageSchema, buildBreadcrumbListSchema } from '@/lib/schema'
+import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 
@@ -324,10 +326,29 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </section>
       )}
 
-      {/* Schema slot — A5 (Discovery Schema ticket) fills this with CollectionPage + BreadcrumbList JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({}) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildCollectionPageSchema({
+              name: collection.title,
+              url: `${SITE_URL}/category/${slug}`,
+              ...(collection.description ? { description: collection.description } : {}),
+              ...(collection.image?.url ? { image: collection.image.url } : {}),
+            }),
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbListSchema(
+              [{ label: collection.title }],
+              `${SITE_URL}/category/${slug}`,
+            ),
+          ),
+        }}
       />
     </main>
   )
