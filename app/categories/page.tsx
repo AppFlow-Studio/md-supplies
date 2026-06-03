@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { buildMetadata } from '@/lib/seo'
+import { buildBreadcrumbListSchema } from '@/lib/schema'
+import { SITE_URL } from '@/lib/seo/constants'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
@@ -133,6 +135,18 @@ export default async function CategoriesPage() {
 
       {/* Shop by Industry */}
       <ShopByIndustry />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbListSchema(
+              [{ label: 'All Categories' }],
+              `${SITE_URL}/categories`,
+            ),
+          ),
+        }}
+      />
     </main>
   )
 }
