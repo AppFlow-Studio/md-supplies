@@ -1,5 +1,4 @@
 import { BlogGrid } from "@/components/blog/BlogGrid";
-import { buildMetadata } from '@/lib/seo'
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { storefrontFetch } from "@/lib/shopify/storefront";
 import { GET_BLOGS_WITH_ARTICLES } from "@/lib/shopify/queries/blog";
@@ -8,6 +7,7 @@ import { buildMetadata } from '@/lib/seo'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
+import {FadeIn} from "@/components/ui/FadeIn";
 
 export const revalidate = 3600;
 
@@ -30,7 +30,7 @@ export default async function BlogPage() {
   }
 
   return (
-    <main className="bg-white">
+
     <main id="main-content">
       <WebPageSchema
         name="MDSupplies Blog"
