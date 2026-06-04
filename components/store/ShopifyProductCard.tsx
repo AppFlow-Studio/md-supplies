@@ -60,7 +60,7 @@ export function ShopifyProductCard({ product }: { product: CollectionProduct }) 
 
       {/* Info */}
       <div className="px-[22px] pt-[19px] pb-[22px] flex flex-col">
-        <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
+        <span className="text-[#0086b1] text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
           {product.vendor}
         </span>
         <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">

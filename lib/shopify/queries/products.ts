@@ -46,6 +46,7 @@ export const GET_PRODUCT = `#graphql
           id
           title
           availableForSale
+          
           selectedOptions { name value }
           price { amount currencyCode }
           compareAtPrice { amount currencyCode }
@@ -56,6 +57,7 @@ export const GET_PRODUCT = `#graphql
         name
         values
       }
+     
     }
   }
 `;

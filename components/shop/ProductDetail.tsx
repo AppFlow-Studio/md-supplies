@@ -6,6 +6,7 @@ import {
   Star, ShieldCheck, Truck, RotateCcw, Plus, Minus, ShoppingCart, ChevronRight,
 } from "lucide-react";
 import type { ProductDetailData } from "@/lib/products";
+import {ROUTES} from "@/lib/routes";
 
 // ─── Star rating ──────────────────────────────────────────────────────────────
 
@@ -130,18 +131,24 @@ export function ProductDetail({ product }: { product: ProductDetailData }) {
 
   const currentUnit = product.units[activeUnit];
 
+  console.log(product)
   return (
     <>
-      {/* ── Breadcrumbs ── */}
+       {/*── Breadcrumbs ──*/}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
-        <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
-          <Link href="/"         className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link>
-          <span className="text-gray-500">›</span>
-          <Link href="/shop"     className="text-gray-500 hover:text-navy-900 transition-colors">Gloves</Link>
-          <span className="text-gray-500">›</span>
-          <Link href="/shop"     className="text-gray-500 hover:text-navy-900 transition-colors">Exam Gloves</Link>
-          <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold line-clamp-1">{product.name}</span>
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
+          {/*<Link href={ROUTES.home} className="text-gray-500 hover:text-navy-900 transition-colors">*/}
+          {/*  Home*/}
+          {/*</Link>*/}
+          {/*<span className="text-gray-500">›</span>*/}
+          {/*<Link*/}
+          {/*    href={ROUTES.category(slug)}*/}
+          {/*    className="text-gray-500 hover:text-navy-900 transition-colors capitalize"*/}
+          {/*>*/}
+          {/*  {slug.replace(/-/g, ' ')}*/}
+          {/*</Link>*/}
+          {/*<span className="text-gray-500">›</span>*/}
+          {/*<span className="text-navy-900 font-semibold">{collection.title}</span>*/}
         </nav>
       </div>
 

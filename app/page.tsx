@@ -9,6 +9,8 @@ import { storefrontFetch } from '@/lib/shopify/storefront';
 import { GET_PRODUCTS } from '@/lib/shopify/queries/products';
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections';
 import type { CollectionProduct } from '@/lib/shopify/types';
+import { buildMetadata } from '@/lib/seo'
+import { buildWebSiteSchema, jsonLdSafe } from '@/lib/schema'
 
 interface CollectionSummary {
   id: string;
@@ -16,6 +18,8 @@ interface CollectionSummary {
   handle: string;
   image: { url: string; altText: string | null } | null;
 }
+
+export const metadata = buildMetadata({ pageType: 'homepage' })
 
 export default async function Home() {
   const [productsData, collectionsData] = await Promise.all([
@@ -30,6 +34,10 @@ export default async function Home() {
 
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildWebSiteSchema()) }}
+      />
       <HeroSection />
       <TrustedBrands />
       <ShopByIndustry />

@@ -55,6 +55,7 @@ export function FaqAccordion() {
         return (
           <div key={q} className="border-b border-gray-200 last:border-0">
             <button
+              type="button"
               onClick={() => setOpenIdx(isOpen ? -1 : i)}
               className="w-full flex items-center justify-between gap-6 py-5 px-6 sm:px-8 text-left group"
             >

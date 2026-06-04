@@ -1,8 +1,10 @@
-import type { Metadata } from 'next'
+import { buildCanonical, buildRobots } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Contact Us | MD Supplies',
+export const metadata = {
+  title: 'Contact Us | MDSupplies',
   description: 'Get in touch with the MD Supplies team for wholesale inquiries.',
+  robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
+  alternates: { canonical: buildCanonical({ path: '/contact' }) },
 }
 
 export default function ContactPage() {

@@ -76,9 +76,8 @@ export function ProductView({ product, relatedProducts, relatedArticles = [] }: 
       })
     : null
 
-  const stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' | 'backordered' = (() => {
+  const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
-    if (qty !== null && qty <= 9) return 'low_stock'
     return 'in_stock'
   })()
 
@@ -104,6 +103,7 @@ export function ProductView({ product, relatedProducts, relatedArticles = [] }: 
     { label: 'Order Size',       value: product.orderSize },
   ].filter((r) => r.value != null)
 
+  console.log(product)
   return (
     <>
       {/* Breadcrumb */}
@@ -111,7 +111,7 @@ export function ProductView({ product, relatedProducts, relatedArticles = [] }: 
         <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
           <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link>
           <span className="text-gray-500">›</span>
-          <Link href="/shop" className="text-gray-500 hover:text-navy-900 transition-colors">
+          <Link href={`/brands/${product.vendor}`} className="text-gray-500 hover:text-navy-900 transition-colors">
             {product.vendor}
           </Link>
           <span className="text-gray-500">›</span>
@@ -189,14 +189,6 @@ export function ProductView({ product, relatedProducts, relatedArticles = [] }: 
                   <span className="size-[8px] rounded-full shrink-0 bg-green-500" />
                   <span className="text-gray-500 text-[13px] tracking-[0.26px]">
                     {qty !== null ? `In Stock – ${qty} available` : 'In Stock – Ships Same Day'}
-                  </span>
-                </>
-              )}
-              {stockStatus === 'low_stock' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-amber-400" />
-                  <span className="text-amber-600 text-[13px] font-semibold tracking-[0.26px]">
-                    Low Stock – only {qty} left
                   </span>
                 </>
               )}
@@ -450,18 +442,18 @@ export function ProductView({ product, relatedProducts, relatedArticles = [] }: 
                       </span>
                     </div>
                   </div>
-                  {i < arr.length - 1 && (
-                    <div className="flex items-center justify-center w-[40px] shrink-0">
-                      <span className="text-navy-900 text-[20px] font-semibold">+</span>
-                    </div>
-                  )}
+                  {/*{i < arr.length - 1 && (*/}
+                  {/*  <div className="flex items-center justify-center w-[40px] shrink-0">*/}
+                  {/*    <span className="text-navy-900 text-[20px] font-semibold">+</span>*/}
+                  {/*  </div>*/}
+                  {/*)}*/}
                 </div>
               ))}
             </div>
           </div>
         </section>
       )}
-      <RelatedArticles articles={relatedArticles} heading="From Our Blog" />
+      {/*<RelatedArticles articles={relatedArticles} heading="From Our Blog" />*/}
     </>
   )
 }

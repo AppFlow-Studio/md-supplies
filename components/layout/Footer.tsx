@@ -1,46 +1,25 @@
-import Link from "next/link";
-import { CurrencySwitcher } from "./CurrencySwitcher";
-import type { AvailableCountry } from "@/lib/shopify/types";
-
-const TOP_CATEGORIES = [
-  "Gloves",
-  "Wound Care",
-  "Needles & Syringes",
-  "Surgical Sutures",
-  "Testing",
-  "Exam Room",
-  "Respiratory",
-  "Mobility",
-];
-
-const MORE_CATEGORIES = [
-  "Surgery & Procedure",
-  "Apparel & PPE",
-  "Hygiene",
-  "Home Care",
-  "Emergency Supplies",
-  "Incontinence",
-  "IV Therapy",
-  "Sterilization",
-];
+import Link from 'next/link'
+import { CurrencySwitcher } from './CurrencySwitcher'
+import type { AvailableCountry, SlimCollection } from '@/lib/shopify/types'
+import { ROUTES } from '@/lib/routes'
 
 const COMPANY_HELP = [
-  { label: "About Us", href: "/about" },
-  { label: "Blog", href: "/blog" },
-  { label: "FAQ", href: "/faq" },
-  { label: "Contact Us", href: "/contact" },
-  { label: "Wholesale / B2B", href: "/b2b" },
-  { label: "My Account", href: "/b2b" },
-  { label: "Order Tracking", href: "/tracking" },
-  { label: "Privacy Policy", href: "/privacy" },
-  { label: "Terms of Service", href: "/terms" },
-  { label: "Shipping Policy", href: "/shipping" },
-];
+  { label: 'About Us', href: ROUTES.about },
+  { label: 'Blog', href: ROUTES.blog },
+  { label: 'FAQ', href: ROUTES.faq },
+  { label: 'Contact Us', href: ROUTES.contact },
+  { label: 'Wholesale / B2B', href: '/b2b' },
+  { label: 'My Account', href: ROUTES.account },
+  { label: 'Order Tracking', href: '/tracking' },
+  { label: 'Privacy Policy', href: ROUTES.policy('privacy') },
+  { label: 'Terms of Service', href: ROUTES.policy('terms') },
+  { label: 'Shipping Policy', href: ROUTES.policy('shipping') },
+]
 
 const SOCIAL = [
   {
-    label: "Facebook",
-    href: "#",
+    label: 'Facebook',
+    href: '#',
     svg: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
         <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
@@ -48,8 +27,8 @@ const SOCIAL = [
     ),
   },
   {
-    label: "Instagram",
-    href: "#",
+    label: 'Instagram',
+    href: '#',
     svg: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
@@ -59,8 +38,8 @@ const SOCIAL = [
     ),
   },
   {
-    label: "LinkedIn",
-    href: "#",
+    label: 'LinkedIn',
+    href: '#',
     svg: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
         <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" />
@@ -69,14 +48,18 @@ const SOCIAL = [
       </svg>
     ),
   },
-];
+]
 
 interface FooterProps {
+  collections: SlimCollection[]
   availableCountries?: AvailableCountry[]
   currentCountry?: string
 }
 
-export function Footer({ availableCountries = [], currentCountry = 'US' }: FooterProps) {
+export function Footer({ collections, availableCountries = [], currentCountry = 'US' }: FooterProps) {
+  const topCategories = collections.slice(0, 8)
+  const moreCategories = collections.slice(8, 16)
+
   return (
     <footer className="bg-neutral-50 border-t border-blue-50 pt-14 pb-0">
       <div className="max-w-360 mx-auto px-4 md:px-8">
@@ -102,7 +85,6 @@ export function Footer({ availableCountries = [], currentCountry = 'US' }: Foote
               institutional buyers nationwide.
             </p>
 
-            {/* Social icons */}
             <div className="flex items-center gap-3 mb-8">
               {SOCIAL.map(({ label, svg, href }) => (
                 <a
@@ -116,55 +98,60 @@ export function Footer({ availableCountries = [], currentCountry = 'US' }: Foote
               ))}
             </div>
 
-            {/* Newsletter */}
             <div className="flex items-end max-w-sm">
               <input
                 type="email"
                 placeholder="Enter your email"
                 className="flex-1 bg-transparent border-b border-gray-200 text-sm text-navy-900 placeholder:text-gray-200 pb-2.5 focus:outline-none focus:border-teal-500 transition-colors"
               />
-              <button className="bg-navy-900 text-white text-sm font-semibold px-6 py-2.5 hover:bg-navy-950 transition-colors shrink-0">
+              <button type="button" className="bg-navy-900 text-white text-sm font-semibold px-6 py-2.5 hover:bg-navy-950 transition-colors shrink-0">
                 Subscribe
               </button>
             </div>
           </div>
 
-          {/* Top Categories */}
+          {/* Top Categories (dynamic) */}
           <div>
             <h4 className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-5">
               Top Categories
             </h4>
             <ul className="space-y-3">
-              {TOP_CATEGORIES.map((cat) => (
-                <li key={cat}>
-                  <Link href="#" className="text-sm text-gray-500 hover:text-teal-500 transition-colors">
-                    {cat}
+              {topCategories.map((col) => (
+                <li key={col.handle}>
+                  <Link
+                    href={ROUTES.category(col.handle)}
+                    className="text-sm text-gray-500 hover:text-teal-500 transition-colors"
+                  >
+                    {col.title}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* More Categories */}
+          {/* More Categories (dynamic) */}
           <div>
             <h4 className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-5">
               More Categories
             </h4>
             <ul className="space-y-3">
-              {MORE_CATEGORIES.map((cat) => (
-                <li key={cat}>
-                  <Link href="#" className="text-sm text-gray-500 hover:text-teal-500 transition-colors">
-                    {cat}
+              {moreCategories.map((col) => (
+                <li key={col.handle}>
+                  <Link
+                    href={ROUTES.category(col.handle)}
+                    className="text-sm text-gray-500 hover:text-teal-500 transition-colors"
+                  >
+                    {col.title}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Company & Help */}
+          {/* Company & Help (static) */}
           <div>
             <h4 className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-5">
-              Company & Help
+              Company &amp; Help
             </h4>
             <ul className="space-y-3">
               {COMPANY_HELP.map((item) => (
@@ -200,5 +187,5 @@ export function Footer({ availableCountries = [], currentCountry = 'US' }: Foote
         </div>
       </div>
     </footer>
-  );
+  )
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { storefrontFetch } from "@/lib/shopify/storefront";
 import {
   GET_ARTICLE,
@@ -11,7 +11,6 @@ import {
 } from "@/lib/shopify/queries/blog";
 import type { BlogArticle, ShopifyBlog, BlogArticleSummary } from "@/lib/shopify/types";
 import { WholesalePricing } from "@/components/home/WholesalePricing";
-import { RelatedArticles } from "@/components/blog/RelatedArticles";
 
 export const revalidate = 3600;
 
@@ -22,10 +21,10 @@ interface Props {
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 async function findArticle(
-  handle: string,
+    handle: string,
 ): Promise<{ blogHandle: string; article: BlogArticle } | null> {
   const data = await storefrontFetch<{ blogs: { nodes: Array<{ handle: string }> } }>(
-    GET_BLOG_HANDLES,
+      GET_BLOG_HANDLES,
   );
 
   for (const blog of data.blogs.nodes) {
@@ -49,7 +48,7 @@ export async function generateStaticParams() {
     }>(GET_ALL_ARTICLE_HANDLES);
 
     return data.blogs.nodes.flatMap((blog) =>
-      blog.articles.nodes.map((a) => ({ handle: a.handle })),
+        blog.articles.nodes.map((a) => ({ handle: a.handle })),
     );
   } catch {
     return [];
@@ -68,8 +67,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${article.title} | MD Supplies Blog`,
       description: article.excerpt?.slice(0, 155) ?? undefined,
       openGraph: article.image
-        ? { images: [{ url: article.image.url, alt: article.image.altText ?? article.title }] }
-        : undefined,
+          ? { images: [{ url: article.image.url, alt: article.image.altText ?? article.title }] }
+          : undefined,
     };
   } catch {
     return { title: "Article | MD Supplies Blog" };
@@ -86,17 +85,17 @@ export default async function ArticlePage({ params }: Props) {
 
   const { article } = found;
 
-  // Fetch a few more articles for the "More articles" section
-  let moreArticles: BlogArticleSummary[] = [];
+  // Fetch related articles for sidebar
+  let relatedArticles: BlogArticleSummary[] = [];
   try {
     const blogsData = await storefrontFetch<{ blogs: { nodes: ShopifyBlog[] } }>(
-      GET_BLOGS_WITH_ARTICLES,
-      { first: 6 },
+        GET_BLOGS_WITH_ARTICLES,
+        { first: 6 },
     );
-    moreArticles = blogsData.blogs.nodes
-      .flatMap((b) => b.articles.nodes)
-      .filter((a) => a.handle !== handle)
-      .slice(0, 3);
+    relatedArticles = blogsData.blogs.nodes
+        .flatMap((b) => b.articles.nodes)
+        .filter((a) => a.handle !== handle)
+        .slice(0, 2);
   } catch {
     // silently skip if unavailable
   }
@@ -105,102 +104,162 @@ export default async function ArticlePage({ params }: Props) {
     month: "long",
     day: "numeric",
     year: "numeric",
-  });
+  }).toUpperCase();
+
+  // Estimate read time (~200 words/min)
+  const wordCount = article.contentHtml.replace(/<[^>]+>/g, '').split(/\s+/).length;
+  const readMins = Math.max(1, Math.round(wordCount / 200));
 
   return (
-    <main className="bg-[#f9fafc]">
-      {/* Breadcrumb */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
-        <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px]">
-          <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">
-            Home
-          </Link>
-          <span className="text-gray-500">›</span>
-          <Link href="/blog" className="text-gray-500 hover:text-navy-900 transition-colors">
-            Blog
-          </Link>
-          <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold line-clamp-1">{article.title}</span>
-        </nav>
-      </div>
-
-      {/* Hero image */}
-      {article.image && (
-        <div className="w-full bg-navy-900 overflow-hidden h-[280px] sm:h-[380px] relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={article.image.url}
-            alt={article.image.altText ?? article.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-40"
-          />
-          <div className="relative max-w-360 mx-auto px-4 sm:px-8 lg:px-14 h-full flex flex-col justify-end pb-10">
-            <h1 className="text-white text-[26px] sm:text-[36px] font-bold leading-tight max-w-[720px]">
-              {article.title}
-            </h1>
-          </div>
-        </div>
-      )}
-
-      {/* Article content */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
-        <div className="max-w-[760px]">
-          {/* Meta row */}
-          <div className="flex items-center gap-5 mb-8 flex-wrap">
-            <div className="flex items-center gap-2 text-gray-500 text-[14px]">
-              <Calendar size={14} className="text-teal-500" />
-              {publishedDate}
-            </div>
-            <div className="flex items-center gap-2 text-gray-500 text-[14px]">
-              <User size={14} className="text-teal-500" />
-              {article.author.name}
-            </div>
-            {article.tags.length > 0 && (
-              <div className="flex gap-2 flex-wrap">
-                {article.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-teal-50 text-teal-700 text-[11px] font-semibold px-2 py-0.5 border border-teal-200 uppercase tracking-[0.22px]"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* No hero image: show title here */}
-          {!article.image && (
-            <h1 className="text-navy-900 text-[28px] sm:text-[36px] font-bold leading-tight mb-8">
-              {article.title}
-            </h1>
-          )}
-
-          {/* Body */}
-          <div
-            className="prose prose-gray max-w-none text-[16px] leading-[1.75] text-gray-600
-              prose-headings:text-navy-900 prose-headings:font-semibold
-              prose-a:text-teal-500 prose-a:no-underline hover:prose-a:underline
-              prose-strong:text-navy-900
-              prose-li:marker:text-teal-500"
-            dangerouslySetInnerHTML={{ __html: article.contentHtml }}
-          />
-
-          {/* Back link */}
-          <div className="mt-14 pt-8 border-t border-gray-200">
-            <Link
-              href="/blog"
-              className="flex items-center gap-2 text-navy-900 text-[14px] font-semibold hover:text-teal-500 transition-colors w-fit"
-            >
-              <ArrowLeft size={16} />
-              Back to all articles
+      <main className="bg-white">
+        {/* Breadcrumb */}
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
+          <nav className="flex items-center gap-2 text-[14px] tracking-[0.28px]">
+            <Link href="/" className="text-gray-400 hover:text-navy-900 transition-colors">
+              Home
             </Link>
+            <span className="text-gray-400">›</span>
+            <Link href="/blog" className="text-gray-400 hover:text-navy-900 transition-colors">
+              Blog
+            </Link>
+            <span className="text-gray-400">›</span>
+            <span className="text-navy-900 font-semibold line-clamp-1">{article.title}</span>
+          </nav>
+        </div>
+
+        {/* Hero image — full width */}
+        {article.image && (
+            <div className="w-full overflow-hidden bg-navy-900 h-[320px] sm:h-[420px] relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                  src={article.image.url}
+                  alt={article.image.altText ?? article.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+              />
+            </div>
+        )}
+
+        {/* Content area — two-column */}
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 lg:py-14">
+          <div className="flex flex-col lg:flex-row gap-12 xl:gap-16 items-start">
+
+            {/* ── Left: main article ── */}
+            <article className="flex-1 min-w-0">
+              {/* Back button */}
+              <Link
+                  href="/blog"
+                  className="inline-flex items-center justify-center size-[38px] rounded-full border border-[rgba(11,23,43,0.2)] bg-[rgba(102,102,100,0.1)] hover:bg-gray-100 transition-colors mb-6"
+                  aria-label="Back to blog"
+              >
+                <ArrowLeft size={14} className="text-navy-900" />
+              </Link>
+
+              {/* Meta: date + read time */}
+              <p className="text-[#0086b1] text-[14px] tracking-[0.75px] uppercase mb-3">
+                {publishedDate}
+                <span className="text-gray-400 mx-2">•</span>
+                <span className="text-gray-400">{readMins} MINS READ</span>
+              </p>
+
+              {/* Title */}
+              <h1 className="text-navy-900 text-[32px] sm:text-[40px] font-semibold leading-[1.25] tracking-[-0.02em] mb-6">
+                {article.title}
+              </h1>
+
+              {/* Divider */}
+              <hr className="border-gray-200 mb-6" />
+
+              {/* Author */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="size-10 rounded-full bg-navy-900 flex items-center justify-center shrink-0">
+                <span className="text-white text-[14px] font-bold">
+                  {article.author.name.charAt(0)}
+                </span>
+                </div>
+                <div>
+                  <p className="text-navy-900 text-[15px] font-semibold">{article.author.name}</p>
+                  {article.tags.length > 0 && (
+                      <p className="text-gray-400 text-[12px] uppercase tracking-[0.5px]">{article.tags[0]}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <hr className="border-gray-200 mb-8" />
+
+              {/* Article body */}
+              <div
+                  className="prose prose-gray max-w-none text-[15px] leading-[1.75] text-gray-600
+                prose-headings:text-navy-900 prose-headings:font-semibold
+                prose-h2:text-[20px] prose-h3:text-[17px]
+                prose-a:text-[#0086b1] prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-navy-900
+                prose-li:marker:text-[#0086b1]"
+                  dangerouslySetInnerHTML={{ __html: article.contentHtml }}
+              />
+
+              {/* Back link */}
+              <div className="mt-12 pt-8 border-t border-gray-200">
+                <Link
+                    href="/blog"
+                    className="flex items-center gap-2 text-navy-900 text-[14px] font-semibold hover:text-[#0086b1] transition-colors w-fit"
+                >
+                  <ArrowLeft size={16} />
+                  Back to all articles
+                </Link>
+              </div>
+            </article>
+
+            {/* ── Right: sidebar related posts ── */}
+            {relatedArticles.length > 0 && (
+                <aside className="lg:w-[390px] xl:w-[420px] shrink-0">
+                  <h2 className="text-navy-900 text-[14px] font-semibold tracking-[0.56px] uppercase mb-6">
+                    Related Posts
+                  </h2>
+                  <div className="flex flex-col gap-5">
+                    {relatedArticles.map((a) => (
+                        <Link
+                            key={a.id}
+                            href={`/blog/${a.handle}`}
+                            className="group flex flex-col bg-white border border-gray-100 hover:border-gray-200 transition-colors"
+                        >
+                          {/* Card image */}
+                          <div className="overflow-hidden bg-gray-100 aspect-[16/10]">
+                            {a.image ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={a.image.url}
+                                    alt={a.image.altText ?? a.title}
+                                    className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                            ) : (
+                                <div className="size-full bg-navy-900" />
+                            )}
+                          </div>
+                          {/* Card info */}
+                          <div className="px-5 py-4 flex flex-col gap-2">
+                            <p className="text-[#0086b1] text-[12px] tracking-[0.65px] uppercase">
+                              {new Date(a.publishedAt).toLocaleDateString("en-US", {
+                                month: "long",
+                                day: "numeric",
+                                year: "numeric",
+                              }).toUpperCase()}
+                            </p>
+                            <p className="text-navy-900 text-[14px] font-bold leading-5 line-clamp-2 group-hover:text-[#0086b1] transition-colors">
+                              {a.title}
+                            </p>
+                          </div>
+                        </Link>
+                    ))}
+                  </div>
+                </aside>
+            )}
+
           </div>
         </div>
-      </div>
 
-      <RelatedArticles articles={moreArticles} />
-
-      <WholesalePricing />
-    </main>
+        {/* ── Wholesale CTA ── */}
+        <WholesalePricing />
+      </main>
   );
 }

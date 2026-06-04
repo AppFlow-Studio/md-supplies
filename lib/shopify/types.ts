@@ -251,3 +251,17 @@ export type Customer = {
   addresses?: { nodes: Address[] };
   orders?: { nodes: Order[]; pageInfo: PageInfo };
 };
+
+export type SlimCollection = {
+  id: string;
+  handle: string;
+  title: string;
+  description: string;
+  descriptionHtml: string;
+  updatedAt: string;
+  image: ProductImage | null;
+  seo: {
+    title: string | null;
+    description: string | null;
+  };
+};

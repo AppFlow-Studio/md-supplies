@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/seo'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
@@ -20,11 +21,12 @@ interface SearchData {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const { q } = await searchParams
-  return {
-    title: q ? `"${q}" — Search | MD Supplies` : 'Search | MD Supplies',
-    robots: { index: false, follow: false },
-  }
+  const sp = await searchParams
+  return buildMetadata({
+    pageType: 'utility',
+    title: sp.q ? `"${sp.q}" — Search` : 'Search',
+    slug: 'search',
+  })
 }
 
 const SUGGESTED = [

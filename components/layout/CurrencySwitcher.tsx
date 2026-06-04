@@ -47,6 +47,7 @@ export function CurrencySwitcher({ availableCountries, currentIsoCode }: Props) 
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={isPending}
         className="flex items-center gap-1 text-gray-500 hover:text-navy-900 text-[12px] font-medium transition-colors disabled:opacity-50"
@@ -62,6 +63,7 @@ export function CurrencySwitcher({ availableCountries, currentIsoCode }: Props) 
           {availableCountries.map((country) => (
             <button
               key={country.isoCode}
+              type="button"
               onClick={() => handleSelect(country)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-[13px] hover:bg-neutral-50 transition-colors text-left ${
                 country.isoCode === currentIsoCode
