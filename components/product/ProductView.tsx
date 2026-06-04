@@ -76,9 +76,8 @@ export function ProductView({ product, relatedProducts, relatedArticles = [] }: 
       })
     : null
 
-  const stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock' | 'backordered' = (() => {
+  const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
-    if (qty !== null && qty <= 9) return 'low_stock'
     return 'in_stock'
   })()
 
@@ -190,14 +189,6 @@ export function ProductView({ product, relatedProducts, relatedArticles = [] }: 
                   <span className="size-[8px] rounded-full shrink-0 bg-green-500" />
                   <span className="text-gray-500 text-[13px] tracking-[0.26px]">
                     {qty !== null ? `In Stock – ${qty} available` : 'In Stock – Ships Same Day'}
-                  </span>
-                </>
-              )}
-              {stockStatus === 'low_stock' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-amber-400" />
-                  <span className="text-amber-600 text-[13px] font-semibold tracking-[0.26px]">
-                    Low Stock – only {qty} left
                   </span>
                 </>
               )}

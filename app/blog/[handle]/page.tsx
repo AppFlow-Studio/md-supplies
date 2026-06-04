@@ -11,6 +11,12 @@ import {
 } from "@/lib/shopify/queries/blog";
 import type { BlogArticle, ShopifyBlog, BlogArticleSummary } from "@/lib/shopify/types";
 import { WholesalePricing } from "@/components/home/WholesalePricing";
+import { FadeIn } from "@/components/ui/FadeIn";
+import { MoreArticles } from "@/components/blog/MoreArticles";
+import { buildMetadata } from '@/lib/seo'
+import { BlogPostingSchema } from '@/components/schema/BlogPostingSchema'
+import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
+import { SITE_URL } from '@/lib/seo/constants'
 
 export const revalidate = 3600;
 
@@ -58,26 +64,26 @@ export async function generateStaticParams() {
 // ─── generateMetadata ───────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { handle } = await params;
+  const { handle } = await params
   try {
-    const found = await findArticle(handle);
-    if (!found) return { title: "Article | MD Supplies Blog" };
-    const { article } = found;
-    return {
-      title: `${article.title} | MD Supplies Blog`,
+    const found = await findArticle(handle)
+    if (!found) return { title: 'Article | MD Supplies Blog' }
+    const { article } = found
+    return buildMetadata({
+      pageType: 'blog-article',
+      title: article.title,
       description: article.excerpt?.slice(0, 155) ?? undefined,
-      openGraph: article.image
-        ? { images: [{ url: article.image.url, alt: article.image.altText ?? article.title }] }
-        : undefined,
-    };
+      slug: handle,
+      image: article.image?.url,
+    })
   } catch {
-    return { title: "Article | MD Supplies Blog" };
+    return { title: 'Article | MD Supplies Blog' }
   }
 }
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
-export default async function ArticlePage({ params }: Props) {
+export default async function ShopifyArticlePage({ params }: Props) {
   const { handle } = await params;
 
   const found = await findArticle(handle).catch(() => null);
@@ -110,79 +116,94 @@ export default async function ArticlePage({ params }: Props) {
   const wordCount = article.contentHtml.replace(/<[^>]+>/g, '').split(/\s+/).length;
   const readMins = Math.max(1, Math.round(wordCount / 200));
 
+  const pageUrl = `${SITE_URL}/blog/${handle}`
+  const publisherLogo = `${SITE_URL}/images/og-default.jpg`
+
   return (
-    <main className="bg-white">
+    <main id="main-content" className="bg-[#f9fafc]">
+      <BlogPostingSchema
+        title={article.title}
+        description={article.excerpt ?? article.title}
+        url={pageUrl}
+        featuredImage={article.image?.url ?? publisherLogo}
+        publishedAt={article.publishedAt}
+        authorName={article.author.name}
+        publisherName="MDSupplies"
+        publisherLogo={publisherLogo}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', item: SITE_URL },
+          { name: 'Blog', item: `${SITE_URL}/blog` },
+          { name: article.title, item: pageUrl },
+        ]}
+      />
       {/* Breadcrumb */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
-        <nav className="flex items-center gap-2 text-[14px] tracking-[0.28px]">
-          <Link href="/" className="text-gray-400 hover:text-navy-900 transition-colors">
-            Home
-          </Link>
-          <span className="text-gray-400">›</span>
-          <Link href="/blog" className="text-gray-400 hover:text-navy-900 transition-colors">
-            Blog
-          </Link>
-          <span className="text-gray-400">›</span>
-          <span className="text-navy-900 font-semibold line-clamp-1">{article.title}</span>
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
+        <nav aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-[15px] tracking-[0.3px]">
+            <li>
+              <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">
+                Home
+              </Link>
+            </li>
+            <li aria-hidden="true" className="text-gray-500">›</li>
+            <li>
+              <Link href="/blog" className="text-gray-500 hover:text-navy-900 transition-colors">
+                Blog
+              </Link>
+            </li>
+            <li aria-hidden="true" className="text-gray-500">›</li>
+            <li aria-current="page" className="text-navy-900 font-semibold line-clamp-1">{article.title}</li>
+          </ol>
         </nav>
       </div>
 
-      {/* Hero image — full width */}
+      {/* Hero image */}
       {article.image && (
-        <div className="w-full overflow-hidden bg-navy-900 h-[320px] sm:h-[420px] relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={article.image.url}
-            alt={article.image.altText ?? article.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        </div>
+        <FadeIn delay={0} className="w-full">
+          <div className="bg-navy-900 overflow-hidden h-[280px] sm:h-[380px] relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={article.image.url}
+              alt={article.image.altText ?? article.title}
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
+            />
+            <div className="relative max-w-360 mx-auto px-4 sm:px-8 lg:px-14 h-full flex flex-col justify-end pb-10">
+              <h1 className="text-white text-[26px] sm:text-[36px] font-bold leading-tight max-w-[720px]">
+                {article.title}
+              </h1>
+            </div>
+          </div>
+        </FadeIn>
       )}
 
-      {/* Content area — two-column */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 lg:py-14">
-        <div className="flex flex-col lg:flex-row gap-12 xl:gap-16 items-start">
-
-          {/* ── Left: main article ── */}
-          <article className="flex-1 min-w-0">
-            {/* Back button */}
-            <Link
-              href="/blog"
-              className="inline-flex items-center justify-center size-[38px] rounded-full border border-[rgba(11,23,43,0.2)] bg-[rgba(102,102,100,0.1)] hover:bg-gray-100 transition-colors mb-6"
-              aria-label="Back to blog"
-            >
-              <ArrowLeft size={14} className="text-navy-900" />
-            </Link>
-
-            {/* Meta: date + read time */}
-            <p className="text-[#0086b1] text-[14px] tracking-[0.75px] uppercase mb-3">
+      {/* Article content */}
+      <FadeIn delay={0.1} className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
+        <div className="max-w-[760px]">
+          {/* Meta row */}
+          <div className="flex items-center gap-5 mb-8 flex-wrap">
+            <div className="flex items-center gap-2 text-gray-500 text-[14px]">
+              <Calendar size={14} className="text-teal-500" />
               {publishedDate}
-              <span className="text-gray-400 mx-2">•</span>
-              <span className="text-gray-400">{readMins} MINS READ</span>
-            </p>
-
-            {/* Title */}
-            <h1 className="text-navy-900 text-[32px] sm:text-[40px] font-semibold leading-[1.25] tracking-[-0.02em] mb-6">
-              {article.title}
-            </h1>
-
-            {/* Divider */}
-            <hr className="border-gray-200 mb-6" />
-
-            {/* Author */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="size-10 rounded-full bg-navy-900 flex items-center justify-center shrink-0">
-                <span className="text-white text-[14px] font-bold">
-                  {article.author.name.charAt(0)}
-                </span>
-              </div>
-              <div>
-                <p className="text-navy-900 text-[15px] font-semibold">{article.author.name}</p>
-                {article.tags.length > 0 && (
-                  <p className="text-gray-400 text-[12px] uppercase tracking-[0.5px]">{article.tags[0]}</p>
-                )}
-              </div>
             </div>
+            <div className="flex items-center gap-2 text-gray-500 text-[14px]">
+              <User size={14} className="text-teal-500" />
+              {article.author.name}
+            </div>
+            {article.tags.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                {article.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-teal-50 text-teal-700 text-[11px] font-semibold px-2 py-0.5 border border-teal-200 uppercase tracking-[0.22px]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
             {/* Divider */}
             <hr className="border-gray-200 mb-8" />
@@ -198,65 +219,55 @@ export default async function ArticlePage({ params }: Props) {
               dangerouslySetInnerHTML={{ __html: article.contentHtml }}
             />
 
-            {/* Back link */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <Link
-                href="/blog"
-                className="flex items-center gap-2 text-navy-900 text-[14px] font-semibold hover:text-[#0086b1] transition-colors w-fit"
-              >
-                <ArrowLeft size={16} />
-                Back to all articles
-              </Link>
-            </div>
-          </article>
-
-          {/* ── Right: sidebar related posts ── */}
-          {relatedArticles.length > 0 && (
-            <aside className="lg:w-[390px] xl:w-[420px] shrink-0">
-              <h2 className="text-navy-900 text-[14px] font-semibold tracking-[0.56px] uppercase mb-6">
-                Related Posts
-              </h2>
-              <div className="flex flex-col gap-5">
-                {relatedArticles.map((a) => (
-                  <Link
-                    key={a.id}
-                    href={`/blog/${a.handle}`}
-                    className="group flex flex-col bg-white border border-gray-100 hover:border-gray-200 transition-colors"
-                  >
-                    {/* Card image */}
-                    <div className="overflow-hidden bg-gray-100 aspect-[16/10]">
-                      {a.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={a.image.url}
-                          alt={a.image.altText ?? a.title}
-                          className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="size-full bg-navy-900" />
-                      )}
-                    </div>
-                    {/* Card info */}
-                    <div className="px-5 py-4 flex flex-col gap-2">
-                      <p className="text-[#0086b1] text-[12px] tracking-[0.65px] uppercase">
-                        {new Date(a.publishedAt).toLocaleDateString("en-US", {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        }).toUpperCase()}
-                      </p>
-                      <p className="text-navy-900 text-[14px] font-bold leading-5 line-clamp-2 group-hover:text-[#0086b1] transition-colors">
-                        {a.title}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </aside>
-          )}
-
+          {/* Back link */}
+			{/* ── Right: sidebar related posts ── */}
+			{relatedArticles.length > 0 && (
+				<aside className="lg:w-[390px] xl:w-[420px] shrink-0">
+					<h2 className="text-navy-900 text-[14px] font-semibold tracking-[0.56px] uppercase mb-6">
+						Related Posts
+					</h2>
+					<div className="flex flex-col gap-5">
+						{relatedArticles.map((a) => (
+							<Link
+								key={a.id}
+								href={`/blog/${a.handle}`}
+								className="group flex flex-col bg-white border border-gray-100 hover:border-gray-200 transition-colors"
+							>
+								{/* Card image */}
+								<div className="overflow-hidden bg-gray-100 aspect-[16/10]">
+									{a.image ? (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img
+											src={a.image.url}
+											alt={a.image.altText ?? a.title}
+											className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
+										/>
+									) : (
+										<div className="size-full bg-navy-900" />
+									)}
+								</div>
+								{/* Card info */}
+								<div className="px-5 py-4 flex flex-col gap-2">
+									<p className="text-[#0086b1] text-[12px] tracking-[0.65px] uppercase">
+										{new Date(a.publishedAt).toLocaleDateString("en-US", {
+											month: "long",
+											day: "numeric",
+											year: "numeric",
+										}).toUpperCase()}
+									</p>
+									<p className="text-navy-900 text-[14px] font-bold leading-5 line-clamp-2 group-hover:text-[#0086b1] transition-colors">
+										{a.title}
+									</p>
+								</div>
+							</Link>
+						))}
+					</div>
+				</aside>
+			)}
         </div>
-      </div>
+      </FadeIn>
+
+
 
       {/* ── Wholesale CTA ── */}
       <WholesalePricing />

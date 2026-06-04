@@ -1,17 +1,14 @@
+import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
+import { mockOCCHub } from '@/lib/mock/occ'
+import { OCCHubPage } from '@/components/b2b/OCCHub'
 
-export const metadata = buildMetadata({
+export const metadata: Metadata = buildMetadata({
   pageType: 'occ',
-  description: 'Free shipping on all OCC-eligible medical supplies for qualifying facilities.',
+  title: mockOCCHub.seoTitle,
+  description: mockOCCHub.seoDescription || mockOCCHub.intro,
 })
 
-export default function OccPage() {
-  return (
-    <main className="bg-[#f9fafc] min-h-screen">
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14">
-        <h1 className="text-navy-900 text-[32px] font-bold">OCC Program</h1>
-        <p className="text-gray-500 text-[15px] mt-2">Coming soon.</p>
-      </div>
-    </main>
-  )
+export default function OCCPage() {
+  return <OCCHubPage hub={mockOCCHub} />
 }

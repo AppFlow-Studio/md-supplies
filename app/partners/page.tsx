@@ -1,5 +1,11 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
+import { SITE_URL } from '@/lib/seo/constants'
+import { getActivePartners } from '@/lib/mock/partners'
+import { PartnerDirectory } from '@/components/b2b/PartnerDirectory'
+import { WebPageSchema } from '@/components/schema/WebPageSchema'
+import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 
 export const metadata = buildMetadata({
   pageType: 'partners',
@@ -82,115 +88,32 @@ const MANUFACTURERS = [
     vendorSlug: 'vive-health',
   },
 ]
+export const metadata: Metadata = buildMetadata({ pageType: 'partners' })
 
 export default function PartnersPage() {
+  const partners = getActivePartners()
+
   return (
-    <main className="bg-neutral-100">
+    <main id="main-content" className="bg-[#f9fafc]">
+      <WebPageSchema
+        name="Our Partners"
+        description="Browse MDSupplies brand and vendor partners supplying medical and dental products."
+        url={`${SITE_URL}/partners`}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', item: SITE_URL },
+          { name: 'Partners', item: `${SITE_URL}/partners` },
+        ]}
+      />
 
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-neutral-100 min-h-[580px] lg:min-h-[660px]">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-[59px] py-14 lg:py-0 lg:h-[810px] flex flex-col lg:flex-row items-start">
-
-          {/* Right hero image (full bleed) */}
-          <div className="hidden lg:block absolute right-0 top-0 w-[1170px] h-[716px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={HERO_IMAGE}
-              alt="Medical facility warehouse"
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          {/* White overlay card */}
-          <div className="hidden lg:block absolute left-[240px] top-[312px] w-[662px] h-[498px] bg-white z-10" />
-
-          {/* Left text — sits on top of white card */}
-          <div className="relative z-20 flex flex-col gap-6 lg:pt-[360px]">
-            <div className="inline-flex items-center self-start">
-              <div className="bg-[rgba(0,193,255,0.2)] rounded-[20px] px-4 py-2">
-                <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px]">
-                  PARTNERS
-                </span>
-              </div>
-            </div>
-
-            <h1 className="text-navy-900 text-[40px] lg:text-[50px] font-semibold leading-[1.2] tracking-tight max-w-[600px]">
-              Trusted Partner<br />Network
-            </h1>
-
-            <p className="text-gray-500 text-[18px] leading-[30px] max-w-[516px]">
-              MDSupplies &amp; Partners, Inc. partners with top manufacturers and vendors to provide a comprehensive selection of medical supplies. We specialize in serving healthcare practices, hospitals, urgent care centers, schools, charities, and individual consumers with high-quality, reliable products.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Our Manufacturers ── */}
-      <section className="bg-neutral-100 py-14 lg:py-[104px]">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-[61px]">
-          <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-10">
-            Our Manufacturers
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {MANUFACTURERS.map(({ name, logo, description, vendorSlug }) => (
-              <div key={name} className="bg-white flex flex-col p-6 gap-4">
-                {/* Logo */}
-                <div className="h-[57px] flex items-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={logo}
-                    alt={name}
-                    className="max-h-full max-w-[210px] object-contain"
-                  />
-                </div>
-
-                {/* Divider */}
-                <div className="h-px bg-gray-200" />
-
-                {/* Description */}
-                <p className="text-gray-500 text-[15px] leading-[22px] tracking-[0.3px] flex-1">
-                  {description}
-                </p>
-
-                <Link
-                  href={`/brands/${vendorSlug}`}
-                  className="text-teal-500 text-[13px] font-medium tracking-[0.26px] hover:underline"
-                >
-                  View Products →
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Become a Partner CTA ── */}
-      <section className="bg-navy-900 py-16 lg:py-[112px]">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-[59px] flex flex-col items-center text-center gap-6">
-          <h2 className="text-white text-[35px] font-semibold tracking-tight">
-            Become a partner
-          </h2>
-          <p className="text-white text-[15px] leading-[30px] tracking-[0.3px] max-w-[585px]">
-            Join our curated ecosystem of global manufacturers and healthcare institutions. We provide the infrastructure for growth and the network for clinical impact.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <Link
-              href="/contact?type=manufacturer"
-              className="bg-white text-navy-900 text-[18px] font-semibold px-8 h-[59px] flex items-center justify-center hover:bg-neutral-50 transition-colors"
-            >
-              Manufacturer Inquiry
-            </Link>
-            <Link
-              href="/contact?type=provider"
-              className="border border-white text-white text-[18px] font-semibold px-8 h-[59px] flex items-center justify-center hover:bg-white/10 transition-colors"
-            >
-              Provider Enrollment
-            </Link>
-          </div>
-        </div>
-      </section>
-
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10">
+        <h1 className="text-3xl sm:text-4xl font-bold text-navy-900 mb-3">Our Partners</h1>
+        <p className="text-base text-gray-500 mb-10 max-w-[640px]">
+          MDSupplies works with trusted brands and distributors to bring you high-quality medical supplies at wholesale prices.
+        </p>
+        <PartnerDirectory partners={partners} />
+      </div>
     </main>
   )
 }
