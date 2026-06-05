@@ -88,7 +88,6 @@ const MANUFACTURERS = [
     vendorSlug: 'vive-health',
   },
 ]
-export const metadata: Metadata = buildMetadata({ pageType: 'partners' })
 
 export default function PartnersPage() {
   const partners = getActivePartners()
