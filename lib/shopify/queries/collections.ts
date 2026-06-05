@@ -12,6 +12,16 @@ export const GET_COLLECTIONS = `#graphql
   }
 `;
 
+export const GET_COLLECTION_META = `#graphql
+  query GetCollectionMeta($handle: String!) {
+    collection(handle: $handle) {
+      id
+      title
+      handle
+    }
+  }
+`;
+
 export const GET_COLLECTION = `#graphql
   query GetCollection(
     $handle: String!

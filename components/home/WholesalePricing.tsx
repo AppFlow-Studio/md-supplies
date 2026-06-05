@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { FadeIn } from "@/components/ui/FadeIn";
 
 const BENEFITS = [
-  "Volume discounts up to 25%",
-  "Net 30 payment terms",
-  "Dedicated account manager",
-  "Priority same-day shipping",
+  "Product availability support",
+  "Packaging and quantity guidance",
+  "Item number / brand confirmation",
+  "Reliable ordering assistance",
 ];
 
 const FACULTY_TYPES = [
@@ -51,12 +50,12 @@ export function WholesalePricing() {
   }
 
   return (
-    <section className="w-full bg-neutral-50 overflow-hidden">
-      <div className="max-w-360 mx-auto flex flex-col lg:flex-row min-h-[580px]">
+    <section className="w-full bg-neutral-50 overflow-hidden relative">
+      <div className="mx-auto flex flex-col lg:flex-row min-h-[580px]">
 
         {/* ── Left: teal panel ── */}
         <motion.div
-          className="bg-teal-500 flex-1 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center gap-6"
+          className="bg-teal-500 flex-1 px-8 sm:px-12 lg:px-16 py-14 md:py-32 flex flex-col justify-center gap-6"
           variants={leftContainerVariants}
           initial="hidden"
           whileInView="show"
@@ -69,11 +68,11 @@ export function WholesalePricing() {
           </motion.div>
 
           <motion.h2 variants={leftItemVariants} className="text-[38px] sm:text-[45px] font-bold text-white leading-[1.15] tracking-[0.9px] max-w-[460px]">
-            Get exclusive Wholesale Pricing
+            Need Help Sourcing Medical Supplies?
           </motion.h2>
 
           <motion.p variants={leftItemVariants} className="text-white text-[15px] font-normal leading-[1.9] max-w-[490px]">
-            Apply for a professional account and volume discounts, priority support, and net terms.
+            Tell us what you’re looking for and our team will help confirm product availability, packaging options, item details, and the best ordering path for your needs.
           </motion.p>
 
           <motion.ul variants={leftItemVariants} className="flex flex-col gap-3">
@@ -85,11 +84,21 @@ export function WholesalePricing() {
             ))}
           </motion.ul>
         </motion.div>
+        {/* Spacer — desktop only, reserves room for the absolute form */}
+        <div className="hidden lg:block w-[40%] shrink-0" />
 
         {/* ── Right: form panel ── */}
-        <FadeIn delay={0.2} className="bg-white lg:w-[560px] xl:w-[642px] shrink-0 px-8 sm:px-12 lg:px-14 py-14 md:py-16 flex flex-col justify-center">
+        <motion.div
+          initial={{ opacity: 0, x: 32 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.55, ease: 'easeOut', delay: 0.2 }}
+          viewport={{ once: true }}
+          className="bg-white w-full px-8 sm:px-12 py-14
+                     lg:absolute lg:top-1/2 lg:-translate-y-1/2 lg:right-[8%] lg:w-[560px] lg:px-14 lg:py-16
+                     xl:w-[642px]
+                     flex flex-col justify-center"
+        >
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-
             <div className="flex flex-col gap-1.5">
               <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
                 Faculty Name
@@ -156,11 +165,11 @@ export function WholesalePricing() {
               type="submit"
               className="mt-2 bg-navy-900 text-white text-[18px] font-semibold tracking-[0.04em] py-4 hover:bg-navy-950 transition-colors"
             >
-              Submit Application
+              SUBMIT APPLICATION
             </button>
 
           </form>
-        </FadeIn>
+        </motion.div>
 
       </div>
     </section>

@@ -43,7 +43,7 @@ export function PopularCategories({ collections }: Props) {
         </FadeIn>
 
         <motion.div
-          className="grid grid-cols-2 sm:grid-cols-4 gap-[1px] border border-[rgba(0,0,0,0.08)] bg-[rgba(0,0,0,0.08)]"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-px border border-[rgba(0,0,0,0.1)] bg-[rgba(0,0,0,0.1)]"
           variants={containerVariants}
           initial="hidden"
           whileInView="show"
@@ -55,21 +55,21 @@ export function PopularCategories({ collections }: Props) {
                 href={`/category/${handle}`}
                 className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-10 px-4 h-full"
               >
-                <div className="w-[50px] h-[50px] rounded-xl bg-[rgba(0,193,255,0.15)] flex items-center justify-center overflow-hidden group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">
+                <div className="w-14 h-14 flex items-center justify-center overflow-hidden">
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={image.url}
                       alt={image.altText ?? title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
-                    <span className="text-teal-500 text-[20px] font-bold">
+                    <span className="text-navy-900 text-[24px] font-bold">
                       {title.charAt(0)}
                     </span>
                   )}
                 </div>
-                <span className="text-[15px] font-semibold text-navy-900 text-center leading-snug">
+                <span className="text-[14px] font-medium text-navy-900 text-center leading-snug">
                   {title}
                 </span>
               </Link>

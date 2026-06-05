@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ShoppingCart } from 'lucide-react'
 import type { CollectionProduct } from '@/lib/shopify/types'
 
-export function ShopifyProductCard({ product }: { product: CollectionProduct }) {
+export function ShopifyProductCard({ product, categorySlug }: { product: CollectionProduct; categorySlug?: string }) {
   const variant = product.variants.nodes[0]
   const price = parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount)
   const compareAt = variant?.compareAtPrice
@@ -14,8 +14,12 @@ export function ShopifyProductCard({ product }: { product: CollectionProduct }) 
   const stockQty = variant?.quantityAvailable ?? null
   const isLowStock = product.availableForSale && stockQty !== null && stockQty <= 9 && stockQty > 0
 
+  const href = categorySlug
+    ? `/category/${categorySlug}/${product.handle}`
+    : `/product/${product.handle}`
+
   return (
-    <Link href={`/product/${product.handle}`} className="group bg-white flex flex-col">
+    <Link href={href} className="group bg-white flex flex-col">
       {/* Image */}
       <div className="relative overflow-hidden bg-white aspect-square">
         {image ? (

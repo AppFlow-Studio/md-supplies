@@ -8,6 +8,7 @@ import {
   Search, User, ShoppingCart, Menu, X,
 } from 'lucide-react'
 import { useCart } from '@/components/store/CartProvider'
+import Image from 'next/image'
 
 const NAV_ITEMS = [
   { label: 'Categories', href: '#', hasDropdown: true },
@@ -81,22 +82,14 @@ export function Header() {
 
       {/* 3 — Main nav */}
       <nav className="bg-white border-b border-blue-50 h-18 flex items-center">
-        <div className="max-w-360 mx-auto px-4 md:px-8 w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-3 items-center gap-4">
+        <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 2v12M2 8h12" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-            </div>
-            <span className="font-bold text-[18px] leading-none">
-              <span className="text-navy-900">MD</span>
-              <span className="text-teal-500">Supplies</span>
-            </span>
+          <Link href="/">
+            <Image src={'/images/logo.avif'} alt='logo' width={500} height={500} className='w-fit h-10 object-contain'/>
           </Link>
 
           {/* Nav links */}
-          <div className="hidden md:flex items-center justify-center gap-5 lg:gap-6">
+          <div className="hidden md:flex flex-1 items-center justify-center gap-5 lg:gap-6">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.label}
