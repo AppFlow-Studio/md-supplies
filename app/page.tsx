@@ -24,7 +24,7 @@ export const metadata = buildMetadata({ pageType: 'homepage' })
 export default async function Home() {
   const [productsData, collectionsData] = await Promise.all([
     storefrontFetch<{ products: { nodes: CollectionProduct[] } }>(GET_PRODUCTS, {
-      first: 4,
+      first: 8,
       sortKey: 'BEST_SELLING',
     }),
     storefrontFetch<{ collections: { nodes: CollectionSummary[] } }>(GET_COLLECTIONS, {
@@ -32,17 +32,21 @@ export default async function Home() {
     }),
   ]);
 
+  const allProducts = productsData.products.nodes;
+  const heroProducts = allProducts.slice(0, 4);
+  const popularProducts = allProducts.slice(4, 8);
+
   return (
     <main>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildWebSiteSchema()) }}
       />
-      <HeroSection />
+      <HeroSection products={heroProducts} />
       <TrustedBrands />
       <ShopByIndustry />
       <PopularCategories collections={collectionsData.collections.nodes} />
-      <PopularProducts products={productsData.products.nodes} />
+      <PopularProducts products={popularProducts} />
       <WhyChooseUs />
       <WholesalePricing />
     </main>

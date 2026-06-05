@@ -2,96 +2,94 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
-import { getActivePartners } from '@/lib/mock/partners'
-import { PartnerDirectory } from '@/components/b2b/PartnerDirectory'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
+import { FadeIn } from '@/components/ui/FadeIn'
+import { ManufacturersGrid } from '@/components/b2b/ManufacturersGrid'
 
 export const metadata = buildMetadata({
   pageType: 'partners',
   description: 'Our network of trusted medical supply manufacturers and partners.',
 })
 
-const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/47a5d306-8846-4a5e-8cbe-637497fa0d5f'
+const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/7e97ac3a-09ed-42db-96c5-a2d21b722527'
 
 const MANUFACTURERS = [
   {
     name: 'AD Surgical',
-    logo: 'https://www.figma.com/api/mcp/asset/4d211a7e-3e2d-482b-b268-049c0dc35f1d',
+    logo: 'https://www.figma.com/api/mcp/asset/8c489793-5cbe-4f61-8fcd-19ba4119eec9',
     description: 'Leading provider of surgical sutures, wound closure, and procedure kits.',
     vendorSlug: 'ad-surgical',
   },
   {
     name: 'CorDx',
-    logo: 'https://www.figma.com/api/mcp/asset/f2e636c8-b927-4958-affc-8295113e46eb',
+    logo: 'https://www.figma.com/api/mcp/asset/2ff04940-2487-4aa4-8daa-1f440301fc04',
     description: 'Advanced rapid diagnostic testing solutions for clinical and point-of-care settings.',
     vendorSlug: 'cordx',
   },
   {
     name: 'Dukal',
-    logo: 'https://www.figma.com/api/mcp/asset/4bbc2824-c03f-4140-a711-dcd68a0ae83c',
+    logo: 'https://www.figma.com/api/mcp/asset/0d3ad4a5-6272-46a4-8120-e7e86dee0773',
     description: 'High-quality disposable medical products for wound care, exam, and procedure use.',
     vendorSlug: 'dukal',
   },
   {
     name: 'Dynarex',
-    logo: 'https://www.figma.com/api/mcp/asset/9be75c1a-8c01-4f7a-b8be-3e2dd9e7394b',
+    logo: 'https://www.figma.com/api/mcp/asset/40c82316-c043-4b64-8be8-585ed3276f96',
     description: 'Dependable general medical products trusted by healthcare providers nationwide.',
     vendorSlug: 'dynarex',
   },
   {
     name: 'Kadara',
-    logo: 'https://www.figma.com/api/mcp/asset/3fb72131-7f56-4a4f-a957-b4514328a056',
+    logo: 'https://www.figma.com/api/mcp/asset/57a084ab-54d3-4aac-bbb6-2230b7945506',
     description: 'Innovative medical supply solutions focused on quality and clinical performance.',
     vendorSlug: 'kadara',
   },
   {
     name: 'Kemp USA',
-    logo: 'https://www.figma.com/api/mcp/asset/b6a933b7-25a0-42d1-9d5f-7b57645aa7cb',
+    logo: 'https://www.figma.com/api/mcp/asset/4feee5b9-fc58-439f-9232-841240db91f2',
     description: 'Professional-grade medical equipment and emergency response supplies.',
     vendorSlug: 'kemp-usa',
   },
   {
     name: 'Graham Field',
-    logo: 'https://www.figma.com/api/mcp/asset/53849f7d-ddfa-4ced-a73a-50852f5ba079',
+    logo: 'https://www.figma.com/api/mcp/asset/1a1a19d2-e56f-4f27-9b46-e2cc7fffc8df',
     description: 'Comprehensive durable medical equipment and rehabilitation solutions.',
     vendorSlug: 'graham-field',
   },
   {
     name: 'Medline',
-    logo: 'https://www.figma.com/api/mcp/asset/08caea44-525a-465d-a54e-e106f6187252',
+    logo: 'https://www.figma.com/api/mcp/asset/9f893490-1d51-45bf-ba02-a012f9d5a8b3',
     description: 'One of the largest manufacturers and distributors of healthcare supplies in the US.',
     vendorSlug: 'medline',
   },
   {
     name: 'Systems',
-    logo: 'https://www.figma.com/api/mcp/asset/3c94a7b1-9ea8-428e-98c5-0435281fc221',
+    logo: 'https://www.figma.com/api/mcp/asset/bd49eacf-6f92-4512-b5fd-c795d35acbd2',
     description: 'Integrated medical supply systems for streamlined clinical procurement.',
     vendorSlug: 'systems',
   },
   {
     name: 'Philip Scalice',
-    logo: 'https://www.figma.com/api/mcp/asset/bb9317f3-5696-44df-937a-d4332c3dc27d',
+    logo: 'https://www.figma.com/api/mcp/asset/4f85d0fb-edfb-44c7-93d8-11f795a75e52',
     description: 'Specialty medical supplies and instruments for clinical and surgical use.',
     vendorSlug: 'philip-scalice',
   },
   {
     name: 'TrueCare',
-    logo: 'https://www.figma.com/api/mcp/asset/4890765a-143f-4e74-a4c3-63b72f7552ab',
+    logo: 'https://www.figma.com/api/mcp/asset/35a25913-e45f-40fb-bed3-02bfccad6b4e',
     description: 'Patient-centered wound care and disposable medical supply solutions.',
     vendorSlug: 'truecare',
   },
   {
     name: 'Vive Health',
-    logo: 'https://www.figma.com/api/mcp/asset/b3a36538-5ff0-4d25-a6da-75ebb915429a',
+    logo: 'https://www.figma.com/api/mcp/asset/0b4afb00-deb5-4dc9-8a3e-bef93ff6f60d',
     description: 'Daily living aids, mobility equipment, and home health supplies.',
     vendorSlug: 'vive-health',
   },
 ]
 
 export default function PartnersPage() {
-  const partners = getActivePartners()
-
   return (
     <main id="main-content" className="bg-[#f9fafc]">
       <WebPageSchema
@@ -106,13 +104,74 @@ export default function PartnersPage() {
         ]}
       />
 
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10">
-        <h1 className="text-3xl sm:text-4xl font-bold text-navy-900 mb-3">Our Partners</h1>
-        <p className="text-base text-gray-500 mb-10 max-w-[640px]">
-          MDSupplies works with trusted brands and distributors to bring you high-quality medical supplies at wholesale prices.
-        </p>
-        <PartnerDirectory partners={partners} />
-      </div>
+      {/* ─── Hero ─── */}
+      <section className="relative bg-white overflow-hidden">
+        {/* Warehouse image — right 67% on desktop, full-width on mobile */}
+        <div className="relative w-full h-[300px] sm:h-[420px] lg:absolute lg:inset-0 lg:left-[33%] lg:h-auto">
+          <img
+            src={HERO_IMAGE}
+            alt="Medical supply warehouse"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+          />
+        </div>
+
+        {/* White content card */}
+        <div className="relative z-10 bg-white mx-4 sm:mx-8 lg:mx-0 lg:ml-[59px] lg:mt-[96px] lg:w-[662px] px-8 lg:px-14 pt-10 pb-12">
+          <FadeIn>
+            <span className="inline-block bg-[rgba(0,193,255,0.2)] text-teal-500 text-[15px] font-semibold rounded-full px-5 py-2 mb-6 tracking-[0.3px]">
+              PARTNERS
+            </span>
+            <h1 className="text-[40px] lg:text-[50px] font-bold text-navy-900 leading-[1.2] mb-6">
+              Trusted Partner
+              <br />
+              Network
+            </h1>
+            <p className="text-gray-500 text-base lg:text-[18px] leading-[30px] max-w-[516px]">
+              MDSupplies &amp; Partners, Inc. partners with top manufacturers and vendors to provide a comprehensive selection of medical supplies. We specialize in serving healthcare practices, hospitals, urgent care centers, schools, charities, and individual consumers with high-quality, reliable products.
+            </p>
+          </FadeIn>
+        </div>
+
+        {/* Desktop height spacer so image fills the section */}
+        <div className="hidden lg:block h-[232px]" />
+      </section>
+
+      {/* ─── Our Manufacturers ─── */}
+      <section className="bg-[#f9fafc] px-4 sm:px-8 lg:px-[61px] pt-[80px] lg:pt-[104px] pb-20">
+        <FadeIn>
+          <h2 className="text-[28px] font-semibold text-navy-900 tracking-[0.56px] mb-10">
+            Our Manufacturers
+          </h2>
+        </FadeIn>
+        <ManufacturersGrid manufacturers={MANUFACTURERS} />
+      </section>
+
+      {/* ─── Become a Partner CTA ─── */}
+      <section className="bg-navy-900 py-[112px] px-8 text-center">
+        <FadeIn>
+          <h2 className="text-[35px] font-semibold text-[#f9fafc] mb-8 tracking-[0.35px]">
+            Become a partner
+          </h2>
+          <p className="text-white/90 text-[15px] font-normal leading-[30px] max-w-[585px] mx-auto mb-12 tracking-[0.3px]">
+            Join our curated ecosystem of global manufacturers and healthcare institutions. We provide the infrastructure for growth and the network for clinical impact.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/contact"
+              className="bg-white text-navy-900 font-semibold text-[18px] px-[52px] py-[17px] hover:bg-gray-100 transition-colors tracking-[0.36px] whitespace-nowrap"
+            >
+              Manufacturer Inquiry
+            </Link>
+            <Link
+              href="/contact"
+              className="border border-white text-white font-semibold text-[18px] px-[52px] py-[17px] hover:bg-white/10 transition-colors tracking-[0.36px] whitespace-nowrap"
+            >
+              Provider Enrollment
+            </Link>
+          </div>
+        </FadeIn>
+      </section>
     </main>
   )
 }

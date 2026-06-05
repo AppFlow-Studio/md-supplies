@@ -6,10 +6,10 @@ import { FadeIn } from "@/components/ui/FadeIn";
 const BRANDS = [
   { name: "Cardinal Health", img: "/images/brands/cardinal-health.png" },
   { name: "Medline",         img: "/images/brands/medline.png" },
-  { name: "Covidien",        img: "/images/brands/covidien.png" },
-  { name: "McKesson",        img: "/images/brands/mc-kesson.png" },
+  { name: "Covidien",        img: "/images/brands/covidien.jpg" },
+  { name: "McKesson",        img: "/images/brands/mc-kesson.svg" },
   { name: "Dynarex",         img: "/images/brands/dynarex.png" },
-  { name: "BD",              img: "/images/brands/bd.png" },
+  { name: "BD",              img: "/images/brands/bd.svg" },
 ];
 
 function BrandLogo({ name, img }: { name: string; img: string }) {
