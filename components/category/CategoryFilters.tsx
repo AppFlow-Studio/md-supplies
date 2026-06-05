@@ -62,8 +62,8 @@ function FilterGroup({
       <div className="h-px bg-gray-200 mb-5" />
       {open && (
         <div className="flex flex-col gap-[18px]">
-          {filter.values.map((value) => (
-            <label key={value.id} className="flex items-center gap-[14px] cursor-pointer">
+          {filter.values.map((value, idx) => (
+            <label key={idx} className="flex items-center gap-[14px] cursor-pointer">
               <Checkbox
                 checked={activeFilters.includes(value.input)}
                 onChange={() => onToggle(value.input)}

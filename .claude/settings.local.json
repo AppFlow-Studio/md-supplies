@@ -16,7 +16,24 @@
       "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\components\\\\product\")",
       "Bash(dir \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\components\\\\store\")",
       "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\app\\\\product\\\\[slug]\")",
-      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\app\\\\search\")"
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\sarik\\\\WebstormProjects\\\\md-supplies\\\\app\\\\search\")",
+      "Bash(git *)",
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "Bash(npm install *)",
+      "Bash(npm test *)",
+      "Bash(npx vitest *)",
+      "Read(//Users/munistursunov/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/subagent-driven-development/**)",
+      "Bash(mkdir -p \"/Users/munistursunov/Projects/APPFLOW_STUDIO/md-supplies/app/partners/[partner-slug]\")",
+      "Bash(mkdir -p \"/Users/munistursunov/Projects/APPFLOW_STUDIO/md-supplies/app/industries/[industry-slug]\")",
+      "Bash(python3 *)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(npx next *)",
+      "Bash(awk -F\"'\" '{print $2}')",
+      "Bash(grep -v \"^$\")",
+      "Bash(chmod +x *)",
+      "Bash(bash -n /Users/munistursunov/Projects/APPFLOW_STUDIO/md-supplies/scripts/run-lighthouse-audit.sh)",
+      "Bash(xargs -I{} cp {} /tmp/screenshot_fix.png)"
     ]
   }
 }
