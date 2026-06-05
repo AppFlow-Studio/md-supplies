@@ -334,7 +334,7 @@ function LoggedOutView({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <div className="w-full h-[280px] sm:h-[420px] lg:w-[720px] lg:h-auto shrink-0 relative overflow-hidden">
             <img
-              src={IMG_DOCTOR}
+              src={'/images/doc_with_ipad.jpg'}
               alt="Healthcare professional"
               className="absolute inset-0 size-full object-cover"
             />

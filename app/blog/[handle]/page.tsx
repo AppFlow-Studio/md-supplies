@@ -189,12 +189,7 @@ export default async function ArticlePage({ params }: Props) {
 
               {/* Article body */}
               <div
-                  className="prose prose-gray max-w-none text-[15px] leading-[1.75] text-gray-600
-                prose-headings:text-navy-900 prose-headings:font-semibold
-                prose-h2:text-[20px] prose-h3:text-[17px]
-                prose-a:text-[#0086b1] prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-navy-900
-                prose-li:marker:text-[#0086b1]"
+                  className="article-prose"
                   dangerouslySetInnerHTML={{ __html: article.contentHtml }}
               />
 
