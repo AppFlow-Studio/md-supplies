@@ -71,7 +71,29 @@
       "mcp__plugin_figma_figma__use_figma",
       "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/category-new.png\" \"https://www.figma.com/api/mcp/asset/32613898-81f4-45e1-8fc6-b6353e353c04\")",
       "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/blog-new.png\" \"https://www.figma.com/api/mcp/asset/dcbd1926-f495-4216-8f0d-8028cdfd7033\")",
-      "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/blog-detail-new.png\" \"https://www.figma.com/api/mcp/asset/09f59e36-2a72-48e6-8291-166cf77c4d10\")"
+      "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/blog-detail-new.png\" \"https://www.figma.com/api/mcp/asset/09f59e36-2a72-48e6-8291-166cf77c4d10\")",
+      "Bash(netstat -ano)",
+      "Bash(curl -s http://localhost:3000/account -o /tmp/account.html -w \"%{http_code}\\\\n\")",
+      "Skill(run)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(mkdir -p /tmp/shots)",
+      "Bash(rm -f /tmp/shots/*.png)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1440,1024 --screenshot=/tmp/shots/account-desktop.png \"http://localhost:3000/account\")",
+      "Read(//tmp/**)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1440,900 --screenshot=/tmp/shots/b2b-desktop.png \"http://localhost:3000/b2b\")",
+      "Bash(rm -f /tmp/shots/b2b-wide.png)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1920,1080 --screenshot=/tmp/shots/b2b-wide.png \"http://localhost:3000/b2b\")",
+      "Bash(rm -f /tmp/shots/b2b-mobile.png)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=390,844 --screenshot=/tmp/shots/b2b-mobile.png \"http://localhost:3000/b2b\")",
+      "Bash(grep -iE \"^ws$|puppeteer|playwright|chrome-remote\")",
+      "Bash(rm -f /tmp/shots/b2b-mobile-emu.png)",
+      "Bash('/c/Program Files/Google/Chrome/Application/chrome.exe' --headless=new --disable-gpu --hide-scrollbars --window-size=390,844 --force-device-scale-factor=1 '--user-agent=Mozilla/5.0 \\(iPhone; CPU iPhone OS 17_0 like Mac OS X\\) AppleWebKit/605.1.15 \\(KHTML, like Gecko\\) Version/17.0 Mobile/15E148 Safari/604.1' --virtual-time-budget=8000 --screenshot=/tmp/shots/b2b-mobile-emu.png http://localhost:3000/b2b)",
+      "Bash(rm -f /tmp/shots/b2b-mobile-sb.png)",
+      "Bash('/c/Program Files/Google/Chrome/Application/chrome.exe' --headless=new --disable-gpu --window-size=390,500 --virtual-time-budget=8000 --screenshot=/tmp/shots/b2b-mobile-sb.png http://localhost:3000/b2b)",
+      "Bash(rm -f /tmp/shots/partners-mobile.png)",
+      "Bash('/c/Program Files/Google/Chrome/Application/chrome.exe' --headless=new --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=8000 --screenshot=/tmp/shots/partners-mobile.png http://localhost:3000/partners)",
+      "Bash(rm -f /tmp/shots/b2b-final.png)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1600,950 --virtual-time-budget=6000 --screenshot=/tmp/shots/b2b-final.png \"http://localhost:3000/b2b\")"
     ]
   }
 }

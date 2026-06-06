@@ -3,18 +3,20 @@ import type { CollectionProduct } from '@/lib/shopify/types'
 import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
 
 interface Props {
-  products: CollectionProduct[]
-  emptyStateHref: string
-  emptyStateMessage?: string
+    products: CollectionProduct[]
+    emptyStateHref: string
+    emptyStateMessage?: string
+    categorySlug?: string
 }
 
 export function ProductGrid({
-  products,
-  emptyStateHref,
-  emptyStateMessage = 'No products found.',
+    products,
+    emptyStateHref,
+    emptyStateMessage = 'No products found.',
+    categorySlug,
 }: Props) {
 
-    console.log(products)
+    console.log(categorySlug)
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -37,7 +39,7 @@ export function ProductGrid({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[23px]">
       {products.map((product) => (
-        <ShopifyProductCard key={product.id} product={product} />
+        <ShopifyProductCard key={product.id} product={product} categorySlug={categorySlug} />
       ))}
     </div>
   )

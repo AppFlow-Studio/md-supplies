@@ -73,7 +73,7 @@ export default async function BrandsPage() {
           </div>
 
           {/* White overlay card on left */}
-          <div className="hidden lg:block absolute left-[-24px] top-[152px] w-[828px] h-[412px] bg-white" />
+          <div className="hidden lg:block absolute left-[100px] top-[250px] w-[828px] h-[412px] bg-white" />
         </div>
       </section>
 

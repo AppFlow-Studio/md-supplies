@@ -100,7 +100,6 @@ export default async function ProductPage({ params }: Props) {
       <ProductView
         product={product}
         relatedProducts={relatedProducts}
-        relatedArticles={relatedArticles}
       />
     </main>
   )

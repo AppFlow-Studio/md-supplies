@@ -127,8 +127,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     getRelatedCategories(slug),
   ])
 
-  console.log(data)
-
   if (!data.collection) notFound()
 
   const { collection } = data
@@ -279,6 +277,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           <ProductGrid
             products={products}
             emptyStateHref={ROUTES.category(slug)}
+            categorySlug={data.collection.handle}
           />
 
           {/* Clean-page pagination */}
