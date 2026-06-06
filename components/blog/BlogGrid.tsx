@@ -31,14 +31,14 @@ export function BlogGrid({ articles }: Props) {
   return (
     <div className="flex flex-col gap-10">
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[22px] gap-y-[28px]"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[22px] gap-y-[28px] items-stretch"
         variants={containerVariants}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
       >
         {visible.map((article) => (
-          <motion.div key={article.id} variants={itemVariants}>
+          <motion.div key={article.id} variants={itemVariants} className="h-full">
             <BlogCard
               slug={article.handle}
               date={new Date(article.publishedAt).toLocaleDateString("en-US", {

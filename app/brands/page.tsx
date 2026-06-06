@@ -53,15 +53,15 @@ export default async function BrandsPage() {
     <main className="bg-neutral-100">
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-neutral-100">
+      <section className="relative bg-white overflow-hidden">
 
-        {/* Mobile layout: text → image stacked */}
+        {/* Mobile: text first, image below */}
         <div className="lg:hidden px-4 sm:px-8 pt-8 pb-0">
           <span className="text-teal-500 text-[12px] font-semibold tracking-[0.24px] uppercase mb-3 block">
             Shop by Brand
           </span>
-          <h1 className="text-navy-900 text-[32px] font-semibold leading-[1.2] tracking-tight mb-3">
-            Clinical Standards<br />from Global Leaders
+          <h1 className="text-navy-900 text-[28px] font-semibold leading-[1.2] tracking-tight mb-3">
+            Clinical Standards from Global Leaders
           </h1>
           <p className="text-gray-500 text-[16px] leading-[26px] mb-6">
             Whether you run an urgent care clinic, HRT practice, or home health agency — we stock the products you need with same-day shipping and wholesale pricing.
@@ -74,23 +74,26 @@ export default async function BrandsPage() {
           />
         </div>
 
-        {/* Desktop layout: text left, image right (absolute) */}
-        <div className="hidden lg:flex max-w-[1440px] mx-auto px-[49px] h-[716px] flex-row items-center relative">
-          <div className="flex-1 max-w-[55%] flex flex-col justify-center items-start py-20 pl-16 z-10 gap-6 bg-white h-full">
-            <h1 className="text-navy-900 text-[50px] font-semibold leading-[1.2] tracking-tight max-w-[755px]">
-              Clinical Standards<br />from Global Leaders
-            </h1>
-            <p className="text-gray-500 text-[18px] leading-[30px] max-w-[541px]">
-              Whether you run an urgent care clinic, HRT practice, or home health agency — we stock the products you need with same-day shipping and wholesale pricing.
-            </p>
-          </div>
-          <div className="absolute right-0 top-0 w-[758px] h-[728px]">
+        {/* Desktop: text card left, image right (absolute) */}
+        <div className="hidden lg:flex relative min-h-[580px] items-center">
+          <div className="absolute inset-0 left-[38%]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={HERO_IMAGE}
               alt="Medical supplies"
               className="w-full h-full object-cover"
             />
+          </div>
+          <div className="relative z-10 bg-white ml-[59px] w-[55vw] px-14 py-14">
+            <span className="inline-block text-teal-500 text-[12px] font-semibold tracking-[0.24px] uppercase mb-4">
+              Shop by Brand
+            </span>
+            <h1 className="text-navy-900 text-[50px] font-semibold leading-[1.2] tracking-tight mb-6 max-w-[600px]">
+              Clinical Standards<br />from Global Leaders
+            </h1>
+            <p className="text-gray-500 text-[18px] leading-[30px] max-w-[516px]">
+              Whether you run an urgent care clinic, HRT practice, or home health agency — we stock the products you need with same-day shipping and wholesale pricing.
+            </p>
           </div>
         </div>
 

@@ -31,7 +31,7 @@ export default async function BlogPage() {
 
   return (
 
-    <main id="main-content">
+    <main id="main-content" className="bg-[#f9fafc]">
       <WebPageSchema
         name="MDSupplies Blog"
         description="Tips, guides, and industry updates for healthcare professionals and facility managers."
@@ -44,20 +44,20 @@ export default async function BlogPage() {
         ]}
       />
       {/* ── Page header ── */}
-      <section className="w-full bg-white border-b border-gray">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pt-16 md:pt-20 lg:pt-24 pb-12 md:pb-16">
+      <section className="w-full bg-[#f9fafc] border-b border-gray-200">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pt-12 md:pt-16 pb-8 md:pb-10">
           <FadeIn delay={0}>
-            <p className="text-teal-500 text-[13px] sm:text-[15px] font-semibold tracking-[0.75px] uppercase mb-4">
+            <p className="text-teal-500 text-[13px] font-semibold tracking-[0.75px] uppercase mb-3">
               Resources &amp; Insights
             </p>
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <h1 className="text-[40px] sm:text-[50px] font-semibold text-navy-900 leading-[1.1] tracking-tight">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <h1 className="text-[36px] sm:text-[44px] font-semibold text-navy-900 leading-[1.1] tracking-tight">
                 Blog
               </h1>
-              <p className="text-gray-500 text-[15px] leading-[1.65] max-w-[420px]">
+              <p className="text-gray-500 text-[15px] leading-[1.6] max-w-[400px]">
                 Tips, guides, and industry updates for healthcare professionals and facility managers.
               </p>
             </div>
@@ -66,8 +66,8 @@ export default async function BlogPage() {
       </section>
 
       {/* ── Blog grid + pagination ── */}
-      <section className="w-full bg-white">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 md:py-16">
+      <section className="w-full bg-[#f9fafc]">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 md:py-14">
           {articles.length > 0 ? (
             <BlogGrid articles={articles} />
           ) : (

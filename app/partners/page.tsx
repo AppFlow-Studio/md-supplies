@@ -106,35 +106,55 @@ export default function PartnersPage() {
 
       {/* ─── Hero ─── */}
       <section className="relative bg-white overflow-hidden">
-        {/* Warehouse image — right 67% on desktop, full-width on mobile */}
-        <div className="relative w-full h-[300px] sm:h-[420px] lg:absolute lg:inset-0 lg:left-[33%] lg:h-auto">
+
+        {/* Mobile: text first, image below */}
+        <div className="lg:hidden px-4 sm:px-8 pt-8 pb-0">
+          <FadeIn>
+            <span className="inline-block bg-[rgba(0,193,255,0.2)] text-teal-500 text-[12px] font-semibold rounded-full px-4 py-1.5 mb-3 tracking-[0.3px] uppercase">
+              Partners
+            </span>
+            <h1 className="text-[28px] font-bold text-navy-900 leading-[1.2] mb-3">
+              Trusted Partner Network
+            </h1>
+            <p className="text-gray-500 text-[16px] leading-[26px] mb-6">
+              MDSupplies &amp; Partners, Inc. partners with top manufacturers and vendors to provide a comprehensive selection of medical supplies.
+            </p>
+          </FadeIn>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={HERO_IMAGE}
             alt="Medical supply warehouse"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-full aspect-[4/3] object-cover"
             loading="eager"
           />
         </div>
 
-        {/* White content card */}
-        <div className="relative z-10 bg-white mx-4 sm:mx-8 lg:mx-0 lg:ml-[59px] lg:mt-[96px] lg:w-[662px] px-8 lg:px-14 pt-10 pb-12">
-          <FadeIn>
-            <span className="inline-block bg-[rgba(0,193,255,0.2)] text-teal-500 text-[15px] font-semibold rounded-full px-5 py-2 mb-6 tracking-[0.3px]">
-              PARTNERS
-            </span>
-            <h1 className="text-[40px] lg:text-[50px] font-bold text-navy-900 leading-[1.2] mb-6">
-              Trusted Partner
-              <br />
-              Network
-            </h1>
-            <p className="text-gray-500 text-base lg:text-[18px] leading-[30px] max-w-[516px]">
-              MDSupplies &amp; Partners, Inc. partners with top manufacturers and vendors to provide a comprehensive selection of medical supplies. We specialize in serving healthcare practices, hospitals, urgent care centers, schools, charities, and individual consumers with high-quality, reliable products.
-            </p>
-          </FadeIn>
+        {/* Desktop: text card left, image right (absolute) */}
+        <div className="hidden lg:flex relative min-h-[580px] items-center">
+          <div className="absolute inset-0 left-[38%]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={HERO_IMAGE}
+              alt="Medical supply warehouse"
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
+          </div>
+          <div className="relative z-10 bg-white ml-[59px] w-[55vw] px-14 py-14">
+            <FadeIn>
+              <span className="inline-block bg-[rgba(0,193,255,0.2)] text-teal-500 text-[15px] font-semibold rounded-full px-5 py-2 mb-6 tracking-[0.3px]">
+                PARTNERS
+              </span>
+              <h1 className="text-[50px] font-bold text-navy-900 leading-[1.2] mb-6">
+                Trusted Partner<br />Network
+              </h1>
+              <p className="text-gray-500 text-[18px] leading-[30px] max-w-[516px]">
+                MDSupplies &amp; Partners, Inc. partners with top manufacturers and vendors to provide a comprehensive selection of medical supplies. We specialize in serving healthcare practices, hospitals, urgent care centers, schools, charities, and individual consumers with high-quality, reliable products.
+              </p>
+            </FadeIn>
+          </div>
         </div>
 
-        {/* Desktop height spacer so image fills the section */}
-        <div className="hidden lg:block h-[232px]" />
       </section>
 
       {/* ─── Our Manufacturers ─── */}
