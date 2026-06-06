@@ -71,7 +71,18 @@
       "mcp__plugin_figma_figma__use_figma",
       "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/category-new.png\" \"https://www.figma.com/api/mcp/asset/32613898-81f4-45e1-8fc6-b6353e353c04\")",
       "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/blog-new.png\" \"https://www.figma.com/api/mcp/asset/dcbd1926-f495-4216-8f0d-8028cdfd7033\")",
-      "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/blog-detail-new.png\" \"https://www.figma.com/api/mcp/asset/09f59e36-2a72-48e6-8291-166cf77c4d10\")"
+      "Bash(curl -s -o \"C:/Users/sarik/WebstormProjects/md-supplies/.claude/blog-detail-new.png\" \"https://www.figma.com/api/mcp/asset/09f59e36-2a72-48e6-8291-166cf77c4d10\")",
+      "mcp__claude_ai_Figma__whoami",
+      "mcp__plugin_figma_figma__whoami",
+      "mcp__claude_ai_Figma__get_metadata",
+      "mcp__claude_ai_Figma__get_design_context",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/partners)",
+      "Bash(npx playwright *)",
+      "Bash(curl -s http://localhost:3000/partners)",
+      "Bash(npx --yes playwright install --dry-run)",
+      "Bash(python3 -c \"from playwright.sync_api import sync_playwright; print\\('ok'\\)\")",
+      "Bash(git rm *)",
+      "Bash(git push *)"
     ]
   }
 }
