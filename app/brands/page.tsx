@@ -53,7 +53,7 @@ export default async function BrandsPage() {
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-[49px] py-14 lg:py-0 lg:h-[716px] flex flex-col lg:flex-row items-center">
 
           {/* Left content */}
-          <div className="flex-1 flex flex-col gap-6 lg:pt-[240px] relative z-10">
+          <div className="flex-1 max-w-[55vw] flex flex-col justify-center items-start py-20 pl-16 z-10 gap-6 lg:bg-white">
             <h1 className="text-navy-900 text-[40px] lg:text-[50px] font-semibold leading-[1.2] tracking-tight max-w-[755px]">
               Clinical Standards<br />from Global Leaders
             </h1>
@@ -71,20 +71,12 @@ export default async function BrandsPage() {
               className="w-full h-full object-cover"
             />
           </div>
-
-          {/* White overlay card on left */}
-          <div className="hidden lg:block absolute left-[-24px] top-[152px] w-[828px] h-[412px] bg-white" />
         </div>
       </section>
 
       {/* ── Brand Directory ── */}
       <section className="bg-neutral-100 py-12 lg:py-[66px]">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-[57px]">
-          <div className="mb-8">
-            <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px]">Brand Directory</h2>
-            <p className="text-gray-500 text-[15px] tracking-[0.3px]">Clinical Manufacturers</p>
-          </div>
-
           {brands.length === 0 ? (
             <p className="text-gray-500 text-[15px] py-12">No brands available yet.</p>
           ) : (

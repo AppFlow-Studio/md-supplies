@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { INDUSTRIES } from '@/lib/industries'
 import { buildCanonical, buildRobots } from '@/lib/seo'
+import {BadgeCheck, FileText, Headset, MapPin, Truck} from "lucide-react";
 
 export const revalidate = 3600
 
@@ -156,20 +157,19 @@ export default function IndustriesPage() {
           <h2 className="text-white text-[28px] font-semibold tracking-[0.56px] text-center mb-14">
             Why Facilities Choose MD Supplies
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 lg:gap-0 relative">
-            {WHY_ITEMS.map((item, i) => (
-              <div key={item.title} className="flex flex-col items-center text-center px-4 lg:px-12 relative">
-                {i < WHY_ITEMS.length - 1 && (
-                  <div className="hidden sm:block absolute right-0 top-0 h-full w-px bg-white/20" />
-                )}
-                <div className="bg-[rgba(0,193,255,0.2)] rounded-[12px] w-[50px] h-[50px] mb-6" />
-                <span className="text-white text-[16px] font-bold tracking-[0.32px] mb-3">
-                  {item.title}
-                </span>
-                <p className="text-white text-[14px] leading-[1.6] tracking-[0.28px] max-w-[280px]">
-                  {item.description}
-                </p>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/20">
+            {[
+              { icon: <Truck size={24} className="text-teal-300" />,    title: "Fast Shipping",    desc: "Fast, reliable fulfillment on every order — so your facility never runs short." },
+              { icon: <BadgeCheck size={24} className="text-teal-300" />,   title: "Trusted Brands",  desc: "We stock only industry-leading clinical brands with full ISO certifications." },
+              { icon: <Headset size={24} className="text-teal-300" />, title: "Dedicated Support",   desc: "Expert account managers for every facility to handle complex procurement needs." },
+            ].map(({ icon, title, desc }) => (
+                <div key={title} className="flex flex-col items-center text-center gap-5 px-8 sm:px-12 py-10 sm:py-0">
+                  <div className="w-[50px] h-[50px] rounded-[12px] bg-[rgba(0,193,255,0.2)] flex items-center justify-center shrink-0">
+                    {icon}
+                  </div>
+                  <h3 className="text-[#f9fafc] text-[16px] font-bold leading-[1.3]">{title}</h3>
+                  <p className="text-[rgba(255,255,255,0.65)] text-[14px] leading-[1.65]">{desc}</p>
+                </div>
             ))}
           </div>
         </div>

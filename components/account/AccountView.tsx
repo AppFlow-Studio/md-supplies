@@ -7,8 +7,6 @@ import {
   Package, ChevronRight, LogOut, User,
 } from "lucide-react";
 
-const IMG_DOCTOR = "https://www.figma.com/api/mcp/asset/9128814a-0d38-4c3c-8f89-3c5d2676837c";
-
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
 const MOCK_USER = {
@@ -302,44 +300,49 @@ function LoggedOutView({
   return (
     <>
       {/* Hero */}
-      <section className="w-full bg-white overflow-hidden">
-        <div className="max-w-360 mx-auto flex flex-col lg:flex-row items-stretch">
-          <div className="flex-1 px-4 sm:px-8 lg:px-14 py-16 lg:py-24 flex flex-col justify-center gap-7">
-            <div className="inline-flex self-start items-center px-4 py-2 rounded-full bg-[rgba(0,193,255,0.2)]">
-              <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
-                My Account
-              </span>
-            </div>
-            <h1 className="text-[40px] sm:text-[50px] font-semibold text-navy-900 leading-[1.2] tracking-tight max-w-[540px]">
-              Manage Your Account
-            </h1>
-            <p className="text-gray-500 text-[18px] font-medium leading-[1.65] max-w-[516px]">
-              Track orders, save addresses, and view invoices — all in one place built for healthcare professionals.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={onLoginClick}
-                className="inline-flex items-center justify-center bg-navy-900 text-white text-[20px] font-semibold h-[59px] px-10 hover:bg-navy-950 transition-colors"
-              >
-                Log In
-              </button>
-              <button
-                onClick={onCreateClick}
-                className="inline-flex items-center justify-center border border-navy-900 text-navy-900 text-[20px] font-semibold h-[59px] px-10 hover:bg-neutral-50 transition-colors"
-              >
-                Create Account
-              </button>
-            </div>
-          </div>
+      <section className="relative bg-white overflow-hidden">
+        {/* Background image — right ~67% on desktop, full-width on mobile */}
+        <div className="relative w-full h-[280px] sm:h-[420px] lg:absolute lg:inset-0 lg:left-[33%] lg:h-auto">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <div className="w-full h-[280px] sm:h-[420px] lg:w-[720px] lg:h-auto shrink-0 relative overflow-hidden">
-            <img
-              src={IMG_DOCTOR}
-              alt="Healthcare professional"
-              className="absolute inset-0 size-full object-cover"
-            />
+          <img
+            src="/images/doc_with_ipad.jpg"
+            alt="Healthcare professional using a tablet"
+            className="absolute inset-0 w-[80%] h-full object-center"
+            loading="eager"
+          />
+        </div>
+
+        {/* White content card */}
+        <div className="relative z-10 bg-white mx-4 sm:mx-8 lg:mx-0 lg:ml-[59px] lg:mt-[96px] lg:w-[662px] px-8 lg:px-14 pt-10 pb-12 flex flex-col gap-7">
+          <div className="inline-flex self-start items-center px-4 py-2 rounded-full bg-[rgba(0,193,255,0.2)]">
+            <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
+              My Account
+            </span>
+          </div>
+          <h1 className="text-[40px] sm:text-[50px] font-semibold text-navy-900 leading-[1.2] tracking-tight">
+            Manage<br />Your Account
+          </h1>
+          <p className="text-gray-500 text-[18px] font-medium leading-[1.65] max-w-[516px]">
+            Access your order history, track shipments, manage saved addresses, and update your account details in one centralized clinical dashboard.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={onLoginClick}
+              className="inline-flex items-center justify-center bg-navy-900 text-white text-[20px] font-semibold h-[59px] px-10 hover:bg-navy-950 transition-colors"
+            >
+              Log In
+            </button>
+            <button
+              onClick={onCreateClick}
+              className="inline-flex items-center justify-center border border-navy-900 text-navy-900 text-[20px] font-semibold h-[59px] px-10 hover:bg-neutral-50 transition-colors"
+            >
+              Create Account
+            </button>
           </div>
         </div>
+
+        {/* Desktop height spacer so the image fills the section */}
+        <div className="hidden lg:block h-[140px]" />
       </section>
 
       {/* Trusted By */}

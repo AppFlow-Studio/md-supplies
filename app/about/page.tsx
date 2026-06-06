@@ -3,10 +3,10 @@ import { buildCanonical, buildRobots } from '@/lib/seo'
 import { ShieldCheck, Package, Headphones } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 
-const IMG_HERO      = "https://www.figma.com/api/mcp/asset/4f5cd1d0-fb0a-4e82-b3d4-dcabf50a66bb";
-const IMG_BRANDS    = "https://www.figma.com/api/mcp/asset/b6e08a8d-383d-4c7e-b71f-99f8394d4930";
-const IMG_WAREHOUSE = "https://www.figma.com/api/mcp/asset/72760d7f-cb6d-4f98-8e44-196f9e85cdf9";
-const IMG_PRODUCTS  = "https://www.figma.com/api/mcp/asset/e2b4a902-bc73-43d5-973c-02103610a20a";
+const IMG_HERO      = "/images/about/hero.png";
+const IMG_BRANDS    = "/images/about/brands.png";
+const IMG_WAREHOUSE = "/images/about/warehouse.png";
+const IMG_PRODUCTS  = "/images/about/products.png";
 
 export const metadata = {
   title: 'About Us | MDSupplies',
@@ -57,7 +57,7 @@ export default function AboutPage() {
 
           {/* Right image */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <FadeIn delay={0.2} className="w-full h-[280px] sm:h-[420px] lg:w-[720px] lg:h-auto shrink-0 relative overflow-hidden">
+          <FadeIn delay={0.2} className="w-full h-[280px] sm:h-[420px] lg:w-[720px] lg:h-auto shrink-0 relative overflow-hidden ">
             <img
               src={IMG_HERO}
               alt="Medical supplies laid out on a surface"
@@ -136,7 +136,7 @@ export default function AboutPage() {
             </FadeIn>
 
             {/* Tile 4 – Image */}
-            <FadeIn delay={0.24} className="relative overflow-hidden min-h-[200px]">
+            <FadeIn delay={0.24} className="relative overflow-hidden min-h-[200px] ">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={IMG_BRANDS}
@@ -173,7 +173,7 @@ export default function AboutPage() {
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-16 md:pb-20 lg:pb-24 flex flex-col lg:flex-row gap-5">
 
           {/* Left – warehouse image with text overlay */}
-          <FadeIn delay={0} className="lg:flex-1 relative overflow-hidden min-h-[360px] lg:min-h-[654px]">
+          <FadeIn delay={0} className="lg:flex-1 relative overflow-hidden min-h-[360px] lg:min-h-[654px] bg-neutral-700">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={IMG_WAREHOUSE}
@@ -210,7 +210,7 @@ export default function AboutPage() {
             </FadeIn>
 
             {/* Medical products image */}
-            <FadeIn delay={0.08} className="relative overflow-hidden min-h-[200px]">
+            <FadeIn delay={0.08} className="relative overflow-hidden min-h-[200px] ">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={IMG_PRODUCTS}
