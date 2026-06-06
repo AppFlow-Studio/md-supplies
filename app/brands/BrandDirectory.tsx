@@ -47,7 +47,7 @@ export function BrandDirectory({ brands }: Props) {
   return (
     <div className="flex gap-8 lg:gap-14">
 
-      {/* ── Left Sidebar ── */}
+      {/* ── Left Sidebar (desktop only) ── */}
       <aside className="hidden lg:flex flex-col w-[220px] shrink-0 sticky top-[120px] self-start">
         <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px]">Brand Directory</h2>
         <p className="text-gray-500 text-[15px] tracking-[0.3px] mb-6">Clinical Manufacturers</p>
@@ -89,8 +89,15 @@ export function BrandDirectory({ brands }: Props) {
 
       {/* ── Main content ── */}
       <div className="flex-1 min-w-0">
+
+        {/* Mobile title (hidden on desktop where sidebar handles it) */}
+        <div className="lg:hidden mb-5">
+          <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px]">Brand Directory</h2>
+          <p className="text-gray-500 text-[15px] tracking-[0.3px]">Clinical Manufacturers</p>
+        </div>
+
         {/* Search bar */}
-        <div className="border border-[rgba(102,102,100,0.2)] bg-white flex items-center gap-3 px-4 h-[55px] mb-8">
+        <div className="border border-[rgba(102,102,100,0.2)] bg-white flex items-center gap-3 px-4 h-[55px] mb-4">
           <Search className="text-gray-500 shrink-0" size={15} />
           <input
             type="text"
@@ -100,6 +107,26 @@ export function BrandDirectory({ brands }: Props) {
             className="flex-1 bg-transparent text-[18px] text-gray-500 placeholder:text-[rgba(102,102,100,0.8)] outline-none leading-[30px] font-medium"
           />
         </div>
+
+        {/* Mobile letter nav — horizontal scrollable row (hidden on desktop) */}
+        {availableLetters.length > 0 && (
+          <div className="lg:hidden flex gap-1 overflow-x-auto pb-1 mb-6 scrollbar-none">
+            {availableLetters.map((letter) => (
+              <button
+                key={letter}
+                onClick={() => scrollToLetter(letter)}
+                className={`text-[14px] min-w-[32px] h-[32px] flex items-center justify-center font-medium tracking-[0.28px] transition-colors shrink-0 ${
+                  activeLetter === letter
+                    ? 'bg-navy-900 text-white'
+                    : 'text-navy-900 hover:text-teal-500'
+                }`}
+              >
+                {letter}
+              </button>
+            ))}
+          </div>
+        )}
+
 
         {/* Letter groups */}
         {availableLetters.length === 0 ? (
