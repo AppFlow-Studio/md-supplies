@@ -2,51 +2,19 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  Syringe, Shield, FlaskConical, Scissors, Bandage, Wind,
-  Stethoscope, Accessibility, Pill, Thermometer, Microscope,
-  Bone, Brain, Eye, Ear, HeartPulse, Dna, Hospital, Package,
-  type LucideIcon,
-} from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { ROUTES } from '@/lib/routes';
 
-const ICON_MAP: Array<{ pattern: RegExp; Icon: LucideIcon }> = [
-  { pattern: /needle|syringe/i,              Icon: Syringe },
-  { pattern: /ppe|mask|glove|protect/i,      Icon: Shield },
-  { pattern: /test|diagnostic|rapid/i,       Icon: FlaskConical },
-  { pattern: /suture|surgical|surgery/i,     Icon: Scissors },
-  { pattern: /wound|bandage|dress/i,         Icon: Bandage },
-  { pattern: /respirat|breath|oxygen|lung/i, Icon: Wind },
-  { pattern: /exam|consult|clinic/i,         Icon: Stethoscope },
-  { pattern: /mobil|wheelchair|dme|rehab/i,  Icon: Accessibility },
-  { pattern: /pill|medic|pharma|drug/i,      Icon: Pill },
-  { pattern: /thermo|temperat/i,             Icon: Thermometer },
-  { pattern: /micro|lab|specim/i,            Icon: Microscope },
-  { pattern: /bone|ortho|spine/i,            Icon: Bone },
-  { pattern: /brain|neuro/i,                 Icon: Brain },
-  { pattern: /eye|ophthal|vision/i,          Icon: Eye },
-  { pattern: /ear|audio|hearing/i,           Icon: Ear },
-  { pattern: /heart|cardio|cardiac/i,        Icon: HeartPulse },
-  { pattern: /dna|genetic|genomic/i,         Icon: Dna },
-  { pattern: /hospital|facilit/i,            Icon: Hospital },
-];
-
-function getCategoryIcon(handle: string, title: string): LucideIcon {
-  const haystack = `${handle} ${title}`;
-  return ICON_MAP.find(({ pattern }) => pattern.test(haystack))?.Icon ?? Package;
-}
-
-interface CollectionSummary {
-  id: string;
-  title: string;
-  handle: string;
-  image: { url: string; altText: string | null } | null;
-}
-
-interface Props {
-  collections: CollectionSummary[];
-}
+const CATEGORIES = [
+  { title: 'Needles & Syringes', handle: 'needles-syringes',   icon: '/icons/category-logo-1.svg' },
+  { title: 'PPE',                handle: 'ppe',                 icon: '/icons/category-logo-2.svg' },
+  { title: 'Testing',            handle: 'testing',             icon: '/icons/category-logo-3.svg' },
+  { title: 'Surgical Sutures',   handle: 'surgical-sutures',   icon: '/icons/category-logo-4.svg' },
+  { title: 'Wound Care',         handle: 'wound-care',          icon: '/icons/category-logo-5.svg' },
+  { title: 'Respiratory',        handle: 'respiratory',         icon: '/icons/category-logo-6.svg' },
+  { title: 'Exam Room',          handle: 'exam-room',           icon: '/icons/category-logo-7.svg' },
+  { title: 'Mobility',           handle: 'mobility',            icon: '/icons/category-logo-8.svg' },
+]
 
 const containerVariants = {
   hidden: {},
@@ -58,7 +26,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
-export function PopularCategories({ collections }: Props) {
+export function PopularCategories() {
   return (
     <section className="w-full bg-white">
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14 md:py-16">
@@ -82,26 +50,20 @@ export function PopularCategories({ collections }: Props) {
           whileInView="show"
           viewport={{ once: true }}
         >
-          {collections.map(({ id, title, handle, image }) => (
-            <motion.div key={id} variants={itemVariants}>
+          {CATEGORIES.map(({ title, handle, icon }) => (
+            <motion.div key={handle} variants={itemVariants}>
               <Link
                 href={ROUTES.category(handle)}
                 className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-10 px-4 h-full"
               >
-                <div className="w-14 h-14 flex items-center justify-center overflow-hidden">
-                  {image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={image.url}
-                      alt={image.altText ?? title}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    (() => {
-                      const Icon = getCategoryIcon(handle, title);
-                      return <Icon size={36} strokeWidth={1.5} className="text-navy-900" />;
-                    })()
-                  )}
+                <div className="w-14 h-14 flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={icon}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-8 h-8 object-contain"
+                  />
                 </div>
                 <span className="text-[14px] font-medium text-navy-900 text-center leading-snug">
                   {title}

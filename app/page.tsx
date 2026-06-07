@@ -7,30 +7,17 @@ import { WhyChooseUs }       from "@/components/home/WhyChooseUs";
 import { WholesalePricing }  from "@/components/home/WholesalePricing";
 import { storefrontFetch } from '@/lib/shopify/storefront';
 import { GET_PRODUCTS } from '@/lib/shopify/queries/products';
-import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections';
 import type { CollectionProduct } from '@/lib/shopify/types';
 import { buildMetadata } from '@/lib/seo'
 import { buildWebSiteSchema, jsonLdSafe } from '@/lib/schema'
 
-interface CollectionSummary {
-  id: string;
-  title: string;
-  handle: string;
-  image: { url: string; altText: string | null } | null;
-}
-
 export const metadata = buildMetadata({ pageType: 'homepage' })
 
 export default async function Home() {
-  const [productsData, collectionsData] = await Promise.all([
-    storefrontFetch<{ products: { nodes: CollectionProduct[] } }>(GET_PRODUCTS, {
-      first: 8,
-      sortKey: 'BEST_SELLING',
-    }),
-    storefrontFetch<{ collections: { nodes: CollectionSummary[] } }>(GET_COLLECTIONS, {
-      first: 8,
-    }),
-  ]);
+  const productsData = await storefrontFetch<{ products: { nodes: CollectionProduct[] } }>(
+    GET_PRODUCTS,
+    { first: 8, sortKey: 'BEST_SELLING' },
+  );
 
   const allProducts = productsData.products.nodes;
   const heroProducts = allProducts.slice(0, 4);
@@ -45,7 +32,7 @@ export default async function Home() {
       <HeroSection products={heroProducts} />
       <TrustedBrands />
       <ShopByIndustry />
-      <PopularCategories collections={collectionsData.collections.nodes} />
+      <PopularCategories />
       <PopularProducts products={popularProducts} />
       <WhyChooseUs />
       <WholesalePricing />
