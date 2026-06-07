@@ -5,7 +5,46 @@ interface Props {
   currentPage: number
   hasNext: boolean
   nextCursor: string | null
-  baseUrl: string   // e.g. /category/exam-gloves (no query string)
+  baseUrl: string
+}
+
+type PageItem =
+  | { kind: 'page'; page: number; href: string | null; isCurrent: boolean }
+  | { kind: 'ellipsis'; key: string }
+
+function buildPages(
+  currentPage: number,
+  hasNext: boolean,
+  nextHref: string | null,
+  baseUrl: string,
+): PageItem[] {
+  const items: PageItem[] = []
+
+  if (currentPage === 1) {
+    items.push({ kind: 'page', page: 1, href: null, isCurrent: true })
+    if (hasNext) {
+      items.push({ kind: 'page', page: 2, href: nextHref, isCurrent: false })
+      items.push({ kind: 'ellipsis', key: 'end' })
+    }
+  } else if (currentPage === 2) {
+    items.push({ kind: 'page', page: 1, href: baseUrl, isCurrent: false })
+    items.push({ kind: 'page', page: 2, href: null, isCurrent: true })
+    if (hasNext) {
+      items.push({ kind: 'page', page: 3, href: nextHref, isCurrent: false })
+      items.push({ kind: 'ellipsis', key: 'end' })
+    }
+  } else {
+    // currentPage >= 3
+    items.push({ kind: 'page', page: 1, href: baseUrl, isCurrent: false })
+    items.push({ kind: 'ellipsis', key: 'start' })
+    items.push({ kind: 'page', page: currentPage, href: null, isCurrent: true })
+    if (hasNext) {
+      items.push({ kind: 'page', page: currentPage + 1, href: nextHref, isCurrent: false })
+      items.push({ kind: 'ellipsis', key: 'end' })
+    }
+  }
+
+  return items
 }
 
 export function CategoryPagination({
@@ -16,47 +55,108 @@ export function CategoryPagination({
 }: Props) {
   const hasPrev = currentPage > 1
 
-  // Next href: embed cursor + page number so the server can fetch efficiently.
-  // encodeURIComponent keeps cursor characters safe in the URL.
   const nextHref =
     hasNext && nextCursor
       ? `${baseUrl}?page=${currentPage + 1}&after=${encodeURIComponent(nextCursor)}`
       : null
 
-  // Prev always goes to page 1 (the clean base URL) — we don't store older
-  // cursors, so we can't reconstruct page N-1 for N > 2.
   const prevHref = hasPrev ? baseUrl : null
 
   if (!hasPrev && !hasNext) return null
 
+  const pages = buildPages(currentPage, hasNext, nextHref, baseUrl)
+
   return (
-    <div className="flex items-center justify-center gap-6 pt-12">
+    <div className="flex items-center justify-center gap-2 pt-12">
+      {/* Prev arrow */}
       {prevHref ? (
         <Link
           href={prevHref}
-          className="flex items-center gap-2 border border-navy-900 text-navy-900 text-[14px] font-semibold px-5 h-[44px] hover:bg-neutral-50 transition-colors"
+          aria-label="Previous page"
+          className="flex size-[35px] items-center justify-center text-navy-900 hover:text-navy-950 transition-colors"
         >
-          <ChevronLeft size={16} />
-          Previous
+          <ChevronLeft size={16} strokeWidth={2} />
         </Link>
       ) : (
-        <span className="w-[107px]" />
+        <span
+          aria-disabled="true"
+          className="flex size-[35px] items-center justify-center text-gray-200 cursor-not-allowed"
+        >
+          <ChevronLeft size={16} strokeWidth={2} />
+        </span>
       )}
 
-      <span className="text-navy-900 text-[14px] font-medium min-w-[60px] text-center">
-        Page {currentPage}
-      </span>
+      {/* Page numbers */}
+      <div className="flex items-center gap-1">
+        {pages.map((item) => {
+          if (item.kind === 'ellipsis') {
+            return (
+              <div key={item.key}  className="flex items-center gap-1">
+                <span
 
+                    className="flex size-[35px] items-center justify-center text-[13px] font-semibold tracking-[0.26px] text-black"
+                >
+                ...
+              </span>
+                <span
+                    aria-current="page"
+                    className="flex size-[35px] items-center justify-center  text-[13px] font-semibold tracking-[0.26px]"
+                >
+                10
+              </span>
+              </div>
+            )
+          }
+
+
+
+          if (item.isCurrent) {
+            return (
+              <span
+                key={item.page}
+                aria-current="page"
+                className="flex size-[35px] items-center justify-center rounded-full bg-navy-900 text-[13px] font-semibold tracking-[0.26px] text-white"
+              >
+                {item.page}
+              </span>
+            )
+          }
+
+          return item.href ? (
+            <Link
+              key={item.page}
+              href={item.href}
+              className="flex size-[35px] items-center justify-center text-[13px] font-semibold tracking-[0.26px] text-black hover:text-navy-900 transition-colors"
+            >
+              {item.page}
+            </Link>
+          ) : (
+            <span
+              key={item.page}
+              className="flex size-[35px] items-center justify-center text-[13px] font-semibold tracking-[0.26px] text-black"
+            >
+              {item.page}
+            </span>
+          )
+        })}
+      </div>
+
+      {/* Next arrow */}
       {nextHref ? (
         <Link
           href={nextHref}
-          className="flex items-center gap-2 border border-navy-900 text-navy-900 text-[14px] font-semibold px-5 h-[44px] hover:bg-neutral-50 transition-colors"
+          aria-label="Next page"
+          className="flex size-[35px] items-center justify-center text-navy-900 hover:text-navy-950 transition-colors"
         >
-          Next
-          <ChevronRight size={16} />
+          <ChevronRight size={16} strokeWidth={2} />
         </Link>
       ) : (
-        <span className="w-[107px]" />
+        <span
+          aria-disabled="true"
+          className="flex size-[35px] items-center justify-center text-gray-200 cursor-not-allowed"
+        >
+          <ChevronRight size={16} strokeWidth={2} />
+        </span>
       )}
     </div>
   )

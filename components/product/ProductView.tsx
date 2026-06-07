@@ -8,11 +8,9 @@ import {
 import type { Product, CollectionProduct, ProductVariant } from '@/lib/shopify/types'
 import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
-import { RelatedArticles } from '@/components/blog/RelatedArticles'
-import type { BlogArticleSummary } from '@/lib/shopify/types'
 
-type Tab = 'DESCRIPTION' | 'SPECIFICATIONS' | 'ORDERING INFO' | 'REVIEWS'
-const TABS: Tab[] = ['DESCRIPTION', 'SPECIFICATIONS', 'ORDERING INFO', 'REVIEWS']
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
 
 function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
   return variants.find((v) => v.availableForSale) ?? variants[0]
@@ -62,7 +60,7 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
   )
   const [orderQty, setOrderQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
-  const [activeTab, setActiveTab] = useState<Tab>('DESCRIPTION')
+  const [activeTab, setActiveTab] = useState<Tab>('SPECIFICATIONS')
 
   const price = parseFloat(selectedVariant.price.amount)
   const compareAt = selectedVariant.compareAtPrice
@@ -86,8 +84,11 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
     return 'in_stock'
   })()
 
+  const brandDisplay = product.brandName ?? product.vendor
+
+  const variantSku = selectedVariant.id.split('/').pop() ?? ''
+
   const SPEC_ROWS: { label: string; value: string | null }[] = [
-    { label: 'Brand',            value: product.brandName },
     { label: 'Material',         value: product.material },
     { label: 'Color',            value: product.color },
     { label: 'Sterility',        value: product.sterility },
@@ -103,12 +104,12 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
     { label: 'Tests For',        value: product.testsFor },
     { label: 'Detectable Drugs', value: product.detectableDrugs },
     { label: 'Adulterants',      value: product.adulterants },
-    { label: 'Units Per Order',  value: product.unitsPerOrder },
-    { label: 'Quantity of Units',value: product.quantityOfUnits },
-    { label: 'Order Size',       value: product.orderSize },
   ].filter((r) => r.value != null)
 
-  console.log(product)
+  const hasPackaging = product.unitsPerOrder || product.orderSize || product.quantityOfUnits
+  const hasOptions = product.options.length > 0 &&
+    !(product.options.length === 1 && product.options[0].values.length === 1)
+
   return (
     <>
       {/* Breadcrumb */}
@@ -116,7 +117,7 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
         <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
           <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link>
           {(breadcrumbs ?? []).map((crumb) => (
-            <div  key={`sep-${crumb.label}`}>
+            <div key={`sep-${crumb.label}`}>
               <span className="text-gray-500">›  </span>
               {crumb.href ? (
                 <Link key={crumb.label} href={crumb.href} className="text-gray-500 hover:text-navy-900 transition-colors">
@@ -133,12 +134,12 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
       </div>
 
       {/* Hero */}
-      <section className="bg-[#f9fafc]">
+      <section className="bg-white pt-10 sm:pt-14">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-14 flex flex-col lg:flex-row gap-10 xl:gap-14">
 
           {/* Left – Image gallery */}
           <div className="lg:w-[52%] shrink-0 flex flex-col gap-4">
-            <div className="relative bg-neutral-50 aspect-square overflow-hidden">
+            <div className="relative bg-[#f9faf9] aspect-square overflow-hidden">
               {images[activeImg] ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -156,7 +157,7 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
                   <button
                     key={img.id}
                     onClick={() => setActiveImg(i)}
-                    className={`size-[80px] sm:size-[100px] lg:size-[120px] shrink-0 overflow-hidden bg-neutral-50 transition-colors ${
+                    className={`size-[80px] sm:size-[100px] lg:size-[120px] shrink-0 overflow-hidden bg-[#f9faf9] transition-colors ${
                       activeImg === i
                         ? 'border-[3px] border-navy-900'
                         : 'border border-gray-200 hover:border-navy-900'
@@ -172,27 +173,27 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
 
           {/* Right – Product info */}
           <div className="flex-1 flex flex-col gap-5">
-            {/* Brand + rating placeholder */}
+            {/* Brand + rating */}
             <div className="flex items-center justify-between flex-wrap gap-3">
               <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
-                {product.vendor}
+                {brandDisplay}
               </span>
               <div className="flex items-center gap-1.5">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} size={14} strokeWidth={0} fill={i < 4 ? '#F4B942' : '#e5e7eb'} />
                 ))}
-                <span className="text-gray-500 text-[13px] tracking-[0.26px] ml-1">4.8</span>
+                <span className="text-gray-500 text-[13px] tracking-[0.26px] ml-1">4.8 (127 Reviews)</span>
               </div>
             </div>
 
             {/* Title */}
-            <h1 className="text-navy-900 text-[24px] sm:text-[28px] font-semibold leading-[1.25] tracking-tight">
+            <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
               {product.title}
             </h1>
 
-            {/* SKU placeholder — Shopify exposes this via `variants[0].sku` in Admin API but not Storefront */}
+            {/* SKU */}
             <p className="text-gray-500 text-[13px] tracking-[0.26px]">
-              SKU: {selectedVariant.id.split('/').pop()}
+              SKU: {variantSku}
             </p>
 
             {/* Availability */}
@@ -226,16 +227,18 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
             <div className="h-px bg-gray-200" />
 
             {/* Variant selector */}
-            <VariantSelector
-              options={product.options}
-              variants={product.variants.nodes}
-              selectedVariant={selectedVariant}
-              onSelect={setSelectedVariant}
-            />
+            {hasOptions && (
+              <VariantSelector
+                options={product.options}
+                variants={product.variants.nodes}
+                selectedVariant={selectedVariant}
+                onSelect={setSelectedVariant}
+              />
+            )}
 
             {/* Price */}
             <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-navy-900 text-[30px] font-bold leading-none">
+              <span className="text-black text-[35px] font-extrabold leading-none tracking-[0.7px]">
                 ${price.toFixed(2)}
               </span>
               {compareAt && compareAt > price && (
@@ -250,22 +253,48 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
               )}
             </div>
 
+            {/* UNIT / QUANTITY table */}
+            {hasPackaging && (
+              <div className="border border-[rgba(102,102,100,0.5)]">
+                <div className="bg-navy-900 flex">
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">UNIT</p>
+                  </div>
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">QUANTITY</p>
+                  </div>
+                </div>
+                <div className="flex">
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                      {product.orderSize ?? '—'}
+                    </p>
+                  </div>
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                      {product.unitsPerOrder ?? product.quantityOfUnits ?? '—'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Qty + Add to cart */}
             <div className="flex gap-3 flex-wrap sm:flex-nowrap">
               <div className="flex border border-[rgba(102,102,100,0.5)] h-[56px] w-[167px] shrink-0">
                 <button
                   onClick={() => setOrderQty((q) => Math.max(1, q - 1))}
-                  className="flex-1 flex items-center justify-center text-navy-900 hover:bg-neutral-50 transition-colors"
+                  className="flex-1 flex items-center justify-center text-gray-500 text-[20px] font-semibold hover:bg-neutral-50 transition-colors"
                   aria-label="Decrease quantity"
                 >
                   <Minus size={16} />
                 </button>
-                <div className="flex items-center justify-center w-[55px] border-x border-[rgba(102,102,100,0.5)] text-navy-900 text-[16px] font-semibold">
+                <div className="flex items-center justify-center w-[55px] border-x border-[rgba(102,102,100,0.5)] text-navy-900 text-[18px] font-bold">
                   {orderQty}
                 </div>
                 <button
                   onClick={() => setOrderQty((q) => q + 1)}
-                  className="flex-1 flex items-center justify-center text-navy-900 hover:bg-neutral-50 transition-colors"
+                  className="flex-1 flex items-center justify-center text-gray-500 text-[20px] font-semibold hover:bg-neutral-50 transition-colors"
                   aria-label="Increase quantity"
                 >
                   <Plus size={16} />
@@ -279,21 +308,16 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
               />
             </div>
 
-            {/* Request a quote */}
-            <button className="border border-navy-900 text-navy-900 h-[46px] text-[14px] font-semibold tracking-[0.28px] hover:bg-neutral-50 transition-colors">
-              Request a Quote
-            </button>
-
             {/* Trust badges */}
-            <div className="flex flex-wrap gap-4 pt-1">
+            <div className="flex flex-wrap gap-5 pt-1">
               {[
-                { icon: <ShieldCheck size={16} className="text-teal-500" />, label: 'Quality Certified' },
-                { icon: <Truck size={16} className="text-teal-500" />, label: '2-3 Day Delivery' },
-                { icon: <RotateCcw size={16} className="text-teal-500" />, label: '30-Day Return' },
+                { icon: <ShieldCheck size={15} className="text-gray-500" />, label: 'QUALITY CERTIFIED' },
+                { icon: <Truck size={15} className="text-gray-500" />, label: '2-3 DAY DELIVERY' },
+                { icon: <RotateCcw size={15} className="text-gray-500" />, label: '30-DAY RETURN' },
               ].map(({ icon, label }) => (
                 <div key={label} className="flex items-center gap-2">
                   {icon}
-                  <span className="text-gray-500 text-[12px] font-semibold uppercase tracking-[0.24px]">{label}</span>
+                  <span className="text-gray-500 text-[13px] tracking-[0.26px]">{label}</span>
                 </div>
               ))}
             </div>
@@ -302,7 +326,7 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
       </section>
 
       {/* Tabs */}
-      <section className="bg-white">
+      <section className="bg-white border-t border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
           <div className="border-b border-gray-200">
             <div className="flex overflow-x-auto scrollbar-hide">
@@ -322,49 +346,54 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
             </div>
           </div>
 
-          <div className="py-10 sm:py-14 max-w-[760px]">
-            {activeTab === 'DESCRIPTION' && (
-              <div
-                className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]"
-                dangerouslySetInnerHTML={{ __html: product.descriptionHtml || product.description }}
-              />
-            )}
-
+          <div className="py-10 sm:py-14">
             {activeTab === 'SPECIFICATIONS' && (
-              <div className="flex flex-col gap-6">
-                {(product.options.length > 0 || SPEC_ROWS.length > 0) ? (
-                  <table className="w-full max-w-[600px]">
-                    <tbody>
-                      {product.options.map((opt, i) => (
-                        <tr key={opt.id} className={i % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}>
-                          <td className="py-3 px-4 text-[14px] font-semibold text-navy-900 w-[200px]">
-                            {opt.name}
-                          </td>
-                          <td className="py-3 px-4 text-[14px] text-gray-500">
-                            {opt.values.join(', ')}
-                          </td>
-                        </tr>
-                      ))}
-                      {SPEC_ROWS.map(({ label, value }, i) => (
-                        <tr
-                          key={label}
-                          className={(product.options.length + i) % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}
-                        >
-                          <td className="py-3 px-4 text-[14px] font-semibold text-navy-900 w-[200px]">
-                            {label}
-                          </td>
-                          <td className="py-3 px-4 text-[14px] text-gray-500">{value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="text-gray-500 text-[15px]">No specifications available.</p>
+              <div className="flex flex-col gap-8 max-w-[760px]">
+                {/* Item Number */}
+                <div>
+                  <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Item Number</p>
+                  <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantSku}</p>
+                </div>
+
+                {/* Brand Name */}
+                {brandDisplay && (
+                  <div>
+                    <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Brand Name</p>
+                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{brandDisplay}</p>
+                  </div>
+                )}
+
+                {/* Description */}
+                {(product.descriptionHtml || product.description) && (
+                  <div>
+                    <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Description</p>
+                    <div
+                      className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] prose max-w-none prose-p:mb-4 prose-ul:pl-5 prose-li:mb-1"
+                      dangerouslySetInnerHTML={{ __html: product.descriptionHtml || product.description }}
+                    />
+                  </div>
+                )}
+
+                {/* Specs table */}
+                {SPEC_ROWS.length > 0 && (
+                  <div>
+                    <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-4">Specifications</p>
+                    <table className="w-full max-w-[600px]">
+                      <tbody>
+                        {SPEC_ROWS.map(({ label, value }, i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}>
+                            <td className="py-3 px-4 text-[14px] font-semibold text-navy-900 w-[200px]">{label}</td>
+                            <td className="py-3 px-4 text-[14px] text-gray-500">{value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
 
                 {/* Badges */}
                 {(product.customBadge1 || product.customBadge2 || product.customBadge3) && (
-                  <div className="flex flex-wrap gap-2 pt-2">
+                  <div className="flex flex-wrap gap-2">
                     {[product.customBadge1, product.customBadge2, product.customBadge3]
                       .filter(Boolean)
                       .map((badge) => (
@@ -380,16 +409,49 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
               </div>
             )}
 
-            {activeTab === 'ORDERING INFO' && (
-              <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                Orders placed before 3 PM EST ship same day. Standard delivery is 2–3 business days.
-                Bulk orders of 10+ cases qualify for additional volume discounts. Contact your
-                account manager or use the B2B quote form for custom pricing.
-              </p>
+            {activeTab === 'ORDER PACKAGING' && (
+              <div className="flex flex-col gap-6 max-w-[760px]">
+                {hasPackaging ? (
+                  <table className="w-full max-w-[500px]">
+                    <tbody>
+                      {[
+                        { label: 'Order Size', value: product.orderSize },
+                        { label: 'Units Per Order', value: product.unitsPerOrder },
+                        { label: 'Quantity of Units', value: product.quantityOfUnits },
+                      ]
+                        .filter((r) => r.value != null)
+                        .map(({ label, value }, i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}>
+                            <td className="py-3 px-4 text-[14px] font-semibold text-navy-900 w-[200px]">{label}</td>
+                            <td className="py-3 px-4 text-[14px] text-gray-500">{value}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                    Packaging information not available for this product.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'VENDOR SHIPPING & RETURNS' && (
+              <div className="flex flex-col gap-4 max-w-[760px]">
+                <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                  Orders placed before 3 PM EST ship same day. Standard delivery is 2–3 business days.
+                  Bulk orders of 10+ cases qualify for additional volume discounts. Contact your
+                  account manager or use the B2B quote form for custom pricing.
+                </p>
+                <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                  Returns are accepted within 30 days of delivery for unopened, undamaged items in
+                  original packaging. Contact support to initiate a return authorization.
+                </p>
+              </div>
             )}
 
             {activeTab === 'REVIEWS' && (
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6 max-w-[760px]">
                 <div className="flex items-center gap-4">
                   <span className="text-navy-900 text-[48px] font-bold leading-none">4.8</span>
                   <div className="flex flex-col gap-1">
@@ -410,11 +472,11 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
         </div>
       </section>
 
-      {/* Related products */}
+      {/* Commonly Purchased With */}
       {relatedProducts.length > 0 && (
-        <section className="bg-white border-t border-gray-200">
+        <section className="bg-[#f9faf9] border-t border-gray-200">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
-            <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px] mb-8">
+            <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               Commonly Purchased With
             </h2>
             <div className="flex flex-col sm:flex-row gap-[23px]">
@@ -426,47 +488,40 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
         </section>
       )}
 
+      {/* You May Also Need */}
       {relatedProducts.length > 4 && (
-        <section className="bg-[#f9fafc] border-t border-gray-200">
+        <section className="bg-white border-t border-gray-200">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
-            <h2 className="text-navy-900 text-[20px] font-semibold tracking-[0.4px] mb-8">
+            <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
             <div className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch">
-              {relatedProducts.slice(4).map((item, i, arr) => (
-                <div key={item.id} className="flex items-stretch">
-                  <div className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
-                    <div className="bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                      {item.images.nodes[0] && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.images.nodes[0].url}
-                          alt={item.images.nodes[0].altText ?? item.title}
-                          className="size-full object-contain"
-                        />
-                      )}
-                    </div>
-                    <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
-                      <p className="text-black text-[13px] font-semibold leading-5 line-clamp-2">
-                        {item.title}
-                      </p>
-                      <span className="text-black text-[16px] font-bold">
-                        ${parseFloat(item.priceRange.minVariantPrice.amount).toFixed(2)}
-                      </span>
-                    </div>
+              {relatedProducts.slice(4).map((item) => (
+                <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
+                  <div className="bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
+                    {item.images.nodes[0] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.images.nodes[0].url}
+                        alt={item.images.nodes[0].altText ?? item.title}
+                        className="size-full object-contain"
+                      />
+                    )}
                   </div>
-                  {/*{i < arr.length - 1 && (*/}
-                  {/*  <div className="flex items-center justify-center w-[40px] shrink-0">*/}
-                  {/*    <span className="text-navy-900 text-[20px] font-semibold">+</span>*/}
-                  {/*  </div>*/}
-                  {/*)}*/}
+                  <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
+                    <p className="text-black text-[14px] font-semibold leading-5 line-clamp-2">
+                      {item.title}
+                    </p>
+                    <span className="text-black text-[18px] font-bold">
+                      ${parseFloat(item.priceRange.minVariantPrice.amount).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
       )}
-      {/*<RelatedArticles articles={relatedArticles} heading="From Our Blog" />*/}
     </>
   )
 }

@@ -251,7 +251,17 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             <div className="flex flex-wrap gap-2 mb-6">
               {activeFilterStrings.map((f) => {
                 let label = f
-                try { label = String(Object.values(JSON.parse(f)).join(', ')) } catch { /* keep raw */ }
+                try {
+                  const parsed = JSON.parse(f)
+                  if (parsed?.price) {
+                    const { min, max } = parsed.price
+                    label = max >= 200000
+                      ? `Price: $${Number(min).toLocaleString()}+`
+                      : `Price: $${Number(min).toLocaleString()} – $${Number(max).toLocaleString()}`
+                  } else {
+                    label = String(Object.values(parsed).join(', '))
+                  }
+                } catch { /* keep raw */ }
                 return (
                   <Link
                     key={f}

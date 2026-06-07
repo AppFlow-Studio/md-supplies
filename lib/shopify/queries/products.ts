@@ -38,6 +38,10 @@ export const GET_PRODUCT = `#graphql
         minVariantPrice { amount currencyCode }
         maxVariantPrice { amount currencyCode }
       }
+      compareAtPriceRange {
+        minVariantPrice { amount currencyCode }
+        maxVariantPrice { amount currencyCode }
+      }
       images(first: 20) {
         nodes { id url altText width height }
       }
@@ -46,7 +50,7 @@ export const GET_PRODUCT = `#graphql
           id
           title
           availableForSale
-          
+        
           selectedOptions { name value }
           price { amount currencyCode }
           compareAtPrice { amount currencyCode }
@@ -57,7 +61,7 @@ export const GET_PRODUCT = `#graphql
         name
         values
       }
-     
+
     }
   }
 `;
