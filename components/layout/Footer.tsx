@@ -3,12 +3,20 @@ import { CurrencySwitcher } from './CurrencySwitcher'
 import type { AvailableCountry, SlimCollection } from '@/lib/shopify/types'
 import { ROUTES } from '@/lib/routes'
 
+const EXPLORE = [
+  { label: 'Partners', href: ROUTES.partners },
+  { label: 'Brands', href: ROUTES.brands },
+  { label: 'Industries', href: ROUTES.industries },
+  { label: 'Blog', href: ROUTES.blog },
+  { label: 'Solutions', href: ROUTES.solutions.occ },
+  { label: 'Wholesale / B2B', href: '/b2b' },
+  { label: 'Returns', href: ROUTES.returns },
+]
+
 const COMPANY_HELP = [
   { label: 'About Us', href: ROUTES.about },
-  { label: 'Blog', href: ROUTES.blog },
   { label: 'FAQ', href: ROUTES.faq },
   { label: 'Contact Us', href: ROUTES.contact },
-  { label: 'Wholesale / B2B', href: '/b2b' },
   { label: 'My Account', href: ROUTES.account },
   { label: 'Order Tracking', href: '/tracking' },
   { label: 'Privacy Policy', href: ROUTES.policy('privacy') },
@@ -64,7 +72,7 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
     <footer className="bg-neutral-50 border-t border-blue-50 pt-14 pb-0">
       <div className="max-w-360 mx-auto px-4 md:px-8">
         {/* Main columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-10">
           {/* Brand column */}
           <div className="sm:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-5">
@@ -142,6 +150,22 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
                     className="text-sm text-gray-500 hover:text-teal-500 transition-colors"
                   >
                     {col.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Explore (static) */}
+          <div>
+            <h4 className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-5">
+              Explore
+            </h4>
+            <ul className="space-y-3">
+              {EXPLORE.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm text-gray-500 hover:text-teal-500 transition-colors">
+                    {item.label}
                   </Link>
                 </li>
               ))}

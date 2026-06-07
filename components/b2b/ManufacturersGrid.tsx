@@ -27,7 +27,7 @@ export function ManufacturersGrid({ manufacturers }: Props) {
           className="h-full"
         >
           <Link
-            href={`/brands/${m.vendorSlug}`}
+            href={`/partners/${m.vendorSlug}`}
             className="group flex flex-col bg-white h-full min-h-[258px] hover:shadow-lg transition-shadow duration-200"
           >
             <div className="flex items-center px-10 pt-8 pb-6 h-[110px]">

@@ -2,8 +2,40 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import {
+  Syringe, Shield, FlaskConical, Scissors, Bandage, Wind,
+  Stethoscope, Accessibility, Pill, Thermometer, Microscope,
+  Bone, Brain, Eye, Ear, HeartPulse, Dna, Hospital, Package,
+  type LucideIcon,
+} from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { ROUTES } from '@/lib/routes';
+
+const ICON_MAP: Array<{ pattern: RegExp; Icon: LucideIcon }> = [
+  { pattern: /needle|syringe/i,              Icon: Syringe },
+  { pattern: /ppe|mask|glove|protect/i,      Icon: Shield },
+  { pattern: /test|diagnostic|rapid/i,       Icon: FlaskConical },
+  { pattern: /suture|surgical|surgery/i,     Icon: Scissors },
+  { pattern: /wound|bandage|dress/i,         Icon: Bandage },
+  { pattern: /respirat|breath|oxygen|lung/i, Icon: Wind },
+  { pattern: /exam|consult|clinic/i,         Icon: Stethoscope },
+  { pattern: /mobil|wheelchair|dme|rehab/i,  Icon: Accessibility },
+  { pattern: /pill|medic|pharma|drug/i,      Icon: Pill },
+  { pattern: /thermo|temperat/i,             Icon: Thermometer },
+  { pattern: /micro|lab|specim/i,            Icon: Microscope },
+  { pattern: /bone|ortho|spine/i,            Icon: Bone },
+  { pattern: /brain|neuro/i,                 Icon: Brain },
+  { pattern: /eye|ophthal|vision/i,          Icon: Eye },
+  { pattern: /ear|audio|hearing/i,           Icon: Ear },
+  { pattern: /heart|cardio|cardiac/i,        Icon: HeartPulse },
+  { pattern: /dna|genetic|genomic/i,         Icon: Dna },
+  { pattern: /hospital|facilit/i,            Icon: Hospital },
+];
+
+function getCategoryIcon(handle: string, title: string): LucideIcon {
+  const haystack = `${handle} ${title}`;
+  return ICON_MAP.find(({ pattern }) => pattern.test(haystack))?.Icon ?? Package;
+}
 
 interface CollectionSummary {
   id: string;
@@ -65,9 +97,10 @@ export function PopularCategories({ collections }: Props) {
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    <span className="text-navy-900 text-[24px] font-bold">
-                      {title.charAt(0)}
-                    </span>
+                    (() => {
+                      const Icon = getCategoryIcon(handle, title);
+                      return <Icon size={36} strokeWidth={1.5} className="text-navy-900" />;
+                    })()
                   )}
                 </div>
                 <span className="text-[14px] font-medium text-navy-900 text-center leading-snug">
