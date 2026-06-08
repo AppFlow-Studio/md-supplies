@@ -128,7 +128,7 @@ export function SearchDropdown({ onClose }: Props) {
               />
               <input
                 ref={inputRef}
-                type="search"
+                type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -136,22 +136,20 @@ export function SearchDropdown({ onClose }: Props) {
                 autoComplete="off"
                 className="flex-1 h-[44px] text-[15px] text-navy-900 placeholder:text-gray-400 outline-none bg-transparent"
               />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => { setQuery(''); setResults(EMPTY); inputRef.current?.focus() }}
-                  className="text-gray-300 hover:text-gray-500 transition-colors shrink-0 focus:outline-none"
-                  aria-label="Clear"
-                >
-                  <X size={14} />
-                </button>
-              )}
             </div>
             <button
               type="submit"
               className="bg-navy-900 text-white h-[44px] px-6 text-[13px] font-bold tracking-[0.5px] uppercase hover:bg-navy-950 transition-colors shrink-0 focus:outline-none"
             >
               Search
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-navy-900 transition-colors px-3 focus:outline-none"
+              aria-label="Close search"
+            >
+              <X size={20} />
             </button>
           </form>
 
