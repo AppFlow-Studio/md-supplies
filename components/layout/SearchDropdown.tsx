@@ -5,14 +5,14 @@ import {
   type KeyboardEvent, type FormEvent,
 } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, X, ArrowRight, Tag, Package } from 'lucide-react'
+import { Search, X, ArrowRight, Tag } from 'lucide-react'
 import type { PredictiveResults } from '@/app/api/search/predictive/route'
 
 /** Strip everything except <mark> and <span> (no attributes). */
 function sanitizeStyledText(raw: string): string {
   return raw
-    .replace(/<(?!\/?(?:mark|span)\b)[^>]*>/gi, '') // remove any tag that isn't mark/span
-    .replace(/<(mark|span)\s[^>]*>/gi, '<$1>')       // strip attributes from allowed tags
+    .replace(/<(?!\/?(?:mark|span)\b)[^>]*>/gi, '')
+    .replace(/<(mark|span)\s[^>]*>/gi, '<$1>')
 }
 
 interface Props {
@@ -42,12 +42,10 @@ export function SearchDropdown({ onClose }: Props) {
 
   const debouncedQuery = useDebounce(query, 280)
 
-  // Focus input on mount
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 40)
   }, [])
 
-  // Fetch predictive results
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setResults(EMPTY)
@@ -76,7 +74,6 @@ export function SearchDropdown({ onClose }: Props) {
     results.products.length > 0 ||
     results.collections.length > 0
 
-  // Build flat list for keyboard nav
   const flatItems = [
     ...results.queries.map((q) => ({ type: 'query' as const, href: `/search?q=${encodeURIComponent(q.text)}`, label: q.text })),
     ...results.products.map((p) => ({ type: 'product' as const, href: `/product/${p.handle}`, label: p.title })),
@@ -119,18 +116,18 @@ export function SearchDropdown({ onClose }: Props) {
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/20 z-50"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/30 z-50" onClick={onClose} />
 
       {/* Panel */}
-      <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
-        <div className="max-w-360 mx-auto px-4 md:px-8 py-4">
+      <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-xl z-50">
+        <div className="max-w-360 mx-auto px-4 md:px-8 py-5">
           {/* Input row */}
-          <form onSubmit={handleSubmit} className="flex gap-3 relative">
-            <div className="flex-1 flex items-center border border-gray-200 focus-within:border-navy-900 transition-colors px-4 gap-3 bg-white">
-              <Search size={18} className={`shrink-0 transition-colors ${loading ? 'text-teal-500 animate-pulse' : 'text-gray-400'}`} />
+          <form onSubmit={handleSubmit} className="flex gap-2 relative">
+            <div className="flex-1 flex items-center border-2 border-navy-900 px-4 gap-3 bg-white transition-colors">
+              <Search
+                size={17}
+                className={`shrink-0 transition-colors ${loading ? 'text-teal-500 animate-pulse' : 'text-gray-400'}`}
+              />
               <input
                 ref={inputRef}
                 type="search"
@@ -139,22 +136,22 @@ export function SearchDropdown({ onClose }: Props) {
                 onKeyDown={handleKeyDown}
                 placeholder="Search products, categories…"
                 autoComplete="off"
-                className="flex-1 h-[48px] text-[15px] text-navy-900 placeholder:text-gray-400 outline-none bg-transparent"
+                className="flex-1 h-[46px] text-[15px] text-navy-900 placeholder:text-gray-400 outline-none bg-transparent"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => { setQuery(''); setResults(EMPTY); inputRef.current?.focus() }}
-                  className="text-gray-400 hover:text-navy-900 transition-colors shrink-0"
+                  className="text-gray-400 hover:text-navy-900 transition-colors shrink-0 p-1"
                   aria-label="Clear"
                 >
-                  <X size={16} />
+                  <X size={14} />
                 </button>
               )}
             </div>
             <button
               type="submit"
-              className="bg-navy-900 text-white h-[48px] px-6 text-[14px] font-semibold tracking-[0.28px] uppercase hover:bg-navy-950 transition-colors shrink-0"
+              className="bg-navy-900 text-white h-[46px] px-7 text-[13px] font-bold tracking-[0.5px] uppercase hover:bg-navy-950 transition-colors shrink-0"
             >
               Search
             </button>
@@ -164,7 +161,7 @@ export function SearchDropdown({ onClose }: Props) {
               className="text-gray-400 hover:text-navy-900 transition-colors px-2"
               aria-label="Close search"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </form>
 
@@ -172,12 +169,12 @@ export function SearchDropdown({ onClose }: Props) {
           {showDropdown && hasResults && (
             <div
               ref={dropdownRef}
-              className="mt-2 border border-gray-100 bg-white shadow-md max-h-[420px] overflow-y-auto"
+              className="mt-3 border border-gray-100 bg-white shadow-lg overflow-hidden max-h-[400px] overflow-y-auto"
             >
               {/* Query suggestions */}
               {results.queries.length > 0 && (
-                <div>
-                  <p className="px-4 pt-3 pb-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.6px]">
+                <div className="py-1">
+                  <p className="px-4 pt-2.5 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-[0.8px]">
                     Suggestions
                   </p>
                   {results.queries.map((q) => {
@@ -188,9 +185,9 @@ export function SearchDropdown({ onClose }: Props) {
                         key={q.text}
                         type="button"
                         onClick={() => navigate(`/search?q=${encodeURIComponent(q.text)}`)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
                       >
-                        <Search size={14} className="text-gray-400 shrink-0" />
+                        <Search size={13} className="text-gray-300 shrink-0" />
                         <span
                           className="text-[14px] text-navy-900 [&_mark]:bg-transparent [&_mark]:font-semibold [&_mark]:text-teal-500"
                           dangerouslySetInnerHTML={{ __html: sanitizeStyledText(q.styledText) }}
@@ -203,8 +200,8 @@ export function SearchDropdown({ onClose }: Props) {
 
               {/* Products */}
               {results.products.length > 0 && (
-                <div className={results.queries.length > 0 ? 'border-t border-gray-100' : ''}>
-                  <p className="px-4 pt-3 pb-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.6px]">
+                <div className={`py-1 ${results.queries.length > 0 ? 'border-t border-gray-100' : ''}`}>
+                  <p className="px-4 pt-2.5 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-[0.8px]">
                     Products
                   </p>
                   {results.products.map((p) => {
@@ -215,22 +212,24 @@ export function SearchDropdown({ onClose }: Props) {
                         key={p.id}
                         type="button"
                         onClick={() => navigate(`/product/${p.handle}`)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
                       >
-                        {p.featuredImage ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={p.featuredImage.url}
-                            alt={p.featuredImage.altText ?? p.title}
-                            className="w-8 h-8 object-contain rounded border border-gray-100 shrink-0 bg-white"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 flex items-center justify-center border border-gray-100 rounded shrink-0 bg-neutral-50">
-                            <Package size={14} className="text-gray-300" />
-                          </div>
-                        )}
-                        <span className="text-[14px] text-navy-900 line-clamp-1 flex-1">{p.title}</span>
-                        <ArrowRight size={13} className="text-gray-300 shrink-0" />
+                        <div className="w-9 h-9 shrink-0 border border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
+                          {p.featuredImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={p.featuredImage.url}
+                              alt={p.featuredImage.altText ?? p.title}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-[10px] font-bold text-gray-300 uppercase">
+                              {p.title.slice(0, 2)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[13px] text-navy-900 line-clamp-1 flex-1 leading-snug">{p.title}</span>
+                        <ArrowRight size={12} className="text-gray-300 shrink-0" />
                       </button>
                     )
                   })}
@@ -239,8 +238,8 @@ export function SearchDropdown({ onClose }: Props) {
 
               {/* Collections */}
               {results.collections.length > 0 && (
-                <div className={results.queries.length > 0 || results.products.length > 0 ? 'border-t border-gray-100' : ''}>
-                  <p className="px-4 pt-3 pb-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.6px]">
+                <div className={`py-1 ${results.queries.length > 0 || results.products.length > 0 ? 'border-t border-gray-100' : ''}`}>
+                  <p className="px-4 pt-2.5 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-[0.8px]">
                     Categories
                   </p>
                   {results.collections.map((c) => {
@@ -251,11 +250,11 @@ export function SearchDropdown({ onClose }: Props) {
                         key={c.id}
                         type="button"
                         onClick={() => navigate(`/category/${c.handle}`)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
                       >
-                        <Tag size={14} className="text-gray-400 shrink-0" />
-                        <span className="text-[14px] text-navy-900 flex-1">{c.title}</span>
-                        <ArrowRight size={13} className="text-gray-300 shrink-0" />
+                        <Tag size={13} className="text-gray-300 shrink-0" />
+                        <span className="text-[13px] text-navy-900 flex-1">{c.title}</span>
+                        <ArrowRight size={12} className="text-gray-300 shrink-0" />
                       </button>
                     )
                   })}
@@ -263,14 +262,14 @@ export function SearchDropdown({ onClose }: Props) {
               )}
 
               {/* See all results */}
-              <div className="border-t border-gray-100 px-4 py-3">
+              <div className="border-t border-gray-100 px-4 py-2.5 bg-neutral-50">
                 <button
                   type="button"
                   onClick={() => navigate(`/search?q=${encodeURIComponent(query)}`)}
-                  className="text-[13px] font-semibold text-teal-500 hover:text-teal-600 transition-colors flex items-center gap-1"
+                  className="text-[12px] font-semibold text-teal-500 hover:text-teal-600 transition-colors flex items-center gap-1"
                 >
                   See all results for &ldquo;{query}&rdquo;
-                  <ArrowRight size={13} />
+                  <ArrowRight size={12} />
                 </button>
               </div>
             </div>
@@ -278,8 +277,8 @@ export function SearchDropdown({ onClose }: Props) {
 
           {/* No results state */}
           {showDropdown && !hasResults && !loading && (
-            <div className="mt-2 border border-gray-100 bg-white shadow-md px-4 py-5">
-              <p className="text-[14px] text-gray-500">
+            <div className="mt-3 border border-gray-100 bg-white shadow-lg px-4 py-4">
+              <p className="text-[13px] text-gray-500">
                 No results for &ldquo;<span className="font-semibold text-navy-900">{query}</span>&rdquo;
               </p>
             </div>
