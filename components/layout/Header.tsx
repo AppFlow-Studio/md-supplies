@@ -10,10 +10,10 @@ import {
 import { useCart } from '@/components/store/CartProvider'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
-import type { SlimCollection } from '@/lib/shopify/types'
+import type { MenuItem } from '@/lib/shopify/types'
 
 interface HeaderProps {
-  collections: SlimCollection[]
+  menuItems: MenuItem[]
 }
 
 const STATS = [
@@ -23,19 +23,17 @@ const STATS = [
   { label: '50,000+', sublabel: 'Products', icon: Package },
 ]
 
-const DROPDOWN_NAV_ITEMS = [
-  { label: 'Home Care', href: '/category/home-care', prefix: 'home-care' },
-  { label: 'Mobility', href: '/category/mobility', prefix: 'mobility' },
-  { label: 'Needles/Syringes', href: '/category/needles-syringes', prefix: 'needles-syringes' },
-  { label: 'Testing', href: '/category/testing', prefix: 'testing' },
-] as const
-
-function getSubsFromCollections(collections: SlimCollection[], prefix: string): SlimCollection[] {
-  const fullPrefix = `${prefix}-`
-  return collections.filter((c) => c.handle.startsWith(fullPrefix))
+function titleToSlug(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
-export function Header({ collections }: HeaderProps) {
+function menuItemHref(item: MenuItem): string {
+  if (item.type === 'CATALOG') return ROUTES.categories
+  if (item.title === 'OCC') return ROUTES.solutions.occ
+  return ROUTES.category(titleToSlug(item.title))
+}
+
+export function Header({ menuItems }: HeaderProps) {
   const { cart, openCart } = useCart()
   const cartCount = cart?.totalQuantity ?? 0
   const router = useRouter()
@@ -79,7 +77,8 @@ export function Header({ collections }: HeaderProps) {
     setTimeout(() => searchInputRef.current?.focus(), 50)
   }
 
-  const megaCategories = collections.slice(0, 24)
+  const categoriesItem = menuItems.find((item) => item.type === 'CATALOG')
+  const otherItems = menuItems.filter((item) => item.type !== 'CATALOG')
 
   return (
     <header className="sticky top-0 z-40">
@@ -97,7 +96,7 @@ export function Header({ collections }: HeaderProps) {
         </div>
       </div>
 
-      {/* 2 — Stats bar (4 items) */}
+      {/* 2 — Stats bar */}
       <div className="hidden md:flex bg-neutral-50 border-b border-blue-50 h-11.5 items-center">
         <div className="max-w-360 mx-auto px-8 w-full flex items-center justify-center gap-12 lg:gap-16">
           {STATS.map(({ label, sublabel, icon: Icon }) => (
@@ -124,88 +123,83 @@ export function Header({ collections }: HeaderProps) {
           <div className="hidden md:flex items-center justify-center gap-5 lg:gap-6">
 
             {/* Categories — mega-dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => openDropdown('categories')}
-              onMouseLeave={scheduleClose}
-            >
-              <Link
-                href={ROUTES.categories}
-                className="text-gray-500 text-sm hover:text-navy-900 transition-colors flex items-center gap-0.5 whitespace-nowrap py-6"
+            {categoriesItem && (
+              <div
+                className="relative"
+                onMouseEnter={() => openDropdown('categories')}
+                onMouseLeave={scheduleClose}
               >
-                Categories
-                <ChevronDown
-                  size={12}
-                  className={`mt-0.5 opacity-60 transition-transform duration-150 ${openNav === 'categories' ? 'rotate-180' : ''}`}
-                />
-              </Link>
-
-              {openNav === 'categories' && (
-                <div
-                  className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-[680px] bg-white border border-gray-200 shadow-lg z-50 p-6"
-                  onMouseEnter={() => openDropdown('categories')}
-                  onMouseLeave={scheduleClose}
+                <Link
+                  href={ROUTES.categories}
+                  className="text-gray-500 text-sm hover:text-navy-900 transition-colors flex items-center gap-0.5 whitespace-nowrap py-6"
                 >
-                  <div className="grid grid-cols-4 gap-1">
-                    {megaCategories.map((col) => (
+                  {categoriesItem.title}
+                  <ChevronDown
+                    size={12}
+                    className={`mt-0.5 opacity-60 transition-transform duration-150 ${openNav === 'categories' ? 'rotate-180' : ''}`}
+                  />
+                </Link>
+
+                {openNav === 'categories' && (
+                  <div
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-[680px] bg-white border border-gray-200 shadow-lg z-50 p-6"
+                    onMouseEnter={() => openDropdown('categories')}
+                    onMouseLeave={scheduleClose}
+                  >
+                    <div className="grid grid-cols-4 gap-1">
+                      {categoriesItem.items.map((col) => (
+                        <Link
+                          key={col.id}
+                          href={ROUTES.category(titleToSlug(col.title))}
+                          className="text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors truncate"
+                        >
+                          {col.title}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-gray-100">
                       <Link
-                        key={col.handle}
-                        href={ROUTES.category(col.handle)}
-                        className="text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors truncate"
+                        href={ROUTES.categories}
+                        className="text-[13px] text-teal-500 font-semibold hover:text-teal-600 transition-colors"
                       >
-                        {col.title}
+                        Browse all categories →
                       </Link>
-                    ))}
+                    </div>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-gray-100">
-                    <Link
-                      href={ROUTES.categories}
-                      className="text-[13px] text-teal-500 font-semibold hover:text-teal-600 transition-colors"
-                    >
-                      Browse all categories →
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
-            {/* OCC — simple link */}
-            <Link
-              href={ROUTES.solutions.occ}
-              className="text-gray-500 text-sm hover:text-navy-900 transition-colors whitespace-nowrap"
-            >
-              OCC
-            </Link>
+            {/* Other nav items */}
+            {otherItems.map((item) => {
+              const href = menuItemHref(item)
+              const isOpen = openNav === item.id
+              const hasSubs = item.items.length > 0
 
-            {/* Subcategory dropdown items */}
-            {DROPDOWN_NAV_ITEMS.map((item) => {
-              const subs = getSubsFromCollections(collections, item.prefix)
-              const isOpen = openNav === item.prefix
-
-              if (subs.length === 0) {
+              if (!hasSubs) {
                 return (
                   <Link
-                    key={item.label}
-                    href={item.href}
+                    key={item.id}
+                    href={href}
                     className="text-gray-500 text-sm hover:text-navy-900 transition-colors whitespace-nowrap"
                   >
-                    {item.label}
+                    {item.title}
                   </Link>
                 )
               }
 
               return (
                 <div
-                  key={item.label}
+                  key={item.id}
                   className="relative"
-                  onMouseEnter={() => openDropdown(item.prefix)}
+                  onMouseEnter={() => openDropdown(item.id)}
                   onMouseLeave={scheduleClose}
                 >
                   <Link
-                    href={item.href}
+                    href={href}
                     className="text-gray-500 text-sm hover:text-navy-900 transition-colors flex items-center gap-0.5 whitespace-nowrap py-6"
                   >
-                    {item.label}
+                    {item.title}
                     <ChevronDown
                       size={12}
                       className={`mt-0.5 opacity-60 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
@@ -215,20 +209,20 @@ export function Header({ collections }: HeaderProps) {
                   {isOpen && (
                     <div
                       className="absolute top-full left-0 mt-0 w-[220px] bg-white border border-gray-200 shadow-lg z-50 py-2"
-                      onMouseEnter={() => openDropdown(item.prefix)}
+                      onMouseEnter={() => openDropdown(item.id)}
                       onMouseLeave={scheduleClose}
                     >
                       <Link
-                        href={item.href}
+                        href={href}
                         className="block px-4 py-2 text-[13px] font-semibold text-navy-900 hover:bg-neutral-50 transition-colors"
                       >
-                        All {item.label}
+                        All {item.title}
                       </Link>
                       <div className="border-t border-gray-100 my-1" />
-                      {subs.map((sub) => (
+                      {item.items.map((sub) => (
                         <Link
-                          key={sub.handle}
-                          href={ROUTES.subcategory(item.prefix, sub.handle.slice(item.prefix.length + 1))}
+                          key={sub.id}
+                          href={ROUTES.subcategory(titleToSlug(item.title), titleToSlug(sub.title))}
                           className="block px-4 py-2 text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 transition-colors"
                         >
                           {sub.title}
@@ -306,91 +300,85 @@ export function Header({ collections }: HeaderProps) {
 
             <nav className="px-4 py-3 flex flex-col gap-1">
               {/* Categories mobile */}
-              <div>
-                <button
-                  onClick={() => setMobileExpanded((v) => v === 'categories' ? null : 'categories')}
-                  className="w-full text-gray-500 text-sm py-2.5 border-b border-gray-200 flex items-center justify-between hover:text-navy-900 transition-colors"
-                >
-                  Categories
-                  <ChevronDown
-                    size={14}
-                    className={`opacity-50 transition-transform duration-150 ${mobileExpanded === 'categories' ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                {mobileExpanded === 'categories' && (
-                  <div className="py-2 pl-4 flex flex-col gap-0.5">
-                    {collections.slice(0, 24).map((col) => (
+              {categoriesItem && (
+                <div>
+                  <button
+                    onClick={() => setMobileExpanded((v) => v === 'categories' ? null : 'categories')}
+                    className="w-full text-gray-500 text-sm py-2.5 border-b border-gray-200 flex items-center justify-between hover:text-navy-900 transition-colors"
+                  >
+                    {categoriesItem.title}
+                    <ChevronDown
+                      size={14}
+                      className={`opacity-50 transition-transform duration-150 ${mobileExpanded === 'categories' ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {mobileExpanded === 'categories' && (
+                    <div className="py-2 pl-4 flex flex-col gap-0.5">
+                      {categoriesItem.items.map((col) => (
+                        <Link
+                          key={col.id}
+                          href={ROUTES.category(titleToSlug(col.title))}
+                          onClick={() => setMobileOpen(false)}
+                          className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
+                        >
+                          {col.title}
+                        </Link>
+                      ))}
                       <Link
-                        key={col.handle}
-                        href={ROUTES.category(col.handle)}
+                        href={ROUTES.categories}
                         onClick={() => setMobileOpen(false)}
-                        className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
+                        className="text-teal-500 text-sm py-1.5 font-semibold"
                       >
-                        {col.title}
+                        All categories →
                       </Link>
-                    ))}
-                    <Link
-                      href={ROUTES.categories}
-                      onClick={() => setMobileOpen(false)}
-                      className="text-teal-500 text-sm py-1.5 font-semibold"
-                    >
-                      All categories →
-                    </Link>
-                  </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* OCC mobile */}
-              <Link
-                href={ROUTES.solutions.occ}
-                onClick={() => setMobileOpen(false)}
-                className="text-gray-500 text-sm py-2.5 border-b border-gray-200 hover:text-navy-900 transition-colors"
-              >
-                OCC
-              </Link>
+              {/* Other nav items mobile */}
+              {otherItems.map((item) => {
+                const href = menuItemHref(item)
+                const hasSubs = item.items.length > 0
 
-              {/* Subcategory dropdown items mobile */}
-              {DROPDOWN_NAV_ITEMS.map((item) => {
-                const subs = getSubsFromCollections(collections, item.prefix)
-
-                if (subs.length === 0) {
+                if (!hasSubs) {
                   return (
                     <Link
-                      key={item.label}
-                      href={item.href}
+                      key={item.id}
+                      href={href}
                       onClick={() => setMobileOpen(false)}
                       className="text-gray-500 text-sm py-2.5 border-b border-gray-200 hover:text-navy-900 transition-colors"
                     >
-                      {item.label}
+                      {item.title}
                     </Link>
                   )
                 }
 
                 return (
-                  <div key={item.label}>
+                  <div key={item.id}>
                     <button
-                      onClick={() => setMobileExpanded((v) => v === item.prefix ? null : item.prefix)}
+                      onClick={() => setMobileExpanded((v) => v === item.id ? null : item.id)}
                       className="w-full text-gray-500 text-sm py-2.5 border-b border-gray-200 flex items-center justify-between hover:text-navy-900 transition-colors"
                     >
-                      {item.label}
+                      {item.title}
                       <ChevronDown
                         size={14}
-                        className={`opacity-50 transition-transform duration-150 ${mobileExpanded === item.prefix ? 'rotate-180' : ''}`}
+                        className={`opacity-50 transition-transform duration-150 ${mobileExpanded === item.id ? 'rotate-180' : ''}`}
                       />
                     </button>
-                    {mobileExpanded === item.prefix && (
+                    {mobileExpanded === item.id && (
                       <div className="py-2 pl-4 flex flex-col gap-0.5">
                         <Link
-                          href={item.href}
+                          href={href}
                           onClick={() => setMobileOpen(false)}
                           className="text-navy-900 text-sm py-1.5 font-semibold hover:text-teal-500 transition-colors"
                         >
-                          All {item.label}
+                          All {item.title}
                         </Link>
-                        {subs.map((sub) => (
+                        {item.items.map((sub) => (
                           <Link
-                            key={sub.handle}
-                            href={ROUTES.subcategory(item.prefix, sub.handle.slice(item.prefix.length + 1))}
+                            key={sub.id}
+                            href={ROUTES.subcategory(titleToSlug(item.title), titleToSlug(sub.title))}
                             onClick={() => setMobileOpen(false)}
                             className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
                           >

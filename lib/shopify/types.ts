@@ -265,3 +265,8 @@ export type SlimCollection = {
     description: string | null;
   };
 };
+
+export type MenuItemLeaf = { id: string; title: string; url: string };
+export type MenuSubItem = MenuItemLeaf & { type?: string; items: MenuItemLeaf[] };
+export type MenuItem = MenuSubItem & { type: string; tags: string[]; items: MenuSubItem[] };
+export type ShopifyMenu = { id: string; title: string; items: MenuItem[] };

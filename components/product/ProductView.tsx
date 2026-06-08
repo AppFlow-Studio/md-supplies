@@ -51,10 +51,11 @@ interface BreadcrumbItem {
 interface Props {
   product: Product
   relatedProducts: CollectionProduct[]
+  complementaryProducts: CollectionProduct[]
   breadcrumbs?: BreadcrumbItem[]
 }
 
-export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
+export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     () => getDefaultVariant(product.variants.nodes),
   )
@@ -472,12 +473,28 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
         </div>
       </section>
 
-      {/* Commonly Purchased With */}
-      {relatedProducts.length > 0 && (
+      {/* Frequently Bought With — complementary (manually curated in S&D) */}
+      {complementaryProducts.length > 0 && (
         <section className="bg-[#f9faf9] border-t border-gray-200">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
-              Commonly Purchased With
+              Frequently Bought With
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-[23px]">
+              {complementaryProducts.slice(0, 4).map((p) => (
+                <RelatedProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* You May Also Like — Shopify auto-generated related */}
+      {relatedProducts.length > 0 && (
+        <section className="bg-white border-t border-gray-200">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
+            <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
+              You May Also Like
             </h2>
             <div className="flex flex-col sm:flex-row gap-[23px]">
               {relatedProducts.slice(0, 4).map((p) => (
@@ -488,9 +505,9 @@ export function ProductView({ product, relatedProducts, breadcrumbs }: Props) {
         </section>
       )}
 
-      {/* You May Also Need */}
+      {/* More products — overflow scroll row */}
       {relatedProducts.length > 4 && (
-        <section className="bg-white border-t border-gray-200">
+        <section className="bg-[#f9faf9] border-t border-gray-200">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need

@@ -101,3 +101,15 @@ export const GET_PRODUCTS_BY_VENDOR = `#graphql
     }
   }
 `;
+
+export const GET_PRODUCT_RECS = `#graphql
+  ${PRODUCT_CARD_FRAGMENT}
+  query GetProductRecs($handle: String!) {
+    related: productRecommendations(productHandle: $handle, intent: RELATED) {
+      ...ProductCard
+    }
+    complementary: productRecommendations(productHandle: $handle, intent: COMPLEMENTARY) {
+      ...ProductCard
+    }
+  }
+`;

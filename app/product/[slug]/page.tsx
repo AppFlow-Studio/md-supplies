@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_PRODUCT, GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
+import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
 import { GET_BLOGS_WITH_ARTICLES } from '@/lib/shopify/queries/blog'
 import type { Product, CollectionProduct, ProductMetafields, ShopifyBlog, BlogArticleSummary } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
@@ -77,20 +77,18 @@ export default async function ProductPage({ params }: Props) {
 
   const product = normalizeProduct(rawData.product)
 
-  // Fetch related products (same vendor) and blog articles in parallel
-  const [relatedData, blogsData] = await Promise.all([
-    storefrontFetch<{ products: { nodes: CollectionProduct[] } }>(GET_PRODUCTS_BY_VENDOR, {
-      query: `vendor:"${product.vendor}"`,
-      first: 8,
-      after: null,
-      sortKey: 'BEST_SELLING',
-      reverse: false,
-    }).catch(() => ({ products: { nodes: [] } })),
+  // Fetch Shopify recommendations and blog articles in parallel
+  const [recsData, blogsData] = await Promise.all([
+    storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
+      GET_PRODUCT_RECS,
+      { handle: slug },
+    ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] })),
     storefrontFetch<{ blogs: { nodes: ShopifyBlog[] } }>(GET_BLOGS_WITH_ARTICLES, { first: 6 })
       .catch(() => ({ blogs: { nodes: [] } })),
   ])
 
-  const relatedProducts = relatedData.products.nodes.filter((p) => p.handle !== slug)
+  const relatedProducts = recsData.related
+  const complementaryProducts = recsData.complementary
   const relatedArticles: BlogArticleSummary[] = blogsData.blogs.nodes
     .flatMap((b) => b.articles.nodes)
     .slice(0, 3)
@@ -100,6 +98,7 @@ export default async function ProductPage({ params }: Props) {
       <ProductView
         product={product}
         relatedProducts={relatedProducts}
+        complementaryProducts={complementaryProducts}
       />
     </main>
   )

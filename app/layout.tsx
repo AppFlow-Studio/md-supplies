@@ -11,8 +11,9 @@ import { getCart } from '@/app/actions/cart'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_LOCALIZATION } from '@/lib/shopify/queries/markets'
 import { GET_COLLECTIONS_SLIM } from '@/lib/shopify/queries/collections'
+import { GET_MENU } from '@/lib/shopify/queries/menu'
 import { buildOrganizationSchema, jsonLdSafe } from '@/lib/schema'
-import type { LocalizationData, AvailableCountry, SlimCollection } from '@/lib/shopify/types'
+import type { LocalizationData, AvailableCountry, SlimCollection, ShopifyMenu } from '@/lib/shopify/types'
 
 const manrope = Manrope({
   variable: '--font-manrope',
@@ -30,7 +31,7 @@ export default async function RootLayout({
   const cookieStore = await cookies()
   const currentCountry = cookieStore.get('market_country')?.value ?? 'US'
 
-  const [initialCart, localization, collectionsData] = await Promise.all([
+  const [initialCart, localization, collectionsData, menuData] = await Promise.all([
     getCart(),
     storefrontFetch<{ localization: LocalizationData }>(GET_LOCALIZATION).catch(() => null),
     storefrontFetch<{ collections: { nodes: SlimCollection[] } }>(
@@ -39,10 +40,17 @@ export default async function RootLayout({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { next: { revalidate: 3600 } } as any,
     ).catch(() => ({ collections: { nodes: [] as SlimCollection[] } })),
+    storefrontFetch<{ menu: ShopifyMenu }>(
+      GET_MENU,
+      { handle: 'main-menu' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { next: { revalidate: 3600 } } as any,
+    ).catch(() => ({ menu: { id: '', title: '', items: [] } as ShopifyMenu })),
   ])
 
   const availableCountries: AvailableCountry[] = localization?.localization.availableCountries ?? []
   const collections: SlimCollection[] = collectionsData.collections.nodes
+  const menuItems = menuData.menu?.items ?? []
 
   return (
     <html lang="en" className={`${manrope.variable} h-full antialiased`}>
@@ -53,7 +61,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildOrganizationSchema()) }}
         />
         <CartProvider initialCart={initialCart}>
-          <Header collections={collections} />
+          <Header menuItems={menuItems} />
           {children}
           <Footer
             collections={collections}

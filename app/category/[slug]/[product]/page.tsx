@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_PRODUCT, GET_PRODUCTS } from '@/lib/shopify/queries/products'
+import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
 import { GET_COLLECTION_META } from '@/lib/shopify/queries/collections'
 import type { Product, CollectionProduct } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
@@ -29,25 +29,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CategoryProductPage({ params }: Props) {
   const { slug, product: handle } = await params
 
-  const [productData, collectionData, relatedData] = await Promise.all([
+  const [productData, collectionData] = await Promise.all([
     storefrontFetch<{ product: Product | null }>(GET_PRODUCT, { handle }),
     storefrontFetch<{ collection: { title: string; handle: string } | null }>(
       GET_COLLECTION_META,
       { handle: slug },
     ),
-    storefrontFetch<{ products: { nodes: CollectionProduct[] } }>(GET_PRODUCTS, {
-      first: 9,
-      sortKey: 'BEST_SELLING',
-      reverse: false,
-    }),
   ])
 
   if (!productData.product) notFound()
   if (productData.product.variants.nodes.length === 0) notFound()
 
-  const relatedProducts = relatedData.products.nodes
-    .filter((p) => p.handle !== handle)
-    .slice(0, 8)
+  const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
+    GET_PRODUCT_RECS,
+    { handle },
+  ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
   const breadcrumbs = collectionData.collection
     ? [{ label: collectionData.collection.title, href: `/category/${slug}` }]
@@ -57,7 +53,8 @@ export default async function CategoryProductPage({ params }: Props) {
     <main className="bg-[#f9fafc]">
       <ProductView
         product={productData.product}
-        relatedProducts={relatedProducts}
+        relatedProducts={recsData.related}
+        complementaryProducts={recsData.complementary}
         breadcrumbs={breadcrumbs}
       />
     </main>
