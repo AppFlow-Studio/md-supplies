@@ -2,6 +2,11 @@ import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
 import { mockOCCHub } from '@/lib/mock/occ'
 import { OCCHubPage } from '@/components/b2b/OCCHub'
+import { storefrontFetch } from '@/lib/shopify/storefront'
+import { GET_PRODUCT_CARD_BY_HANDLE } from '@/lib/shopify/queries/products'
+import type { OCCProduct } from '@/types/occ'
+
+export const revalidate = 3600
 
 export const metadata: Metadata = buildMetadata({
   pageType: 'occ',
@@ -9,6 +14,37 @@ export const metadata: Metadata = buildMetadata({
   description: mockOCCHub.seoDescription || mockOCCHub.intro,
 })
 
-export default function OCCPage() {
-  return <OCCHubPage hub={mockOCCHub} />
+interface ProductCardResult {
+  product: {
+    handle: string
+    title:  string
+    priceRange: { minVariantPrice: { amount: string; currencyCode: string } }
+    images: { nodes: { url: string; altText: string | null }[] }
+  } | null
+}
+
+async function fetchLiveProducts(fallbacks: OCCProduct[]): Promise<OCCProduct[]> {
+  const results = await Promise.allSettled(
+    fallbacks.map(({ handle }) =>
+      storefrontFetch<ProductCardResult>(GET_PRODUCT_CARD_BY_HANDLE, { handle })
+    )
+  )
+
+  return results.map((result, i) => {
+    const fallback = fallbacks[i]
+    if (result.status === 'rejected' || !result.value.product) return fallback
+    const p = result.value.product
+    return {
+      handle:  p.handle,
+      title:   p.title,
+      image:   p.images.nodes[0]?.url ?? fallback.image,
+      price:   Math.round(parseFloat(p.priceRange.minVariantPrice.amount) * 100),
+    }
+  })
+}
+
+export default async function OCCPage() {
+  const liveProducts = await fetchLiveProducts(mockOCCHub.eligibleProducts)
+
+  return <OCCHubPage hub={{ ...mockOCCHub, eligibleProducts: liveProducts }} />
 }

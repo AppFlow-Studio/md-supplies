@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useRef, useEffect, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
+
 import {
   ShieldCheck, Truck, Package, ChevronDown,
   Search, User, ShoppingCart, Menu, X, Building2,
 } from 'lucide-react'
+
 import { useCart } from '@/components/store/CartProvider'
+import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
 import type { MenuItem } from '@/lib/shopify/types'
@@ -36,15 +38,11 @@ function menuItemHref(item: MenuItem): string {
 export function Header({ menuItems }: HeaderProps) {
   const { cart, openCart } = useCart()
   const cartCount = cart?.totalQuantity ?? 0
-  const router = useRouter()
-
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const [openNav, setOpenNav] = useState<string | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -63,19 +61,7 @@ export function Header({ menuItems }: HeaderProps) {
     closeTimer.current = setTimeout(() => setOpenNav(null), 150)
   }
 
-  const handleSearchSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    const q = searchQuery.trim()
-    if (!q) return
-    router.push(`/search?q=${encodeURIComponent(q)}`)
-    setSearchOpen(false)
-    setSearchQuery('')
-  }
-
-  const openSearch = () => {
-    setSearchOpen(true)
-    setTimeout(() => searchInputRef.current?.focus(), 50)
-  }
+  const openSearch = () => setSearchOpen(true)
 
   const categoriesItem = menuItems.find((item) => item.type === 'CATALOG')
   const otherItems = menuItems.filter((item) => item.type !== 'CATALOG')
@@ -403,40 +389,9 @@ export function Header({ menuItems }: HeaderProps) {
         )}
       </nav>
 
-      {/* Search overlay */}
+      {/* Search overlay with predictive dropdown */}
       {searchOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/20 z-50"
-            onClick={() => setSearchOpen(false)}
-          />
-          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-md z-50 px-4 md:px-8 py-4">
-            <form onSubmit={handleSearchSubmit} className="max-w-360 mx-auto flex gap-3">
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products…"
-                className="flex-1 h-[48px] border border-gray-200 px-4 text-[15px] text-navy-900 placeholder:text-gray-500 outline-none focus:border-navy-900 transition-colors"
-              />
-              <button
-                type="submit"
-                className="bg-navy-900 text-white h-[48px] px-6 text-[14px] font-semibold tracking-[0.28px] uppercase hover:bg-navy-950 transition-colors"
-              >
-                Search
-              </button>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(false)}
-                className="text-gray-500 hover:text-navy-900 transition-colors px-2"
-                aria-label="Close search"
-              >
-                <X size={20} />
-              </button>
-            </form>
-          </div>
-        </>
+        <SearchDropdown onClose={() => setSearchOpen(false)} />
       )}
     </header>
   )

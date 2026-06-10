@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ProductImage } from "@/lib/shopify/types";
+import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
 
 export interface BlogPost {
   slug: string;
@@ -39,8 +40,8 @@ export function BlogCard({ slug, date, title, excerpt, image }: BlogPost) {
         <p className="text-gray-500 text-[14px] leading-[1.5] line-clamp-2 flex-1">
           {excerpt || " "}
         </p>
-        <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] shrink-0">
-          Read more →
+        <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] shrink-0 inline-flex items-center gap-1">
+          Read more <AnimatedArrow />
         </span>
       </div>
     </Link>
