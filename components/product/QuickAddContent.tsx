@@ -35,7 +35,7 @@ export function QuickAddContent({ product, titleId }: Props) {
     <div className="flex flex-col gap-5">
       {/* Product image + title */}
       <div className="flex gap-3 items-start">
-        <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-neutral-50 border border-gray-200">
+        <div className="w-16 h-16 shrink-0 overflow-hidden bg-neutral-50 border border-gray-200">
           <img
             src={product.image.url}
             alt={product.image.altText}
@@ -62,7 +62,7 @@ export function QuickAddContent({ product, titleId }: Props) {
             id="quick-add-variant"
             value={selectedVariantId}
             onChange={(e) => { setSelectedVariantId(e.target.value); setAdded(false) }}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-navy-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full border border-gray-200 px-3 py-2 text-sm text-navy-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             {product.variants.map((v) => (
               <option key={v.id} value={v.id} disabled={!v.available}>
@@ -76,7 +76,7 @@ export function QuickAddContent({ product, titleId }: Props) {
       {/* Quantity */}
       <div>
         <label className="block text-sm font-medium text-navy-900 mb-1.5">Quantity</label>
-        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden w-fit">
+        <div className="flex items-center border border-gray-200 overflow-hidden w-fit">
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             aria-label="Decrease quantity"
@@ -101,7 +101,7 @@ export function QuickAddContent({ product, titleId }: Props) {
       <button
         onClick={handleAdd}
         disabled={!canAdd || added}
-        className={`w-full py-3 px-4 rounded-lg text-sm font-semibold transition-colors ${
+        className={`w-full py-3 px-4 text-sm font-semibold transition-colors ${
           added
             ? 'bg-green-600 text-white cursor-default'
             : canAdd

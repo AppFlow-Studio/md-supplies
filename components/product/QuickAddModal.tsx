@@ -75,7 +75,7 @@ export function QuickAddModal({ product, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl"
+        className="relative z-10 w-full sm:max-w-md bg-white  shadow-xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-200">
@@ -83,7 +83,7 @@ export function QuickAddModal({ product, onClose }: Props) {
           <button
             onClick={onClose}
             aria-label="Close quick add"
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 text-gray-500 transition-colors"
+            className="w-8 h-8 flex items-center justify-center  hover:bg-neutral-100 text-gray-500 transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

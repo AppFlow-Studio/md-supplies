@@ -44,7 +44,6 @@ export function ShopifyQuickAddButton({ product }: { product: CollectionProduct 
   const cardData = toCardData(product)
 
   function handleOpen(e: React.MouseEvent) {
-    e.preventDefault()
     e.stopPropagation()
     setIsOpen(true)
   }
@@ -58,6 +57,7 @@ export function ShopifyQuickAddButton({ product }: { product: CollectionProduct 
     <>
       <button
         ref={triggerRef}
+        type="button"
         onClick={handleOpen}
         aria-label={`Quick add ${product.title}`}
         className="absolute top-2 right-2 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-navy-900 hover:text-white text-navy-900"
