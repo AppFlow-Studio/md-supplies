@@ -91,20 +91,13 @@ export function CategoryPagination({
         {pages.map((item) => {
           if (item.kind === 'ellipsis') {
             return (
-              <div key={item.key}  className="flex items-center gap-1">
-                <span
-
-                    className="flex size-[35px] items-center justify-center text-[13px] font-semibold tracking-[0.26px] text-black"
-                >
-                ...
+              <span
+                key={item.key}
+                aria-hidden="true"
+                className="flex size-[35px] items-center justify-center text-[13px] font-semibold tracking-[0.26px] text-black"
+              >
+                …
               </span>
-                <span
-                    aria-current="page"
-                    className="flex size-[35px] items-center justify-center  text-[13px] font-semibold tracking-[0.26px]"
-                >
-                10
-              </span>
-              </div>
             )
           }
 

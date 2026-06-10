@@ -102,6 +102,21 @@ export const GET_PRODUCTS_BY_VENDOR = `#graphql
   }
 `;
 
+export const GET_PRODUCT_CARD_BY_HANDLE = `#graphql
+  query GetProductCardByHandle($handle: String!) {
+    product(handle: $handle) {
+      handle
+      title
+      priceRange {
+        minVariantPrice { amount currencyCode }
+      }
+      images(first: 1) {
+        nodes { url altText }
+      }
+    }
+  }
+`;
+
 export const GET_PRODUCT_RECS = `#graphql
   ${PRODUCT_CARD_FRAGMENT}
   query GetProductRecs($handle: String!) {

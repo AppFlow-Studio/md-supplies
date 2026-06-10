@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { BlogCard } from "./BlogCard";
 import { Pagination } from "./Pagination";
@@ -24,18 +24,24 @@ const itemVariants = {
 
 export function BlogGrid({ articles }: Props) {
   const [page, setPage] = useState(1);
+  const gridRef = useRef<HTMLDivElement>(null);
   const totalPages = Math.ceil(articles.length / POSTS_PER_PAGE);
   const start = (page - 1) * POSTS_PER_PAGE;
   const visible = articles.slice(start, start + POSTS_PER_PAGE);
 
+  function goToPage(p: number) {
+    setPage(p);
+    gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
-    <div className="flex flex-col gap-10">
+    <div ref={gridRef} className="flex flex-col gap-10">
       <motion.div
+        key={page}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[22px] gap-y-[28px] items-stretch"
         variants={containerVariants}
         initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
+        animate="show"
       >
         {visible.map((article) => (
           <motion.div key={article.id} variants={itemVariants} className="h-full">
@@ -55,7 +61,7 @@ export function BlogGrid({ articles }: Props) {
       </motion.div>
 
       {totalPages > 1 && (
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={goToPage} />
       )}
     </div>
   );

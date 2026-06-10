@@ -15,7 +15,7 @@ export default function FaqPage() {
     <main>
 
       {/* ── Hero + Accordion ── */}
-      <section className="w-full bg-neutral-100">
+      <section className="w-full bg-neutral-100 overflow-x-hidden">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-16 md:py-20 lg:py-24">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 xl:gap-20">
 
@@ -57,7 +57,7 @@ export default function FaqPage() {
             </div>
 
             {/* Right: accordion on white card */}
-            <FadeIn delay={0.1} className="flex-1 min-w-0">
+            <FadeIn delay={0.1} className="flex-1 min-w-0 lg:max-[1449px]:-mr-14">
               <div className="bg-white">
                 <FaqAccordion />
               </div>

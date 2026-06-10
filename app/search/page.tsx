@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
 import Link from 'next/link'
-import { Search, X, ChevronRight } from 'lucide-react'
+import { X } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { SEARCH_PRODUCTS } from '@/lib/shopify/queries/search'
-import { ProductGrid } from '@/components/category/ProductGrid'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { SearchSort } from '@/components/search/SearchSort'
 import { SearchFilterDrawer } from '@/components/search/SearchFilterDrawer'
+import { SearchBarForm } from '@/components/search/SearchBarForm'
+import { SearchResultsSection } from '@/components/search/SearchResultsSection'
 import type { CollectionProduct, CollectionFilter, PageInfo } from '@/lib/shopify/types'
 
 export const dynamic = 'force-dynamic'
@@ -75,6 +76,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const q = sp.q ?? ''
 
   const activeFilterStrings = parseFilterParam(sp.filter)
+  const parsedFilters = parseFilters(activeFilterStrings)
   const { sortKey, reverse } = parseSortKey(sp.sort)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
 
@@ -91,7 +93,7 @@ export default async function SearchPage({ searchParams }: Props) {
         after: sp.after ?? null,
         sortKey,
         reverse,
-        filters: parseFilters(activeFilterStrings),
+        filters: parsedFilters,
       })
       products = data.search.nodes
       totalCount = data.search.totalCount
@@ -112,15 +114,6 @@ export default async function SearchPage({ searchParams }: Props) {
     return qs ? `/search?${qs}` : '/search'
   }
 
-  const loadMoreUrl = (() => {
-    const p = new URLSearchParams()
-    if (q) p.set('q', q)
-    if (sp.sort) p.set('sort', sp.sort)
-    activeFilterStrings.forEach((f) => p.append('filter', f))
-    if (pageInfo.endCursor) p.set('after', pageInfo.endCursor)
-    return `/search?${p.toString()}`
-  })()
-
   const clearFiltersUrl = (() => {
     const p = new URLSearchParams()
     if (q) p.set('q', q)
@@ -129,30 +122,10 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <main className="bg-[#f9fafc] min-h-screen">
-      {/* Search bar */}
+      {/* Search bar — keyed so controlled input resets on each new query */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
-          <form method="GET" action="/search">
-            <div className="flex gap-3 max-w-[600px]">
-              <div className="flex-1 flex items-center border border-gray-200 focus-within:border-navy-900 transition-colors px-4 gap-3 bg-white">
-                <Search size={18} className="text-gray-500 shrink-0" />
-                <input
-                  type="search"
-                  name="q"
-                  defaultValue={q}
-                  placeholder="Search medical supplies…"
-                  className="flex-1 h-[48px] text-[15px] text-navy-900 placeholder:text-gray-500 outline-none bg-transparent"
-                  autoFocus
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-navy-900 text-white h-[48px] px-6 text-[14px] font-semibold tracking-[0.28px] uppercase hover:bg-navy-950 transition-colors shrink-0"
-              >
-                Search
-              </button>
-            </div>
-          </form>
+          <SearchBarForm key={q} defaultQuery={q} />
         </div>
       </div>
 
@@ -229,63 +202,19 @@ export default async function SearchPage({ searchParams }: Props) {
             />
           )}
 
-          {/* Results grid */}
-          {q.trim() && products.length > 0 && (
-            <ProductGrid
-              products={products}
-              emptyStateHref={clearFiltersUrl}
-              emptyStateMessage={`No results for "${q}"`}
+          {/* Results grid + load more — keyed so client state resets on filter/sort change */}
+          {q.trim() && (
+            <SearchResultsSection
+              key={`${q}|${sp.sort ?? ''}|${activeFilterStrings.join(',')}`}
+              initialProducts={products}
+              initialPageInfo={pageInfo}
+              q={q}
+              sortKey={sortKey}
+              reverse={reverse}
+              filters={parsedFilters}
+              clearFiltersUrl={clearFiltersUrl}
+              isFiltered={isFiltered}
             />
-          )}
-
-          {/* Load more — when filtered/sorted */}
-          {isFiltered && pageInfo.hasNextPage && (
-            <div className="flex items-center justify-center pt-12">
-              <Link
-                href={loadMoreUrl}
-                className="flex items-center gap-2 border border-navy-900 text-navy-900 text-[14px] font-semibold px-5 h-[44px] hover:bg-neutral-50 transition-colors"
-              >
-                Load More
-                <ChevronRight size={16} />
-              </Link>
-            </div>
-          )}
-
-          {/* Empty state — query but no results */}
-          {q.trim() && products.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 gap-6">
-              <Search size={48} className="text-gray-300" />
-              <div className="text-center">
-                <p className="text-navy-900 text-[20px] font-semibold mb-2">
-                  No results for &ldquo;{q}&rdquo;
-                </p>
-                <p className="text-gray-500 text-[15px]">
-                  {isFiltered
-                    ? 'Try removing some filters or adjusting your search.'
-                    : 'Try a different search term or browse our categories below.'}
-                </p>
-              </div>
-              {isFiltered ? (
-                <Link
-                  href={clearFiltersUrl}
-                  className="border border-navy-900 text-navy-900 text-[14px] font-semibold px-5 h-[40px] flex items-center hover:bg-neutral-50 transition-colors"
-                >
-                  Clear filters
-                </Link>
-              ) : (
-                <div className="flex flex-wrap gap-3 justify-center">
-                  {SUGGESTED.map(({ label, href }) => (
-                    <Link
-                      key={label}
-                      href={href}
-                      className="border border-navy-900 text-navy-900 text-[14px] font-semibold px-5 h-[40px] flex items-center hover:bg-neutral-50 transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
           )}
 
           {/* No query state */}
