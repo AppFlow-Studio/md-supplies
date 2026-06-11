@@ -20,6 +20,7 @@ export interface PartnerRelatedCategory {
 export interface Partner {
   slug: string
   name: string
+  vendorName: string    // exact Shopify product.vendor string (e.g. "Dynarex")
   type: 'brand' | 'vendor'
   isActive: boolean
   description: string
