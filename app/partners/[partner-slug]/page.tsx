@@ -4,7 +4,10 @@ import Link from 'next/link'
 import { ArrowLeft, Package, Tag } from 'lucide-react'
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { buildMetadata } from '@/lib/seo'
-import { getPartnerBySlug, mockPartners } from '@/lib/mock/partners'
+import { getPartnerBySlug, PARTNERS } from '@/lib/partners'
+import { storefrontFetch } from '@/lib/shopify/storefront'
+import { GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
+import type { CollectionProduct } from '@/lib/shopify/types'
 import { FeaturedProductCard } from '@/components/b2b/FeaturedProductCard'
 import { WholesalePricing } from '@/components/home/WholesalePricing'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
@@ -16,8 +19,25 @@ interface Props {
   params: Promise<{ 'partner-slug': string }>
 }
 
+async function fetchFeaturedProducts(vendorName: string): Promise<CollectionProduct[]> {
+  try {
+    const data = await storefrontFetch<{
+      products: { nodes: CollectionProduct[] }
+    }>(GET_PRODUCTS_BY_VENDOR, {
+      query: `vendor:"${vendorName}"`,
+      first: 4,
+      after: null,
+      sortKey: 'BEST_SELLING',
+      reverse: false,
+    })
+    return data.products.nodes
+  } catch {
+    return []
+  }
+}
+
 export function generateStaticParams() {
-  return mockPartners
+  return PARTNERS
     .filter((p) => p.isActive)
     .map((p) => ({ 'partner-slug': p.slug }))
 }
@@ -45,9 +65,12 @@ export default async function PartnerDetailPage({ params }: Props) {
   const pageUrl = `${SITE_URL}/partners/${partner.slug}`
   const pageDescription = partner.seoDescription || partner.description
 
-  const otherPartners = mockPartners
-    .filter((p) => p.isActive && p.slug !== partner.slug)
-    .slice(0, 3)
+  const [featuredProducts, otherPartners] = await Promise.all([
+    fetchFeaturedProducts(partner.vendorName),
+    Promise.resolve(
+      PARTNERS.filter((p) => p.isActive && p.slug !== partner.slug).slice(0, 3)
+    ),
+  ])
 
   return (
     <main className="bg-white">
@@ -167,7 +190,7 @@ export default async function PartnerDetailPage({ params }: Props) {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {partner.relatedBrands.map((brandSlug) => {
-                      const brand = mockPartners.find((p) => p.slug === brandSlug)
+                      const brand = PARTNERS.find((p) => p.slug === brandSlug)
                       return (
                         <Link
                           key={brandSlug}
@@ -183,7 +206,7 @@ export default async function PartnerDetailPage({ params }: Props) {
               </FadeIn>
             )}
 
-            {partner.featuredProducts.length > 0 && (
+            {featuredProducts.length > 0 && (
               <FadeIn delay={0.18}>
                 <div className="mt-10 pt-10 border-t border-gray-200">
                   <div className="flex items-center justify-between mb-6">
@@ -191,15 +214,25 @@ export default async function PartnerDetailPage({ params }: Props) {
                       Featured Products
                     </p>
                     <Link
-                      href={`/brands/${partner.slug}`}
+                      href={`/partners/${partner.slug}/products`}
                       className="group text-teal-500 text-[14px] font-semibold flex items-center gap-1"
                     >
                       View all <AnimatedArrow size={14} />
                     </Link>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {partner.featuredProducts.map((p) => (
-                      <FeaturedProductCard key={p.handle} product={p} />
+                    {featuredProducts.map((p) => (
+                      <FeaturedProductCard
+                        key={p.handle}
+                        product={{
+                          handle: p.handle,
+                          title: p.title,
+                          image: p.images.nodes[0]?.url ?? '',
+                          price: Math.round(
+                            parseFloat(p.priceRange.minVariantPrice.amount) * 100
+                          ),
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -236,7 +269,7 @@ export default async function PartnerDetailPage({ params }: Props) {
                   Browse the full {partner.name} catalog on MDSupplies at wholesale pricing for healthcare providers.
                 </p>
                 <Link
-                  href={`/brands/${partner.slug}`}
+                  href={`/partners/${partner.slug}/products`}
                   className="bg-teal-500 text-white text-[14px] font-semibold px-5 py-3 hover:bg-teal-400 transition-colors text-center"
                 >
                   Browse Products
