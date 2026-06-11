@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Package } from 'lucide-react'
+import { ROUTES } from '@/lib/routes'
 
 interface Props {
   product: {
@@ -17,7 +18,7 @@ function formatCents(cents: number): string {
 export function FeaturedProductCard({ product }: Props) {
   return (
     <Link
-      href={`/products/${product.handle}`}
+      href={ROUTES.product(product.handle)}
       className="group flex flex-col h-full overflow-hidden bg-white border border-gray-100 hover:border-teal-400 hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}

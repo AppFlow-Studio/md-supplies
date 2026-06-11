@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { ProductCardData } from '@/types/product'
 import { ProductBadges } from './ProductBadges'
 import { ProductCardClient } from './ProductCardClient'
+import { ROUTES } from '@/lib/routes'
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -20,7 +21,7 @@ export function ProductCard({ product }: Props) {
     >
       {/* Card link covers image + info */}
       <Link
-        href={`/products/${product.handle}`}
+        href={ROUTES.product(product.handle)}
         className="flex flex-col flex-1 p-3 gap-3"
         tabIndex={0}
       >
