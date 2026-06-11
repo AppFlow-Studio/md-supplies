@@ -11,7 +11,6 @@ const STATIC_URLS: SitemapEntry[] = [
   { url: `${SITE_URL}/partners`, changeFrequency: 'monthly', priority: 0.7 },
   { url: `${SITE_URL}/solutions/occ`, changeFrequency: 'monthly', priority: 0.7 },
   { url: `${SITE_URL}/blog`, changeFrequency: 'weekly', priority: 0.7 },
-  { url: `${SITE_URL}/brands`, changeFrequency: 'monthly', priority: 0.6 },
   { url: `${SITE_URL}/about`, changeFrequency: 'monthly', priority: 0.5 },
   { url: `${SITE_URL}/contact`, changeFrequency: 'monthly', priority: 0.5 },
   { url: `${SITE_URL}/faq`, changeFrequency: 'monthly', priority: 0.5 },
