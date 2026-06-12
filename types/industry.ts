@@ -25,6 +25,7 @@ export interface Industry {
   name: string
   isPopulated: boolean
   intro: string
+  buyerType?: string
   heroImage?: { url: string; altText: string }
   relevantCategories: IndustryCategory[]
   relevantSubcategories: IndustryCategory[]
