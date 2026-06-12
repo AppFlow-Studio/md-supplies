@@ -4,6 +4,7 @@ import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
 import { GET_COLLECTION_META } from '@/lib/shopify/queries/collections'
 import type { Product, CollectionProduct } from '@/lib/shopify/types'
+import { buildMetadata } from '@/lib/seo'
 import { ProductView } from '@/components/product/ProductView'
 
 export const revalidate = 30
@@ -16,13 +17,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { product: handle } = await params
   try {
     const data = await storefrontFetch<{ product: Product | null }>(GET_PRODUCT, { handle })
-    if (!data.product) return { title: 'Product | MD Supplies' }
-    return {
-      title: `${data.product.title} | MD Supplies`,
-      description: data.product.description.slice(0, 155) || `Buy ${data.product.title} at wholesale prices`,
-    }
+    if (!data.product) return buildMetadata({ pageType: 'product', slug: handle })
+    const p = data.product
+    return buildMetadata({
+      pageType: 'product',
+      title: p.title,
+      description: p.description.slice(0, 155) || `Buy ${p.title} at wholesale prices from MDSupplies`,
+      slug: handle,
+      image: p.images.nodes[0]?.url,
+    })
   } catch {
-    return { title: 'Product | MD Supplies' }
+    return buildMetadata({ pageType: 'product', slug: handle })
   }
 }
 
