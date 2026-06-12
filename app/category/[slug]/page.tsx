@@ -128,9 +128,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     getRelatedCategories(slug),
   ])
 
-  const clusterLinks = getClusterLinks(slug)
-
   if (!data.collection) notFound()
+
+  const clusterLinks = getClusterLinks(slug)
 
   const { collection } = data
   const products = collection.products.nodes
@@ -342,22 +342,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </section>
       )}
 
-      {/* ── About section — dark navy background ── */}
-      {collection.descriptionHtml && (
-        <section className="bg-navy-900 py-16 sm:py-20">
-          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 text-center">
-            <h2 className="text-white text-[36px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-8">
-              About {collection.title}
-            </h2>
-            <div
-              className="prose prose-invert max-w-[880px] mx-auto text-[15px] leading-[1.85] text-white/75
-                prose-headings:text-white prose-a:text-[#0086b1] prose-strong:text-white"
-              dangerouslySetInnerHTML={{ __html: collection.descriptionHtml }}
-            />
-          </div>
-        </section>
-      )}
-
       {/* ── Cluster: Industries & Partners ── */}
       {clusterLinks && (clusterLinks.industryLinks.length > 0 || clusterLinks.partnerLinks.length > 0 || clusterLinks.occEligible) && (
         <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
@@ -412,6 +396,22 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                 </Link>
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* ── About section — dark navy background ── */}
+      {collection.descriptionHtml && (
+        <section className="bg-navy-900 py-16 sm:py-20">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 text-center">
+            <h2 className="text-white text-[36px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-8">
+              About {collection.title}
+            </h2>
+            <div
+              className="prose prose-invert max-w-[880px] mx-auto text-[15px] leading-[1.85] text-white/75
+                prose-headings:text-white prose-a:text-[#0086b1] prose-strong:text-white"
+              dangerouslySetInnerHTML={{ __html: collection.descriptionHtml }}
+            />
           </div>
         </section>
       )}
