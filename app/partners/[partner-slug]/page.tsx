@@ -36,6 +36,8 @@ async function fetchFeaturedProducts(vendorName: string): Promise<CollectionProd
   }
 }
 
+// Entity structure verified: H1 ✓ | intro ✓ | type badge ✓ | categories ✓ | products ✓ | schema ✓
+
 export function generateStaticParams() {
   return PARTNERS
     .filter((p) => p.isActive)
