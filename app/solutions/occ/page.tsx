@@ -5,6 +5,9 @@ import { OCCHubPage } from '@/components/b2b/OCCHub'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT_CARD_BY_HANDLE } from '@/lib/shopify/queries/products'
 import type { OCCProduct } from '@/types/occ'
+import { WebPageSchema } from '@/components/schema/WebPageSchema'
+import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
+import { SITE_URL } from '@/lib/seo/constants'
 
 export const revalidate = 3600
 
@@ -46,5 +49,21 @@ async function fetchLiveProducts(fallbacks: OCCProduct[]): Promise<OCCProduct[]>
 export default async function OCCPage() {
   const liveProducts = await fetchLiveProducts(OCC_HUB.eligibleProducts)
 
-  return <OCCHubPage hub={{ ...OCC_HUB, eligibleProducts: liveProducts }} />
+  return (
+    <>
+      <WebPageSchema
+        name={OCC_HUB.seoTitle || OCC_HUB.title}
+        description={OCC_HUB.seoDescription || OCC_HUB.intro}
+        url={`${SITE_URL}/solutions/occ`}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home',      item: SITE_URL },
+          { name: 'Solutions', item: `${SITE_URL}/solutions` },
+          { name: 'OCC',       item: `${SITE_URL}/solutions/occ` },
+        ]}
+      />
+      <OCCHubPage hub={{ ...OCC_HUB, eligibleProducts: liveProducts }} />
+    </>
+  )
 }
