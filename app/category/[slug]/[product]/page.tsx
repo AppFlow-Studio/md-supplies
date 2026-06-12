@@ -23,7 +23,6 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
   const subHandle = `${slug}-${handle}`
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mdsupplies.com'
 
   const subData = await storefrontFetch<{ collection: Collection | null }>(
     GET_COLLECTION,
@@ -33,10 +32,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (subData.collection) {
     const { title, description } = subData.collection
     return buildMetadata({
-      pageType: 'category',
+      pageType: 'subcategory',
       title,
       description: description || undefined,
-      canonical: `${base}/category/${slug}/${handle}`,
+      canonical: `${SITE_URL}/category/${slug}/${handle}`,
     })
   }
 
@@ -186,9 +185,7 @@ export default async function CategoryProductPage({ params }: Props) {
   }
 
   // Fall back to product
-  const [productData] = await Promise.all([
-    storefrontFetch<{ product: Product | null }>(GET_PRODUCT, { handle }),
-  ])
+  const productData = await storefrontFetch<{ product: Product | null }>(GET_PRODUCT, { handle })
 
   if (!productData.product) notFound()
   if (productData.product.variants.nodes.length === 0) notFound()
