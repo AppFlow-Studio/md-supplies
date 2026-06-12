@@ -1,16 +1,23 @@
 import Link from 'next/link'
 import { INDUSTRIES } from '@/lib/industries'
-import { buildCanonical, buildRobots } from '@/lib/seo'
+import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
 import {BadgeCheck, FileText, Headset, MapPin, Truck} from "lucide-react";
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 
 export const revalidate = 3600
 
+const _industriesCanonical = buildCanonical({ path: '/industries' })
 export const metadata = {
   title: 'Shop by Industry | MDSupplies',
   description: 'Medical supplies curated for your specialty — urgent care, EMS, pharmacy, physical therapy, and more.',
   robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-  alternates: { canonical: buildCanonical({ path: '/industries' }) },
+  alternates: { canonical: _industriesCanonical },
+  ...buildOg({
+    pageType: 'homepage',
+    title: 'Shop by Industry | MDSupplies',
+    description: 'Medical supplies curated for your specialty — urgent care, EMS, pharmacy, physical therapy, and more.',
+    url: _industriesCanonical,
+  }),
 }
 
 const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/4cc83b0b-dc84-4fc6-82cc-35f7d6930005'

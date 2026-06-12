@@ -1,10 +1,17 @@
-import { buildCanonical, buildRobots } from '@/lib/seo'
+import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
 
+const _contactCanonical = buildCanonical({ path: '/contact' })
 export const metadata = {
   title: 'Contact Us | MDSupplies',
   description: 'Get in touch with the MD Supplies team for wholesale inquiries.',
   robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-  alternates: { canonical: buildCanonical({ path: '/contact' }) },
+  alternates: { canonical: _contactCanonical },
+  ...buildOg({
+    pageType: 'homepage',
+    title: 'Contact Us | MDSupplies',
+    description: 'Get in touch with the MD Supplies team for wholesale inquiries.',
+    url: _contactCanonical,
+  }),
 }
 
 export default function ContactPage() {
