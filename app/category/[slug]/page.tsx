@@ -15,6 +15,7 @@ import { buildMetadata } from '@/lib/seo'
 import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
+import { getClusterLinks } from '@/lib/cluster-links'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 
 export const revalidate = 30
@@ -126,6 +127,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     getSubcategories(slug),
     getRelatedCategories(slug),
   ])
+
+  const clusterLinks = getClusterLinks(slug)
 
   if (!data.collection) notFound()
 
@@ -351,6 +354,64 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                 prose-headings:text-white prose-a:text-[#0086b1] prose-strong:text-white"
               dangerouslySetInnerHTML={{ __html: collection.descriptionHtml }}
             />
+          </div>
+        </section>
+      )}
+
+      {/* ── Cluster: Industries & Partners ── */}
+      {clusterLinks && (clusterLinks.industryLinks.length > 0 || clusterLinks.partnerLinks.length > 0 || clusterLinks.occEligible) && (
+        <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
+          <h2 className="text-navy-900 text-[18px] font-semibold mb-6">Shop by Need</h2>
+          <div className="flex flex-col gap-6 sm:flex-row sm:gap-10">
+            {clusterLinks.industryLinks.length > 0 && (
+              <div>
+                <p className="text-gray-500 text-[12px] font-semibold uppercase tracking-[0.48px] mb-3">
+                  Industries
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {clusterLinks.industryLinks.map((ind) => (
+                    <Link
+                      key={ind.slug}
+                      href={ROUTES.industry(ind.slug)}
+                      className="border border-gray-200 bg-white text-navy-900 text-[14px] px-4 py-2 hover:border-navy-900 transition-colors"
+                    >
+                      {ind.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+            {clusterLinks.partnerLinks.length > 0 && (
+              <div>
+                <p className="text-gray-500 text-[12px] font-semibold uppercase tracking-[0.48px] mb-3">
+                  Brands
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {clusterLinks.partnerLinks.map((p) => (
+                    <Link
+                      key={p.slug}
+                      href={ROUTES.partner(p.slug)}
+                      className="border border-gray-200 bg-white text-navy-900 text-[14px] px-4 py-2 hover:border-navy-900 transition-colors"
+                    >
+                      {p.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+            {clusterLinks.occEligible && (
+              <div>
+                <p className="text-gray-500 text-[12px] font-semibold uppercase tracking-[0.48px] mb-3">
+                  Programs
+                </p>
+                <Link
+                  href={ROUTES.solutions.occ}
+                  className="border border-teal-500 bg-teal-50 text-teal-700 text-[14px] px-4 py-2 hover:bg-teal-100 transition-colors inline-block"
+                >
+                  OCC Program — Volume Pricing
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       )}
