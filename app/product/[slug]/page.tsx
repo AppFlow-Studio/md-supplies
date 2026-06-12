@@ -3,8 +3,7 @@ import { buildMetadata } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
-import { GET_BLOGS_WITH_ARTICLES } from '@/lib/shopify/queries/blog'
-import type { Product, CollectionProduct, ProductMetafields, ShopifyBlog, BlogArticleSummary } from '@/lib/shopify/types'
+import type { Product, CollectionProduct, ProductMetafields } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
 import { PARTNERS } from '@/lib/partners'
 import { ProductSchema } from '@/components/schema/ProductSchema'
@@ -84,21 +83,13 @@ export default async function ProductPage({ params }: Props) {
     (p) => p.isActive && p.vendorName === product.vendor,
   ) ?? null
 
-  // Fetch Shopify recommendations and blog articles in parallel
-  const [recsData, blogsData] = await Promise.all([
-    storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
-      GET_PRODUCT_RECS,
-      { handle: slug },
-    ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] })),
-    storefrontFetch<{ blogs: { nodes: ShopifyBlog[] } }>(GET_BLOGS_WITH_ARTICLES, { first: 6 })
-      .catch(() => ({ blogs: { nodes: [] } })),
-  ])
+  const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
+    GET_PRODUCT_RECS,
+    { handle: slug },
+  ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
   const relatedProducts = recsData.related
   const complementaryProducts = recsData.complementary
-  const relatedArticles: BlogArticleSummary[] = blogsData.blogs.nodes
-    .flatMap((b) => b.articles.nodes)
-    .slice(0, 3)
 
   return (
     <main className="bg-[#f9fafc]">
@@ -116,7 +107,13 @@ export default async function ProductPage({ params }: Props) {
         brand={product.brandName ?? product.vendor}
         price={parseFloat(product.variants.nodes[0]?.price.amount ?? '0')}
         priceCurrency="USD"
-        availability={product.variants.nodes[0]?.availableForSale ? 'InStock' : 'OutOfStock'}
+        availability={
+          product.variants.nodes[0]?.availableForSale
+            ? 'InStock'
+            : product.estimatedRestockDate
+              ? 'PreOrder'
+              : 'OutOfStock'
+        }
         url={`${SITE_URL}/product/${slug}`}
         seller="MDSupplies"
         shippingDetails="Orders placed before 3 PM EST ship same day. Standard delivery is 2–3 business days."
