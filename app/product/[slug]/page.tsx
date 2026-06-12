@@ -104,7 +104,7 @@ export default async function ProductPage({ params }: Props) {
     name: product.title,
     description: product.description,
     image: product.images.nodes[0]?.url ?? '',
-    sku: firstVariant?.id ?? slug,
+    sku: firstVariant?.id?.split('/').pop() ?? slug,
     brand: product.brandName ?? product.vendor,
     price: parseFloat(firstVariant?.price?.amount ?? '0'),
     priceCurrency: firstVariant?.price?.currencyCode ?? 'USD',
@@ -115,7 +115,7 @@ export default async function ProductPage({ params }: Props) {
 
   const breadcrumbItems = [
     { name: 'Home', item: SITE_URL },
-    { name: 'Products', item: `${SITE_URL}/products` },
+    { name: 'Shop', item: `${SITE_URL}/categories` },
     { name: product.title, item: productUrl },
   ]
 

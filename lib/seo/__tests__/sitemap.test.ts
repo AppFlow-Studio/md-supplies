@@ -129,10 +129,12 @@ describe('getSitemapUrls', () => {
     expect(urls.filter(u => u.includes('/partners/')).length).toBeGreaterThan(0)
   })
 
-  it('emits /industries/<slug> for every industry in static config', async () => {
+  it('does not emit noindexed /industries/<slug> detail pages in sitemap', async () => {
     setupDefaultMocks()
     const urls = (await getSitemapUrls(false)).map(e => e.url)
-    expect(urls.filter(u => u.includes('/industries/')).length).toBeGreaterThan(0)
+    expect(urls.every(u => !u.match(/\/industries\/[a-z]/))).toBe(true)
+    // The /industries hub page should still be in STATIC_URLS
+    expect(urls.some(u => u.endsWith('/industries'))).toBe(true)
   })
 
   it('emits /blog/<handle> for each article', async () => {
