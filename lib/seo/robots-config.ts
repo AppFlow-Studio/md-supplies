@@ -17,7 +17,7 @@ export function getRobotsConfig(isStaging: boolean = STAGING_GUARD): MetadataRou
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/account/', '/cart', '/search', '/internal/'],
+      disallow: ['/api/', '/account/', '/cart', '/search', '/internal/', '/b2b'],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   }

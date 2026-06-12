@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "My Account | MD Supplies",
   description:
     "Manage your MD Supplies account — track orders, save addresses, and view invoices.",
+  robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
