@@ -23,6 +23,9 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
   }
 `
 
+// Metafields require Storefront API "Read access" enabled per definition in Shopify Admin
+// (Settings → Custom data → Products → [field] → Storefront access: on).
+// Fields returning null despite real data = closed access gate.
 export const GET_PRODUCT = `#graphql
   query GetProduct($handle: String!) {
     product(handle: $handle) {
