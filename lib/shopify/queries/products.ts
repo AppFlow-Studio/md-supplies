@@ -5,6 +5,7 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
     handle
     vendor
     availableForSale
+    tags
     priceRange {
       minVariantPrice { amount currencyCode }
       maxVariantPrice { amount currencyCode }
@@ -23,6 +24,9 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
   }
 `
 
+// Metafields require Storefront API "Read access" enabled per definition in Shopify Admin
+// (Settings → Custom data → Products → [field] → Storefront access: on).
+// Fields returning null despite real data = closed access gate.
 export const GET_PRODUCT = `#graphql
   query GetProduct($handle: String!) {
     product(handle: $handle) {
@@ -125,6 +129,20 @@ export const GET_PRODUCT_RECS = `#graphql
     }
     complementary: productRecommendations(productHandle: $handle, intent: COMPLEMENTARY) {
       ...ProductCard
+    }
+  }
+`;
+
+export const GET_ALL_PRODUCT_HANDLES = `#graphql
+  query GetAllProductHandles($first: Int!, $after: String) {
+    products(first: $first, after: $after) {
+      nodes {
+        handle
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
     }
   }
 `;

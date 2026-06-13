@@ -93,6 +93,7 @@ export type CollectionProduct = {
   handle: string;
   vendor: string;
   availableForSale: boolean;
+  tags: string[];
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
   variants: { nodes: Pick<ProductVariant, 'id' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };

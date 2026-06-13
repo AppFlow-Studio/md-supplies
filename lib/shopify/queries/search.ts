@@ -41,6 +41,7 @@ export const SEARCH_PRODUCTS = `#graphql
           handle
           vendor
           availableForSale
+          tags
           priceRange {
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }

@@ -44,24 +44,26 @@ export interface ProductDetailData {
   youMayAlsoNeed: AccessoryProduct[];
 }
 
+const PLACEHOLDER = "/images/pills_on_hands.png"
+
 // Product images
 const IMG = {
-  main:      "https://www.figma.com/api/mcp/asset/920c432f-cd71-4339-9568-bd945a165236",
-  thumb1:    "https://www.figma.com/api/mcp/asset/d61c1cb7-88e8-4237-a50f-716ed6e81879",
-  thumb2:    "https://www.figma.com/api/mcp/asset/6e4971b0-770e-40aa-b155-4306bbd559a3",
-  thumb3:    "https://www.figma.com/api/mcp/asset/47bb9fba-09b9-45db-8a16-d2062d7ee7fa",
-  thumb4:    "https://www.figma.com/api/mcp/asset/0882ca9f-e45c-4aa1-927a-b6d7c8689b78",
-  thumb5:    "https://www.figma.com/api/mcp/asset/03d5375d-61c5-4e15-a86c-708e8df8ce44",
-  related1:  "https://www.figma.com/api/mcp/asset/ffbf67d1-af43-4d08-9790-52452d08d8b1",
-  related2:  "https://www.figma.com/api/mcp/asset/4d3bbe8d-5259-4b9c-8120-ac1fb7518c57",
-  related3:  "https://www.figma.com/api/mcp/asset/c7412034-ce8a-474f-8dd1-85edceb84971",
-  related4:  "https://www.figma.com/api/mcp/asset/03f91b09-f939-4584-9255-39d176c68cab",
-  saline:    "https://www.figma.com/api/mcp/asset/7434dbc5-e96f-4eb8-b6cc-d5a1824bb1f9",
-  cotton:    "https://www.figma.com/api/mcp/asset/c0364dc2-a867-4c3b-aaff-37b49139584f",
-  gauze:     "https://www.figma.com/api/mcp/asset/10c1eceb-10ab-477f-a3c9-ffbd62c7deef",
-  thermo:    "https://www.figma.com/api/mcp/asset/f746fd58-3895-4904-8354-11257f0bc198",
-  bibs:      "https://www.figma.com/api/mcp/asset/337254f4-7428-4c71-8895-71585e4270b5",
-  tape:      "https://www.figma.com/api/mcp/asset/fb9d06a0-4a4d-424e-91c8-181888892a80",
+  main:     PLACEHOLDER,
+  thumb1:   PLACEHOLDER,
+  thumb2:   PLACEHOLDER,
+  thumb3:   PLACEHOLDER,
+  thumb4:   PLACEHOLDER,
+  thumb5:   PLACEHOLDER,
+  related1: PLACEHOLDER,
+  related2: PLACEHOLDER,
+  related3: PLACEHOLDER,
+  related4: PLACEHOLDER,
+  saline:   PLACEHOLDER,
+  cotton:   PLACEHOLDER,
+  gauze:    PLACEHOLDER,
+  thermo:   PLACEHOLDER,
+  bibs:     PLACEHOLDER,
+  tape:     PLACEHOLDER,
 };
 
 const COMMON_RELATED: RelatedProduct[] = [

@@ -32,6 +32,14 @@ export function OCCHubPage({ hub }: Props) {
 
       {/* ── Hero ── */}
       <section className="w-full bg-[#f9fafc] overflow-x-hidden">
+        {/* Server-rendered text: always present in initial HTML for crawlers and screen readers */}
+        <div className="sr-only">
+          <p>{hub.title}</p>
+          <p>{hub.intro}</p>
+          <h2>What is the OCC Program?</h2>
+          <p>{hub.programExplanation}</p>
+          <p>{hub.freeShippingMessage}</p>
+        </div>
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-16 md:py-20 lg:py-24">
           <AnimatedOCCHeroSection
             title={hub.title}

@@ -65,7 +65,14 @@ export function IndustryPage({ industry }: Props) {
         )}
 
         {/* Intro */}
-        <p className="text-base text-gray-500 leading-relaxed max-w-[720px] mb-12">{industry.intro}</p>
+        <div className="mb-12">
+          <p className="text-base text-gray-500 leading-relaxed max-w-[720px]">{industry.intro}</p>
+          {industry.buyerType && (
+            <p className="text-sm text-gray-400 leading-relaxed max-w-[720px] mt-2 italic">
+              Typical buyers: {industry.buyerType}
+            </p>
+          )}
+        </div>
 
         {/* Categories + subcategories */}
         {industry.relevantCategories.length > 0 && (

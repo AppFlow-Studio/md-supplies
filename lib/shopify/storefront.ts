@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import type { ShopifyResponse } from './types';
+import { loadEnvConfig } from '@next/env';
 
+loadEnvConfig(process.cwd());
 const STOREFRONT_API_URL = `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2026-04/graphql.json`;
 
 export async function storefrontFetch<T>(

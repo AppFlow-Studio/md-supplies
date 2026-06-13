@@ -1,13 +1,20 @@
 import { FaqAccordion }    from "@/components/faq/FaqAccordion";
-import { buildCanonical, buildRobots } from '@/lib/seo'
+import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
 
+const _faqCanonical = buildCanonical({ path: '/faq' })
 export const metadata = {
   title: 'FAQ | MDSupplies',
   description: 'Frequently asked questions about MD Supplies — shipping, returns, product authenticity, and wholesale pricing.',
   robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-  alternates: { canonical: buildCanonical({ path: '/faq' }) },
+  alternates: { canonical: _faqCanonical },
+  ...buildOg({
+    pageType: 'homepage',
+    title: 'FAQ | MDSupplies',
+    description: 'Frequently asked questions about MD Supplies — shipping, returns, product authenticity, and wholesale pricing.',
+    url: _faqCanonical,
+  }),
 }
 
 export default function FaqPage() {

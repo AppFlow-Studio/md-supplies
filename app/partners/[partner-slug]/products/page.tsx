@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_PRODUCTS, GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
-import { unslugifyVendor } from '@/lib/brands'
+import { GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
+import { getPartnerBySlug, PARTNERS } from '@/lib/partners'
 import { WholesalePricing } from '@/components/home/WholesalePricing'
 import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
 import { CategorySort } from '@/components/category/CategorySort'
@@ -13,7 +13,7 @@ import type { CollectionProduct, PageInfo } from '@/lib/shopify/types'
 export const revalidate = 30
 
 interface Props {
-  params: Promise<{ slug: string }>
+  params: Promise<{ 'partner-slug': string }>
   searchParams: Promise<{ sort?: string; after?: string }>
 }
 
@@ -27,39 +27,33 @@ function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
   }
 }
 
-async function resolveVendorName(slug: string): Promise<string | undefined> {
-  const data = await storefrontFetch<{ products: { nodes: CollectionProduct[] } }>(
-    GET_PRODUCTS,
-    { first: 250 },
-  )
-  const vendors = [...new Set(data.products.nodes.map((p) => p.vendor).filter(Boolean))]
-  return unslugifyVendor(slug, vendors)
+export function generateStaticParams() {
+  return PARTNERS.filter((p) => p.isActive).map((p) => ({ 'partner-slug': p.slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
-  // Note: This is a separate server function call, so the fetch is not deduplicated with the page component
-  const vendor = await resolveVendorName(slug)
-  if (!vendor) return { title: 'Brand | MD Supplies' }
+  const { 'partner-slug': slug } = await params
+  const partner = getPartnerBySlug(slug)
+  if (!partner) return { title: 'Partner Products | MD Supplies' }
   return {
-    title: `${vendor} Products | MD Supplies`,
-    description: `Shop all ${vendor} medical supplies at wholesale prices.`,
+    title: `${partner.name} Products | MD Supplies`,
+    description: `Shop all ${partner.name} medical supplies at wholesale prices.`,
   }
 }
 
-export default async function BrandPage({ params, searchParams }: Props) {
-  const { slug } = await params
+export default async function PartnerProductsPage({ params, searchParams }: Props) {
+  const { 'partner-slug': slug } = await params
   const sp = await searchParams
 
-  const vendor = await resolveVendorName(slug)
-  if (!vendor) notFound()
+  const partner = getPartnerBySlug(slug)
+  if (!partner) notFound()
 
   const { sortKey, reverse } = parseSortKey(sp.sort)
 
   const data = await storefrontFetch<{
     products: { nodes: CollectionProduct[]; pageInfo: PageInfo }
   }>(GET_PRODUCTS_BY_VENDOR, {
-    query: `vendor:"${vendor}"`,
+    query: `vendor:"${partner.vendorName}"`,
     first: 24,
     after: sp.after ?? null,
     sortKey,
@@ -74,7 +68,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
     if (sp.sort) p.set('sort', sp.sort)
     if (cursor) p.set('after', cursor)
     const qs = p.toString()
-    return qs ? `/brands/${slug}?${qs}` : `/brands/${slug}`
+    return qs ? `/partners/${slug}/products?${qs}` : `/partners/${slug}/products`
   }
 
   return (
@@ -84,16 +78,18 @@ export default async function BrandPage({ params, searchParams }: Props) {
         <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
           <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link>
           <span className="text-gray-500">›</span>
-          <Link href="/brands" className="text-gray-500 hover:text-navy-900 transition-colors">Brands</Link>
+          <Link href="/partners" className="text-gray-500 hover:text-navy-900 transition-colors">Partners</Link>
           <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold">{vendor}</span>
+          <Link href={`/partners/${slug}`} className="text-gray-500 hover:text-navy-900 transition-colors">{partner.name}</Link>
+          <span className="text-gray-500">›</span>
+          <span className="text-navy-900 font-semibold">All Products</span>
         </nav>
       </div>
 
       {/* Hero */}
       <div className="bg-navy-900 h-[180px] sm:h-[220px] flex items-center">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 w-full">
-          <h1 className="text-white text-[28px] sm:text-[36px] font-bold leading-tight">{vendor}</h1>
+          <h1 className="text-white text-[28px] sm:text-[36px] font-bold leading-tight">{partner.name}</h1>
           <p className="text-white/70 text-[15px] mt-2">
             {pageInfo.hasNextPage ? '24+' : products.length} products
           </p>

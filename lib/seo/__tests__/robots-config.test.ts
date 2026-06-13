@@ -70,4 +70,11 @@ describe('getRobotsConfig', () => {
       expect(path).not.toMatch(/\.(css|js|png|jpg|svg|woff2?)/)
     }
   })
+
+  it('disallows /b2b on production', () => {
+    const cfg = getRobotsConfig(false)
+    const rules = Array.isArray(cfg.rules) ? cfg.rules[0] : cfg.rules
+    const disallowed = Array.isArray(rules.disallow) ? rules.disallow : [rules.disallow ?? '']
+    expect(disallowed).toContain('/b2b')
+  })
 })

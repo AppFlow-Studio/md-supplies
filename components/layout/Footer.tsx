@@ -5,7 +5,6 @@ import { ROUTES } from '@/lib/routes'
 
 const EXPLORE = [
   { label: 'Partners', href: ROUTES.partners },
-  { label: 'Brands', href: ROUTES.brands },
   { label: 'Industries', href: ROUTES.industries },
   { label: 'Blog', href: ROUTES.blog },
   { label: 'Solutions', href: ROUTES.solutions.occ },

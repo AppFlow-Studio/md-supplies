@@ -1,17 +1,20 @@
 import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
-import { mockOCCHub } from '@/lib/mock/occ'
+import { OCC_HUB } from '@/lib/occ'
 import { OCCHubPage } from '@/components/b2b/OCCHub'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT_CARD_BY_HANDLE } from '@/lib/shopify/queries/products'
 import type { OCCProduct } from '@/types/occ'
+import { WebPageSchema } from '@/components/schema/WebPageSchema'
+import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
+import { SITE_URL } from '@/lib/seo/constants'
 
 export const revalidate = 3600
 
 export const metadata: Metadata = buildMetadata({
   pageType: 'occ',
-  title: mockOCCHub.seoTitle,
-  description: mockOCCHub.seoDescription || mockOCCHub.intro,
+  title: OCC_HUB.seoTitle,
+  description: OCC_HUB.seoDescription || OCC_HUB.intro,
 })
 
 interface ProductCardResult {
@@ -44,7 +47,22 @@ async function fetchLiveProducts(fallbacks: OCCProduct[]): Promise<OCCProduct[]>
 }
 
 export default async function OCCPage() {
-  const liveProducts = await fetchLiveProducts(mockOCCHub.eligibleProducts)
+  const liveProducts = await fetchLiveProducts(OCC_HUB.eligibleProducts)
 
-  return <OCCHubPage hub={{ ...mockOCCHub, eligibleProducts: liveProducts }} />
+  return (
+    <>
+      <WebPageSchema
+        name={OCC_HUB.seoTitle || OCC_HUB.title}
+        description={OCC_HUB.seoDescription || OCC_HUB.intro}
+        url={`${SITE_URL}/solutions/occ`}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', item: SITE_URL },
+          { name: 'OCC',  item: `${SITE_URL}/solutions/occ` },
+        ]}
+      />
+      <OCCHubPage hub={{ ...OCC_HUB, eligibleProducts: liveProducts }} />
+    </>
+  )
 }

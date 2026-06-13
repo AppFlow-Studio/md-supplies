@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { storefrontFetch } from "@/lib/shopify/storefront";
 import { GET_PRODUCT } from "@/lib/shopify/queries/products";
 import type { Product, ProductMetafields } from "@/lib/shopify/types";
-import type { ProductDetailData } from "@/lib/products";
+import { getProductBySlug, type ProductDetailData } from "@/lib/products";
 import { ProductDetail } from "@/components/shop/ProductDetail";
 
 interface Props {
@@ -72,10 +71,10 @@ function toProductDetailData(p: Product): ProductDetailData {
     brand: p.brandName ?? p.vendor,
     sku: firstVariant?.id.split('/').pop() ?? p.handle,
     name: p.title,
-    rating: 4.8,
-    reviewCount: 127,
+    rating: 0,
+    reviewCount: 0,
     inStock: p.availableForSale,
-    freeShipping: false,
+    freeShipping: p.tags.includes('free-shipping'),
     images: p.images.nodes.map((img) => img.url),
     units: units.length > 0
       ? units
@@ -97,13 +96,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
     const data = await storefrontFetch<{ product: RawProduct | null }>(GET_PRODUCT, { handle: slug })
-    if (!data.product) return { title: 'Product | MD Supplies' }
-    const product = normalizeProduct(data.product)
-    const brand = product.brandName ?? product.vendor
-    return {
-      title: `${product.title} | MD Supplies`,
-      description: `${brand} — ${product.description.slice(0, 140)}`,
+    if (data.product) {
+      const product = normalizeProduct(data.product)
+      const brand = product.brandName ?? product.vendor
+      return {
+        title: `${product.title} | MD Supplies`,
+        description: `${brand} — ${product.description.slice(0, 140)}`,
+      }
     }
+    const fallback = getProductBySlug(slug)
+    return { title: `${fallback.name} | MD Supplies` }
   } catch {
     return { title: 'Product | MD Supplies' }
   }
@@ -113,13 +115,14 @@ export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
 
   const data = await storefrontFetch<{ product: RawProduct | null }>(GET_PRODUCT, { handle: slug })
-  if (!data.product) notFound()
 
-  const product = normalizeProduct(data.product)
+  const productDetailData = data.product
+    ? toProductDetailData(normalizeProduct(data.product))
+    : getProductBySlug(slug)
 
   return (
     <main className="bg-[#f9fafc]">
-      <ProductDetail product={toProductDetailData(product)} />
+      <ProductDetail product={productDetailData} />
     </main>
   );
 }

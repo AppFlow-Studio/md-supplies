@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  Star, ShieldCheck, Truck, RotateCcw, Plus, Minus,
+  ShieldCheck, Truck, RotateCcw, Plus, Minus,
 } from 'lucide-react'
 import type { Product, CollectionProduct, ProductVariant } from '@/lib/shopify/types'
 import { VariantSelector } from './VariantSelector'
@@ -53,9 +53,10 @@ interface Props {
   relatedProducts: CollectionProduct[]
   complementaryProducts: CollectionProduct[]
   breadcrumbs?: BreadcrumbItem[]
+  partnerSlug?: string | null
 }
 
-export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs }: Props) {
+export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     () => getDefaultVariant(product.variants.nodes),
   )
@@ -174,17 +175,20 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
           {/* Right – Product info */}
           <div className="flex-1 flex flex-col gap-5">
-            {/* Brand + rating */}
+            {/* Brand */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
-                {brandDisplay}
-              </span>
-              <div className="flex items-center gap-1.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} size={14} strokeWidth={0} fill={i < 4 ? '#F4B942' : '#e5e7eb'} />
-                ))}
-                <span className="text-gray-500 text-[13px] tracking-[0.26px] ml-1">4.8 (127 Reviews)</span>
-              </div>
+              {partnerSlug ? (
+                <Link
+                  href={`/partners/${partnerSlug}`}
+                  className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase hover:text-teal-600 transition-colors"
+                >
+                  {brandDisplay}
+                </Link>
+              ) : (
+                <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
+                  {brandDisplay}
+                </span>
+              )}
             </div>
 
             {/* Title */}
@@ -267,14 +271,18 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 </div>
                 <div className="flex">
                   <div className="flex-1 px-4 py-3">
-                    <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
-                      {product.orderSize ?? '—'}
-                    </p>
+                    {product.orderSize && (
+                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                        {product.orderSize}
+                      </p>
+                    )}
                   </div>
                   <div className="flex-1 px-4 py-3">
-                    <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
-                      {product.unitsPerOrder ?? product.quantityOfUnits ?? '—'}
-                    </p>
+                    {(product.unitsPerOrder || product.quantityOfUnits) && (
+                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                        {product.unitsPerOrder ?? product.quantityOfUnits}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -453,19 +461,8 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
             {activeTab === 'REVIEWS' && (
               <div className="flex flex-col gap-6 max-w-[760px]">
-                <div className="flex items-center gap-4">
-                  <span className="text-navy-900 text-[48px] font-bold leading-none">4.8</span>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} size={14} strokeWidth={0} fill={i < 5 ? '#F4B942' : '#e5e7eb'} />
-                      ))}
-                    </div>
-                    <span className="text-gray-500 text-[13px]">Based on customer reviews</span>
-                  </div>
-                </div>
                 <p className="text-gray-500 text-[15px] leading-[28px]">
-                  No individual reviews to display yet.
+                  Reviews are not yet available for this product.
                 </p>
               </div>
             )}

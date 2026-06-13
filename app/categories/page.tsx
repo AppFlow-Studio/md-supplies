@@ -7,6 +7,7 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
+import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
 
 export const revalidate = 60
 
@@ -30,7 +31,9 @@ export default async function CategoriesPage() {
       GET_COLLECTIONS,
       { first: 250 },
     )
-    collections = data.collections.nodes
+    collections = data.collections.nodes.filter(
+      (c) => !EXCLUDED_COLLECTION_HANDLES.has(c.handle)
+    )
   } catch {
     // degrade gracefully — render empty state
   }

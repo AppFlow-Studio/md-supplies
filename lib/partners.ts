@@ -1,9 +1,10 @@
 import type { Partner } from '@/types/partner'
 
-export const mockPartners: Partner[] = [
+export const PARTNERS: Partner[] = [
   {
     slug: 'ad-surgical',
     name: 'AD Surgical',
+    vendorName: 'AD Surgical',
     type: 'brand',
     isActive: true,
     description: 'Leading provider of surgical sutures, wound closure, and procedure kits.',
@@ -26,6 +27,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'cordx',
     name: 'CorDx',
+    vendorName: 'CorDx',
     type: 'brand',
     isActive: true,
     description: 'Advanced rapid diagnostic testing solutions for clinical and point-of-care settings.',
@@ -48,6 +50,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'dukal',
     name: 'Dukal',
+    vendorName: 'Dukal',
     type: 'brand',
     isActive: true,
     description: 'High-quality disposable medical products for wound care, exam, and procedure use.',
@@ -71,6 +74,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'dynarex',
     name: 'Dynarex',
+    vendorName: 'Dynarex',
     type: 'brand',
     isActive: true,
     description: 'Dependable general medical products trusted by healthcare providers nationwide.',
@@ -82,10 +86,7 @@ export const mockPartners: Partner[] = [
     },
     intro: 'Dynarex is one of the largest manufacturers of general medical products in the United States, offering thousands of SKUs across gloves, wound care, personal protective equipment, and exam room essentials.',
     productCategories: ['disposables', 'wound-care', 'ppe', 'exam-room'],
-    featuredProducts: [
-      { handle: 'nitrile-exam-gloves-powder-free', title: 'Nitrile Exam Gloves', image: 'https://placehold.co/400x400/dbeafe/1d4ed8?text=Gloves', price: 2499 },
-      { handle: 'latex-exam-gloves-powder-free', title: 'Latex Exam Gloves', image: 'https://placehold.co/400x400/dbeafe/1d4ed8?text=Latex+Gloves', price: 2299 },
-    ],
+    featuredProducts: [],
     relatedCategories: [
       { handle: 'disposables', title: 'Disposables' },
       { handle: 'ppe', title: 'PPE' },
@@ -95,8 +96,32 @@ export const mockPartners: Partner[] = [
     seoDescription: 'Shop Dynarex gloves, wound care, and disposable medical supplies at wholesale prices through MDSupplies.',
   },
   {
+    slug: 'drive-medical',
+    name: 'Drive Medical',
+    vendorName: 'Drive Medical',
+    type: 'brand',
+    isActive: true,
+    description: 'Durable medical equipment and mobility solutions for healthcare.',
+    logo: {
+      url: 'https://placehold.co/200x80/e0e7ff/4338ca?text=Drive+Medical',
+      altText: 'Drive Medical logo',
+      width: 200,
+      height: 80,
+    },
+    intro: 'Drive Medical designs and manufactures durable medical equipment trusted by healthcare facilities and home health providers worldwide, including wheelchairs, walkers, and patient aids.',
+    productCategories: ['dme', 'mobility-aids', 'home-health'],
+    featuredProducts: [],
+    relatedCategories: [
+      { handle: 'dme', title: 'Durable Medical Equipment' },
+      { handle: 'mobility-aids', title: 'Mobility Aids' },
+    ],
+    seoTitle: 'Drive Medical Products | MDSupplies',
+    seoDescription: 'Shop Drive Medical durable medical equipment and mobility aids at wholesale prices.',
+  },
+  {
     slug: 'kadara',
     name: 'Kadara',
+    vendorName: 'Kadara',
     type: 'brand',
     isActive: true,
     description: 'Innovative medical supply solutions focused on quality and clinical performance.',
@@ -118,6 +143,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'kemp-usa',
     name: 'Kemp USA',
+    vendorName: 'Kemp USA',
     type: 'brand',
     isActive: true,
     description: 'Professional-grade medical equipment and emergency response supplies.',
@@ -140,6 +166,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'graham-field',
     name: 'Graham Field',
+    vendorName: 'Graham Field',
     type: 'brand',
     isActive: true,
     description: 'Comprehensive durable medical equipment and rehabilitation solutions.',
@@ -151,10 +178,7 @@ export const mockPartners: Partner[] = [
     },
     intro: 'Graham Field Health Products is a leading manufacturer and distributor of durable medical equipment and rehabilitation products. Their brands—including Lumex and Everest & Jennings—serve patients from acute care to home health settings.',
     productCategories: ['dme', 'rehabilitation', 'patient-care', 'mobility-aids'],
-    featuredProducts: [
-      { handle: 'standard-walker', title: 'Standard Walker', image: 'https://placehold.co/400x400/ede9fe/5b21b6?text=Walker', price: 4999 },
-      { handle: 'disposable-bed-pads', title: 'Disposable Bed Pads', image: 'https://placehold.co/400x400/ede9fe/5b21b6?text=Bed+Pads', price: 3299 },
-    ],
+    featuredProducts: [],
     relatedCategories: [
       { handle: 'dme', title: 'Durable Medical Equipment' },
       { handle: 'rehabilitation', title: 'Rehabilitation' },
@@ -165,6 +189,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'medline',
     name: 'Medline',
+    vendorName: 'Medline',
     type: 'brand',
     isActive: true,
     description: 'One of the largest manufacturers and distributors of healthcare supplies in the US.',
@@ -189,6 +214,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'systems',
     name: 'Systems',
+    vendorName: 'Systems',
     type: 'brand',
     isActive: true,
     description: 'Integrated medical supply systems for streamlined clinical procurement.',
@@ -210,6 +236,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'philip-scalice',
     name: 'Philip Scalice',
+    vendorName: 'Philip Scalice',
     type: 'brand',
     isActive: true,
     description: 'Specialty medical supplies and instruments for clinical and surgical use.',
@@ -232,6 +259,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'truecare',
     name: 'TrueCare',
+    vendorName: 'TrueCare',
     type: 'brand',
     isActive: true,
     description: 'Patient-centered wound care and disposable medical supply solutions.',
@@ -254,6 +282,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'vive-health',
     name: 'Vive Health',
+    vendorName: 'Vive Health',
     type: 'brand',
     isActive: true,
     description: 'Daily living aids, mobility equipment, and home health supplies.',
@@ -277,6 +306,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'dawn-mist',
     name: 'Dawn Mist',
+    vendorName: 'Dawn Mist',
     type: 'brand',
     isActive: true,
     description: 'Premium personal care and hygiene products for healthcare facilities.',
@@ -288,10 +318,7 @@ export const mockPartners: Partner[] = [
     },
     intro: 'Dawn Mist is a leading brand of personal care products trusted by hospitals and long-term care facilities across North America.',
     productCategories: ['personal-care', 'hygiene', 'bath-supplies'],
-    featuredProducts: [
-      { handle: 'nitrile-exam-gloves-powder-free', title: 'Nitrile Exam Gloves', image: 'https://placehold.co/400x400/e5eff7/0086b1?text=Gloves', price: 2499 },
-      { handle: 'disposable-bed-pads', title: 'Disposable Bed Pads', image: 'https://placehold.co/400x400/e5eff7/0086b1?text=Bed+Pads', price: 3299 },
-    ],
+    featuredProducts: [],
     relatedCategories: [
       { handle: 'personal-care', title: 'Personal Care' },
       { handle: 'hygiene', title: 'Hygiene Supplies' },
@@ -302,6 +329,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'lumex',
     name: 'Lumex',
+    vendorName: 'Lumex',
     type: 'brand',
     isActive: true,
     description: 'Durable medical equipment and mobility aids for patient care.',
@@ -313,10 +341,7 @@ export const mockPartners: Partner[] = [
     },
     intro: 'Lumex specializes in durable medical equipment including walkers, wheelchairs, and patient lifts used in home care and clinical settings.',
     productCategories: ['dme', 'mobility-aids', 'patient-lifts'],
-    featuredProducts: [
-      { handle: 'standard-walker', title: 'Standard Walker', image: 'https://placehold.co/400x400/f0fdf4/166534?text=Walker', price: 4999 },
-      { handle: 'transport-wheelchair', title: 'Transport Wheelchair', image: 'https://placehold.co/400x400/f0fdf4/166534?text=Wheelchair', price: 8999 },
-    ],
+    featuredProducts: [],
     relatedCategories: [
       { handle: 'dme', title: 'Durable Medical Equipment' },
       { handle: 'mobility-aids', title: 'Mobility Aids' },
@@ -325,6 +350,7 @@ export const mockPartners: Partner[] = [
   {
     slug: 'dynao2',
     name: 'DynaO2',
+    vendorName: 'DynaO2',
     type: 'brand',
     isActive: true,
     description: 'Respiratory therapy and oxygen delivery products for clinical use.',
@@ -336,10 +362,7 @@ export const mockPartners: Partner[] = [
     },
     intro: 'DynaO2 manufactures respiratory therapy products including nasal cannulas, oxygen masks, and nebulizer kits for hospitals and home health agencies.',
     productCategories: ['respiratory', 'oxygen-therapy'],
-    featuredProducts: [
-      { handle: 'nasal-cannula-adult', title: 'Nasal Cannula, Adult', image: 'https://placehold.co/400x400/fef9c3/854d0e?text=Cannula', price: 199 },
-      { handle: 'simple-face-mask', title: 'Simple Face Mask', image: 'https://placehold.co/400x400/fef9c3/854d0e?text=Face+Mask', price: 299 },
-    ],
+    featuredProducts: [],
     relatedCategories: [
       { handle: 'respiratory', title: 'Respiratory Supplies' },
       { handle: 'oxygen-therapy', title: 'Oxygen Therapy' },
@@ -347,10 +370,10 @@ export const mockPartners: Partner[] = [
   },
 ]
 
-export function getActivePartners(): Partner[] {
-  return mockPartners.filter((p) => p.isActive)
+export function getPartnerBySlug(slug: string): Partner | undefined {
+  return PARTNERS.find((p) => p.slug === slug)
 }
 
-export function getPartnerBySlug(slug: string): Partner | undefined {
-  return mockPartners.find((p) => p.slug === slug)
+export function getActivePartners(): Partner[] {
+  return PARTNERS.filter((p) => p.isActive)
 }

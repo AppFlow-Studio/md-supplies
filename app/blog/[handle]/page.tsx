@@ -12,6 +12,10 @@ import {
 import type { BlogArticle, ShopifyBlog, BlogArticleSummary } from "@/lib/shopify/types";
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { buildMetadata } from "@/lib/seo";
+import { BlogPostingSchema } from "@/components/schema/BlogPostingSchema";
+import { BreadcrumbSchema } from "@/components/schema/BreadcrumbSchema";
+import { SITE_URL } from "@/lib/seo/constants";
 
 export const revalidate = 3600;
 
@@ -56,17 +60,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
   try {
     const found = await findArticle(handle);
-    if (!found) return { title: "Article | MD Supplies Blog" };
+    if (!found) return buildMetadata({ pageType: 'blog-article', slug: handle });
     const { article } = found;
-    return {
-      title: `${article.title} | MD Supplies Blog`,
+    return buildMetadata({
+      pageType: 'blog-article',
+      title: article.title,
       description: article.excerpt?.slice(0, 155) ?? undefined,
-      openGraph: article.image
-        ? { images: [{ url: article.image.url, alt: article.image.altText ?? article.title }] }
-        : undefined,
-    };
+      slug: handle,
+      image: article.image?.url,
+    });
   } catch {
-    return { title: "Article | MD Supplies Blog" };
+    return buildMetadata({ pageType: 'blog-article', slug: handle });
   }
 }
 
@@ -106,6 +110,23 @@ export default async function ArticlePage({ params }: Props) {
 
   return (
     <main className="bg-white">
+      <BlogPostingSchema
+        title={article.title}
+        description={article.excerpt ?? article.title}
+        url={`${SITE_URL}/blog/${article.handle}`}
+        featuredImage={heroSrc}
+        publishedAt={article.publishedAt}
+        authorName={article.author.name}
+        publisherName="MD Supplies"
+        publisherLogo={`${SITE_URL}/images/logo.png`}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", item: SITE_URL },
+          { name: "Blog", item: `${SITE_URL}/blog` },
+          { name: article.title, item: `${SITE_URL}/blog/${article.handle}` },
+        ]}
+      />
 
       {/* ── Hero image with breadcrumb overlay ── */}
       <div className="w-full overflow-hidden bg-navy-900 h-[280px] sm:h-[380px] lg:h-[460px] relative">

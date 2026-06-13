@@ -83,16 +83,22 @@ function TabContent({ tab, product }: { tab: Tab; product: ProductDetailData }) 
   // REVIEWS
   return (
     <div className="flex flex-col gap-6 max-w-[700px]">
-      <div className="flex items-center gap-4">
-        <span className="text-navy-900 text-[48px] font-bold leading-none">{product.rating}</span>
-        <div className="flex flex-col gap-1">
-          <StarRating rating={product.rating} />
-          <span className="text-gray-500 text-[13px]">{product.reviewCount} reviews</span>
+      {product.reviewCount > 0 && (
+        <div className="flex items-center gap-4">
+          <span className="text-navy-900 text-[48px] font-bold leading-none">{product.rating}</span>
+          <div className="flex flex-col gap-1">
+            <StarRating rating={product.rating} />
+            <span className="text-gray-500 text-[13px]">{product.reviewCount} reviews</span>
+          </div>
         </div>
-      </div>
-      <p className="text-gray-500 text-[15px] leading-[28px]">
-        No individual reviews to display yet. Be the first to review this product.
-      </p>
+      )}
+      {product.reviewCount === 0 ? (
+        <p className="text-gray-500 text-sm">No reviews yet.</p>
+      ) : (
+        <p className="text-gray-500 text-[15px] leading-[28px]">
+          No individual reviews to display yet. Be the first to review this product.
+        </p>
+      )}
     </div>
   );
 }
@@ -195,12 +201,14 @@ export function ProductDetail({ product }: { product: ProductDetailData }) {
               <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
                 {product.brand}
               </span>
-              <div className="flex items-center gap-2">
-                <StarRating rating={product.rating} />
-                <span className="text-gray-500 text-[13px] tracking-[0.26px]">
-                  {product.rating} ({product.reviewCount} Reviews)
-                </span>
-              </div>
+              {product.reviewCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <StarRating rating={product.rating} />
+                  <span className="text-gray-500 text-[13px] tracking-[0.26px]">
+                    {product.rating} ({product.reviewCount} Reviews)
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Name */}
@@ -332,7 +340,7 @@ export function ProductDetail({ product }: { product: ProductDetailData }) {
                       : "text-navy-900 border-transparent hover:text-teal-500"
                   }`}
                 >
-                  {tab === "REVIEWS" ? `REVIEWS (${product.reviewCount})` : tab}
+                  {tab === "REVIEWS" ? `REVIEWS${product.reviewCount > 0 ? ` (${product.reviewCount})` : ''}` : tab}
                 </button>
               ))}
             </div>
