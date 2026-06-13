@@ -1,9 +1,10 @@
+import { cache } from 'react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 
 type SlimCollection = { handle: string; title: string }
 
-async function fetchAllCollections(): Promise<SlimCollection[]> {
+const fetchAllCollections = cache(async (): Promise<SlimCollection[]> => {
   try {
     const data = await storefrontFetch<{ collections: { nodes: SlimCollection[] } }>(
       GET_COLLECTIONS,
@@ -13,7 +14,7 @@ async function fetchAllCollections(): Promise<SlimCollection[]> {
   } catch {
     return []
   }
-}
+})
 
 // Returns subcollections of a parent slug using the handle convention:
 // /category/gloves → finds collections like gloves-nitrile, gloves-latex, etc.

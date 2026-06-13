@@ -7,7 +7,7 @@ import { useCart } from './CartProvider'
 export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
-
+    console.log(cart)
   return (
     <>
       {/* Backdrop */}

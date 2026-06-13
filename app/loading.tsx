@@ -1,4 +1,3 @@
-import { HeroSection }      from "@/components/home/HeroSection";
 import { TrustedBrands }    from "@/components/home/TrustedBrands";
 import { ShopByIndustry }   from "@/components/home/ShopByIndustry";
 import { WhyChooseUs }      from "@/components/home/WhyChooseUs";
@@ -8,7 +7,23 @@ import { Skeleton }         from "@/components/ui/Skeleton";
 export default function HomeLoading() {
   return (
     <main>
-      <HeroSection />
+      {/* Hero skeleton — real HeroSection has H1s that would leak into non-homepage SSR HTML */}
+      <section className="w-full bg-neutral-100">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-16 lg:py-24 flex flex-col lg:flex-row gap-10 items-center min-h-[480px] lg:min-h-[600px]">
+          <div className="flex-1 flex flex-col gap-6">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-14 w-full max-w-[480px]" />
+            <Skeleton className="h-14 w-3/4 max-w-[360px]" />
+            <Skeleton className="h-5 w-full max-w-[520px]" />
+            <Skeleton className="h-5 w-4/5 max-w-[420px]" />
+            <div className="flex gap-4 pt-2">
+              <Skeleton className="h-14 w-48" />
+              <Skeleton className="h-14 w-36" />
+            </div>
+          </div>
+          <Skeleton className="w-full sm:w-[420px] lg:w-[540px] h-[320px] lg:h-[460px] shrink-0" />
+        </div>
+      </section>
       <TrustedBrands />
       <ShopByIndustry />
 

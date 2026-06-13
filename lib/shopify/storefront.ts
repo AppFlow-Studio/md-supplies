@@ -25,8 +25,7 @@ export async function storefrontFetch<T>(
   if (country && country !== 'US') {
     headers['Shopify-Storefront-Buyer-Country'] = country;
   }
-  console.log('URL:', STOREFRONT_API_URL);
-  console.log('TOKEN:', process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN);
+
   const res = await fetch(STOREFRONT_API_URL, {
     method: 'POST',
     headers,

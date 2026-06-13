@@ -1,33 +1,54 @@
 import { storefrontFetch } from '../lib/shopify/storefront'
 import { GET_COLLECTIONS } from '../lib/shopify/queries/collections'
 
+// Revised 2026-06-13: updated to match live Shopify collection handles.
+// Original wishlist (exam-gloves, gloves-nitrile, iv-therapy, respiratory, etc.) had no matching collections.
 const APPROVED_CATEGORIES = [
-	'exam-gloves',
-	'gloves-nitrile',
-	'gloves-latex',
-	'gloves-vinyl',
-	'gloves-sterile',
+	// Gloves & hand protection
+	'gloves',             // replaces: exam-gloves
+	'surgical-gloves',    // replaces: gloves-sterile
+
+	// Wound & skin
 	'wound-care',
-	'bandages',
-	'gauze',
-	'sutures',
-	'needles-syringes',
-	'syringes',
-	'needles',
-	'iv-therapy',
-	'respiratory',
-	'oxygen-therapy',
-	'diagnostics',
-	'surgical',
-	'ppe',
-	'disposables',
-	'personal-care',
-	'dme',
-	'mobility-aids',
-	'emergency',
-	'first-aid',
+	'skin-preparation',   // replaces: surgical / bandages / gauze area
+
+	// Injection & blood
+	'blood-collection',   // replaces: needles-syringes / needles / syringes
+
+	// Diagnostics & monitoring
+	'testing-screening',  // replaces: diagnostics
+	'diagnostic-tools',
+	'blood-pressure',
+
+	// Exam room & dental
 	'exam-room',
+	'dental',
+
+	// Continence & personal care
 	'incontinence',
+	'hygiene',            // replaces: personal-care
+	'mouth-care',
+
+	// Home care & DME
+	'home-care',          // replaces: dme (partial)
+	'mobility',           // replaces: mobility-aids
+	'bariatric',
+	'braces-support',
+
+	// Therapy & rehab
+	'patient-therapy-rehab',
+	'hot-cold-therapy',
+
+	// Emergency & facility
+	'emergency-supplies', // replaces: emergency / first-aid
+	'housekeeping-janitorial',
+	'bags',
+	'cotton',
+	'seating',
+
+	// PPE & apparel
+	'capes-gowns',        // replaces: ppe (partial)
+	'caps-headwear',
 ]
 
 async function main() {

@@ -3,9 +3,9 @@ import { buildMetadata } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
-import { GET_BLOGS_WITH_ARTICLES } from '@/lib/shopify/queries/blog'
-import type { Product, CollectionProduct, ProductMetafields, ShopifyBlog, BlogArticleSummary } from '@/lib/shopify/types'
+import type { Product, CollectionProduct, ProductMetafields } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
+import { PARTNERS } from '@/lib/partners'
 import { ProductSchema } from '@/components/schema/ProductSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
@@ -80,21 +80,17 @@ export default async function ProductPage({ params }: Props) {
 
   const product = normalizeProduct(rawData.product)
 
-  // Fetch Shopify recommendations and blog articles in parallel
-  const [recsData, blogsData] = await Promise.all([
-    storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
-      GET_PRODUCT_RECS,
-      { handle: slug },
-    ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] })),
-    storefrontFetch<{ blogs: { nodes: ShopifyBlog[] } }>(GET_BLOGS_WITH_ARTICLES, { first: 6 })
-      .catch(() => ({ blogs: { nodes: [] } })),
-  ])
+  const partner = PARTNERS.find(
+    (p) => p.isActive && p.vendorName === product.vendor,
+  ) ?? null
+
+  const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
+    GET_PRODUCT_RECS,
+    { handle: slug },
+  ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
   const relatedProducts = recsData.related
   const complementaryProducts = recsData.complementary
-  const relatedArticles: BlogArticleSummary[] = blogsData.blogs.nodes
-    .flatMap((b) => b.articles.nodes)
-    .slice(0, 3)
 
   const firstVariant = product.variants.nodes[0]
   const isAvailable = firstVariant?.availableForSale ?? product.availableForSale
@@ -127,6 +123,7 @@ export default async function ProductPage({ params }: Props) {
         product={product}
         relatedProducts={relatedProducts}
         complementaryProducts={complementaryProducts}
+        partnerSlug={partner?.slug ?? null}
       />
     </main>
   )
