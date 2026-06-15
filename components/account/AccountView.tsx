@@ -20,17 +20,6 @@ export interface CustomerAddress {
   phoneNumber: string | null
 }
 
-export interface OrderLineItem {
-  title:    string
-  quantity: number
-  variant: {
-    id:    string
-    title: string
-    price: { amount: string; currencyCode: string }
-    image: { id: string; url: string; altText: string | null; width: number; height: number } | null
-  } | null
-}
-
 export interface CustomerOrder {
   id:                string
   number:            number
@@ -38,7 +27,6 @@ export interface CustomerOrder {
   financialStatus:   string
   fulfillmentStatus: string
   totalPrice:        { amount: string; currencyCode: string }
-  lineItems:         { nodes: OrderLineItem[] }
 }
 
 export interface Customer {

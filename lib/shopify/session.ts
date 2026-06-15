@@ -4,6 +4,7 @@ export const SESSION_COOKIES = {
   ACCESS_TOKEN:  'shopify_access_token',
   REFRESH_TOKEN: 'shopify_refresh_token',
   EXPIRES_AT:    'shopify_token_expires_at',
+  ID_TOKEN:      'shopify_id_token',
   CODE_VERIFIER: 'shopify_code_verifier',
   OAUTH_STATE:   'shopify_oauth_state',
 } as const

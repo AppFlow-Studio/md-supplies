@@ -2,16 +2,34 @@ import type { ShopifyResponse } from './types';
 
 const CUSTOMER_API_VERSION = '2026-04';
 
+// SHOPIFY_CUSTOMER_ACCOUNT_URL is the OAuth/OIDC base:
+//   https://shopify.com/authentication/<shop-id>
+// The OAuth endpoints (/oauth/authorize, /oauth/token, /logout) hang off it directly.
+// The Customer Account GraphQL API lives on a DIFFERENT base — the same host/shop-id
+// WITHOUT the /authentication segment:
+//   https://shopify.com/<shop-id>/account/customer/api/<version>/graphql
+function authBase(): string {
+  return process.env.SHOPIFY_CUSTOMER_ACCOUNT_URL ?? '';
+}
+
+function apiBase(): string {
+  return authBase().replace('/authentication', '');
+}
+
 function customerApiUrl(): string {
-  return `${process.env.SHOPIFY_CUSTOMER_ACCOUNT_URL}/account/customer/api/${CUSTOMER_API_VERSION}/graphql`;
+  return `${apiBase()}/account/customer/api/${CUSTOMER_API_VERSION}/graphql`;
 }
 
 function tokenUrl(): string {
-  return `${process.env.SHOPIFY_CUSTOMER_ACCOUNT_URL}/oauth/token`;
+  return `${authBase()}/oauth/token`;
 }
 
 function authorizeUrl(): string {
-  return `${process.env.SHOPIFY_CUSTOMER_ACCOUNT_URL}/oauth/authorize`;
+  return `${authBase()}/oauth/authorize`;
+}
+
+export function logoutUrl(): string {
+  return `${authBase()}/logout`;
 }
 
 function base64UrlEncode(input: Uint8Array): string {
@@ -50,6 +68,8 @@ export type TokenResponse = {
   expires_in: number;
   refresh_token: string;
   token_type: string;
+  // Present because the `openid` scope is requested. Used as id_token_hint at logout.
+  id_token?: string;
 };
 
 export async function exchangeToken(code: string, codeVerifier: string): Promise<TokenResponse> {
@@ -100,7 +120,8 @@ export async function customerFetch<T>(
   accessToken: string,
   variables?: Record<string, unknown>,
 ): Promise<T> {
-  const res = await fetch(customerApiUrl(), {
+  const url = customerApiUrl();
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -110,12 +131,19 @@ export async function customerFetch<T>(
   });
 
   if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    // DEBUG (temporary): surface why the Customer Account API call fails
+    console.error(
+      `[customerFetch] HTTP ${res.status} ${res.statusText}\n  url:   ${url}\n  token: ${accessToken?.slice(0, 9)}… (len ${accessToken?.length})\n  body:  ${body.slice(0, 600)}`,
+    );
     throw new Error(`Customer API HTTP ${res.status}: ${res.statusText}`);
   }
 
   const json: ShopifyResponse<T> = await res.json();
 
   if (json.errors?.length) {
+    // DEBUG (temporary)
+    console.error(`[customerFetch] GraphQL errors @ ${url}\n`, JSON.stringify(json.errors, null, 2));
     throw new Error(json.errors.map((e) => e.message).join('\n'));
   }
 

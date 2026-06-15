@@ -43,6 +43,11 @@ export default async function AccountPage() {
       ),
     ])
 
+    // DEBUG (temporary): 200 OK but customer null = token valid yet no customer returned
+    if (!customerResult.customer) {
+      console.warn('[account] API returned customer: null (token prefix:', session.accessToken.slice(0, 9), ')')
+    }
+
     return (
       <AccountView
         customer={customerResult.customer}
@@ -50,8 +55,9 @@ export default async function AccountPage() {
         addresses={addressesResult.customer.addresses.nodes}
       />
     )
-  } catch {
-    // Token invalid or API unreachable — show logged-out view
+  } catch (err) {
+    // DEBUG (temporary): log instead of silently swallowing
+    console.error('[account] customer fetch failed — showing logged-out view:\n', err)
     return <AccountView customer={null} orders={[]} addresses={[]} />
   }
 }
