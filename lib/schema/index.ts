@@ -3,11 +3,7 @@ export { buildWebSiteSchema } from './website'
 export { buildCollectionPageSchema } from './collection'
 export { buildBreadcrumbListSchema } from './breadcrumb'
 
-// Prevents </script> injection: JSON.stringify does not escape < > & by default.
-// A collection title of "test</script>" would break out of the script element.
-export function jsonLdSafe(value: unknown): string {
-  return JSON.stringify(value)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026')
-}
+// Re-export the canonical safe serializer so callers import from one place.
+// safeJsonLd also escapes Unicode line terminators (U+2028, U+2029) which
+// can break JSON parsing in some environments if left unescaped.
+export { safeJsonLd as jsonLdSafe } from '@/lib/safe-json-ld'
