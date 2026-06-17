@@ -1,7 +1,6 @@
-export type FAQ = {
-  question: string
-  answer: string
-}
+import type { FAQ } from '@/types/industry'
+
+export type { FAQ }
 
 export type Industry = {
   name: string
