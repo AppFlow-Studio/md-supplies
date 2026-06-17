@@ -84,7 +84,7 @@ export function HeroSection({ products }: Props) {
             {/* Description */}
             <FadeIn delay={0.2}>
               <p className="text-gray-500 text-[18px] leading-[30px] tracking-[0.36px] max-w-[516px]">
-                4,000+ products across every clinical category. Trusted by urgent care centers,
+                8,000+ products across every clinical category. Trusted by urgent care centers,
                 HRT clinics, home health agencies, and first responders.
               </p>
             </FadeIn>

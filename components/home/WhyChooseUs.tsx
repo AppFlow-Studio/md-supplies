@@ -8,8 +8,8 @@ import { FadeIn } from "@/components/ui/FadeIn";
 const FEATURES: { Icon: LucideIcon; title: string; description: string }[] = [
   {
     Icon: Truck,
-    title: "Same Day Shipping",
-    description: "Order by 2PM for same-day dispatch on in-stock items",
+    title: "Reliable Fulfillment",
+    description: "Orders are processed through trusted medical supply partners with clear product and shipping details.",
   },
   {
     Icon: ShieldCheck,
@@ -19,7 +19,7 @@ const FEATURES: { Icon: LucideIcon; title: string; description: string }[] = [
   {
     Icon: Tag,
     title: "Competitive Pricing",
-    description: "Save up to 40% compared to traditional distributors",
+    description: "Transparent wholesale pricing across medical supply categories, with no inflated markups.",
   },
   {
     Icon: RotateCcw,

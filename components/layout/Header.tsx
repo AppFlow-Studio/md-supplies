@@ -18,11 +18,17 @@ interface HeaderProps {
   menuItems: MenuItem[]
 }
 
+const ANNOUNCEMENTS = [
+  'FREE SHIPPING on eligible orders $150+',
+  'Ordering support for clinics, pharmacies & care teams',
+  'Shop medical supplies by category, brand, or industry',
+]
+
 const STATS = [
   { label: '12,000+', sublabel: 'Facilities', icon: Building2 },
   { label: '99.8%', sublabel: 'Order Accuracy', icon: ShieldCheck },
   { label: 'Fast', sublabel: 'Shipping', icon: Truck },
-  { label: '50,000+', sublabel: 'Products', icon: Package },
+  { label: '8,000+', sublabel: 'Products', icon: Package },
 ]
 
 function titleToSlug(title: string): string {
@@ -43,6 +49,22 @@ export function Header({ menuItems }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [openNav, setOpenNav] = useState<string | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [msgIdx, setMsgIdx] = useState(0)
+  const [annPaused, setAnnPaused] = useState(false)
+  const [annVisible, setAnnVisible] = useState(true)
+
+  useEffect(() => {
+    if (annPaused) return
+    const id = setInterval(() => {
+      setAnnVisible(false)
+      const t = setTimeout(() => {
+        setMsgIdx(i => (i + 1) % ANNOUNCEMENTS.length)
+        setAnnVisible(true)
+      }, 300)
+      return () => clearTimeout(t)
+    }, 4000)
+    return () => clearInterval(id)
+  }, [annPaused])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -69,15 +91,26 @@ export function Header({ menuItems }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40">
       {/* 1 — Announcement bar */}
-      <div className="bg-navy-900 h-13.5 flex items-center">
+      <div
+        className="bg-navy-900 h-13.5 flex items-center"
+        onMouseEnter={() => setAnnPaused(true)}
+        onMouseLeave={() => setAnnPaused(false)}
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center justify-center gap-4">
-          <span className="text-white text-sm font-medium text-center">
-            FREE SHIPPING on Orders $150 +
+          <span
+            className={`text-white text-sm font-medium text-center transition-opacity duration-300 ${annVisible ? 'opacity-100' : 'opacity-0'}`}
+          >
+            {ANNOUNCEMENTS[msgIdx]}
           </span>
           <div className="hidden sm:flex items-center gap-1.5">
-            <span className="w-5 h-1.5 rounded-full bg-white" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+            {ANNOUNCEMENTS.map((_, i) => (
+              <span
+                key={i}
+                className={`rounded-full bg-white transition-all duration-300 ${i === msgIdx ? 'w-5 h-1.5' : 'w-1.5 h-1.5 opacity-40'}`}
+              />
+            ))}
           </div>
         </div>
       </div>

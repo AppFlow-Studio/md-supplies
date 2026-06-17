@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link";
-import { Star, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { FadeIn } from "@/components/ui/FadeIn";
 import type { CollectionProduct } from "@/lib/shopify/types";
@@ -73,11 +73,7 @@ export function PopularProducts({ products }: Props) {
                       {product.availableForSale ? "in stock" : "out of stock"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={11} className="text-[#f5a623] fill-[#f5a623]" />
-                    ))}
-                  </div>
+
                   <p className="text-[14px] font-semibold text-black leading-snug line-clamp-3">
                     {product.title}
                   </p>

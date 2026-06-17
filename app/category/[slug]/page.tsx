@@ -416,30 +416,34 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </section>
       )}
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: jsonLdSafe(
-            buildCollectionPageSchema({
-              name: collection.title,
-              url: `${SITE_URL}/category/${slug}`,
-              ...(collection.description ? { description: collection.description } : {}),
-              ...(collection.image?.url ? { image: collection.image.url } : {}),
-            }),
-          ),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: jsonLdSafe(
-            buildBreadcrumbListSchema(
-              [{ label: collection.title }],
-              `${SITE_URL}/category/${slug}`,
-            ),
-          ),
-        }}
-      />
+      {!isFiltered && (
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: jsonLdSafe(
+                buildCollectionPageSchema({
+                  name: collection.title,
+                  url: `${SITE_URL}/category/${slug}`,
+                  ...(collection.description ? { description: collection.description } : {}),
+                  ...(collection.image?.url ? { image: collection.image.url } : {}),
+                }),
+              ),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: jsonLdSafe(
+                buildBreadcrumbListSchema(
+                  [{ label: collection.title }],
+                  `${SITE_URL}/category/${slug}`,
+                ),
+              ),
+            }}
+          />
+        </>
+      )}
     </main>
   )
 }
