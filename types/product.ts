@@ -50,6 +50,7 @@ export interface ProductCardData {
   leadTime?: string
   isOCC?: boolean
   hasFreeShipping?: boolean
+  isRx?: boolean
   variants: { id: string; title: string; price: number; available: boolean }[]
 }
 

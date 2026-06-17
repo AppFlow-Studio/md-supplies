@@ -1,11 +1,12 @@
 interface Props {
   isOCC?: boolean
   hasFreeShipping?: boolean
+  isRx?: boolean
   available: boolean
   leadTime?: string
 }
 
-export function ProductBadges({ isOCC, hasFreeShipping, available, leadTime }: Props) {
+export function ProductBadges({ isOCC, hasFreeShipping, isRx, available, leadTime }: Props) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {isOCC && (
@@ -16,6 +17,11 @@ export function ProductBadges({ isOCC, hasFreeShipping, available, leadTime }: P
       {hasFreeShipping && (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-teal-500 text-white">
           Free Shipping
+        </span>
+      )}
+      {isRx && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-amber-600 text-white">
+          RX Only
         </span>
       )}
       {!available && (

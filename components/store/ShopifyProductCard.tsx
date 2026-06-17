@@ -62,6 +62,20 @@ export function ShopifyProductCard({ product, categorySlug }: { product: Collect
           <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
             {product.title}
           </p>
+          {(product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {product.tags.includes('free-shipping') && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-teal-500 text-white">
+                  Free Shipping
+                </span>
+              )}
+              {product.tags.includes('rx-required') && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-amber-600 text-white">
+                  RX Only
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex items-baseline gap-2">
             <span className="text-black text-[18px] font-bold tracking-[0.36px]">
               ${price.toFixed(2)}

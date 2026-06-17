@@ -229,6 +229,22 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               )}
             </div>
 
+            {/* Product badges — metafield/tag gated */}
+            {(product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
+              <div className="flex flex-wrap gap-2">
+                {product.tags.includes('free-shipping') && (
+                  <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-teal-500 text-white">
+                    Free Shipping
+                  </span>
+                )}
+                {product.tags.includes('rx-required') && (
+                  <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white">
+                    RX Only
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="h-px bg-gray-200" />
 
             {/* Variant selector */}

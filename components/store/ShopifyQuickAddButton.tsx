@@ -27,6 +27,7 @@ function toCardData(product: CollectionProduct): ProductCardData {
     sku: '',
     available: product.availableForSale,
     hasFreeShipping: product.tags.includes('free-shipping'),
+    isRx: product.tags.includes('rx-required'),
     variants: product.variants.nodes.map((v, i) => ({
       id: v.id,
       title: `Option ${i + 1}`,

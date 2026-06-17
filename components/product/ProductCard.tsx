@@ -65,6 +65,7 @@ export function ProductCard({ product }: Props) {
         <ProductBadges
           isOCC={product.isOCC}
           hasFreeShipping={product.hasFreeShipping}
+          isRx={product.isRx}
           available={product.available}
           leadTime={product.leadTime}
         />

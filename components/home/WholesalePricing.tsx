@@ -32,6 +32,8 @@ const leftItemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
+type Status = 'idle' | 'submitting' | 'success' | 'error'
+
 export function WholesalePricing() {
   const [form, setForm] = useState({
     name: "",
@@ -39,14 +41,29 @@ export function WholesalePricing() {
     phone: "",
     facultyType: "",
   });
+  const [status, setStatus] = useState<Status>('idle')
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    alert("Application submitted! We'll be in touch shortly.");
+    setStatus('submitting')
+    try {
+      await fetch('/api/sourcing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      setStatus('success')
+      const w = window as unknown as { gtag?: (...args: unknown[]) => void }
+      if (typeof w.gtag === 'function') {
+        w.gtag('event', 'form_submit', { form_name: 'sourcing_request', faculty_type: form.facultyType })
+      }
+    } catch {
+      setStatus('error')
+    }
   }
 
   return (
@@ -161,12 +178,26 @@ export function WholesalePricing() {
               </select>
             </div>
 
-            <button
-              type="submit"
-              className="mt-2 bg-navy-900 text-white text-[18px] font-semibold tracking-[0.04em] py-4 hover:bg-navy-950 transition-colors"
-            >
-              SUBMIT APPLICATION
-            </button>
+            {status === 'success' ? (
+              <div className="mt-2 bg-teal-50 border border-teal-300 text-teal-800 text-[15px] font-medium py-5 px-6 text-center">
+                Application submitted — we&apos;ll be in touch shortly.
+              </div>
+            ) : (
+              <>
+                <button
+                  type="submit"
+                  disabled={status === 'submitting'}
+                  className="mt-2 bg-navy-900 text-white text-[18px] font-semibold tracking-[0.04em] py-4 hover:bg-navy-950 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {status === 'submitting' ? 'SUBMITTING…' : 'SUBMIT APPLICATION'}
+                </button>
+                {status === 'error' && (
+                  <p className="text-red-600 text-[13px] text-center">
+                    Something went wrong. Please try again or email us directly.
+                  </p>
+                )}
+              </>
+            )}
 
           </form>
         </motion.div>
