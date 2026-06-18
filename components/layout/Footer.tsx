@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CurrencySwitcher } from './CurrencySwitcher'
 import type { AvailableCountry, SlimCollection } from '@/lib/shopify/types'
 import { ROUTES } from '@/lib/routes'
+import { buildCategoryNav } from '@/lib/category-nav'
 
 const EXPLORE = [
   { label: 'Partners', href: ROUTES.partners },
@@ -64,8 +65,7 @@ interface FooterProps {
 }
 
 export function Footer({ collections, availableCountries = [], currentCountry = 'US' }: FooterProps) {
-  const topCategories = collections.slice(0, 8)
-  const moreCategories = collections.slice(8, 16)
+  const categoryNav = buildCategoryNav(collections)
 
   return (
     <footer className="bg-neutral-50 border-t border-blue-50 pt-14 pb-0">
@@ -123,13 +123,13 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
               Top Categories
             </h4>
             <ul className="space-y-3">
-              {topCategories.map((col) => (
-                <li key={col.handle}>
+              {categoryNav.primary.map((cat) => (
+                <li key={cat.href}>
                   <Link
-                    href={ROUTES.category(col.handle)}
+                    href={cat.href}
                     className="text-sm text-gray-500 hover:text-teal-500 transition-colors"
                   >
-                    {col.title}
+                    {cat.displayName}
                   </Link>
                 </li>
               ))}
@@ -142,13 +142,13 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
               More Categories
             </h4>
             <ul className="space-y-3">
-              {moreCategories.map((col) => (
-                <li key={col.handle}>
+              {categoryNav.more.map((cat) => (
+                <li key={cat.href}>
                   <Link
-                    href={ROUTES.category(col.handle)}
+                    href={cat.href}
                     className="text-sm text-gray-500 hover:text-teal-500 transition-colors"
                   >
-                    {col.title}
+                    {cat.displayName}
                   </Link>
                 </li>
               ))}
