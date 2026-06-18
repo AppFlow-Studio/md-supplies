@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { track } from '@/lib/analytics/track'
+import { buildFormSubmitEvent } from '@/lib/analytics/events'
 
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
@@ -34,10 +36,7 @@ export function ContactForm() {
       })
       if (!res.ok) throw new Error('server')
       setStatus('success')
-      const w = window as unknown as { gtag?: (...args: unknown[]) => void }
-      if (typeof w.gtag === 'function') {
-        w.gtag('event', 'form_submit', { form_name: 'contact', subject: form.subject || 'none' })
-      }
+      track(buildFormSubmitEvent({ formName: 'contact', details: { subject: form.subject || 'none' } }))
     } catch {
       setStatus('error')
     }
