@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
+import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
 
 type SlimCollection = { handle: string; title: string }
 
@@ -52,7 +53,10 @@ export async function getRelatedCategories(
   const all = await fetchAllCollections()
   return all
     .filter(
-      (c) => c.handle !== excludeSlug && !c.handle.startsWith(`${excludeSlug}-`),
+      (c) =>
+        c.handle !== excludeSlug &&
+        !c.handle.startsWith(`${excludeSlug}-`) &&
+        !EXCLUDED_COLLECTION_HANDLES.has(c.handle),
     )
     .slice(0, 6)
     .map((c) => ({ label: c.title, slug: c.handle }))
