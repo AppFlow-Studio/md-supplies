@@ -1,9 +1,28 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import productRedirects from './docs/redirects-ready.json'
 
 type Redirect301 = { from: string; to: string; status: 301 }
 type Gone410    = { from: string; status: 410 }
 type RedirectEntry = Redirect301 | Gone410
+
+// ─── Product catalog 301s (bulk) ──────────────────────────────────────────────
+//
+// 1,285 legacy product URLs from the old store, loaded from docs/redirects-ready.json
+// into a Map keyed by `from` for O(1) lookup (a linear scan over 1,285 rows on every
+// request is wasteful). The data file is validated clean: 1,285 unique `from` keys,
+// no self-redirects, and ZERO chains (no `to` is itself a `from`), so a single hop
+// always lands on a live page.
+//
+// The old store served every product at `/products/<handle>` (plural); this site
+// serves them at `/product/<handle>` (singular). Both `from` and `to` in the JSON
+// use the plural form, so we rewrite each `to` to the singular live route here.
+const PRODUCT_REDIRECTS = new Map<string, string>(
+  (productRedirects as { from: string; to: string }[]).map(({ from, to }) => [
+    from,
+    to.replace(/^\/products\//, '/product/'),
+  ]),
+)
 
 // ─── Redirect + 410 map ──────────────────────────────────────────────────────
 //
@@ -60,6 +79,22 @@ export function proxy(request: NextRequest): Response | undefined {
     if (pathname !== entry.from) continue
     if (entry.status === 410) return new Response(null, { status: 410 })
     return NextResponse.redirect(new URL(entry.to, request.url), 301)
+  }
+
+  // Bulk product catalog 301s (consolidated/discontinued handles) — exact match.
+  // Checked before the blanket rule below so a remapped handle wins over the
+  // naive plural→singular rewrite.
+  const productTarget = PRODUCT_REDIRECTS.get(pathname)
+  if (productTarget) {
+    return NextResponse.redirect(new URL(productTarget, request.url), 301)
+  }
+
+  // Blanket plural→singular fallback: any other legacy `/products/<handle>` URL
+  // maps to the live `/product/<handle>` route. Catches products that survived
+  // with an unchanged handle (and so are not enumerated in redirects-ready.json).
+  if (pathname.startsWith('/products/')) {
+    const newPath = pathname.replace(/^\/products\//, '/product/')
+    return NextResponse.redirect(new URL(newPath, request.url), 301)
   }
 
   // Brands → Partners wildcard (T1 consolidation)

@@ -110,6 +110,32 @@ describe('proxy — path normalization (pass-through for unknown)', () => {
   })
 })
 
+describe('proxy — bulk product catalog 301s', () => {
+  it('maps a consolidated legacy variant URL to its singular canonical target', () => {
+    // Row from docs/redirects-ready.json — green XL variant consolidated into the
+    // black small canonical. The plural `to` in the data is rewritten to singular.
+    const res = proxy(req('/products/8-mil-nitrile-industrial-gloves-diamond-textured-green-xl-8104'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe(
+      'https://mdsupplies.com/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101',
+    )
+  })
+
+  it('blanket fallback: an un-enumerated /products/<handle> → /product/<handle>', () => {
+    const res = proxy(req('/products/some-surviving-handle-not-in-the-map'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe(
+      'https://mdsupplies.com/product/some-surviving-handle-not-in-the-map',
+    )
+  })
+
+  it('the singular canonical target passes through (no chain / no double redirect)', () => {
+    expect(
+      proxy(req('/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101')),
+    ).toBeUndefined()
+  })
+})
+
 describe('proxy — brands wildcard', () => {
   it('/brands → /partners', () => {
     const res = proxy(req('/brands'))
