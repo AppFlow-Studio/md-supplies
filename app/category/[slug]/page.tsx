@@ -295,6 +295,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             products={products}
             emptyStateHref={ROUTES.category(slug)}
             categorySlug={data.collection.handle}
+            itemListId={data.collection.handle}
+            itemListName={collection.title}
           />
 
           {/* Clean-page pagination */}

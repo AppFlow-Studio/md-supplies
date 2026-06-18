@@ -136,6 +136,8 @@ export default async function CategoryProductPage({ params }: Props) {
             products={collection.products.nodes}
             emptyStateHref={ROUTES.category(slug)}
             categorySlug={subHandle}
+            itemListId={subHandle}
+            itemListName={collection.title}
           />
         </div>
 

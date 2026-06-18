@@ -98,6 +98,8 @@ export function SearchResultsSection({
         products={products}
         emptyStateHref={clearFiltersUrl}
         emptyStateMessage={`No results for "${q}"`}
+        itemListId="search-results"
+        itemListName={`Search results for "${q}"`}
       />
       {pageInfo.hasNextPage && (
         <div className="flex items-center justify-center pt-12">

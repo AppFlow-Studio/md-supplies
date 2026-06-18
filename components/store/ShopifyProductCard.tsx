@@ -1,9 +1,21 @@
+'use client'
+
 import Link from 'next/link'
 import { ShoppingCart } from 'lucide-react'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { ShopifyQuickAddButton } from './ShopifyQuickAddButton'
+import { track } from '@/lib/analytics/track'
+import { buildSelectItemEvent, toGA4Item, currencyOf } from '@/lib/analytics/events'
 
-export function ShopifyProductCard({ product, categorySlug }: { product: CollectionProduct; categorySlug?: string }) {
+interface Props {
+  product: CollectionProduct
+  categorySlug?: string
+  itemListId?: string
+  itemListName?: string
+  index?: number
+}
+
+export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0 }: Props) {
   const variant = product.variants.nodes[0]
   const price = parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount)
   const compareAt = variant?.compareAtPrice
@@ -19,9 +31,21 @@ export function ShopifyProductCard({ product, categorySlug }: { product: Collect
     ? `/category/${categorySlug}/${product.handle}`
     : `/product/${product.handle}`
 
+  function handleSelect() {
+    track({
+      ...buildSelectItemEvent({
+        currency: currencyOf(product),
+        itemListId: itemListId ?? 'unknown',
+        itemListName: itemListName ?? 'unknown',
+        item: toGA4Item(product),
+        index,
+      }),
+    })
+  }
+
   return (
     <div className="group relative bg-white flex flex-col">
-      <Link href={href} className="flex flex-col">
+      <Link href={href} onClick={handleSelect} className="flex flex-col">
         {/* Image */}
         <div className="relative overflow-hidden bg-white aspect-square">
           {image ? (
