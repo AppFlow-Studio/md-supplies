@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   ShieldCheck, Truck, RotateCcw, Plus, Minus,
 } from 'lucide-react'
 import type { Product, CollectionProduct, ProductVariant } from '@/lib/shopify/types'
+import { track } from '@/lib/analytics/track'
+import { buildViewItemEvent } from '@/lib/analytics/events'
 import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
 
@@ -63,6 +65,26 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
   const [orderQty, setOrderQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
   const [activeTab, setActiveTab] = useState<Tab>('SPECIFICATIONS')
+
+  useEffect(() => {
+    track(
+      {
+        ...buildViewItemEvent({
+          currency: selectedVariant.price.currencyCode,
+          item: {
+            item_id: selectedVariant.id,
+            item_name: product.title,
+            price: parseFloat(selectedVariant.price.amount),
+            item_brand: product.vendor,
+          },
+        }),
+      },
+    )
+    // Fire once per product page visit, not on every variant switch — App Router
+    // reuses this client component instance across product-to-product navigation,
+    // so `product.id` (not `[]`) is the dependency that makes this refire correctly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id])
 
   const price = parseFloat(selectedVariant.price.amount)
   const compareAt = selectedVariant.compareAtPrice
