@@ -6,6 +6,7 @@ import {
   ShieldCheck, Truck, RotateCcw, Plus, Minus,
 } from 'lucide-react'
 import type { Product, CollectionProduct, ProductVariant } from '@/lib/shopify/types'
+import { ProductImage } from '@/components/shared/ProductImage'
 import { track } from '@/lib/analytics/track'
 import { buildViewItemEvent } from '@/lib/analytics/events'
 import { VariantSelector } from './VariantSelector'
@@ -27,12 +28,7 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
   return (
     <Link href={`/product/${product.handle}`} className="group flex flex-col bg-neutral-50 flex-1 min-w-[160px]">
       <div className="relative overflow-hidden bg-neutral-50 aspect-square">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image.url} alt={image.altText ?? product.title} className="size-full object-contain" />
-        ) : (
-          <div className="size-full bg-gray-100" />
-        )}
+        <ProductImage src={image?.url} alt={image?.altText ?? product.title} />
       </div>
       <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
         <span className="text-teal-500 text-[12px] font-semibold uppercase tracking-[0.24px]">
@@ -164,16 +160,11 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
           {/* Left – Image gallery */}
           <div className="lg:w-[52%] shrink-0 flex flex-col gap-4">
             <div className="relative bg-[#f9faf9] aspect-square overflow-hidden">
-              {images[activeImg] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={images[activeImg].url}
-                  alt={images[activeImg].altText ?? product.title}
-                  className="size-full object-contain"
-                />
-              ) : (
-                <div className="size-full bg-gray-100" />
-              )}
+              <ProductImage
+                src={images[activeImg]?.url}
+                alt={images[activeImg]?.altText ?? product.title}
+                priority
+              />
             </div>
             {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto scrollbar-hide">
@@ -181,14 +172,13 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                   <button
                     key={img.id}
                     onClick={() => setActiveImg(i)}
-                    className={`size-[80px] sm:size-[100px] lg:size-[120px] shrink-0 overflow-hidden bg-[#f9faf9] transition-colors ${
+                    className={`relative size-[80px] sm:size-[100px] lg:size-[120px] shrink-0 overflow-hidden bg-[#f9faf9] transition-colors ${
                       activeImg === i
                         ? 'border-[3px] border-navy-900'
                         : 'border border-gray-200 hover:border-navy-900'
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.url} alt={img.altText ?? product.title} className="size-full object-contain" />
+                    <ProductImage src={img.url} alt={img.altText ?? product.title} />
                   </button>
                 ))}
               </div>
@@ -229,7 +219,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 <>
                   <span className="size-[8px] rounded-full shrink-0 bg-green-500" />
                   <span className="text-gray-500 text-[13px] tracking-[0.26px]">
-                    {qty !== null ? `In Stock – ${qty} available` : 'In Stock – Ships Same Day'}
+                    {qty !== null ? `In Stock – ${qty} available` : 'In Stock'}
                   </span>
                 </>
               )}
@@ -359,7 +349,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <div className="flex flex-wrap gap-5 pt-1">
               {[
                 { icon: <ShieldCheck size={15} className="text-gray-500" />, label: 'QUALITY CERTIFIED' },
-                { icon: <Truck size={15} className="text-gray-500" />, label: '2-3 DAY DELIVERY' },
+                { icon: <Truck size={15} className="text-gray-500" />, label: 'RELIABLE FULFILLMENT' },
                 { icon: <RotateCcw size={15} className="text-gray-500" />, label: '30-DAY RETURN' },
               ].map(({ icon, label }) => (
                 <div key={label} className="flex items-center gap-2">
@@ -486,9 +476,9 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             {activeTab === 'VENDOR SHIPPING & RETURNS' && (
               <div className="flex flex-col gap-4 max-w-[760px]">
                 <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                  Orders placed before 3 PM EST ship same day. Standard delivery is 2–3 business days.
-                  Bulk orders of 10+ cases qualify for additional volume discounts. Contact your
-                  account manager or use the B2B quote form for custom pricing.
+                  Orders are processed through trusted medical supply partners with clear product
+                  and shipping details. Bulk orders of 10+ cases qualify for additional volume
+                  discounts. Contact your account manager or use the B2B quote form for custom pricing.
                 </p>
                 <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
                   Returns are accepted within 30 days of delivery for unopened, undamaged items in
@@ -550,15 +540,8 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <div className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch">
               {relatedProducts.slice(4).map((item) => (
                 <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
-                  <div className="bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                    {item.images.nodes[0] && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.images.nodes[0].url}
-                        alt={item.images.nodes[0].altText ?? item.title}
-                        className="size-full object-contain"
-                      />
-                    )}
+                  <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
+                    <ProductImage src={item.images.nodes[0]?.url} alt={item.images.nodes[0]?.altText ?? item.title} />
                   </div>
                   <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
                     <p className="text-black text-[14px] font-semibold leading-5 line-clamp-2">
