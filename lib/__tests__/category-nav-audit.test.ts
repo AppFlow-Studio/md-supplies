@@ -3,9 +3,9 @@ import { buildCollectionFlags, buildRoadmapCoverage, type AuditCollectionInput }
 import type { RoadmapCategory } from '../category-nav'
 
 const ROADMAP: RoadmapCategory[] = [
-  { displayName: 'Gloves', navGroup: 'primary', matchedHandles: ['gloves'] },
-  { displayName: 'Apparel', navGroup: 'primary', matchedHandles: ['capes-gowns', 'footwear'] },
-  { displayName: 'Needles & Syringes', navGroup: 'primary', matchedHandles: [] },
+  { displayName: 'Gloves', navGroup: 'primary', matchedHandles: ['gloves'], placeholderSlug: 'gloves' },
+  { displayName: 'Apparel', navGroup: 'primary', matchedHandles: ['capes-gowns', 'footwear'], placeholderSlug: 'apparel' },
+  { displayName: 'Needles & Syringes', navGroup: 'primary', matchedHandles: [], placeholderSlug: 'needles-syringes' },
 ]
 
 function collection(overrides: Partial<AuditCollectionInput>): AuditCollectionInput {
