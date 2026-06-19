@@ -26,6 +26,7 @@ export function ProductImage({
 }: Props) {
   const [realImageFailed, setRealImageFailed] = useState(false)
   const [categoryPlaceholderFailed, setCategoryPlaceholderFailed] = useState(false)
+  const [globalPlaceholderFailed, setGlobalPlaceholderFailed] = useState(false)
 
   if (src && !realImageFailed) {
     return (
@@ -40,18 +41,31 @@ export function ProductImage({
     )
   }
 
-  const placeholderSrc = categoryPlaceholderFailed
-    ? GLOBAL_PRODUCT_PLACEHOLDER
-    : getProductPlaceholderPath(categoryHandle)
+  if (!categoryPlaceholderFailed) {
+    return (
+      <Image
+        src={getProductPlaceholderPath(categoryHandle)}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className={className}
+        onError={() => setCategoryPlaceholderFailed(true)}
+      />
+    )
+  }
 
-  return (
-    <Image
-      src={placeholderSrc}
-      alt={alt}
-      fill
-      sizes={sizes}
-      className={className}
-      onError={() => setCategoryPlaceholderFailed(true)}
-    />
-  )
+  if (!globalPlaceholderFailed) {
+    return (
+      <Image
+        src={GLOBAL_PRODUCT_PLACEHOLDER}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className={className}
+        onError={() => setGlobalPlaceholderFailed(true)}
+      />
+    )
+  }
+
+  return <div className="absolute inset-0 bg-neutral-50" />
 }
