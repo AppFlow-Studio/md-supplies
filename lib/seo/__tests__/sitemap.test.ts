@@ -141,11 +141,14 @@ describe('getSitemapUrls', () => {
     expect(urls.filter(u => u.includes('/partners/')).length).toBeGreaterThan(0)
   })
 
-  it('does not emit noindexed /industries/<slug> detail pages in sitemap', async () => {
+  it('emits /industries/<slug> detail pages and the /industries hub', async () => {
     setupDefaultMocks()
     const urls = (await getSitemapUrls(false)).map(e => e.url)
-    expect(urls.every(u => !u.match(/\/industries\/[a-z]/))).toBe(true)
-    // The /industries hub page should still be in STATIC_URLS
+    // Industry detail pages are index,follow content pages (closeout §12.2) →
+    // they must appear in the sitemap.
+    expect(urls).toContain('https://mdsupplies.com/industries/hrt-clinics')
+    expect(urls).toContain('https://mdsupplies.com/industries/urgent-care')
+    // The /industries hub page is still present (from STATIC_URLS).
     expect(urls.some(u => u.endsWith('/industries'))).toBe(true)
   })
 

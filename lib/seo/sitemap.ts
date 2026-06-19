@@ -7,6 +7,7 @@ import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
 import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
+import { INDUSTRIES } from '@/lib/industries'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
 
@@ -21,6 +22,9 @@ const STATIC_URLS: SitemapEntry[] = [
   { url: `${SITE_URL}/contact`,         changeFrequency: 'monthly', priority: 0.5 },
   { url: `${SITE_URL}/faq`,             changeFrequency: 'monthly', priority: 0.5 },
   { url: `${SITE_URL}/returns`,         changeFrequency: 'monthly', priority: 0.4 },
+  { url: `${SITE_URL}/policies/privacy`,  changeFrequency: 'yearly', priority: 0.3 },
+  { url: `${SITE_URL}/policies/terms`,    changeFrequency: 'yearly', priority: 0.3 },
+  { url: `${SITE_URL}/policies/shipping`, changeFrequency: 'yearly', priority: 0.3 },
 ]
 
 function isExcludedCollectionHandle(handle: string): boolean {
@@ -108,6 +112,14 @@ export async function getSitemapUrls(
     priority: 0.6,
   }))
 
+  // Industry detail pages are index,follow content pages (built out with FAQs
+  // in Priority #11), so they belong in the sitemap per closeout §12.2.
+  const industryUrls: SitemapEntry[] = INDUSTRIES.map(i => ({
+    url: `${SITE_URL}/industries/${i.slug}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }))
+
   const [categoryUrls, productUrls, articleUrls] = await Promise.all([
     fetchCategoryUrls(),
     fetchProductUrls(),
@@ -119,6 +131,7 @@ export async function getSitemapUrls(
     ...categoryUrls,
     ...productUrls,
     ...partnerUrls,
+    ...industryUrls,
     ...articleUrls,
   ]
 }

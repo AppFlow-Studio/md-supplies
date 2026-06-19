@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Truck, MapPin, FileText, Star,
+  Truck, MapPin, FileText,
   Package, ChevronRight, LogOut, User,
   Zap, Activity, Home, Heart, Building2, Shield,
 } from "lucide-react";
@@ -222,11 +222,6 @@ function LoggedOutView() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {TESTIMONIALS.map(({ quote, name, practice }) => (
               <div key={name} className="bg-white p-10 flex flex-col gap-5">
-                <div className="flex gap-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} size={16} fill="currentColor" strokeWidth={0} className="text-yellow-400" />
-                  ))}
-                </div>
                 <p className="text-gray-500 text-[14px] leading-[22px] flex-1">{quote}</p>
                 <div className="flex flex-col gap-1">
                   <span className="text-navy-900 text-[14px] font-semibold">{name}</span>

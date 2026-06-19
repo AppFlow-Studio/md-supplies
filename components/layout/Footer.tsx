@@ -189,6 +189,13 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
               currentIsoCode={currentCountry}
             />
           )}
+
+          <Link
+            href="/b2b"
+            className="bg-teal-500 text-white text-sm font-semibold px-7 py-3 rounded-full hover:bg-[#006d92] transition-colors"
+          >
+            Wholesale Pricing
+          </Link>
         </div>
       </div>
     </footer>

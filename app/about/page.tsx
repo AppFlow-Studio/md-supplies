@@ -91,7 +91,7 @@ export default function AboutPage() {
                 fast shipping, and fair pricing — without the red tape of traditional distributors.
               </p>
               <p className="text-gray-500 text-[18px] font-medium leading-[1.65]">
-                We stock over 4,000 products from trusted manufacturers. Whether you&apos;re
+                We stock over 8,000 products from trusted manufacturers. Whether you&apos;re
                 restocking an urgent care clinic, managing supplies for an HRT practice, or
                 equipping a first responder team — we make ordering simple.
               </p>
@@ -126,7 +126,7 @@ export default function AboutPage() {
                   Vast Inventory
                 </h3>
                 <p className="text-gray-500 text-[15px] leading-[1.65]">
-                  Browse 4,000+ products from trusted brands.
+                  Browse 8,000+ products from trusted brands.
                 </p>
               </div>
             </FadeIn>
@@ -138,7 +138,7 @@ export default function AboutPage() {
                   Trusted Brands
                 </h3>
                 <p className="text-[#9e9e9e] text-[15px] leading-[1.65]">
-                  BD, Medline, McKesson, Dynarex, Cardinal Health — names you know.
+                  BD, Dynarex, Cardinal Health — names you know.
                 </p>
               </div>
             </FadeIn>
@@ -191,7 +191,7 @@ export default function AboutPage() {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[rgba(0,0,0,0.8)] transition-opacity duration-300 group-hover:opacity-0" />
             <div className="absolute bottom-0 left-0 p-8 sm:p-10">
               <h3 className="text-[#f9fafc] text-[30px] sm:text-[35px] font-semibold leading-[1.1] mb-3 drop-shadow-md">
-                Fast fullfilment
+                Fast Fulfillment
               </h3>
               <p className="text-[#9e9e9e] text-[15px] leading-[1.65] max-w-[480px] drop-shadow">
                 Orders ship from our warehouse to facilities nationwide.
@@ -232,7 +232,7 @@ export default function AboutPage() {
               <div className="bg-navy-900 p-8 flex flex-col justify-center gap-5">
                 <div className="flex flex-col gap-1">
                   <span className="text-[#f9fafc] text-[35px] font-semibold leading-none">
-                    4,000+
+                    8,000+
                   </span>
                   <span className="text-gray-500 text-[13px] tracking-[0.3px] uppercase">
                     Products
