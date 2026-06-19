@@ -161,6 +161,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
           <div className="lg:w-[52%] shrink-0 flex flex-col gap-4">
             <div className="relative bg-[#f9faf9] aspect-square overflow-hidden">
               <ProductImage
+                key={images[activeImg]?.id ?? activeImg}
                 src={images[activeImg]?.url}
                 alt={images[activeImg]?.altText ?? product.title}
                 priority
