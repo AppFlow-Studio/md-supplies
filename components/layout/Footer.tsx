@@ -92,7 +92,7 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
               institutional buyers nationwide.
             </p>
 
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3">
               {SOCIAL.map(({ label, svg, href }) => (
                 <a
                   key={label}
@@ -103,17 +103,6 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
                   {svg}
                 </a>
               ))}
-            </div>
-
-            <div className="flex items-end max-w-sm">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 bg-transparent border-b border-gray-200 text-sm text-navy-900 placeholder:text-gray-200 pb-2.5 focus:outline-none focus:border-teal-500 transition-colors"
-              />
-              <button type="button" className="bg-navy-900 text-white text-sm font-normal uppercase tracking-[0.5px] px-6 py-2.5 hover:bg-navy-950 transition-colors shrink-0">
-                Subscribe
-              </button>
             </div>
           </div>
 
@@ -200,13 +189,6 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
               currentIsoCode={currentCountry}
             />
           )}
-
-          <Link
-            href="/b2b"
-            className="bg-teal-500 text-white text-sm font-semibold px-7 py-3 rounded-full hover:bg-[#006d92] transition-colors"
-          >
-            Get 10% OFF
-          </Link>
         </div>
       </div>
     </footer>

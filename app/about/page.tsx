@@ -12,13 +12,13 @@ const IMG_PRODUCTS  = "/images/about/products.png";
 const _aboutCanonical = buildCanonical({ path: '/about' })
 export const metadata = {
   title: 'About Us | MDSupplies',
-  description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing, same-day shipping, and trusted brands.',
+  description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing and trusted brands.',
   robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
   alternates: { canonical: _aboutCanonical },
   ...buildOg({
     pageType: 'homepage',
     title: 'About Us | MDSupplies',
-    description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing, same-day shipping, and trusted brands.',
+    description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing and trusted brands.',
     url: _aboutCanonical,
   }),
 }
@@ -50,7 +50,7 @@ export default function AboutPage() {
             <FadeIn delay={0.2}>
               <p className="text-gray-500 text-[18px] font-medium leading-[1.65] max-w-[516px]">
                 We serve clinics, urgent care centers, HRT practices, and first responders with
-                wholesale pricing, same-day shipping, and brands you already know.
+                wholesale pricing and brands you already know.
               </p>
             </FadeIn>
             <FadeIn delay={0.3}>
@@ -194,7 +194,7 @@ export default function AboutPage() {
                 Fast fullfilment
               </h3>
               <p className="text-[#9e9e9e] text-[15px] leading-[1.65] max-w-[480px] drop-shadow">
-                Orders ship from our warehouse for 2–3 day delivery nationwide.
+                Orders ship from our warehouse to facilities nationwide.
               </p>
             </div>
           </FadeIn>

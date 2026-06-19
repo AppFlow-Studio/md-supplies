@@ -51,7 +51,7 @@ const INDUSTRY_LINKS = [
 
 const TESTIMONIALS = [
   {
-    quote: "MD Supplies has completely streamlined our clinic's ordering process. Same-day shipping means we're never caught short on supplies.",
+    quote: "MD Supplies has completely streamlined our clinic's ordering process. Reliable fulfillment means we're never caught short on supplies.",
     name: "Dr. Sarah Mitchell",
     practice: "Urgent Care Director",
   },
@@ -178,7 +178,7 @@ function LoggedOutView() {
           {[
             { value: "1,000+",   label: "Active Accounts" },
             { value: "4,000+",   label: "Products"        },
-            { value: "Same-Day", label: "Fulfillment"     },
+            { value: "Reliable", label: "Fulfillment"     },
             { value: "24-48 hr", label: "Fast Support"    },
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-2 text-center">

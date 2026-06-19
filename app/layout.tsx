@@ -39,7 +39,7 @@ export default async function RootLayout({
     storefrontFetch<{ localization: LocalizationData }>(GET_LOCALIZATION).catch(() => null),
     storefrontFetch<{ collections: { nodes: SlimCollection[] } }>(
       GET_COLLECTIONS_SLIM,
-      { first: 50 },
+      { first: 249 },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { next: { revalidate: 3600 } } as any,
     ).catch(() => ({ collections: { nodes: [] as SlimCollection[] } })),
@@ -50,7 +50,6 @@ export default async function RootLayout({
       { next: { revalidate: 3600 } } as any,
     ).catch(() => ({ menu: { id: '', title: '', items: [] } as ShopifyMenu })),
   ])
-
   const availableCountries: AvailableCountry[] = localization?.localization.availableCountries ?? []
   const collections: SlimCollection[] = collectionsData.collections.nodes
   const menuItems = menuData.menu?.items ?? []
