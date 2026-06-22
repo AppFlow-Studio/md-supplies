@@ -12,10 +12,12 @@ import { useCart } from '@/components/store/CartProvider'
 import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
-import type { MenuItem } from '@/lib/shopify/types'
+import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
+import { buildCategoryNav } from '@/lib/category-nav'
 
 interface HeaderProps {
   menuItems: MenuItem[]
+  collections: SlimCollection[]
 }
 
 const ANNOUNCEMENTS = [
@@ -41,7 +43,7 @@ function menuItemHref(item: MenuItem): string {
   return ROUTES.category(titleToSlug(item.title))
 }
 
-export function Header({ menuItems }: HeaderProps) {
+export function Header({ menuItems, collections }: HeaderProps) {
   const { cart, openCart } = useCart()
   const cartCount = cart?.totalQuantity ?? 0
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -87,6 +89,7 @@ export function Header({ menuItems }: HeaderProps) {
 
   const categoriesItem = menuItems.find((item) => item.type === 'CATALOG')
   const otherItems = menuItems.filter((item) => item.type !== 'CATALOG')
+  const categoryNav = buildCategoryNav(collections)
 
   return (
     <header className="sticky top-0 z-40">
@@ -165,16 +168,39 @@ export function Header({ menuItems }: HeaderProps) {
                     onMouseEnter={() => openDropdown('categories')}
                     onMouseLeave={scheduleClose}
                   >
-                    <div className="grid grid-cols-4 gap-1">
-                      {categoriesItem.items.map((col) => (
-                        <Link
-                          key={col.id}
-                          href={ROUTES.category(titleToSlug(col.title))}
-                          className="text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors truncate"
-                        >
-                          {col.title}
-                        </Link>
-                      ))}
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-3">
+                          Categories
+                        </p>
+                        <div className="grid grid-cols-2 gap-1">
+                          {categoryNav.primary.map((cat) => (
+                            <Link
+                              key={cat.href}
+                              href={cat.href}
+                              className="text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors truncate"
+                            >
+                              {cat.displayName}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-3">
+                          More Categories
+                        </p>
+                        <div className="grid grid-cols-2 gap-1">
+                          {categoryNav.more.map((cat) => (
+                            <Link
+                              key={cat.href}
+                              href={cat.href}
+                              className="text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors truncate"
+                            >
+                              {cat.displayName}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     <div className="mt-4 pt-3 border-t border-gray-100">
                       <Link
@@ -333,14 +359,24 @@ export function Header({ menuItems }: HeaderProps) {
                   </button>
                   {mobileExpanded === 'categories' && (
                     <div className="py-2 pl-4 flex flex-col gap-0.5">
-                      {categoriesItem.items.map((col) => (
+                      {categoryNav.primary.map((cat) => (
                         <Link
-                          key={col.id}
-                          href={ROUTES.category(titleToSlug(col.title))}
+                          key={cat.href}
+                          href={cat.href}
                           onClick={() => setMobileOpen(false)}
                           className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
                         >
-                          {col.title}
+                          {cat.displayName}
+                        </Link>
+                      ))}
+                      {categoryNav.more.map((cat) => (
+                        <Link
+                          key={cat.href}
+                          href={cat.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
+                        >
+                          {cat.displayName}
                         </Link>
                       ))}
                       <Link

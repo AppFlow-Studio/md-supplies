@@ -4,6 +4,7 @@ import { FeaturedProductCard } from './FeaturedProductCard'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
+import { BrandLogoImage } from '@/components/shared/BrandLogoImage'
 
 interface Props {
   partner: Partner
@@ -43,12 +44,11 @@ export function PartnerDetail({ partner }: Props) {
         {/* Header: logo + name + type badge + intro */}
         <div className="flex flex-col sm:flex-row sm:items-start gap-6 mb-12">
           <div className="flex items-center justify-center bg-white border border-gray-200 rounded-xl p-6 sm:w-48 shrink-0">
-            <img
-              src={partner.logo.url}
-              alt={partner.logo.altText || partner.name}
-              width={partner.logo.width}
-              height={partner.logo.height}
+            <BrandLogoImage
+              src={partner.logo.url || undefined}
+              name={partner.name}
               className="max-h-16 w-auto object-contain"
+              fallbackClassName="text-center font-bold text-[20px] tracking-[0.04em] text-navy-900 select-none"
             />
           </div>
           <div>

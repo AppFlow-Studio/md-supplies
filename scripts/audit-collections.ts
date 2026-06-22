@@ -1,76 +1,70 @@
+import { writeFileSync } from 'fs'
 import { storefrontFetch } from '../lib/shopify/storefront'
-import { GET_COLLECTIONS } from '../lib/shopify/queries/collections'
+import { GET_COLLECTIONS_AUDIT } from '../lib/shopify/queries/collections'
+import { ROADMAP_CATEGORIES } from '../lib/category-nav'
+import {
+  buildCollectionFlags,
+  buildRoadmapCoverage,
+  type AuditCollectionInput,
+} from '../lib/category-nav-audit'
 
-// Revised 2026-06-13: updated to match live Shopify collection handles.
-// Original wishlist (exam-gloves, gloves-nitrile, iv-therapy, respiratory, etc.) had no matching collections.
-const APPROVED_CATEGORIES = [
-	// Gloves & hand protection
-	'gloves',             // replaces: exam-gloves
-	'surgical-gloves',    // replaces: gloves-sterile
+type RawCollection = {
+  handle: string
+  title: string
+  image: { url: string } | null
+  seo: { title: string | null; description: string | null }
+  products: { nodes: { id: string }[] }
+}
 
-	// Wound & skin
-	'wound-care',
-	'skin-preparation',   // replaces: surgical / bandages / gauze area
-
-	// Injection & blood
-	'blood-collection',   // replaces: needles-syringes / needles / syringes
-
-	// Diagnostics & monitoring
-	'testing-screening',  // replaces: diagnostics
-	'diagnostic-tools',
-	'blood-pressure',
-
-	// Exam room & dental
-	'exam-room',
-	'dental',
-
-	// Continence & personal care
-	'incontinence',
-	'hygiene',            // replaces: personal-care
-	'mouth-care',
-
-	// Home care & DME
-	'home-care',          // replaces: dme (partial)
-	'mobility',           // replaces: mobility-aids
-	'bariatric',
-	'braces-support',
-
-	// Therapy & rehab
-	'patient-therapy-rehab',
-	'hot-cold-therapy',
-
-	// Emergency & facility
-	'emergency-supplies', // replaces: emergency / first-aid
-	'housekeeping-janitorial',
-	'bags',
-	'cotton',
-	'seating',
-
-	// PPE & apparel
-	'capes-gowns',        // replaces: ppe (partial)
-	'caps-headwear',
-]
+function statusIcon(flag: boolean): string {
+  return flag ? '⚠️' : '✅'
+}
 
 async function main() {
-	const data = await storefrontFetch<{ collections: { nodes: { handle: string; title: string }[] } }>(
-		GET_COLLECTIONS,
-		{ first: 250 },
-	)
-	const liveHandles = new Set(data.collections.nodes.map((c) => c.handle))
+  const data = await storefrontFetch<{ collections: { nodes: RawCollection[] } }>(
+    GET_COLLECTIONS_AUDIT,
+    { first: 250 },
+  )
+  const raw = data.collections.nodes
 
-	console.log('\n## Approved Category → Shopify Collection Mapping\n')
-	console.log('| Approved Category Handle | Shopify Match | Status |')
-	console.log('|---|---|---|')
+  const collections: AuditCollectionInput[] = raw.map((c) => ({
+    handle: c.handle,
+    title: c.title,
+    hasProduct: c.products.nodes.length > 0,
+    image: c.image,
+    seo: c.seo,
+  }))
 
-	for (const handle of APPROVED_CATEGORIES) {
-		const exists = liveHandles.has(handle)
-		console.log(`| ${handle} | ${exists ? handle : '— NOT FOUND —'} | ${exists ? '✅' : '❌ Missing'} |`)
-	}
+  const coverage = buildRoadmapCoverage(collections, ROADMAP_CATEGORIES)
+  const flags = buildCollectionFlags(collections, ROADMAP_CATEGORIES)
 
-	console.log('\n## All Live Collections\n')
-	for (const c of data.collections.nodes) {
-		console.log(`- ${c.handle} → "${c.title}"`)
-	}
+  const lines: string[] = []
+  lines.push('# Category Nav Audit Report')
+  lines.push('')
+  lines.push(`Generated: ${new Date().toISOString()}`)
+  lines.push('')
+  lines.push('## Roadmap Coverage (§3.1)')
+  lines.push('')
+  lines.push('| Category | Group | Status | Matched Handles |')
+  lines.push('|---|---|---|---|')
+  for (const c of coverage) {
+    lines.push(`| ${c.displayName} | ${c.navGroup} | ${c.status} | ${c.matchedHandles.join(', ') || '—'} |`)
+  }
+
+  lines.push('')
+  lines.push('## Collection Flags (§4.2)')
+  lines.push('')
+  lines.push('| Handle | Title | Excluded | Zero Product | Missing Image | Missing SEO Title | Missing SEO Desc | Unmapped Orphan |')
+  lines.push('|---|---|---|---|---|---|---|---|')
+  for (const f of flags) {
+    lines.push(
+      `| ${f.handle} | ${f.title} | ${statusIcon(f.excluded)} | ${statusIcon(f.zeroProduct)} | ${statusIcon(f.missingImage)} | ${statusIcon(f.missingSeoTitle)} | ${statusIcon(f.missingSeoDescription)} | ${statusIcon(f.unmappedOrphan)} |`,
+    )
+  }
+
+  const report = lines.join('\n') + '\n'
+  writeFileSync('audit/category-nav-audit-report.md', report)
+  console.log(report)
 }
 
 main().catch(console.error)

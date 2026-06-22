@@ -6,6 +6,7 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
+import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
 import { INDUSTRIES } from '@/lib/industries'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
@@ -27,7 +28,7 @@ const STATIC_URLS: SitemapEntry[] = [
 ]
 
 function isExcludedCollectionHandle(handle: string): boolean {
-  return handle === 'brands' || handle.startsWith('brands-')
+  return EXCLUDED_COLLECTION_HANDLES.has(handle) || handle === 'brands' || handle.startsWith('brands-')
 }
 
 async function fetchCategoryUrls(): Promise<SitemapEntry[]> {

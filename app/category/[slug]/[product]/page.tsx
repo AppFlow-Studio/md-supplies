@@ -14,6 +14,8 @@ import { buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
+import { CategoryImage } from '@/components/shared/CategoryImage'
+import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
 
 export const revalidate = 30
 
@@ -94,15 +96,25 @@ export default async function CategoryProductPage({ params }: Props) {
         </div>
 
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-8">
-          <div className="bg-white px-8 sm:px-12 py-10">
-            <h1 className="text-navy-900 text-[36px] sm:text-[44px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
-              {collection.title}
-            </h1>
-            {collection.description && (
-              <p className="text-gray-500 text-[15px] leading-[1.75] max-w-[720px]">
-                {collection.description}
-              </p>
-            )}
+          <div className="relative bg-white overflow-hidden flex min-h-[260px] sm:min-h-[300px]">
+            <div className="relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 max-w-[560px]">
+              <h1 className="text-navy-900 text-[36px] sm:text-[44px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
+                {collection.title}
+              </h1>
+              {collection.description && (
+                <p className="text-gray-500 text-[15px] leading-[1.75] max-w-[500px]">
+                  {collection.description}
+                </p>
+              )}
+            </div>
+
+            <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
+              <CategoryImage
+                bannerPath={getSubcategoryBannerPath(subHandle)}
+                fallbackUrl={collection.image?.url}
+                alt={collection.image?.altText ?? collection.title}
+              />
+            </div>
           </div>
         </div>
 
@@ -136,6 +148,8 @@ export default async function CategoryProductPage({ params }: Props) {
             products={collection.products.nodes}
             emptyStateHref={ROUTES.category(slug)}
             categorySlug={subHandle}
+            itemListId={subHandle}
+            itemListName={collection.title}
           />
         </div>
 

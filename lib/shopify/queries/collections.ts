@@ -110,3 +110,19 @@ export const GET_COLLECTIONS_SLIM = `#graphql
     }
   }
 `;
+
+export const GET_COLLECTIONS_AUDIT = `#graphql
+  query GetCollectionsAudit($first: Int!) {
+    collections(first: $first) {
+      nodes {
+        handle
+        title
+        image { url }
+        seo { title description }
+        products(first: 1) {
+          nodes { id }
+        }
+      }
+    }
+  }
+`;

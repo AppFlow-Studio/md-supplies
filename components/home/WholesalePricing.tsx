@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { motion } from "framer-motion";
+import { track } from '@/lib/analytics/track'
+import { buildFormSubmitEvent } from '@/lib/analytics/events'
 
 const BENEFITS = [
   "Product availability support",
@@ -57,10 +59,7 @@ export function WholesalePricing() {
         body: JSON.stringify(form),
       })
       setStatus('success')
-      const w = window as unknown as { gtag?: (...args: unknown[]) => void }
-      if (typeof w.gtag === 'function') {
-        w.gtag('event', 'form_submit', { form_name: 'sourcing_request', faculty_type: form.facultyType })
-      }
+      track(buildFormSubmitEvent({ formName: 'sourcing_request', details: { faculty_type: form.facultyType } }))
     } catch {
       setStatus('error')
     }

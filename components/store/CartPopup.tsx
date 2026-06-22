@@ -3,11 +3,28 @@
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { useCart } from './CartProvider'
+import { track } from '@/lib/analytics/track'
+import { buildBeginCheckoutEvent } from '@/lib/analytics/events'
 
 export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
-    console.log(cart)
+
+  function handleCheckoutClick() {
+    if (!cart) return
+    track({
+      ...buildBeginCheckoutEvent({
+        currency: cart.cost.subtotalAmount.currencyCode,
+        items: lines.map((line) => ({
+          item_id: line.merchandise.id,
+          item_name: line.merchandise.product.title,
+          price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
+          quantity: line.quantity,
+        })),
+      }),
+    })
+  }
+
   return (
     <>
       {/* Backdrop */}
@@ -148,6 +165,7 @@ export function CartPopup() {
             </p>
             <a
               href={cart.checkoutUrl}
+              onClick={handleCheckoutClick}
               className="bg-navy-900 text-white h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase hover:bg-navy-950 transition-colors"
             >
               Proceed to Checkout

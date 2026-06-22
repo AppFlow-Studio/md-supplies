@@ -51,7 +51,7 @@ const INDUSTRY_LINKS = [
 
 const TESTIMONIALS = [
   {
-    quote: "MD Supplies has completely streamlined our clinic's ordering process. We're never caught short on supplies.",
+    quote: "MD Supplies has completely streamlined our clinic's ordering process. Reliable fulfillment means we're never caught short on supplies.",
     name: "Dr. Sarah Mitchell",
     practice: "Urgent Care Director",
   },
@@ -177,8 +177,8 @@ function LoggedOutView() {
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 grid grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { value: "1,000+",   label: "Active Accounts" },
-            { value: "8,000+",   label: "Products"        },
-            { value: "Fast",     label: "Fulfillment"     },
+            { value: "4,000+",   label: "Products"        },
+            { value: "Reliable", label: "Fulfillment"     },
             { value: "24-48 hr", label: "Fast Support"    },
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-2 text-center">

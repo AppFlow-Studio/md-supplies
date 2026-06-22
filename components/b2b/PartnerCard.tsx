@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Partner } from '@/types/partner'
+import { BrandLogoImage } from '@/components/shared/BrandLogoImage'
 
 interface Props {
   partner: Partner
@@ -13,14 +14,11 @@ export function PartnerCard({ partner }: Props) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center h-12 flex-1 min-w-0">
-          <img
+          <BrandLogoImage
             src={partner.logo.url}
-            alt={partner.logo.altText || partner.name}
-            width={partner.logo.width}
-            height={partner.logo.height}
-            loading="lazy"
-            decoding="async"
+            name={partner.name}
             className="max-h-10 w-auto object-contain"
+            fallbackClassName="font-bold text-[16px] tracking-[0.04em] text-navy-900 select-none"
           />
         </div>
         <span

@@ -9,6 +9,8 @@ import {
 } from 'react'
 import { addToCart, removeFromCart, updateCartLine } from '@/app/actions/cart'
 import type { Cart } from '@/lib/shopify/types'
+import { track } from '@/lib/analytics/track'
+import { buildAddToCartEvent } from '@/lib/analytics/events'
 
 interface CartContextValue {
   cart: Cart | null
@@ -37,6 +39,22 @@ export function CartProvider({
       const updated = await addToCart(variantId, qty)
       setCart(updated)
       setIsOpen(true)
+      const line = updated.lines.nodes.find((l) => l.merchandise.id === variantId)
+      if (line) {
+        track(
+          {
+            ...buildAddToCartEvent({
+              currency: line.cost.totalAmount.currencyCode,
+              item: {
+                item_id: line.merchandise.id,
+                item_name: line.merchandise.product.title,
+                price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
+                quantity: qty,
+              },
+            }),
+          },
+        )
+      }
     } catch (err) {
       console.error('[CartProvider] addItem failed:', err)
     }

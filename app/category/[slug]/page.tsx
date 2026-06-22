@@ -17,6 +17,8 @@ import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
+import { CategoryImage } from '@/components/shared/CategoryImage'
+import { getCategoryBannerPath } from '@/lib/bunnycdn'
 
 export const revalidate = 30
 
@@ -161,53 +163,45 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <Breadcrumb items={[{ label: collection.title }]} />
       </div>
 
-      {/* ── Hero — split when image present, full-width fallback otherwise ── */}
-      {(() => {
-        const hasImage = Boolean(collection.image)
-        return (
-          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-8">
-            <div className={`relative bg-white overflow-hidden flex ${hasImage ? 'min-h-[320px] sm:min-h-[380px]' : ''}`}>
-              {/* Text content */}
-              <div className={`relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 ${hasImage ? 'max-w-[560px]' : 'w-full'}`}>
-                <div className="inline-flex self-start items-center bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-1.5 mb-5">
-                  <span className="text-[#0086b1] text-[13px] font-semibold tracking-[0.3px]">
-                    CERTIFIED MEDICAL SUPPLIER
-                  </span>
-                </div>
-
-                <h1 className="text-navy-900 text-[40px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
-                  {collection.title}
-                </h1>
-
-                {collection.description && (
-                  <p className={`text-gray-500 text-[15px] leading-[1.75] mb-8 ${hasImage ? 'max-w-[500px]' : 'max-w-[800px]'}`}>
-                    {collection.description}
-                  </p>
-                )}
-
-                <Link
-                  href={ROUTES.category(slug)}
-                  className="self-start border border-navy-900 text-navy-900 text-[14px] font-semibold px-6 h-[52px] flex items-center hover:bg-navy-900 hover:text-white transition-colors"
-                >
-                  View All {collection.title}
-                </Link>
-              </div>
-
-              {/* Right: collection image — only when available */}
-              {hasImage && collection.image && (
-                <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={collection.image.url}
-                    alt={collection.image.altText ?? collection.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                </div>
-              )}
+      {/* ── Hero — banner image always present (BunnyCDN → Shopify → neutral panel) ── */}
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-8">
+        <div className="relative bg-white overflow-hidden flex min-h-[320px] sm:min-h-[380px]">
+          {/* Text content */}
+          <div className="relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 max-w-[560px]">
+            <div className="inline-flex self-start items-center bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-1.5 mb-5">
+              <span className="text-[#0086b1] text-[13px] font-semibold tracking-[0.3px]">
+                CERTIFIED MEDICAL SUPPLIER
+              </span>
             </div>
+
+            <h1 className="text-navy-900 text-[40px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
+              {collection.title}
+            </h1>
+
+            {collection.description && (
+              <p className="text-gray-500 text-[15px] leading-[1.75] mb-8 max-w-[500px]">
+                {collection.description}
+              </p>
+            )}
+
+            <Link
+              href={ROUTES.category(slug)}
+              className="self-start border border-navy-900 text-navy-900 text-[14px] font-semibold px-6 h-[52px] flex items-center hover:bg-navy-900 hover:text-white transition-colors"
+            >
+              View All {collection.title}
+            </Link>
           </div>
-        )
-      })()}
+
+          {/* Right: banner image — only on larger screens, matching the existing layout */}
+          <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
+            <CategoryImage
+              bannerPath={getCategoryBannerPath(slug)}
+              fallbackUrl={collection.image?.url}
+              alt={collection.image?.altText ?? collection.title}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* ── Subcategory tabs ── */}
       {subcategories.length > 0 && (
@@ -295,6 +289,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             products={products}
             emptyStateHref={ROUTES.category(slug)}
             categorySlug={data.collection.handle}
+            itemListId={data.collection.handle}
+            itemListName={collection.title}
           />
 
           {/* Clean-page pagination */}

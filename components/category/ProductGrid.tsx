@@ -1,12 +1,15 @@
 import Link from 'next/link'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
+import { ViewItemListTracker } from './ViewItemListTracker'
 
 interface Props {
     products: CollectionProduct[]
     emptyStateHref: string
     emptyStateMessage?: string
     categorySlug?: string
+    itemListId: string
+    itemListName: string
 }
 
 export function ProductGrid({
@@ -14,6 +17,8 @@ export function ProductGrid({
     emptyStateHref,
     emptyStateMessage = 'No products found.',
     categorySlug,
+    itemListId,
+    itemListName,
 }: Props) {
 
   if (products.length === 0) {
@@ -37,8 +42,16 @@ export function ProductGrid({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[23px]">
-      {products.map((product) => (
-        <ShopifyProductCard key={product.id} product={product} categorySlug={categorySlug} />
+      <ViewItemListTracker products={products} itemListId={itemListId} itemListName={itemListName} />
+      {products.map((product, index) => (
+        <ShopifyProductCard
+          key={product.id}
+          product={product}
+          categorySlug={categorySlug}
+          itemListId={itemListId}
+          itemListName={itemListName}
+          index={index}
+        />
       ))}
     </div>
   )

@@ -6,7 +6,9 @@ export const ROUTES = {
   product: (slug: string) => `/product/${slug}`,
   partners: '/partners',
   partner: (slug: string) => `/partners/${slug}`,
-industries: '/industries',
+  // Brands are consolidated onto the partners page (see proxy.ts T1 301 rule).
+  brands: '/partners#brands',
+  industries: '/industries',
   industry: (slug: string) => `/industries/${slug}`,
   solutions: { occ: '/solutions/occ' },
   blog: '/blog',

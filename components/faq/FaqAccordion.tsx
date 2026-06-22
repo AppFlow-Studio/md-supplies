@@ -3,7 +3,7 @@ import { Accordion } from "@/components/ui/Accordion";
 const FAQ_ITEMS = [
   {
     q: "How long does shipping take?",
-    a: "Orders are processed and shipped from our warehouse as quickly as possible. Available shipping methods and estimated delivery timeframes are shown at checkout.",
+    a: "Orders are processed through trusted medical supply partners, with shipping details and options provided at checkout.",
   },
   {
     q: "Do you offer free shipping?",

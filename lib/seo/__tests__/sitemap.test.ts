@@ -80,6 +80,18 @@ describe('getSitemapUrls', () => {
     expect(urls).toContain('https://mdsupplies.com/category/gloves')
   })
 
+  it('excludes §2.4 removed and hidden-at-launch collection handles', async () => {
+    setupDefaultMocks({
+      collections: ['gloves', 'pharmaceuticals', 'beds', 'bariatric-beds', 'office-supplies'],
+    })
+    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    expect(urls).toContain('https://mdsupplies.com/category/gloves')
+    expect(urls).not.toContain('https://mdsupplies.com/category/pharmaceuticals')
+    expect(urls).not.toContain('https://mdsupplies.com/category/beds')
+    expect(urls).not.toContain('https://mdsupplies.com/category/bariatric-beds')
+    expect(urls).not.toContain('https://mdsupplies.com/category/office-supplies')
+  })
+
   it('emits /product/<handle> for each Shopify product', async () => {
     setupDefaultMocks({ products: ['exam-gloves-3xl', 'surgical-mask-50pk'] })
     const urls = (await getSitemapUrls(false)).map(e => e.url)
