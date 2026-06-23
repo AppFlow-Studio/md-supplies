@@ -9,6 +9,9 @@ vi.mock('next/server', () => ({
 
 import type { NextRequest } from 'next/server'
 import { proxy } from '../proxy'
+import productRedirects from '../docs/redirects-ready.json'
+
+const PRODUCT_ROWS = productRedirects as { from: string; to: string }[]
 
 function req(pathname: string, search = ''): NextRequest {
   const base = 'https://mdsupplies.com'
@@ -92,6 +95,34 @@ describe('proxy — 301 static redirects', () => {
   })
 })
 
+describe('proxy — category-level 410s (§4.3)', () => {
+  const goneSlugs = ['pharmaceuticals', 'beds', 'bariatric-beds', 'bed-parts', 'spa', 'pet']
+
+  for (const slug of goneSlugs) {
+    it(`/category/${slug} → 410 Gone`, () => {
+      const res = proxy(req(`/category/${slug}`))
+      expect(res?.status).toBe(410)
+      expect(res?.headers.get('Location')).toBeNull()
+    })
+
+    it(`/category/${slug}/<subpath> → 410 (whole subtree is gone)`, () => {
+      const res = proxy(req(`/category/${slug}/anything-below`))
+      expect(res?.status).toBe(410)
+    })
+  }
+
+  it('does not 410 a live category whose slug merely starts with a gone slug', () => {
+    // `bedside-care` must not be swallowed by the gone slug `beds`.
+    expect(proxy(req('/category/bedside-care'))).toBeUndefined()
+    expect(proxy(req('/category/bed-pans'))).toBeUndefined()
+  })
+
+  it('does not 410 a live category', () => {
+    expect(proxy(req('/category/gloves'))).toBeUndefined()
+    expect(proxy(req('/category/wound-care'))).toBeUndefined()
+  })
+})
+
 describe('proxy — path normalization (pass-through for unknown)', () => {
   it('passes through unknown paths', () => {
     const res = proxy(req('/some-random-page'))
@@ -133,6 +164,52 @@ describe('proxy — bulk product catalog 301s', () => {
     expect(
       proxy(req('/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101')),
     ).toBeUndefined()
+  })
+})
+
+describe('proxy — full product redirect map (programmatic sweep)', () => {
+  const froms = PRODUCT_ROWS.map((r) => r.from)
+  const fromSet = new Set(froms)
+  const singular = (to: string) => to.replace(/^\/products\//, '/product/')
+
+  it('every `from` is unique (no duplicate source keys)', () => {
+    expect(fromSet.size).toBe(froms.length)
+  })
+
+  it('no self-redirects (from never equals its singular target)', () => {
+    const selfRedirects = PRODUCT_ROWS.filter((r) => r.from === singular(r.to))
+    expect(selfRedirects).toEqual([])
+  })
+
+  it('no chains: no target is itself a redirect source (single hop always lands live)', () => {
+    // A chain would exist if a `to` (or its singular form) is also a `from`.
+    const chained = PRODUCT_ROWS.filter(
+      (r) => fromSet.has(r.to) || fromSet.has(singular(r.to)),
+    )
+    expect(chained).toEqual([])
+  })
+
+  it('every row drives a single 301 to its singular canonical target', () => {
+    const failures: string[] = []
+    for (const { from, to } of PRODUCT_ROWS) {
+      const res = proxy(req(from))
+      const loc = res?.headers.get('Location')
+      // Location is a full, percent-encoded URL; decode the pathname before
+      // comparing against the raw (unicode) target in the data file.
+      const locPath = loc ? decodeURIComponent(new URL(loc).pathname) : null
+      if (res?.status !== 301 || locPath !== singular(to)) {
+        failures.push(`${from} → got ${res?.status} ${locPath ?? '(none)'}`)
+      }
+    }
+    expect(failures).toEqual([])
+  })
+
+  it('every singular canonical target passes through (no double redirect)', () => {
+    const chained: string[] = []
+    for (const { to } of PRODUCT_ROWS) {
+      if (proxy(req(singular(to))) !== undefined) chained.push(singular(to))
+    }
+    expect(chained).toEqual([])
   })
 })
 

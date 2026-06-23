@@ -24,6 +24,30 @@ const PRODUCT_REDIRECTS = new Map<string, string>(
   ]),
 )
 
+// ─── Category-level 410s (§4.3) ───────────────────────────────────────────────
+//
+// Categories permanently removed from the new taxonomy. A direct hit (or a
+// stale Google index entry) to one of these on the live site must return a
+// definitive 410 Gone — not render and not 404 — so the URL is deindexed and
+// never recreated. Matched on the live `/category/<slug>` route and any path
+// beneath it (the whole category subtree is gone). These slugs are also hidden
+// from nav/listings/sitemap via lib/excluded-categories.ts.
+const GONE_CATEGORY_SLUGS = new Set([
+  'pharmaceuticals',
+  'beds',
+  'bariatric-beds',
+  'bed-parts',
+  'spa',
+  'pet',
+])
+
+function isGoneCategory(pathname: string): boolean {
+  // Capture the first path segment after /category/ and match the whole segment
+  // (so `/category/bedside-care` does NOT match the gone slug `beds`).
+  const match = pathname.match(/^\/category\/([^/]+)(?:\/|$)/)
+  return match !== null && GONE_CATEGORY_SLUGS.has(match[1])
+}
+
 // ─── Redirect + 410 map ──────────────────────────────────────────────────────
 //
 // 410s first (definitive removal), then 301s.
@@ -74,6 +98,9 @@ export function proxy(request: NextRequest): Response | undefined {
   const raw = request.nextUrl.pathname
   // Normalize encoded paths (+, %20) to match old Magento/WooCommerce-style URLs
   const pathname = raw.replace(/\+/g, ' ')
+
+  // Definitive removal first: permanently-gone categories (§4.3).
+  if (isGoneCategory(pathname)) return new Response(null, { status: 410 })
 
   for (const entry of REDIRECT_ENTRIES) {
     if (pathname !== entry.from) continue
