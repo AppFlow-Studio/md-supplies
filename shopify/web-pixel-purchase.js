@@ -27,11 +27,18 @@ analytics.subscribe('checkout_completed', (event) => {
     clientId ? { client_id: clientId } : {},
   ));
 
-  const order = checkout.order || {};
+  // The order id is the dedup key. Without it a `purchase` would collapse all
+  // orders into one transaction in GA4, so skip rather than send a bad event.
+  const order = checkout.order;
+  if (!order || order.id == null) return;
+
+  // Shopify may send monetary amounts as strings; GA4 expects numbers.
+  const num = (v) => (v == null ? undefined : Number(v));
+
   const items = (checkout.lineItems || []).map((li, i) => ({
     item_id: (li.variant && li.variant.id) || li.id,
     item_name: li.title,
-    price: li.variant && li.variant.price ? li.variant.price.amount : undefined,
+    price: li.variant && li.variant.price ? num(li.variant.price.amount) : undefined,
     quantity: li.quantity,
     index: i,
   }));
@@ -39,11 +46,11 @@ analytics.subscribe('checkout_completed', (event) => {
   // No PII: only order id, money, and line items are sent.
   gtag('event', 'purchase', {
     transaction_id: String(order.id),
-    value: checkout.totalPrice ? checkout.totalPrice.amount : undefined,
+    value: checkout.totalPrice ? num(checkout.totalPrice.amount) : undefined,
     currency: checkout.currencyCode,
-    tax: checkout.totalTax ? checkout.totalTax.amount : undefined,
+    tax: checkout.totalTax ? num(checkout.totalTax.amount) : undefined,
     shipping: checkout.shippingLine && checkout.shippingLine.price
-      ? checkout.shippingLine.price.amount : undefined,
+      ? num(checkout.shippingLine.price.amount) : undefined,
     items: items,
   });
 });
