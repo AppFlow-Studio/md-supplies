@@ -8,6 +8,14 @@ export default defineConfig({
     },
   },
   test: {
+    server: {
+      deps: {
+        inline: ['server-only'],
+      },
+    },
+    alias: {
+      'server-only': new URL('./__mocks__/server-only.ts', import.meta.url).pathname,
+    },
     projects: [
       {
         extends: true,
