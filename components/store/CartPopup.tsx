@@ -3,9 +3,12 @@
 import { useEffect, useRef } from 'react'
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
+import { type MouseEvent } from 'react'
 import { useCart } from './CartProvider'
 import { track } from '@/lib/analytics/track'
 import { buildBeginCheckoutEvent } from '@/lib/analytics/events'
+import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
+import { setCartAttribute } from '@/app/actions/cart'
 
 export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
@@ -49,19 +52,35 @@ export function CartPopup() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, closeCart])
 
-  function handleCheckoutClick() {
+  async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {
     if (!cart) return
-    track({
-      ...buildBeginCheckoutEvent({
-        currency: cart.cost.subtotalAmount.currencyCode,
-        items: lines.map((line) => ({
-          item_id: line.merchandise.id,
-          item_name: line.merchandise.product.title,
-          price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-          quantity: line.quantity,
-        })),
-      }),
-    })
+    e.preventDefault()
+
+    track(
+      {
+        ...buildBeginCheckoutEvent({
+          currency: cart.cost.subtotalAmount.currencyCode,
+          items: lines.map((line) => ({
+            item_id: line.merchandise.id,
+            item_name: line.merchandise.product.title,
+            price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
+            quantity: line.quantity,
+          })),
+        }),
+      },
+    )
+
+    // Bridge the storefront GA client_id into Shopify checkout for the pixel.
+    // Best-effort: never block the handoff on analytics.
+    try {
+      const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
+      const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
+      if (clientId) await setCartAttribute('ga_client_id', clientId)
+    } catch (err) {
+      console.error('[CartPopup] failed to stamp ga_client_id:', err)
+    }
+
+    window.location.href = cart.checkoutUrl
   }
 
   return (

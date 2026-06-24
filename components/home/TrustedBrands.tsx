@@ -2,20 +2,47 @@
 
 import { useState } from "react";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { HOMEPAGE_BRANDS_WITH_LOGO, brandLogoUrl } from "@/lib/brands";
 
-const BRANDS = [
-  { name: "Cardinal Health", img: "/images/brands/cardinal-health.png" },
-  { name: "Covidien",        img: "/images/brands/covidien.jpg" },
-  { name: "Dynarex",         img: "/images/brands/dynarex.png" },
-  { name: "BD",              img: "/images/brands/bd.svg" },
-];
+// Approved homepage brands (§6.1) that have a verified BunnyCDN logo. Brands without
+// a confirmed logo are intentionally omitted here rather than shown as a broken image.
+const BRANDS = HOMEPAGE_BRANDS_WITH_LOGO.map((b) => ({
+  name: b.name,
+  img: brandLogoUrl(b)!,
+}));
+
+// Self-contained marquee styles. Kept in-component (not globals.css) so the carousel
+// is fully portable and never depends on the global stylesheet. The track holds two
+// identical copies of the logo set; each item carries its own trailing margin, so the
+// set width is exactly periodic and translating by -50% loops with no visible jump.
+const MARQUEE_CSS = `
+.tb-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+.tb-marquee-track {
+  display: flex;
+  flex-wrap: nowrap;
+  width: max-content;
+  animation: tb-marquee-scroll 100s linear infinite;
+}
+.tb-marquee:hover .tb-marquee-track { animation-play-state: paused; }
+@keyframes tb-marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tb-marquee-track { animation: none; }
+}
+`;
 
 function BrandLogo({ name, img }: { name: string; img: string }) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
     return (
-      <span className="font-extrabold text-[14px] sm:text-[17px] tracking-[0.06em] text-[rgba(6,13,25,0.25)] select-none">
+      <span className="font-extrabold text-[15px] sm:text-[17px] tracking-[0.06em] text-[rgba(6,13,25,0.3)] select-none whitespace-nowrap">
         {name.toUpperCase()}
       </span>
     );
@@ -26,25 +53,44 @@ function BrandLogo({ name, img }: { name: string; img: string }) {
     <img
       src={img}
       alt={name}
-      className="h-7 sm:h-9 w-auto max-w-30 sm:max-w-37.5 object-contain grayscale opacity-50 hover:opacity-90 hover:grayscale-0 transition-all duration-300"
+      className="h-8 sm:h-10 w-auto max-w-[160px] object-contain grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all duration-300"
       onError={() => setFailed(true)}
     />
+  );
+}
+
+// A single logo cell. ~22px trailing gap keeps even spacing and makes the
+// -50% marquee loop perfectly periodic.
+function BrandCell({ name, img, hidden }: { name: string; img: string; hidden?: boolean }) {
+  return (
+    <div
+      className="mr-[22px] flex shrink-0 items-center justify-center"
+      aria-hidden={hidden || undefined}
+    >
+      <BrandLogo name={name} img={img} />
+    </div>
   );
 }
 
 export function TrustedBrands() {
   return (
     <section className="w-full bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]">
-      <FadeIn className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 md:py-10">
+      <style>{MARQUEE_CSS}</style>
+      <FadeIn className="py-8 md:py-10">
         <p className="text-center text-[12px] sm:text-[13px] font-semibold text-gray-500 tracking-[0.12em] uppercase mb-7">
           Trusted Brands We Carry
         </p>
-        <div className="flex items-center gap-8 sm:gap-4 overflow-x-auto sm:overflow-visible sm:justify-between pb-1 sm:pb-0 scrollbar-hide">
-          {BRANDS.map((brand) => (
-            <div key={brand.name} className="shrink-0 sm:shrink-0 flex items-center justify-center min-w-25 sm:flex-1">
-              <BrandLogo {...brand} />
-            </div>
-          ))}
+        <div className="tb-marquee w-full" aria-label="Trusted brands we carry">
+          <div className="tb-marquee-track">
+            {/* First copy — the visible set */}
+            {BRANDS.map((brand) => (
+              <BrandCell key={`a-${brand.name}`} {...brand} />
+            ))}
+            {/* Second copy — duplicate for the seamless loop (hidden from a11y) */}
+            {BRANDS.map((brand) => (
+              <BrandCell key={`b-${brand.name}`} {...brand} hidden />
+            ))}
+          </div>
         </div>
       </FadeIn>
     </section>

@@ -15,6 +15,17 @@ export interface Session {
   expiresAt:    number
 }
 
+/**
+ * True when the access token has expired or expires within the next 60 s.
+ *
+ * Kept as a standalone (non-component) helper so the `Date.now()` call lives
+ * outside any React render path — calling `Date.now()` directly in a server
+ * component body trips the `react-hooks/purity` lint rule.
+ */
+export function isSessionExpiring(expiresAt: number): boolean {
+  return Date.now() >= expiresAt - 60_000
+}
+
 export async function getSession(): Promise<Session | null> {
   const store        = await cookies()
   const accessToken  = store.get(SESSION_COOKIES.ACCESS_TOKEN)?.value

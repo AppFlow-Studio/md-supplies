@@ -6,7 +6,9 @@ import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { ManufacturersGrid } from '@/components/b2b/ManufacturersGrid'
+import { BrandGrid } from '@/components/brand/BrandGrid'
 import { PARTNERS } from '@/lib/partners'
+import { BRANDS } from '@/lib/brands'
 
 export const metadata = buildMetadata({
   pageType: 'partners',
@@ -101,6 +103,20 @@ export default function PartnersPage() {
               vendorSlug: p.slug,
             }))}
         />
+      </section>
+
+      {/* ─── Brands We Carry (full approved list, §6.2) ─── */}
+      <section id="brands" className="bg-white px-4 sm:px-8 lg:px-[61px] pt-16 lg:pt-20 pb-20 scroll-mt-24">
+        <FadeIn>
+          <h2 className="text-[28px] font-semibold text-navy-900 tracking-[0.56px] mb-3">
+            Brands We Carry
+          </h2>
+          <p className="text-gray-500 text-[16px] leading-[26px] max-w-[640px] mb-10">
+            {BRANDS.length}+ trusted manufacturers across medical, dental, diagnostic, and
+            durable-equipment categories. Select a brand with a dedicated page to shop its products.
+          </p>
+        </FadeIn>
+        <BrandGrid />
       </section>
 
       {/* ─── Become a Partner CTA ─── */}

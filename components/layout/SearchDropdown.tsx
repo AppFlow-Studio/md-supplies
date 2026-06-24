@@ -35,34 +35,37 @@ export function SearchDropdown({ onClose }: Props) {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<PredictiveResults>(EMPTY)
-  const [loading, setLoading] = useState(false)
+  // `fetched.for` records which query the data belongs to so loading and
+  // results can be derived during render instead of reset via a synchronous
+  // setState in the effect body (which trips react-hooks/set-state-in-effect
+  // and causes cascading renders). The effect only ever calls setState from
+  // its async fetch callbacks, which the rule allows.
+  const [fetched, setFetched] = useState<{ for: string; data: PredictiveResults }>({ for: '', data: EMPTY })
   const [activeIdx, setActiveIdx] = useState(-1)
 
   const debouncedQuery = useDebounce(query, 280)
+
+  const isActiveQuery = debouncedQuery.length >= 2
+  // Keep showing the last fetched results while the new query loads.
+  const results = isActiveQuery ? fetched.data : EMPTY
+  const loading = isActiveQuery && fetched.for !== debouncedQuery
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 40)
   }, [])
 
   useEffect(() => {
-    if (debouncedQuery.length < 2) {
-      setResults(EMPTY)
-      setActiveIdx(-1)
-      return
-    }
+    if (debouncedQuery.length < 2) return
     let cancelled = false
-    setLoading(true)
     fetch(`/api/search/predictive?q=${encodeURIComponent(debouncedQuery)}`)
       .then((r) => r.json())
       .then((data: PredictiveResults) => {
         if (!cancelled) {
-          setResults(data)
+          setFetched({ for: debouncedQuery, data })
           setActiveIdx(-1)
-          setLoading(false)
         }
       })
-      .catch(() => { if (!cancelled) setLoading(false) })
+      .catch(() => { if (!cancelled) setFetched({ for: debouncedQuery, data: EMPTY }) })
     return () => { cancelled = true }
   }, [debouncedQuery])
 

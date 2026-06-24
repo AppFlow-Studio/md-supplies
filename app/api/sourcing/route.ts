@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { resend, FROM_EMAIL, TO_EMAIL } from '@/lib/resend'
+import { getResend, FROM_EMAIL, TO_EMAIL } from '@/lib/resend'
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: TO_EMAIL,
       replyTo: email,

@@ -9,6 +9,7 @@ import { LOGO_PATH } from '@/lib/bunnycdn'
 const WHOLESALE_SOURCING_HREF = '/#wholesale-sourcing'
 
 const EXPLORE = [
+  { label: 'Brands', href: ROUTES.brands },
   { label: 'Partners', href: ROUTES.partners },
   { label: 'Industries', href: ROUTES.industries },
   { label: 'Blog', href: ROUTES.blog },

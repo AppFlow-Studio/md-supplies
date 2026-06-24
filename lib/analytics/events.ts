@@ -12,7 +12,7 @@ export interface GA4Item {
 }
 
 export interface GA4EcommerceEvent {
-  event: 'view_item' | 'view_item_list' | 'select_item' | 'add_to_cart' | 'begin_checkout'
+  event: 'view_item' | 'view_item_list' | 'select_item' | 'add_to_cart' | 'view_cart' | 'begin_checkout'
   ecommerce: {
     currency: string
     value: number
@@ -117,6 +117,13 @@ export function buildAddToCartEvent(params: { currency: string; item: GA4Item })
       value: params.item.price * (params.item.quantity ?? 1),
       items: [params.item],
     },
+  }
+}
+
+export function buildViewCartEvent(params: { currency: string; items: GA4Item[] }): GA4EcommerceEvent {
+  return {
+    event: 'view_cart',
+    ecommerce: { currency: params.currency, value: sumItemValue(params.items), items: params.items },
   }
 }
 

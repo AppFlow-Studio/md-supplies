@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
+import { BrandLogoImage } from '@/components/shared/BrandLogoImage'
 
 interface Manufacturer {
   name: string
@@ -32,11 +33,11 @@ export function ManufacturersGrid({ manufacturers }: Props) {
             className="group flex flex-col bg-white h-full min-h-[258px] hover:shadow-lg transition-shadow duration-200"
           >
             <div className="flex items-center px-10 pt-8 pb-6 h-[110px]">
-              <img
+              <BrandLogoImage
                 src={m.logo}
-                alt={`${m.name} logo`}
+                name={m.name}
                 className="max-h-[50px] w-auto max-w-[210px] object-contain"
-                loading="lazy"
+                fallbackClassName="font-bold text-[18px] tracking-[0.04em] text-navy-900 select-none"
               />
             </div>
 

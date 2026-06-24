@@ -13,6 +13,7 @@ import { WholesalePricing } from '@/components/home/WholesalePricing'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { FadeIn } from '@/components/ui/FadeIn'
+import { BrandLogoImage } from '@/components/shared/BrandLogoImage'
 import { SITE_URL } from '@/lib/seo/constants'
 
 interface Props {
@@ -104,12 +105,11 @@ export default async function PartnerDetailPage({ params }: Props) {
         <div className="absolute inset-0 flex items-center justify-center lg:justify-start lg:pl-[61px]">
           <FadeIn>
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-10 py-6 flex items-center justify-center min-w-[200px] min-h-[100px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={partner.logo.url}
-                alt={partner.logo.altText || partner.name}
+              <BrandLogoImage
+                src={partner.logo.url || undefined}
+                name={partner.name}
                 className="max-h-14 max-w-[220px] w-auto object-contain brightness-0 invert"
-                loading="eager"
+                fallbackClassName="text-center font-bold text-[22px] tracking-[0.04em] text-white select-none"
               />
             </div>
           </FadeIn>
@@ -308,12 +308,11 @@ export default async function PartnerDetailPage({ params }: Props) {
                           className="group flex items-center gap-3 p-3 border border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm transition-all"
                         >
                           <div className="size-10 border border-gray-100 rounded-lg flex items-center justify-center bg-white shrink-0 overflow-hidden p-1">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={p.logo.url}
-                              alt={p.logo.altText || p.name}
+                            <BrandLogoImage
+                              src={p.logo.url || undefined}
+                              name={p.name}
                               className="max-h-7 max-w-[52px] object-contain"
-                              loading="lazy"
+                              fallbackClassName="text-center font-bold text-[11px] leading-tight tracking-[0.02em] text-navy-900 select-none"
                             />
                           </div>
                           <div className="flex-1 min-w-0">

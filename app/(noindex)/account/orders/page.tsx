@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
-import { getSession } from '@/lib/shopify/session'
+import { getSession, isSessionExpiring } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { GET_CUSTOMER_ORDERS } from '@/lib/shopify/queries/customer'
 import type { CustomerOrder } from '@/components/account/AccountView'
@@ -39,7 +39,7 @@ export default async function AccountOrdersPage() {
   const session = await getSession()
   if (!session) redirect('/api/auth/login')
 
-  if (Date.now() >= session.expiresAt - 60_000) {
+  if (isSessionExpiring(session.expiresAt)) {
     redirect('/api/auth/refresh?next=/account/orders')
   }
 
