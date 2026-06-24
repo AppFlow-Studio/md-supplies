@@ -17,6 +17,7 @@ vi.mock('next/link', () => ({
 // Mock analytics so CartPopup renders without side effects
 vi.mock('@/lib/analytics/track', () => ({ track: vi.fn() }))
 vi.mock('@/lib/analytics/events', () => ({ buildBeginCheckoutEvent: vi.fn(() => ({})) }))
+vi.mock('@/app/actions/cart', () => ({ setCartAttribute: vi.fn() }))
 
 afterEach(cleanup)
 beforeEach(() => vi.resetAllMocks())
