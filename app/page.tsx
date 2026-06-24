@@ -24,7 +24,7 @@ export default async function Home() {
   const popularProducts = allProducts.slice(4, 8);
 
   return (
-    <main>
+    <main id="main-content">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildWebSiteSchema()) }}

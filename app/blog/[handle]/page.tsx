@@ -136,7 +136,7 @@ export default async function ArticlePage({ params }: Props) {
   const heroAlt = article.image?.altText ?? article.title;
 
   return (
-    <main className="bg-white">
+    <main id="main-content" className="bg-white">
       <BlogPostingSchema
         title={article.title}
         description={article.excerpt ?? article.title}

@@ -116,7 +116,7 @@ export default async function ProductPage({ params }: Props) {
   ]
 
   return (
-    <main className="bg-[#f9fafc]">
+    <main id="main-content" className="bg-[#f9fafc]">
       <ProductSchema {...schemaProps} />
       <BreadcrumbSchema items={breadcrumbItems} />
       <ProductView
