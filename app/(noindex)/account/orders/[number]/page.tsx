@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, Truck } from 'lucide-react'
-import { getSession } from '@/lib/shopify/session'
+import { getSession, isSessionExpiring } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { GET_ORDER_DETAILS } from '@/lib/shopify/queries/customer'
 
@@ -84,7 +84,7 @@ export default async function OrderDetailPage({ params }: Props) {
   const session = await getSession()
   if (!session) redirect('/api/auth/login')
 
-  if (Date.now() >= session.expiresAt - 60_000) {
+  if (isSessionExpiring(session.expiresAt)) {
     redirect(`/api/auth/refresh?next=${encodeURIComponent(`/account/orders/${numberParam}`)}`)
   }
 

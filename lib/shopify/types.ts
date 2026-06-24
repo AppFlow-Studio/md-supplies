@@ -154,6 +154,7 @@ export type Cart = {
   id: string;
   checkoutUrl: string;
   totalQuantity: number;
+  attributes: { key: string; value: string }[];
   lines: { nodes: CartLine[] };
   cost: CartCost;
 };

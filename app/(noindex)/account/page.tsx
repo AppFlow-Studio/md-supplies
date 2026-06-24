@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { getSession } from '@/lib/shopify/session'
+import { getSession, isSessionExpiring } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { GET_CUSTOMER, GET_CUSTOMER_ORDERS, GET_CUSTOMER_ADDRESSES } from '@/lib/shopify/queries/customer'
 import { AccountView } from '@/components/account/AccountView'
@@ -21,9 +21,13 @@ export default async function AccountPage() {
   }
 
   // Token expiring within 60 s — refresh before fetching
-  if (Date.now() >= session.expiresAt - 60_000) {
+  if (isSessionExpiring(session.expiresAt)) {
     redirect('/api/auth/refresh?next=/account')
   }
+
+  let customer: Customer | null
+  let orders: CustomerOrder[]
+  let addresses: CustomerAddress[]
 
   try {
     const [customerResult, ordersResult, addressesResult] = await Promise.all([
@@ -48,16 +52,14 @@ export default async function AccountPage() {
       console.warn('[account] API returned customer: null (token prefix:', session.accessToken.slice(0, 9), ')')
     }
 
-    return (
-      <AccountView
-        customer={customerResult.customer}
-        orders={ordersResult.customer.orders.nodes}
-        addresses={addressesResult.customer.addresses.nodes}
-      />
-    )
+    customer = customerResult.customer
+    orders = ordersResult.customer.orders.nodes
+    addresses = addressesResult.customer.addresses.nodes
   } catch (err) {
     // DEBUG (temporary): log instead of silently swallowing
     console.error('[account] customer fetch failed — showing logged-out view:\n', err)
     return <AccountView customer={null} orders={[]} addresses={[]} />
   }
+
+  return <AccountView customer={customer} orders={orders} addresses={addresses} />
 }

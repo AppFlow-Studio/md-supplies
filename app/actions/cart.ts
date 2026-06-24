@@ -9,6 +9,7 @@ import {
   UPDATE_CART_LINES,
   REMOVE_CART_LINES,
   GET_CART,
+  SET_CART_ATTRIBUTES,
 } from '@/lib/shopify/queries/cart'
 import type { Cart } from '@/lib/shopify/types'
 
@@ -92,4 +93,15 @@ export async function removeFromCart(lineId: string): Promise<Cart> {
   )
   assertNoUserErrors(data.cartLinesRemove.userErrors, 'cartLinesRemove')
   return data.cartLinesRemove.cart
+}
+
+export async function setCartAttribute(key: string, value: string): Promise<Cart> {
+  const cartId = (await cookies()).get(CART_COOKIE)?.value
+  if (!cartId) throw new Error('No cart')
+  const data = await storefrontFetch<{ cartAttributesUpdate: { cart: Cart; userErrors: UserError[] } }>(
+    SET_CART_ATTRIBUTES,
+    { cartId, attributes: [{ key, value }] },
+  )
+  assertNoUserErrors(data.cartAttributesUpdate.userErrors, 'cartAttributesUpdate')
+  return data.cartAttributesUpdate.cart
 }

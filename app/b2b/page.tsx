@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/shopify/session";
+import { getSession, isSessionExpiring } from "@/lib/shopify/session";
 import { customerFetch } from "@/lib/shopify/customer";
 import { GET_CUSTOMER, GET_CUSTOMER_ORDERS, GET_CUSTOMER_ADDRESSES } from "@/lib/shopify/queries/customer";
 import { AccountView } from "@/components/account/AccountView";
@@ -22,9 +22,13 @@ export default async function AccountPage() {
     return <AccountView customer={null} orders={[]} addresses={[]} />;
   }
 
-  if (Date.now() >= session.expiresAt - 60_000) {
+  if (isSessionExpiring(session.expiresAt)) {
     redirect("/api/auth/refresh?next=/b2b");
   }
+
+  let customer: Customer | null;
+  let orders: CustomerOrder[];
+  let addresses: CustomerAddress[];
 
   try {
     const [customerResult, ordersResult, addressesResult] = await Promise.all([
@@ -37,14 +41,12 @@ export default async function AccountPage() {
       ),
     ]);
 
-    return (
-      <AccountView
-        customer={customerResult.customer}
-        orders={ordersResult.customer.orders.nodes}
-        addresses={addressesResult.customer.addresses.nodes}
-      />
-    );
+    customer = customerResult.customer;
+    orders = ordersResult.customer.orders.nodes;
+    addresses = addressesResult.customer.addresses.nodes;
   } catch {
     return <AccountView customer={null} orders={[]} addresses={[]} />;
   }
+
+  return <AccountView customer={customer} orders={orders} addresses={addresses} />;
 }
