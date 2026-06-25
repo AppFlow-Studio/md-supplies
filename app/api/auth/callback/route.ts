@@ -1,8 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { exchangeToken } from '@/lib/shopify/customer'
 import { SESSION_COOKIES } from '@/lib/shopify/session'
-
-const SITE_URL = () => process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+import { SITE_ORIGIN } from '@/lib/site-config'
 
 const SESSION_OPTS = {
   httpOnly: true,
@@ -20,18 +19,17 @@ export async function GET(request: NextRequest) {
   const storedState    = request.cookies.get(SESSION_COOKIES.OAUTH_STATE)?.value
 
   if (!code || !storedVerifier || returnedState !== storedState) {
-    return NextResponse.redirect(`${SITE_URL()}/account?auth_error=1`)
+    return NextResponse.redirect(`${SITE_ORIGIN}/account?auth_error=1`)
   }
 
   try {
     const tokens    = await exchangeToken(code, storedVerifier)
     const expiresAt = Date.now() + tokens.expires_in * 1000
 
-    const response = NextResponse.redirect(`${SITE_URL()}/account`)
+    const response = NextResponse.redirect(`${SITE_ORIGIN}/account`)
     response.cookies.set(SESSION_COOKIES.ACCESS_TOKEN,  tokens.access_token,  { ...SESSION_OPTS, maxAge: tokens.expires_in       })
     response.cookies.set(SESSION_COOKIES.REFRESH_TOKEN, tokens.refresh_token, { ...SESSION_OPTS, maxAge: 60 * 60 * 24 * 30       })
     response.cookies.set(SESSION_COOKIES.EXPIRES_AT,    String(expiresAt),    { ...SESSION_OPTS, maxAge: 60 * 60 * 24 * 30       })
-    // Kept for use as id_token_hint when ending the Shopify session at logout.
     if (tokens.id_token) {
       response.cookies.set(SESSION_COOKIES.ID_TOKEN, tokens.id_token, { ...SESSION_OPTS, maxAge: 60 * 60 * 24 * 30 })
     }
@@ -39,6 +37,6 @@ export async function GET(request: NextRequest) {
     response.cookies.delete(SESSION_COOKIES.OAUTH_STATE)
     return response
   } catch {
-    return NextResponse.redirect(`${SITE_URL()}/account?auth_error=1`)
+    return NextResponse.redirect(`${SITE_ORIGIN}/account?auth_error=1`)
   }
 }
