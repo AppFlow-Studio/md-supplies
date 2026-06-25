@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set(SESSION_COOKIES.EXPIRES_AT,    String(expiresAt),    { ...SESSION_OPTS, maxAge: 60 * 60 * 24 * 30 })
     return response
   } catch {
+    // Refresh token expired or invalid — restart full auth flow
     return NextResponse.redirect(`${SITE_ORIGIN}/api/auth/login`)
   }
 }

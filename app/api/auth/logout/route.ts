@@ -6,6 +6,9 @@ import { SITE_ORIGIN } from '@/lib/site-config'
 export async function GET(request: NextRequest) {
   const idToken = request.cookies.get(SESSION_COOKIES.ID_TOKEN)?.value
 
+  // End the Shopify session too (not just our cookies) so the next login re-prompts
+  // the hosted form. The end_session_endpoint requires id_token_hint; fall back to a
+  // plain redirect if we never captured one.
   let target = `${SITE_ORIGIN}/account`
   if (idToken) {
     const params = new URLSearchParams({

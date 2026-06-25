@@ -19,6 +19,7 @@ export default defineConfig({
             '__tests__/**/*.test.ts',
             'lib/**/*.test.ts',
             'lib/**/__tests__/**/*.test.ts',
+            'app/api/**/__tests__/**/*.test.ts',
           ],
         },
       },

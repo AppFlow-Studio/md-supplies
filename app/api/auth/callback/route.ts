@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set(SESSION_COOKIES.ACCESS_TOKEN,  tokens.access_token,  { ...SESSION_OPTS, maxAge: tokens.expires_in       })
     response.cookies.set(SESSION_COOKIES.REFRESH_TOKEN, tokens.refresh_token, { ...SESSION_OPTS, maxAge: 60 * 60 * 24 * 30       })
     response.cookies.set(SESSION_COOKIES.EXPIRES_AT,    String(expiresAt),    { ...SESSION_OPTS, maxAge: 60 * 60 * 24 * 30       })
+    // Kept for use as id_token_hint when ending the Shopify session at logout.
     if (tokens.id_token) {
       response.cookies.set(SESSION_COOKIES.ID_TOKEN, tokens.id_token, { ...SESSION_OPTS, maxAge: 60 * 60 * 24 * 30 })
     }
