@@ -220,3 +220,14 @@ export const INDUSTRIES: Industry[] = [
     ],
   },
 ]
+
+/**
+ * An industry page is "complete" (and therefore indexable) once it carries
+ * unique positioning plus client-approved FAQ copy. Pages still awaiting FAQ
+ * content are thin and should render `noindex,follow` until complete (E8 §9.2).
+ */
+export function isIndustryComplete(industry: Industry): boolean {
+  return Boolean(
+    industry.buyerType?.trim() && industry.description?.trim() && industry.faq?.length,
+  )
+}

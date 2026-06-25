@@ -160,3 +160,15 @@ export const HOMEPAGE_BRANDS: Brand[] = HOMEPAGE_ORDER
 
 /** Approved homepage brands that have a verified CDN logo — for the trust strip. */
 export const HOMEPAGE_BRANDS_WITH_LOGO: Brand[] = HOMEPAGE_BRANDS.filter((b) => b.logoFile)
+
+/**
+ * The full brand list in approved alphabetical order (§6.2). Sorting here
+ * guarantees correct order regardless of hand-edited array position (e.g. the
+ * "Accutest" / "Acon Laboratories" pair) and is the single source used by the
+ * brands page.
+ */
+export function getSortedBrands(): Brand[] {
+  return [...BRANDS].sort((a, b) =>
+    a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }),
+  )
+}
