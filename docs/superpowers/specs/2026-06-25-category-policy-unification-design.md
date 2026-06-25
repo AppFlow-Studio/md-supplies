@@ -135,4 +135,4 @@ Sections 9 and 10 are the "mismatch" delivery — they explicitly call out what 
 - Sitemap category URLs match exactly the set of live roadmap handles; each entry has `lastmod`.
 - Related categories block only surfaces roadmap-mapped collections.
 - `audit/category-nav-audit-report.md` contains 11 sections; §§ 9–11 show no leaking handles post-fix.
-- All 25 roadmap categories now have at least one `matchedHandle` (the 8 previously empty are filled).
+- All roadmap categories now have `matchedHandles` filled in code (the 8 previously empty are filled). Note: the corresponding Shopify collections are pending catalog creation — `buildCategoryNav`'s live-handle gating suppresses them from all surfaces until they exist, so there is no user-facing regression. §11 will clear once the catalog team creates the 8 collections.
