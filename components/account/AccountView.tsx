@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Truck, MapPin, FileText,
+  Truck, MapPin,
   Package, ChevronRight, LogOut, User,
   Zap, Activity, Home, Heart, Building2, Shield,
 } from "lucide-react";
@@ -174,10 +174,9 @@ function LoggedOutView() {
 
       {/* Stats */}
       <section className="w-full bg-white">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 grid grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 grid grid-cols-2 lg:grid-cols-3 gap-8">
           {[
             { value: "1,000+",   label: "Active Accounts" },
-            { value: "4,000+",   label: "Products"        },
             { value: "Reliable", label: "Fulfillment"     },
             { value: "24-48 hr", label: "Fast Support"    },
           ].map(({ value, label }) => (
@@ -195,11 +194,10 @@ function LoggedOutView() {
           <h2 className="text-[#f9fafc] text-[28px] font-semibold tracking-[0.56px] text-center">
             What You Can Do
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/20">
             {[
-              { icon: <Truck size={24} className="text-teal-300" />,    title: "Track Orders",  desc: "See real-time status on every shipment from placement to delivery." },
+              { icon: <Truck size={24} className="text-teal-300" />,    title: "Track Orders",  desc: "See the status of every shipment from placement to delivery." },
               { icon: <MapPin size={24} className="text-teal-300" />,   title: "Save Addresses", desc: "Store multiple shipping addresses for fast checkout every time."    },
-              { icon: <FileText size={24} className="text-teal-300" />, title: "View Invoices",  desc: "Access and download invoices for your records and accounting."      },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="flex flex-col items-center text-center gap-5 px-8 sm:px-12 py-10 sm:py-0">
                 <div className="w-[50px] h-[50px] rounded-[12px] bg-[rgba(0,193,255,0.2)] flex items-center justify-center shrink-0">
@@ -286,11 +284,10 @@ function LoggedInDashboard({
 
       {/* Dashboard stats */}
       <section className="w-full bg-neutral-100">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 grid grid-cols-2 sm:grid-cols-3 gap-5">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 grid grid-cols-2 gap-5">
           {[
-            { icon: <Package  size={20} className="text-teal-500" />, value: String(orders.length),    label: "Total Orders"    },
-            { icon: <MapPin   size={20} className="text-teal-500" />, value: String(addresses.length), label: "Saved Addresses" },
-            { icon: <FileText size={20} className="text-teal-500" />, value: "—",                      label: "Invoices"        },
+            { icon: <Package size={20} className="text-teal-500" />, value: String(orders.length),    label: "Total Orders"    },
+            { icon: <MapPin  size={20} className="text-teal-500" />, value: String(addresses.length), label: "Saved Addresses" },
           ].map(({ icon, value, label }) => (
             <div key={label} className="bg-white p-6 flex items-center gap-4">
               <div className="w-[44px] h-[44px] rounded-[10px] bg-[rgba(0,193,255,0.12)] flex items-center justify-center shrink-0">
@@ -376,9 +373,6 @@ function LoggedInDashboard({
           <div className="bg-white">
             <div className="flex items-center justify-between px-8 pt-8 pb-5 border-b border-gray-200">
               <h2 className="text-navy-900 text-[20px] font-semibold">Saved Addresses</h2>
-              <button className="text-teal-500 text-[14px] font-medium hover:underline">
-                + Add New
-              </button>
             </div>
             {addresses.length === 0 ? (
               <p className="px-8 py-10 text-gray-500 text-[15px]">No saved addresses.</p>
@@ -394,14 +388,6 @@ function LoggedInDashboard({
                         {[addr.address1, addr.address2].filter(Boolean).join(", ")}
                       </span>
                       <span className="text-gray-500 text-[15px]">{formatAddressLine2(addr)}</span>
-                    </div>
-                    <div className="flex gap-4 pt-1">
-                      <button className="text-navy-900 text-[13px] font-medium hover:text-teal-500 transition-colors">
-                        Edit
-                      </button>
-                      <button className="text-gray-500 text-[13px] font-medium hover:text-red-500 transition-colors">
-                        Remove
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -430,9 +416,6 @@ function LoggedInDashboard({
                     <span className="text-gray-500 text-[12px] uppercase tracking-[0.3px]">{label}</span>
                     <span className="text-navy-900 text-[15px] font-medium">{value}</span>
                   </div>
-                  <button className="text-teal-500 text-[13px] font-medium hover:underline shrink-0">
-                    Edit
-                  </button>
                 </div>
               ))}
             </div>

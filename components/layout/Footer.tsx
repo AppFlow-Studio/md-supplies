@@ -10,7 +10,7 @@ const EXPLORE = [
   { label: 'Industries', href: ROUTES.industries },
   { label: 'Blog', href: ROUTES.blog },
   { label: 'Solutions', href: ROUTES.solutions.occ },
-  { label: 'Wholesale / B2B', href: '/b2b' },
+  { label: 'Wholesale / B2B', href: ROUTES.contact },
   { label: 'Returns', href: ROUTES.returns },
 ]
 
@@ -192,7 +192,7 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
           )}
 
           <Link
-            href="/b2b"
+            href={ROUTES.contact}
             className="bg-teal-500 text-white text-sm font-semibold px-7 py-3 rounded-full hover:bg-[#006d92] transition-colors"
           >
             Wholesale Pricing
