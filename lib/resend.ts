@@ -3,6 +3,12 @@ import { Resend } from 'resend'
 export const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'noreply@mdsupplies.com'
 export const TO_EMAIL   = process.env.RESEND_TO_EMAIL   ?? 'team@mdsupplies.com'
 
+/**
+ * Sourcing requests go to a dedicated inbox when configured, falling back to the
+ * shared contact inbox so a lead is never dropped if the var is unset (DEV-22).
+ */
+export const SOURCING_TO_EMAIL = process.env.RESEND_SOURCING_TO_EMAIL ?? TO_EMAIL
+
 let client: Resend | null = null
 
 /**

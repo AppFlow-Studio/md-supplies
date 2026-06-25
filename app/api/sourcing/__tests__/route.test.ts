@@ -6,6 +6,7 @@ vi.mock('@/lib/resend', () => ({
   getResend: () => ({ emails: { send } }),
   FROM_EMAIL: 'noreply@test.com',
   TO_EMAIL: 'team@test.com',
+  SOURCING_TO_EMAIL: 'sourcing@test.com',
 }))
 
 import { POST } from '@/app/api/sourcing/route'
@@ -35,7 +36,7 @@ const valid = {
 
 beforeEach(() => {
   send.mockReset()
-  send.mockResolvedValue({ id: 'email_123' })
+  send.mockResolvedValue({ data: { id: 'email_123' }, error: null })
 })
 
 describe('POST /api/sourcing', () => {
@@ -43,6 +44,20 @@ describe('POST /api/sourcing', () => {
     const res = await POST(post(valid))
     expect(res.status).toBe(200)
     expect(send).toHaveBeenCalledOnce()
+  })
+
+  it('delivers to the dedicated sourcing inbox', async () => {
+    await POST(post(valid))
+    expect(send.mock.calls[0][0].to).toBe('sourcing@test.com')
+  })
+
+  it('returns 502 when Resend responds with an error object (no swallowing)', async () => {
+    send.mockResolvedValue({
+      data: null,
+      error: { name: 'application_error', message: 'boom', statusCode: 500 },
+    })
+    const res = await POST(post(valid))
+    expect(res.status).toBe(502)
   })
 
   it('returns 403 on a cross-origin request', async () => {

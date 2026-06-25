@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getResend, FROM_EMAIL, TO_EMAIL } from '@/lib/resend'
+import { TO_EMAIL } from '@/lib/resend'
 import { contactSchema } from '@/lib/forms/schema'
+import { sendFormEmail } from '@/lib/forms/email'
 import {
   assertAllowedOrigin,
   readJsonBounded,
@@ -37,25 +38,23 @@ export async function POST(req: Request) {
 
   const { name, email, subject, message } = parsed.data
 
-  try {
-    await getResend().emails.send({
-      from: FROM_EMAIL,
-      to: TO_EMAIL,
-      replyTo: sanitizeHeaderValue(email),
-      subject: subject
-        ? sanitizeHeaderValue(`[Contact] ${subject}`)
-        : '[Contact] New message from MDSupplies',
-      text: [
-        `Name:    ${name}`,
-        `Email:   ${email}`,
-        `Subject: ${subject || '—'}`,
-        '',
-        message,
-      ].join('\n'),
-    })
-  } catch (err) {
-    // Log the failure class only — never the submitted field values.
-    console.error('contact email send failed:', (err as Error)?.name ?? 'Error')
+  const sent = await sendFormEmail({
+    to: TO_EMAIL,
+    replyTo: sanitizeHeaderValue(email),
+    subject: subject
+      ? sanitizeHeaderValue(`[Contact] ${subject}`)
+      : '[Contact] New message from MDSupplies',
+    text: [
+      `Name:    ${name}`,
+      `Email:   ${email}`,
+      `Subject: ${subject || '—'}`,
+      '',
+      message,
+    ].join('\n'),
+    formName: 'contact',
+  })
+
+  if (!sent.ok) {
     return NextResponse.json({ error: 'Email delivery failed' }, { status: 502 })
   }
 

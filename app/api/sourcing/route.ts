@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getResend, FROM_EMAIL, TO_EMAIL } from '@/lib/resend'
+import { SOURCING_TO_EMAIL } from '@/lib/resend'
 import { sourcingSchema } from '@/lib/forms/schema'
+import { sendFormEmail } from '@/lib/forms/email'
 import {
   assertAllowedOrigin,
   readJsonBounded,
@@ -37,22 +38,20 @@ export async function POST(req: Request) {
 
   const { name, email, phone, facultyType } = parsed.data
 
-  try {
-    await getResend().emails.send({
-      from: FROM_EMAIL,
-      to: TO_EMAIL,
-      replyTo: sanitizeHeaderValue(email),
-      subject: sanitizeHeaderValue(`[Sourcing Request] ${facultyType} — ${name}`),
-      text: [
-        `Name:          ${name}`,
-        `Email:         ${email}`,
-        `Phone:         ${phone || '—'}`,
-        `Facility Type: ${facultyType}`,
-      ].join('\n'),
-    })
-  } catch (err) {
-    // Log the failure class only — never the submitted field values.
-    console.error('sourcing email send failed:', (err as Error)?.name ?? 'Error')
+  const sent = await sendFormEmail({
+    to: SOURCING_TO_EMAIL,
+    replyTo: sanitizeHeaderValue(email),
+    subject: sanitizeHeaderValue(`[Sourcing Request] ${facultyType} — ${name}`),
+    text: [
+      `Name:          ${name}`,
+      `Email:         ${email}`,
+      `Phone:         ${phone || '—'}`,
+      `Facility Type: ${facultyType}`,
+    ].join('\n'),
+    formName: 'sourcing',
+  })
+
+  if (!sent.ok) {
     return NextResponse.json({ error: 'Email delivery failed' }, { status: 502 })
   }
 
