@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCategoryNav, getUnmappedRoadmapCategories } from '../category-nav'
+import { buildCategoryNav, getUnmappedRoadmapCategories, getAllowedHandles } from '../category-nav'
 
 const LIVE_HANDLES = [
   'gloves', 'wound-care', 'testing-screening', 'exam-room', 'mobility',
@@ -74,5 +74,52 @@ describe('getUnmappedRoadmapCategories', () => {
   it('does not list a fully mapped category', () => {
     const unmapped = getUnmappedRoadmapCategories(LIVE_HANDLES)
     expect(unmapped.map((c) => c.displayName)).not.toContain('Gloves')
+  })
+})
+
+describe('getAllowedHandles', () => {
+  it('returns a Set containing known mapped handles', () => {
+    const allowed = getAllowedHandles()
+    expect(allowed.has('gloves')).toBe(true)
+    expect(allowed.has('face-coverings')).toBe(true)
+    expect(allowed.has('exam-tables')).toBe(true)
+  })
+
+  it('returns a Set containing the 8 newly filled handles', () => {
+    const allowed = getAllowedHandles()
+    expect(allowed.has('needles-syringes')).toBe(true)
+    expect(allowed.has('surgical-sutures')).toBe(true)
+    expect(allowed.has('respiratory')).toBe(true)
+    expect(allowed.has('disinfectants')).toBe(true)
+    expect(allowed.has('iv-therapy')).toBe(true)
+    expect(allowed.has('urology-ostomy')).toBe(true)
+    expect(allowed.has('sterilization')).toBe(true)
+    expect(allowed.has('pharmacy-products')).toBe(true)
+  })
+
+  it('does not contain handles absent from all roadmap categories', () => {
+    const allowed = getAllowedHandles()
+    expect(allowed.has('pharmaceuticals')).toBe(false)
+    expect(allowed.has('random-nonexistent')).toBe(false)
+    expect(allowed.has('')).toBe(false)
+  })
+})
+
+describe('getUnmappedRoadmapCategories — after filling 8 handles', () => {
+  it('no longer reports any of the 8 previously-empty categories as unmapped', () => {
+    const nowLive = [
+      'needles-syringes', 'surgical-sutures', 'respiratory', 'disinfectants',
+      'iv-therapy', 'urology-ostomy', 'sterilization', 'pharmacy-products',
+    ].map((h) => ({ handle: h }))
+    const unmapped = getUnmappedRoadmapCategories(nowLive)
+    const names = unmapped.map((c) => c.displayName)
+    expect(names).not.toContain('Needles & Syringes')
+    expect(names).not.toContain('Surgical Sutures')
+    expect(names).not.toContain('Respiratory')
+    expect(names).not.toContain('Disinfectants')
+    expect(names).not.toContain('IV Therapy')
+    expect(names).not.toContain('Urology & Ostomy')
+    expect(names).not.toContain('Sterilization')
+    expect(names).not.toContain('Pharmacy Products')
   })
 })

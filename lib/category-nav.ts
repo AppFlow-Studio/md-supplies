@@ -16,11 +16,11 @@ export type RoadmapCategory = {
 export const ROADMAP_CATEGORIES: RoadmapCategory[] = [
   { displayName: 'Gloves', navGroup: 'primary', matchedHandles: ['gloves'], placeholderSlug: 'gloves' },
   { displayName: 'Wound Care', navGroup: 'primary', matchedHandles: ['wound-care'], placeholderSlug: 'wound-care' },
-  { displayName: 'Needles & Syringes', navGroup: 'primary', matchedHandles: [], placeholderSlug: 'needles-syringes' },
-  { displayName: 'Surgical Sutures', navGroup: 'primary', matchedHandles: [], placeholderSlug: 'surgical-sutures' },
+  { displayName: 'Needles & Syringes', navGroup: 'primary', matchedHandles: ['needles-syringes'], placeholderSlug: 'needles-syringes' },
+  { displayName: 'Surgical Sutures', navGroup: 'primary', matchedHandles: ['surgical-sutures'], placeholderSlug: 'surgical-sutures' },
   { displayName: 'Testing', navGroup: 'primary', matchedHandles: ['testing-screening'], placeholderSlug: 'testing' },
   { displayName: 'Exam Room', navGroup: 'primary', matchedHandles: ['exam-room'], placeholderSlug: 'exam-room' },
-  { displayName: 'Respiratory', navGroup: 'primary', matchedHandles: [], placeholderSlug: 'respiratory' },
+  { displayName: 'Respiratory', navGroup: 'primary', matchedHandles: ['respiratory'], placeholderSlug: 'respiratory' },
   { displayName: 'Mobility', navGroup: 'primary', matchedHandles: ['mobility'], placeholderSlug: 'mobility' },
   { displayName: 'Patient Therapy & Rehab', navGroup: 'primary', matchedHandles: ['patient-therapy-rehab'], placeholderSlug: 'patient-therapy-rehab' },
   {
@@ -50,19 +50,19 @@ export const ROADMAP_CATEGORIES: RoadmapCategory[] = [
     placeholderSlug: 'apparel',
   },
   { displayName: 'Hygiene', navGroup: 'primary', matchedHandles: ['hygiene'], placeholderSlug: 'hygiene' },
-  { displayName: 'Disinfectants', navGroup: 'primary', matchedHandles: [], placeholderSlug: 'disinfectants' },
+  { displayName: 'Disinfectants', navGroup: 'primary', matchedHandles: ['disinfectants'], placeholderSlug: 'disinfectants' },
   { displayName: 'Home Care', navGroup: 'more', matchedHandles: ['home-care'], placeholderSlug: 'home-care' },
   { displayName: 'Emergency Supplies', navGroup: 'more', matchedHandles: ['emergency-supplies'], placeholderSlug: 'emergency-supplies' },
   { displayName: 'Incontinence', navGroup: 'more', matchedHandles: ['incontinence'], placeholderSlug: 'incontinence' },
-  { displayName: 'IV Therapy', navGroup: 'more', matchedHandles: [], placeholderSlug: 'iv-therapy' },
-  { displayName: 'Urology & Ostomy', navGroup: 'more', matchedHandles: [], placeholderSlug: 'urology-ostomy' },
-  { displayName: 'Sterilization', navGroup: 'more', matchedHandles: [], placeholderSlug: 'sterilization' },
+  { displayName: 'IV Therapy', navGroup: 'more', matchedHandles: ['iv-therapy'], placeholderSlug: 'iv-therapy' },
+  { displayName: 'Urology & Ostomy', navGroup: 'more', matchedHandles: ['urology-ostomy'], placeholderSlug: 'urology-ostomy' },
+  { displayName: 'Sterilization', navGroup: 'more', matchedHandles: ['sterilization'], placeholderSlug: 'sterilization' },
   { displayName: 'Dental', navGroup: 'more', matchedHandles: ['dental'], placeholderSlug: 'dental' },
   { displayName: 'Housekeeping & Janitorial', navGroup: 'more', matchedHandles: ['housekeeping-janitorial'], placeholderSlug: 'housekeeping-janitorial' },
   { displayName: 'Bariatric', navGroup: 'more', matchedHandles: ['bariatric'], placeholderSlug: 'bariatric' },
   { displayName: 'Room Furniture', navGroup: 'more', matchedHandles: ['seating', 'exam-tables'], placeholderSlug: 'room-furniture' },
   { displayName: 'Face Masks', navGroup: 'more', matchedHandles: ['face-coverings'], placeholderSlug: 'face-masks' },
-  { displayName: 'Pharmacy Products', navGroup: 'more', matchedHandles: [], placeholderSlug: 'pharmacy-products' },
+  { displayName: 'Pharmacy Products', navGroup: 'more', matchedHandles: ['pharmacy-products'], placeholderSlug: 'pharmacy-products' },
 ]
 
 export type NavEntry = { displayName: string; href: string }
@@ -93,4 +93,8 @@ export function getUnmappedRoadmapCategories(
   return ROADMAP_CATEGORIES.filter(
     (category) => !category.matchedHandles.some((h) => liveHandles.has(h)),
   )
+}
+
+export function getAllowedHandles(): Set<string> {
+  return new Set(ROADMAP_CATEGORIES.flatMap((c) => c.matchedHandles))
 }
