@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCollectionFlags, buildRoadmapCoverage, type AuditCollectionInput } from '../category-nav-audit'
+import { buildCollectionFlags, buildRoadmapCoverage, buildSurfaceReport, type AuditCollectionInput, type SurfaceReport } from '../category-nav-audit'
 import type { RoadmapCategory } from '../category-nav'
 
 const ROADMAP: RoadmapCategory[] = [
@@ -80,5 +80,66 @@ describe('buildRoadmapCoverage', () => {
       status: 'unmapped',
       matchedHandles: [],
     })
+  })
+})
+
+describe('buildSurfaceReport', () => {
+  const SURFACE_ROADMAP: RoadmapCategory[] = [
+    { displayName: 'Gloves', navGroup: 'primary', matchedHandles: ['gloves'], placeholderSlug: 'gloves' },
+    { displayName: 'Apparel', navGroup: 'primary', matchedHandles: ['capes-gowns', 'footwear'], placeholderSlug: 'apparel' },
+    { displayName: 'Home Care', navGroup: 'more', matchedHandles: ['home-care'], placeholderSlug: 'home-care' },
+    { displayName: 'Needles & Syringes', navGroup: 'primary', matchedHandles: ['needles-syringes'], placeholderSlug: 'needles-syringes' },
+  ]
+
+  const SURFACE_COLLECTIONS: AuditCollectionInput[] = [
+    collection({ handle: 'gloves' }),
+    collection({ handle: 'capes-gowns' }),
+    collection({ handle: 'footwear' }),
+    collection({ handle: 'home-care' }),
+    collection({ handle: 'orphan-handle' }),      // not in roadmap
+    collection({ handle: 'pharmaceuticals' }),    // excluded
+    // needles-syringes is missing (unmapped)
+  ]
+
+  it('navPrimary contains the first matched handle for each live primary category', () => {
+    const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
+    expect(report.navPrimary).toContain('gloves')
+    expect(report.navPrimary).toContain('capes-gowns')
+    expect(report.navPrimary).not.toContain('footwear') // second handle, nav uses first
+    expect(report.navPrimary).not.toContain('needles-syringes') // not live
+  })
+
+  it('navMore contains live more-group category handles', () => {
+    const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
+    expect(report.navMore).toContain('home-care')
+  })
+
+  it('hubAll contains all live allowed handles including synthesized sub-handles', () => {
+    const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
+    expect(report.hubAll).toContain('gloves')
+    expect(report.hubAll).toContain('capes-gowns')
+    expect(report.hubAll).toContain('footwear') // second synthesized handle — in hub, not nav
+    expect(report.hubAll).not.toContain('orphan-handle')
+    expect(report.hubAll).not.toContain('pharmaceuticals')
+  })
+
+  it('orphanHandles lists live collections not in any roadmap handle and not excluded', () => {
+    const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
+    expect(report.orphanHandles).toContain('orphan-handle')
+    expect(report.orphanHandles).not.toContain('gloves')
+    expect(report.orphanHandles).not.toContain('pharmaceuticals')
+  })
+
+  it('hubOnlyHandles are synthesized sub-handles absent from nav (expected)', () => {
+    const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
+    expect(report.hubOnlyHandles).toContain('footwear')
+    expect(report.hubOnlyHandles).not.toContain('gloves')
+    expect(report.hubOnlyHandles).not.toContain('capes-gowns')
+  })
+
+  it('actionItems lists roadmap categories with no live matching handle', () => {
+    const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
+    expect(report.actionItems).toContain('Needles & Syringes')
+    expect(report.actionItems).not.toContain('Gloves')
   })
 })
