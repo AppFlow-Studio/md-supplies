@@ -62,7 +62,7 @@ function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
   const sp = await searchParams
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mdsupplies.com'
+  const base = SITE_URL
 
   const activeFilterStrings = parseFilterParam(sp.filter)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
