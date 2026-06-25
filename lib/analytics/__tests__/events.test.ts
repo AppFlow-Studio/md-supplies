@@ -8,6 +8,7 @@ import {
   buildViewItemListEvent,
   buildSelectItemEvent,
   buildAddToCartEvent,
+  buildViewCartEvent,
   buildBeginCheckoutEvent,
   buildFormSubmitEvent,
 } from '../events'
@@ -152,6 +153,26 @@ describe('buildAddToCartEvent', () => {
     expect(
       buildAddToCartEvent({ currency: 'USD', item: { item_id: 'v1', item_name: 'Gloves', price: 10 } }),
     ).toMatchObject({ ecommerce: { value: 10 } })
+  })
+})
+
+describe('buildViewCartEvent', () => {
+  it('sums price * quantity across all items', () => {
+    const items = [
+      { item_id: 'v1', item_name: 'Gloves', price: 10, quantity: 2 },
+      { item_id: 'v2', item_name: 'Masks', price: 5, quantity: 1 },
+    ]
+    expect(buildViewCartEvent({ currency: 'USD', items })).toEqual({
+      event: 'view_cart',
+      ecommerce: { currency: 'USD', value: 25, items },
+    })
+  })
+
+  it('builds an empty cart view with zero value', () => {
+    expect(buildViewCartEvent({ currency: 'USD', items: [] })).toEqual({
+      event: 'view_cart',
+      ecommerce: { currency: 'USD', value: 0, items: [] },
+    })
   })
 })
 

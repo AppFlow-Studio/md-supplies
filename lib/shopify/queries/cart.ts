@@ -3,6 +3,7 @@ const CART_FRAGMENT = `#graphql
     id
     checkoutUrl
     totalQuantity
+    attributes { key value }
     lines(first: 100) {
       nodes {
         id
@@ -79,5 +80,15 @@ export const GET_CART = `#graphql
   ${CART_FRAGMENT}
   query GetCart($cartId: ID!) {
     cart(id: $cartId) { ...CartFields }
+  }
+`;
+
+export const SET_CART_ATTRIBUTES = `#graphql
+  ${CART_FRAGMENT}
+  mutation SetCartAttributes($cartId: ID!, $attributes: [AttributeInput!]!) {
+    cartAttributesUpdate(cartId: $cartId, attributes: $attributes) {
+      cart { ...CartFields }
+      userErrors { field message }
+    }
   }
 `;

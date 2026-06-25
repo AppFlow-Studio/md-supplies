@@ -10,7 +10,7 @@ import {
 import { addToCart, removeFromCart, updateCartLine } from '@/app/actions/cart'
 import type { Cart } from '@/lib/shopify/types'
 import { track } from '@/lib/analytics/track'
-import { buildAddToCartEvent } from '@/lib/analytics/events'
+import { buildAddToCartEvent, buildViewCartEvent } from '@/lib/analytics/events'
 
 interface CartContextValue {
   cart: Cart | null
@@ -78,6 +78,25 @@ export function CartProvider({
     }
   }, [])
 
+  const openCart = useCallback(() => {
+    setIsOpen(true)
+    if (cart && cart.lines.nodes.length > 0) {
+      track(
+        {
+          ...buildViewCartEvent({
+            currency: cart.cost.subtotalAmount.currencyCode,
+            items: cart.lines.nodes.map((line) => ({
+              item_id: line.merchandise.id,
+              item_name: line.merchandise.product.title,
+              price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
+              quantity: line.quantity,
+            })),
+          }),
+        },
+      )
+    }
+  }, [cart])
+
   return (
     <CartContext.Provider
       value={{
@@ -86,7 +105,7 @@ export function CartProvider({
         addItem,
         removeItem,
         updateItem,
-        openCart: () => setIsOpen(true),
+        openCart,
         closeCart: () => setIsOpen(false),
       }}
     >
