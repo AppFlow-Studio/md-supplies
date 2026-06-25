@@ -2,9 +2,10 @@ import { cookies } from 'next/headers';
 import { cache } from 'react';
 import type { ShopifyResponse } from './types';
 import { loadEnvConfig } from '@next/env';
+import { serverEnv } from '@/lib/env.server';
 
 loadEnvConfig(process.cwd());
-const STOREFRONT_API_URL = `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2026-04/graphql.json`;
+const STOREFRONT_API_URL = `https://${serverEnv.shopifyStoreDomain}/api/2026-04/graphql.json`;
 
 // cachedRequest is wrapped with React's cache() to deduplicate identical
 // GraphQL calls within a single server-render request. React's cache()
@@ -22,7 +23,7 @@ const cachedRequest = cache(async function cachedRequest<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN!,
+    'X-Shopify-Storefront-Access-Token': serverEnv.shopifyStorefrontToken,
   };
   if (country && country !== 'US') {
     headers['Shopify-Storefront-Buyer-Country'] = country;

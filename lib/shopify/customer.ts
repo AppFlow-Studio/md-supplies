@@ -1,4 +1,9 @@
 import type { ShopifyResponse } from './types';
+import {
+  SITE_ORIGIN,
+  SHOPIFY_CUSTOMER_ACCOUNT_URL,
+  SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID,
+} from '@/lib/site-config';
 
 const CUSTOMER_API_VERSION = '2026-04';
 
@@ -9,7 +14,7 @@ const CUSTOMER_API_VERSION = '2026-04';
 // WITHOUT the /authentication segment:
 //   https://shopify.com/<shop-id>/account/customer/api/<version>/graphql
 function authBase(): string {
-  return process.env.SHOPIFY_CUSTOMER_ACCOUNT_URL ?? '';
+  return SHOPIFY_CUSTOMER_ACCOUNT_URL;
 }
 
 function apiBase(): string {
@@ -52,9 +57,9 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
 
 export function buildAuthUrl(codeChallenge: string, state: string): string {
   const params = new URLSearchParams({
-    client_id: process.env.SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID!,
+    client_id: SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID,
     response_type: 'code',
-    redirect_uri: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`,
+    redirect_uri: `${SITE_ORIGIN}/api/auth/callback`,
     scope: 'openid email customer-account-api:full',
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
@@ -75,8 +80,8 @@ export type TokenResponse = {
 export async function exchangeToken(code: string, codeVerifier: string): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
-    client_id: process.env.SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`,
+    client_id: SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID,
+    redirect_uri: `${SITE_ORIGIN}/api/auth/callback`,
     code,
     code_verifier: codeVerifier,
   });
@@ -97,7 +102,7 @@ export async function exchangeToken(code: string, codeVerifier: string): Promise
 export async function refreshAccessToken(token: string): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
-    client_id: process.env.SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID!,
+    client_id: SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID,
     refresh_token: token,
   });
 

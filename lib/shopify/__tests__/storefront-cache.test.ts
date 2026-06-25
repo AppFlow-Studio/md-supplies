@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// React's cache() is a no-op in the development/node build — it does not
-// memoize outside a React server render context. Replace it with a real
-// Map-based memoizer so tests that assert deduplication actually work.
 vi.mock('react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react')>()
   return {
@@ -23,6 +20,7 @@ vi.mock('react', async (importOriginal) => {
 const fetchMock = vi.fn()
 
 beforeEach(() => {
+  vi.resetModules()
   fetchMock.mockReset()
   fetchMock.mockResolvedValue({
     ok: true,
@@ -31,6 +29,9 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
   vi.stubEnv('SHOPIFY_STORE_DOMAIN', 'test.myshopify.com')
   vi.stubEnv('SHOPIFY_STOREFRONT_ACCESS_TOKEN', 'test-token')
+  vi.stubEnv('SHOPIFY_ADMIN_ACCESS_TOKEN', 'admin-token')
+  vi.stubEnv('RESEND_API_KEY', 're_test')
+  vi.stubEnv('BUNNYCDN_STORAGE_ACCESS_KEY', 'bunny-key')
 })
 
 describe('storefrontFetch request-level memoization', () => {
