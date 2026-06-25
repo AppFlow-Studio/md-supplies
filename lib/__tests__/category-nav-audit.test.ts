@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCollectionFlags, buildRoadmapCoverage, buildSurfaceReport, type AuditCollectionInput, type SurfaceReport } from '../category-nav-audit'
+import { buildCollectionFlags, buildRoadmapCoverage, buildSurfaceReport, type AuditCollectionInput } from '../category-nav-audit'
 import type { RoadmapCategory } from '../category-nav'
 
 const ROADMAP: RoadmapCategory[] = [
