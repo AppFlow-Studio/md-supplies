@@ -41,3 +41,9 @@ export function getProductPlaceholderPath(categoryHandle?: string | null): strin
   if (!categoryHandle) return GLOBAL_PRODUCT_PLACEHOLDER
   return placeholderPathFor(categoryHandle)
 }
+
+const INDUSTRIES_PATH = 'industries'
+
+export function getIndustryImagePath(filename: string): string {
+  return `${PROXY_PREFIX}/${INDUSTRIES_PATH}/${filename}`
+}
