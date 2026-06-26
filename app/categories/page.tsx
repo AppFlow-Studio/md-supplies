@@ -7,7 +7,7 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
-import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
+import { getAllowedHandles, buildCategoryNav } from '@/lib/category-nav'
 
 export const revalidate = 60
 
@@ -31,14 +31,21 @@ export default async function CategoriesPage() {
       GET_COLLECTIONS,
       { first: 250 },
     )
-    collections = data.collections.nodes.filter(
-      (c) => !EXCLUDED_COLLECTION_HANDLES.has(c.handle)
-    )
+    const allowed = getAllowedHandles()
+    collections = data.collections.nodes.filter((c) => allowed.has(c.handle))
   } catch {
     // degrade gracefully — render empty state
   }
 
-  const popularCollections = collections.slice(0, 8)
+  const collectionsByHandle = new Map(collections.map((c) => [c.handle, c]))
+  const popularCollections = buildCategoryNav(collections)
+    .primary
+    .map((entry) => {
+      const handle = entry.href.split('/').pop() ?? ''
+      return collectionsByHandle.get(handle)
+    })
+    .filter((c): c is CollectionNode => c != null)
+    .slice(0, 8)
 
   return (
     <main className="bg-[#f9fafc] min-h-screen">

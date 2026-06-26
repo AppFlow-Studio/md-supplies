@@ -15,6 +15,8 @@ const CATEGORIES_PATH = 'categories'
 
 export const GLOBAL_PRODUCT_PLACEHOLDER = `${PROXY_PREFIX}/${CATEGORIES_PATH}/medical-supplies-placeholder.jpeg`
 
+export const LOGO_PATH = `${PROXY_PREFIX}/logo/logo.avif`
+
 function findRoadmapCategory(handle: string) {
   return ROADMAP_CATEGORIES.find((category) =>
     category.matchedHandles.some((h) => handle === h || handle.startsWith(`${h}-`)),
@@ -38,4 +40,10 @@ export function getSubcategoryBannerPath(handle: string): string {
 export function getProductPlaceholderPath(categoryHandle?: string | null): string {
   if (!categoryHandle) return GLOBAL_PRODUCT_PLACEHOLDER
   return placeholderPathFor(categoryHandle)
+}
+
+const INDUSTRIES_PATH = 'industries'
+
+export function getIndustryImagePath(filename: string): string {
+  return `${PROXY_PREFIX}/${INDUSTRIES_PATH}/${filename}`
 }

@@ -38,6 +38,14 @@ yarn-error.log*
 # vercel
 .vercel
 
+# git worktrees (scratch, per-machine)
+/.worktrees/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

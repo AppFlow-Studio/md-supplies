@@ -12,6 +12,7 @@ const CART_FRAGMENT = `#graphql
           ... on ProductVariant {
             id
             title
+            sku
             selectedOptions { name value }
             product {
               id

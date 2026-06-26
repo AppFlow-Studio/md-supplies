@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import type { ProductImage } from '@/types/product'
 
 interface Props {
@@ -18,10 +19,13 @@ export function ProductGallery({ images, alt }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="relative w-full aspect-square bg-neutral-50 rounded-xl overflow-hidden border border-gray-200">
-        <img
+        <Image
           src={selected.url}
           alt={selected.altText || alt}
-          className="w-full h-full object-contain"
+          fill
+          sizes="(max-width: 1024px) 100vw, 52vw"
+          priority
+          className="object-contain"
         />
       </div>
 
@@ -33,17 +37,18 @@ export function ProductGallery({ images, alt }: Props) {
               onClick={() => setSelectedIndex(i)}
               aria-label={`View image ${i + 1}`}
               aria-pressed={i === selectedIndex}
-              className={`w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 bg-neutral-50 transition-colors ${
+              className={`relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 bg-neutral-50 transition-colors ${
                 i === selectedIndex
                   ? 'border-teal-500'
                   : 'border-gray-200 hover:border-gray-400'
               }`}
             >
-              <img
+              <Image
                 src={img.url}
                 alt={img.altText || `Product image ${i + 1}`}
-                className="w-full h-full object-contain"
-                loading="lazy"
+                fill
+                sizes="64px"
+                className="object-contain"
               />
             </button>
           ))}

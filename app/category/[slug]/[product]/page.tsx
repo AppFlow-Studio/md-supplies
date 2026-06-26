@@ -85,7 +85,7 @@ export default async function CategoryProductPage({ params }: Props) {
     ])
 
     return (
-      <main className="bg-[#f9fafc] min-h-screen">
+      <main id="main-content" className="bg-[#f9fafc] min-h-screen">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
           <Breadcrumb
             items={[
@@ -226,7 +226,7 @@ export default async function CategoryProductPage({ params }: Props) {
     : [{ label: 'Categories', href: '/shop' }]
 
   return (
-    <main className="bg-[#f9fafc]">
+    <main id="main-content" className="bg-[#f9fafc]">
       <ProductView
         product={productData.product}
         relatedProducts={recsData.related}

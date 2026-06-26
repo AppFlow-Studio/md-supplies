@@ -53,8 +53,9 @@ export const GET_PRODUCT = `#graphql
         nodes {
           id
           title
+          sku
           availableForSale
-        
+
           selectedOptions { name value }
           price { amount currencyCode }
           compareAtPrice { amount currencyCode }

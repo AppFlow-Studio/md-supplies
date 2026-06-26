@@ -17,6 +17,7 @@ import { BlogPostingSchema } from "@/components/schema/BlogPostingSchema";
 import { BreadcrumbSchema } from "@/components/schema/BreadcrumbSchema";
 import { SITE_URL } from "@/lib/seo/constants";
 import { STATIC_ARTICLES } from '@/lib/blog-static'
+import { LOGO_PATH } from "@/lib/bunnycdn";
 
 export const revalidate = 3600;
 
@@ -135,7 +136,7 @@ export default async function ArticlePage({ params }: Props) {
   const heroAlt = article.image?.altText ?? article.title;
 
   return (
-    <main className="bg-white">
+    <main id="main-content" className="bg-white">
       <BlogPostingSchema
         title={article.title}
         description={article.excerpt ?? article.title}
@@ -144,7 +145,7 @@ export default async function ArticlePage({ params }: Props) {
         publishedAt={article.publishedAt}
         authorName={article.author.name}
         publisherName="MD Supplies"
-        publisherLogo={`${SITE_URL}/images/logo.png`}
+        publisherLogo={`${SITE_URL}${LOGO_PATH}`}
       />
       <BreadcrumbSchema
         items={[

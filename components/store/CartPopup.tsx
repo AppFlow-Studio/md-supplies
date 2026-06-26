@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { type MouseEvent } from 'react'
@@ -12,6 +13,44 @@ import { setCartAttribute } from '@/app/actions/cart'
 export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const panel = panelRef.current
+    if (!panel) return
+
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])',
+    )
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    first?.focus()
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        closeCart()
+        return
+      }
+      if (e.key === 'Tab' && focusable.length > 0) {
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault()
+            last?.focus()
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault()
+            first?.focus()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, closeCart])
 
   async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {
     if (!cart) return
@@ -57,6 +96,11 @@ export function CartPopup() {
 
       {/* Panel */}
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal={isOpen}
+        aria-hidden={!isOpen}
+        {...(!isOpen ? { inert: true } : {})}
         className={`fixed inset-y-0 right-0 w-full max-w-[440px] bg-white z-50 flex flex-col shadow-xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
@@ -68,6 +112,7 @@ export function CartPopup() {
             Your Cart ({cart?.totalQuantity ?? 0})
           </span>
           <button
+            type="button"
             onClick={closeCart}
             className="text-gray-500 hover:text-navy-900 transition-colors"
             aria-label="Close cart"
@@ -83,6 +128,7 @@ export function CartPopup() {
               <ShoppingCart size={48} className="text-gray-300" />
               <p className="text-gray-500 text-[15px] tracking-[0.3px]">Your cart is empty</p>
               <button
+                type="button"
                 onClick={closeCart}
                 className="text-teal-500 text-[14px] font-semibold hover:underline"
               >
@@ -128,6 +174,7 @@ export function CartPopup() {
                         {/* Qty stepper */}
                         <div className="flex items-center border border-gray-200 h-[32px]">
                           <button
+                            type="button"
                             onClick={() =>
                               line.quantity <= 1
                                 ? removeItem(line.id)
@@ -142,6 +189,7 @@ export function CartPopup() {
                             {line.quantity}
                           </span>
                           <button
+                            type="button"
                             onClick={() => updateItem(line.id, line.quantity + 1)}
                             className="w-8 h-full flex items-center justify-center text-navy-900 hover:bg-neutral-50 transition-colors"
                             aria-label="Increase quantity"
@@ -157,6 +205,7 @@ export function CartPopup() {
 
                     {/* Remove */}
                     <button
+                      type="button"
                       onClick={() => removeItem(line.id)}
                       className="text-gray-400 hover:text-red-400 transition-colors shrink-0 self-start mt-0.5"
                       aria-label="Remove item"
@@ -190,6 +239,7 @@ export function CartPopup() {
               Proceed to Checkout
             </a>
             <button
+              type="button"
               onClick={closeCart}
               className="text-navy-900 text-[14px] font-semibold text-center hover:underline"
             >

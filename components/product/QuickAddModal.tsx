@@ -81,6 +81,7 @@ export function QuickAddModal({ product, onClose }: Props) {
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-200">
           <p className="text-sm font-medium text-gray-500">Quick Add</p>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close quick add"
             className="w-8 h-8 flex items-center justify-center  hover:bg-neutral-100 text-gray-500 transition-colors"

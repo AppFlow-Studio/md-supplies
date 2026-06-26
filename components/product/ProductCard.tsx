@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { ProductCardData } from '@/types/product'
 import { ProductBadges } from './ProductBadges'
 import { ProductCardClient } from './ProductCardClient'
@@ -26,15 +27,13 @@ export function ProductCard({ product }: Props) {
         tabIndex={0}
       >
         {/* Image */}
-        <div className="aspect-square w-full overflow-hidden rounded-lg bg-neutral-50">
-          <img
+        <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-neutral-50">
+          <Image
             src={product.image.url}
             alt={product.image.altText}
-            width={product.image.width}
-            height={product.image.height}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-contain transition-transform duration-200 group-hover:scale-[1.03]"
           />
         </div>
 

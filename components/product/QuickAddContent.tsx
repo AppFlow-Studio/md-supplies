@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import type { ProductCardData } from '@/types/product'
 
 function formatCents(cents: number): string {
@@ -35,12 +36,13 @@ export function QuickAddContent({ product, titleId }: Props) {
     <div className="flex flex-col gap-5">
       {/* Product image + title */}
       <div className="flex gap-3 items-start">
-        <div className="w-16 h-16 shrink-0 overflow-hidden bg-neutral-50 border border-gray-200">
-          <img
+        <div className="relative w-16 h-16 shrink-0 overflow-hidden bg-neutral-50 border border-gray-200">
+          <Image
             src={product.image.url}
             alt={product.image.altText}
-            className="w-full h-full object-contain"
-            loading="lazy"
+            fill
+            sizes="64px"
+            className="object-contain"
           />
         </div>
         <div className="flex flex-col gap-0.5 min-w-0">
@@ -78,6 +80,7 @@ export function QuickAddContent({ product, titleId }: Props) {
         <label className="block text-sm font-medium text-navy-900 mb-1.5">Quantity</label>
         <div className="flex items-center border border-gray-200 overflow-hidden w-fit">
           <button
+            type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             aria-label="Decrease quantity"
             className="w-9 h-9 flex items-center justify-center text-navy-900 hover:bg-neutral-100 transition-colors text-lg font-medium"
@@ -88,6 +91,7 @@ export function QuickAddContent({ product, titleId }: Props) {
             {qty}
           </span>
           <button
+            type="button"
             onClick={() => setQty((q) => q + 1)}
             aria-label="Increase quantity"
             className="w-9 h-9 flex items-center justify-center text-navy-900 hover:bg-neutral-100 transition-colors text-lg font-medium"
@@ -99,6 +103,7 @@ export function QuickAddContent({ product, titleId }: Props) {
 
       {/* Add to cart */}
       <button
+        type="button"
         onClick={handleAdd}
         disabled={!canAdd || added}
         className={`w-full py-3 px-4 text-sm font-semibold transition-colors ${

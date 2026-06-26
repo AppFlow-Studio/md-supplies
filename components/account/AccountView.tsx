@@ -436,7 +436,7 @@ interface AccountViewProps {
 
 export function AccountView({ customer, orders, addresses }: AccountViewProps) {
   return (
-    <main>
+    <main id="main-content">
       {customer ? (
         <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} />
       ) : (

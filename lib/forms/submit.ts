@@ -1,4 +1,5 @@
 import { track } from '@/lib/analytics/track'
+import type { AnalyticsEvent } from '@/lib/analytics/events'
 
 /**
  * Client-side form submission with a hard guarantee: success — and the
@@ -17,7 +18,7 @@ export type SubmitResult =
 export async function submitForm(opts: {
   url: string
   payload: unknown
-  analyticsEvent?: Record<string, unknown>
+  analyticsEvent?: AnalyticsEvent
 }): Promise<SubmitResult> {
   let res: Response
   try {

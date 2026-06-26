@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
     // src is blocked, so pre-existing local images (e.g. /images/logo.avif)
     // must be listed alongside the BunnyCDN proxy path.
     localPatterns: [{ pathname: "/api/bunny/**" }, { pathname: "/images/**" }],
+    // Shopify product/variant images are served directly from cdn.shopify.com
+    // (Storefront API image URLs) — these are remote, not local, so they need
+    // an explicit remotePattern. BunnyCDN itself needs no entry here: it has no
+    // public Pull Zone, so every BunnyCDN read already goes through the
+    // same-origin /api/bunny proxy above (see lib/bunnycdn.ts).
+    remotePatterns: [{ protocol: "https", hostname: "cdn.shopify.com", pathname: "/s/files/**" }],
   },
 };
 

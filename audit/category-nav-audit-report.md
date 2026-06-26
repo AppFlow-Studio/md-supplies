@@ -1,8 +1,8 @@
-# Category Nav Audit Report
+# Category Nav Audit Report — §5.5 Surfaces Mismatch
 
-Generated: 2026-06-18T10:57:32.208Z
+Generated: 2026-06-25T13:07:40.640Z
 
-## Roadmap Coverage (§3.1)
+## §1 Roadmap Coverage (§3.1)
 
 | Category | Group | Status | Matched Handles |
 |---|---|---|---|
@@ -32,7 +32,7 @@ Generated: 2026-06-18T10:57:32.208Z
 | Face Masks | more | mapped | face-coverings |
 | Pharmacy Products | more | unmapped | — |
 
-## Collection Flags (§4.2)
+## §2 Collection Flags (§4.2)
 
 | Handle | Title | Excluded | Zero Product | Missing Image | Missing SEO Title | Missing SEO Desc | Unmapped Orphan |
 |---|---|---|---|---|---|---|---|
@@ -100,7 +100,7 @@ Generated: 2026-06-18T10:57:32.208Z
 | incontinence | Incontinence | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ |
 | underpads | Underpads | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | covid-19 | COVID-19 | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| respiratory-testing | Respiratory Testing | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| respiratory-testing | Respiratory Testing | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ |
 | testing-screening | Testing | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ |
 | shaving-creams | Shaving Creams | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | shaving-deodorants | Shaving & Deodorants | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
@@ -286,3 +286,287 @@ Generated: 2026-06-18T10:57:32.208Z
 | serum-blood-collection-tubes | Serum Blood Collection Tubes | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | potassium-edta-blood-collection-tubes | Potassium EDTA Blood Collection Tubes | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | heparin-blood-collection-tubes | Heparin Blood Collection Tubes | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+
+## §3 Nav Surface — Primary
+
+Handles rendered in the header desktop mega-menu and mobile drawer "Categories" column, and footer "Top Categories" column.
+
+`gloves`, `wound-care`, `testing-screening`, `exam-room`, `mobility`, `patient-therapy-rehab`, `trocars-trocar-kits`, `capes-gowns`, `hygiene`
+
+## §4 Nav Surface — More
+
+Handles rendered in the header desktop mega-menu and mobile drawer "More Categories" column, and footer "More Categories" column.
+
+`home-care`, `emergency-supplies`, `incontinence`, `dental`, `housekeeping-janitorial`, `bariatric`, `seating`, `face-coverings`
+
+## §5 Hub Surface — Primary Strip
+
+Handles shown in the "Popular Categories" strip on /categories (roadmap primary order, first 8).
+
+`gloves`, `wound-care`, `testing-screening`, `exam-room`, `mobility`, `patient-therapy-rehab`, `trocars-trocar-kits`, `capes-gowns`
+
+## §6 Hub Surface — All Categories
+
+All handles eligible to appear in the "Browse All Categories" grid on /categories.
+
+`gloves`, `wound-care`, `testing-screening`, `exam-room`, `mobility`, `patient-therapy-rehab`, `trocars-trocar-kits`, `disposable-3-2mm-3-5mm-trocars`, `disposable-4-5mm-trocars`, `reusable-3-2mm-3-5mm-trocars`, `reusable-4-5mm-trocars`, `capes-gowns`, `caps-headwear`, `coats-jackets`, `footwear`, `medical-scrubs`, `pants-shirts`, `undergarments-wraps`, `hygiene`, `home-care`, `emergency-supplies`, `incontinence`, `dental`, `housekeeping-janitorial`, `bariatric`, `seating`, `exam-tables`, `face-coverings`
+
+## §7 Sitemap Surface — /category/* URLs
+
+Handles emitted as /category/{handle} in sitemap.xml (same allowlist as Hub All).
+
+`gloves`, `wound-care`, `testing-screening`, `exam-room`, `mobility`, `patient-therapy-rehab`, `trocars-trocar-kits`, `disposable-3-2mm-3-5mm-trocars`, `disposable-4-5mm-trocars`, `reusable-3-2mm-3-5mm-trocars`, `reusable-4-5mm-trocars`, `capes-gowns`, `caps-headwear`, `coats-jackets`, `footwear`, `medical-scrubs`, `pants-shirts`, `undergarments-wraps`, `hygiene`, `home-care`, `emergency-supplies`, `incontinence`, `dental`, `housekeeping-janitorial`, `bariatric`, `seating`, `exam-tables`, `face-coverings`
+
+## §8 Internal Links Surface — Related Categories Pool
+
+Handles eligible to appear in the "Related Categories" block on collection and product pages.
+
+`gloves`, `wound-care`, `testing-screening`, `exam-room`, `mobility`, `patient-therapy-rehab`, `trocars-trocar-kits`, `disposable-3-2mm-3-5mm-trocars`, `disposable-4-5mm-trocars`, `reusable-3-2mm-3-5mm-trocars`, `reusable-4-5mm-trocars`, `capes-gowns`, `caps-headwear`, `coats-jackets`, `footwear`, `medical-scrubs`, `pants-shirts`, `undergarments-wraps`, `hygiene`, `home-care`, `emergency-supplies`, `incontinence`, `dental`, `housekeeping-janitorial`, `bariatric`, `seating`, `exam-tables`, `face-coverings`
+
+## §9 Orphan Handles — Not In Any Roadmap Surface
+
+Live Shopify collections that are not in ROADMAP_CATEGORIES.matchedHandles and not in EXCLUDED_COLLECTION_HANDLES. These do not appear on any public-facing surface.
+
+| Handle |
+|---|
+| frontpage |
+| occ |
+| bathroom |
+| bedside-care |
+| commodes |
+| daily-living-aids |
+| patient-lifts-slings |
+| transport-chairs |
+| bath-benches |
+| bath-lifts |
+| bath-stools |
+| pediatric-bath-chairs |
+| raised-toilet-seats |
+| shower-beds |
+| shower-commodes |
+| transfer-benches |
+| bed-pans |
+| emesis-ear-wash-basins |
+| hair-care |
+| hair-combs |
+| soap-bars |
+| washes-soaps |
+| mouth-care |
+| toothbrushes |
+| toothbrush-holders-caps |
+| soap-bar-holders |
+| applicators |
+| cotton-tipped-applicators |
+| finger-cots |
+| surgical-gloves |
+| nail-care |
+| nail-brushes |
+| survival-equipment |
+| foil-survival-blankets |
+| reclosable-bags |
+| patient-belongings-bags |
+| laundry-linen-bags |
+| bags |
+| cotton |
+| cotton-rolls |
+| cotton-balls |
+| toe-fingernail-clippers |
+| emery-boards-files |
+| hot-cold-therapy |
+| cold-packs |
+| underpads |
+| covid-19 |
+| respiratory-testing |
+| shaving-creams |
+| shaving-deodorants |
+| denture-adhesive |
+| point-of-care-urinalysis |
+| diagnostic-tests |
+| 5-panel-drug-test-cups |
+| drug-test-cups |
+| h-pylori-testing |
+| barrier-film-sleeves |
+| chloraprep-applicators |
+| tsh-tests |
+| blood-pressure-monitors |
+| sphygmomanometers |
+| blood-pressure |
+| diagnostic-tools |
+| biopsy-punches |
+| goniometers |
+| laryngoscopes |
+| neurological-hammers |
+| penlights |
+| percussion-hammers |
+| tuning-forks |
+| exam-room-lighting |
+| ultrasound-warmers |
+| ultrasound-gels |
+| waiting-room-chairs |
+| swivel-stools |
+| phlebotomy-chairs |
+| foot-stools |
+| skin-preparation |
+| surgical-pens |
+| alcohol-prep-pads |
+| alcohol-swabs |
+| bzk-antiseptic-towelettes |
+| hydrogen-peroxide |
+| isopropyl-rubbing-alcohol |
+| obstetrical-towelettes |
+| povidone-iodine-prep-solutions |
+| storage-jars |
+| swabsticks |
+| tinc-of-benzoin-swabsticks |
+| povidone-iodine-swabsticks |
+| oral-swabsticks |
+| lemon-glycerin-swabsticks |
+| chloraprep-swabsticks |
+| alcohol-swabsticks |
+| table-paper-cutters-dispensers |
+| pediatric-print-table-paper |
+| table-paper |
+| tourniquets |
+| tray-covers |
+| vaginal-speculums |
+| tongue-depressors-spoons |
+| thermometers |
+| stethoscopes |
+| bariatric-wheelchairs |
+| bariatric-transport-chairs |
+| bariatric-transfer-benches |
+| bariatric-standard-canes |
+| bariatric-shower-commodes |
+| bariatric-shower-beds |
+| bariatric-scales |
+| bariatric-rollators |
+| bariatric-recliners |
+| bariatric-quad-canes |
+| bariatric-foot-stools |
+| bariatric-crutches |
+| bariatric-commode-chairs |
+| bariatric-battery-powered-lifts |
+| bariatric-bath-benches |
+| bariatric-adult-briefs |
+| walkers |
+| walking-canes-1 |
+| wheelchairs |
+| power-mobility |
+| exercise-mobility |
+| braces-support |
+| casting-products |
+| compression-stockings |
+| feet-ankle-support |
+| neck-back-abdominal-support |
+| abdominal-binders |
+| back-braces |
+| cervical-neck-collars |
+| lumbar-support-cushions |
+| pediatric-rehab |
+| shoulders-arms-wrists-and-thumb |
+| splints |
+| walking-boots |
+| rsv |
+| flu-a-b-influenza |
+| covid-19-flu-a-b-combo-tests |
+| analyzers |
+| gastrointestinal-testing |
+| mononucleosis-tests |
+| pregnancy-tests |
+| alcohol-analyzers-strips |
+| featured-products |
+| impression-materials |
+| anesthetics |
+| dental-applicators |
+| dental-dams |
+| anterior-lower |
+| impression-trays |
+| anterior-upper |
+| assorted-trays |
+| bite-trays |
+| lower |
+| quadrant |
+| upper |
+| preventives |
+| prophy-paste |
+| prophy-angles |
+| fluoride-varnish |
+| fluoride-trays |
+| small-equipment |
+| suction |
+| dental-needles-syringes |
+| isolation-surgical-gowns |
+| universal-exam-capes |
+| universal-exam-gowns |
+| bouffant-caps |
+| headbands-hair-nets |
+| lifeguard-caps |
+| lifeguard-visors |
+| nurse-caps |
+| coveralls |
+| lab-coats |
+| beard-covers |
+| shoe-covers |
+| slippers-socks |
+| lifeguard-shorts |
+| lifeguard-t-shirts |
+| patient-exam-shorts |
+| disposable-underwear |
+| disposable-undergarments |
+| spa-wraps |
+| bariatric-walkers |
+| crutches-1 |
+| rollators |
+| forearm-crutches |
+| pediatric-crutches |
+| standard-crutches |
+| crutch-parts-accessories |
+| 3-wheeled-rollators |
+| 4-wheeled-rollators |
+| euro-style-rollators |
+| forearm-rollators |
+| rollator-parts |
+| rollator-accessories |
+| knee-walkers |
+| folding-walkers |
+| posterior-walkers |
+| walker-accessories |
+| walker-parts |
+| wheeled-walkers |
+| folding-canes |
+| offset-handle-canes |
+| quad-canes |
+| standard-canes |
+| reclining-wheelchairs |
+| stand-up-wheelchairs |
+| wheelchair-cushions |
+| wheelchair-parts |
+| wheelchair-accessories |
+| wheelchair-ramps |
+| blood-collection |
+| blood-collection-sets |
+| blood-collection-tubes |
+| serum-blood-collection-tubes |
+| potassium-edta-blood-collection-tubes |
+| heparin-blood-collection-tubes |
+
+## §10 Surface Consistency — Hub-Only Handles
+
+Handles present in Hub All / Sitemap but absent from Nav. These are synthesized sub-handles (e.g. individual Apparel sub-collections). This is expected behaviour — nav collapses them to one parent entry.
+
+`disposable-3-2mm-3-5mm-trocars`, `disposable-4-5mm-trocars`, `reusable-3-2mm-3-5mm-trocars`, `reusable-4-5mm-trocars`, `caps-headwear`, `coats-jackets`, `footwear`, `medical-scrubs`, `pants-shirts`, `undergarments-wraps`, `exam-tables`
+
+## §11 Action Items — Unmapped Roadmap Categories
+
+Roadmap categories with no live Shopify collection. Catalog team must create these collections.
+
+| Category |
+|---|
+| Needles & Syringes |
+| Surgical Sutures |
+| Respiratory |
+| Disinfectants |
+| IV Therapy |
+| Urology & Ostomy |
+| Sterilization |
+| Pharmacy Products |

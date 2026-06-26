@@ -20,7 +20,7 @@ beforeEach(() => {
 describe('submitForm', () => {
   it('returns ok and fires the analytics event on a 200', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, { ok: true })))
-    const event = { event: 'form_submit', form_name: 'contact' }
+    const event = { event: 'form_submit', form_name: 'contact' } as const
 
     const result = await submitForm({ url: '/api/contact', payload: {}, analyticsEvent: event })
 

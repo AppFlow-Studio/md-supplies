@@ -100,7 +100,7 @@ export default async function ProductPage({ params }: Props) {
     name: product.title,
     description: product.description,
     image: product.images.nodes[0]?.url ?? '',
-    sku: firstVariant?.id?.split('/').pop() ?? slug,
+    sku: firstVariant?.sku || slug,
     brand: product.brandName ?? product.vendor,
     price: parseFloat(firstVariant?.price?.amount ?? '0'),
     priceCurrency: firstVariant?.price?.currencyCode ?? 'USD',
@@ -116,7 +116,7 @@ export default async function ProductPage({ params }: Props) {
   ]
 
   return (
-    <main className="bg-[#f9fafc]">
+    <main id="main-content" className="bg-[#f9fafc]">
       <ProductSchema {...schemaProps} />
       <BreadcrumbSchema items={breadcrumbItems} />
       <ProductView

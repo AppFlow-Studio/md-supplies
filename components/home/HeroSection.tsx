@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link";
+import Image from "next/image";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
 import type { CollectionProduct } from "@/lib/shopify/types";
@@ -20,7 +21,7 @@ interface Props {
   products: CollectionProduct[];
 }
 
-function ProductCard({ product }: { product: CollectionProduct }) {
+function ProductCard({ product, priority = false }: { product: CollectionProduct; priority?: boolean }) {
   const price = parseFloat(
     product.variants.nodes[0]?.price.amount ?? product.priceRange.minVariantPrice.amount,
   );
@@ -31,13 +32,15 @@ function ProductCard({ product }: { product: CollectionProduct }) {
       href={`/product/${product.handle}`}
       className="group bg-white overflow-hidden hover:shadow-lg transition-shadow duration-200"
     >
-      <div className="aspect-square overflow-hidden bg-white p-7">
+      <div className="relative aspect-square overflow-hidden bg-white p-7">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={image.url}
             alt={image.altText ?? product.title}
-            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+            fill
+            sizes="(max-width: 640px) 45vw, 220px"
+            priority={priority}
+            className="object-contain group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full bg-gray-100" />
@@ -71,14 +74,10 @@ export function HeroSection({ products }: Props) {
 
             {/* Heading */}
             <FadeIn delay={0.1}>
-              <div>
-                <h1 className="text-[38px] sm:text-[46px] lg:text-[55px] font-semibold leading-[1.2] tracking-[0.9px] text-navy-900">
-                  Medical-Grade Supplies{" "}
-                </h1>
-                <h1 className="text-[38px] sm:text-[46px] lg:text-[55px] font-semibold leading-[1.2] tracking-[0.9px] text-teal-500">
-                  Built for Clinicians
-                </h1>
-              </div>
+              <h1 className="text-[38px] sm:text-[46px] lg:text-[55px] font-semibold leading-[1.2] tracking-[0.9px] text-navy-900">
+                Medical-Grade Supplies{" "}
+                <span className="text-teal-500">Built for Clinicians</span>
+              </h1>
             </FadeIn>
 
             {/* Description */}
@@ -93,7 +92,7 @@ export function HeroSection({ products }: Props) {
             <FadeIn delay={0.3}>
               <div className="flex flex-wrap items-center gap-4">
                 <Link
-                  href="/products"
+                  href="/categories"
                   className="bg-navy-900 text-white border border-navy-900 text-[18px] font-semibold px-[52px] py-[17px] hover:bg-white hover:text-navy-900 hover:border-teal-500 transition-colors tracking-[0.36px]"
                 >
                   Shop All Products
@@ -120,7 +119,7 @@ export function HeroSection({ products }: Props) {
                   </p>
                 </div>
                 <Link
-                  href="/occ"
+                  href="/solutions/occ"
                   className="group text-teal-500 text-[15px] font-semibold shrink-0 tracking-[0.3px] inline-flex items-center gap-1"
                 >
                   Shop OCC <AnimatedArrow size={14} />
@@ -134,8 +133,8 @@ export function HeroSection({ products }: Props) {
           <FadeIn delay={0.2} className="w-full sm:w-105 lg:w-115 xl:w-135 shrink-0">
             <div className="flex gap-3 sm:gap-4">
               <div className="flex flex-col gap-3 sm:gap-4 flex-1 mt-8">
-                {products && [products[0], products[2]].filter(Boolean).map((p) => (
-                  <ProductCard key={p.id} product={p} />
+                {products && [products[0], products[2]].filter(Boolean).map((p, i) => (
+                  <ProductCard key={p.id} product={p} priority={i === 0} />
                 ))}
               </div>
               <div className="flex flex-col gap-3 sm:gap-4 flex-1">

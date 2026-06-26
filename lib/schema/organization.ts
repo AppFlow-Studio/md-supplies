@@ -1,4 +1,5 @@
 import { SITE_NAME, SITE_URL, DEFAULT_DESCRIPTION } from '@/lib/seo/constants'
+import { LOGO_PATH } from '@/lib/bunnycdn'
 
 export function buildOrganizationSchema() {
   return {
@@ -9,7 +10,7 @@ export function buildOrganizationSchema() {
     description: DEFAULT_DESCRIPTION,
     logo: {
       '@type': 'ImageObject',
-      url: `${SITE_URL}/images/logo.png`,
+      url: `${SITE_URL}${LOGO_PATH}`,
     },
   } as const
 }

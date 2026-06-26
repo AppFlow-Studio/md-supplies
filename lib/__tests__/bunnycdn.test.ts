@@ -44,8 +44,8 @@ describe('getProductPlaceholderPath', () => {
     expect(getProductPlaceholderPath('totally-unknown-handle')).toBe(GLOBAL_PRODUCT_PLACEHOLDER)
   })
 
-  it('falls back to the global placeholder for a category with no live matchedHandles', () => {
-    // "Respiratory" has matchedHandles: [] today, so nothing can match it.
-    expect(getProductPlaceholderPath('respiratory')).toBe(GLOBAL_PRODUCT_PLACEHOLDER)
+  it('resolves a newly-mapped handle to its category placeholder', () => {
+    // "Respiratory" was empty before Task 1 filled matchedHandles: ['respiratory'].
+    expect(getProductPlaceholderPath('respiratory')).toBe('/api/bunny/categories/respiratory-placeholder.jpeg')
   })
 })

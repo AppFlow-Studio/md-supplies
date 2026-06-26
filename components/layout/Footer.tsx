@@ -1,8 +1,12 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { CurrencySwitcher } from './CurrencySwitcher'
 import type { AvailableCountry, SlimCollection } from '@/lib/shopify/types'
 import { ROUTES } from '@/lib/routes'
 import { buildCategoryNav } from '@/lib/category-nav'
+import { LOGO_PATH } from '@/lib/bunnycdn'
+
+const WHOLESALE_SOURCING_HREF = '/#wholesale-sourcing'
 
 const EXPLORE = [
   { label: 'Brands', href: ROUTES.brands },
@@ -19,45 +23,13 @@ const COMPANY_HELP = [
   { label: 'FAQ', href: ROUTES.faq },
   { label: 'Contact Us', href: ROUTES.contact },
   { label: 'My Account', href: ROUTES.account },
-  { label: 'Order Tracking', href: '/tracking' },
+  { label: 'Order Tracking', href: ROUTES.accountOrders },
   { label: 'Privacy Policy', href: ROUTES.policy('privacy') },
   { label: 'Terms of Service', href: ROUTES.policy('terms') },
   { label: 'Shipping Policy', href: ROUTES.policy('shipping') },
 ]
 
-const SOCIAL = [
-  {
-    label: 'Facebook',
-    href: '#',
-    svg: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Instagram',
-    href: '#',
-    svg: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
-        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-      </svg>
-    ),
-  },
-  {
-    label: 'LinkedIn',
-    href: '#',
-    svg: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" />
-        <rect x="2" y="9" width="4" height="12" />
-        <circle cx="4" cy="4" r="2" />
-      </svg>
-    ),
-  },
-]
+const LINKEDIN_HREF = 'http://LinkedIn.com/company/mdsupplies'
 
 interface FooterProps {
   collections: SlimCollection[]
@@ -75,16 +47,8 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-10">
           {/* Brand column */}
           <div className="sm:col-span-2">
-            <Link href="/" className="flex items-center gap-2.5 mb-5">
-              <div className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M9 2v14M2 9h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
-              </div>
-              <span className="font-bold text-xl">
-                <span className="text-navy-900">MD</span>
-                <span className="text-teal-500">Supplies</span>
-              </span>
+            <Link href="/" className="flex items-center mb-5">
+              <Image src={LOGO_PATH} alt="MDSupplies" width={420} height={100} className="h-10 w-auto object-contain" />
             </Link>
 
             <p className="text-sm text-gray-500 leading-relaxed mb-7 max-w-sm">
@@ -94,16 +58,19 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
             </p>
 
             <div className="flex items-center gap-3">
-              {SOCIAL.map(({ label, svg, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="w-9 h-9 rounded-full bg-teal-500 text-white flex items-center justify-center hover:bg-[#006d92] transition-colors"
-                >
-                  {svg}
-                </a>
-              ))}
+              <a
+                href={LINKEDIN_HREF}
+                aria-label="LinkedIn"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-teal-500 text-white flex items-center justify-center hover:bg-[#006d92] transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" />
+                  <rect x="2" y="9" width="4" height="12" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
             </div>
           </div>
 

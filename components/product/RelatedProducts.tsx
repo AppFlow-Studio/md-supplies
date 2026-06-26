@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { RelatedProduct } from '@/types/product'
 import { ROUTES } from '@/lib/routes'
 
@@ -25,12 +26,13 @@ export function RelatedProducts({ products }: Props) {
             href={ROUTES.product(product.handle)}
             className="group flex flex-col gap-3 bg-white border border-gray-200 rounded-lg p-3 hover:border-teal-500 transition-colors"
           >
-            <div className="aspect-square bg-neutral-50 rounded overflow-hidden">
-              <img
+            <div className="relative aspect-square bg-neutral-50 rounded overflow-hidden">
+              <Image
                 src={product.image}
                 alt={product.title}
-                className="w-full h-full object-contain"
-                loading="lazy"
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="object-contain"
               />
             </div>
             <div className="flex flex-col gap-1">

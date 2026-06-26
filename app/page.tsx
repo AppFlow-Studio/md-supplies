@@ -11,6 +11,8 @@ import type { CollectionProduct } from '@/lib/shopify/types';
 import { buildMetadata } from '@/lib/seo'
 import { buildWebSiteSchema, jsonLdSafe } from '@/lib/schema'
 
+export const revalidate = 60
+
 export const metadata = buildMetadata({ pageType: 'homepage' })
 
 export default async function Home() {
@@ -24,7 +26,7 @@ export default async function Home() {
   const popularProducts = allProducts.slice(4, 8);
 
   return (
-    <main>
+    <main id="main-content">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildWebSiteSchema()) }}

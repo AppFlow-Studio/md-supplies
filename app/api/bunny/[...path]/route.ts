@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { serverEnv } from '@/lib/env.server'
 
 export async function GET(
   _req: NextRequest,
@@ -10,16 +11,8 @@ export async function GET(
     return new NextResponse(null, { status: 400 })
   }
 
-  const accessKey = process.env.BUNNYCDN_STORAGE_ACCESS_KEY
-  const hostname = process.env.BUNNYCDN_STORAGE_HOSTNAME
-  const zone = process.env.BUNNYCDN_STORAGE_ZONE
-
-  if (!accessKey || !hostname || !zone) {
-    return new NextResponse(null, { status: 404 })
-  }
-
-  const upstreamUrl = `https://${hostname}/${zone}/${path.map(encodeURIComponent).join('/')}`
-  const upstream = await fetch(upstreamUrl, { headers: { AccessKey: accessKey } })
+  const upstreamUrl = `https://${serverEnv.bunnyCdnHostname}/${serverEnv.bunnyCdnZone}/${path.map(encodeURIComponent).join('/')}`
+  const upstream = await fetch(upstreamUrl, { headers: { AccessKey: serverEnv.bunnyCdnAccessKey } })
 
   if (!upstream.ok || !upstream.body) {
     return new NextResponse(null, { status: 404 })

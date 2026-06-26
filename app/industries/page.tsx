@@ -46,7 +46,7 @@ const WHY_ITEMS = [
 
 export default function IndustriesPage() {
   return (
-    <main className="bg-neutral-100">
+    <main id="main-content" className="bg-neutral-100">
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden bg-neutral-100 min-h-[520px] lg:min-h-[600px]">

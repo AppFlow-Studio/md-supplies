@@ -9,6 +9,7 @@ import type { Product, CollectionProduct, ProductVariant } from '@/lib/shopify/t
 import { ProductImage } from '@/components/shared/ProductImage'
 import { track } from '@/lib/analytics/track'
 import { buildViewItemEvent } from '@/lib/analytics/events'
+import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
 
@@ -106,7 +107,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
   const brandDisplay = product.brandName ?? product.vendor
 
-  const variantSku = selectedVariant.id.split('/').pop() ?? ''
+  const variantSku = selectedVariant.sku || (selectedVariant.id.split('/').pop() ?? '')
 
   const SPEC_ROWS: { label: string; value: string | null }[] = [
     { label: 'Material',         value: product.material },
@@ -134,23 +135,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
     <>
       {/* Breadcrumb */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
-        <nav className="flex items-center gap-2 text-[15px] tracking-[0.3px] flex-wrap">
-          <Link href="/" className="text-gray-500 hover:text-navy-900 transition-colors">Home</Link>
-          {(breadcrumbs ?? []).map((crumb) => (
-            <div key={`sep-${crumb.label}`}>
-              <span className="text-gray-500">›  </span>
-              {crumb.href ? (
-                <Link key={crumb.label} href={crumb.href} className="text-gray-500 hover:text-navy-900 transition-colors">
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span key={crumb.label} className="text-gray-500">{crumb.label}</span>
-              )}
-            </div>
-          ))}
-          <span className="text-gray-500">›</span>
-          <span className="text-navy-900 font-semibold line-clamp-1">{product.title}</span>
-        </nav>
+        <Breadcrumb
+          items={[
+            ...(breadcrumbs ?? []),
+            { label: product.title },
+          ]}
+        />
       </div>
 
       {/* Hero */}
@@ -172,6 +162,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {images.slice(0, 6).map((img, i) => (
                   <button
                     key={img.id}
+                    type="button"
                     onClick={() => setActiveImg(i)}
                     className={`relative size-[80px] sm:size-[100px] lg:size-[120px] shrink-0 overflow-hidden bg-[#f9faf9] transition-colors ${
                       activeImg === i
@@ -321,6 +312,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <div className="flex gap-3 flex-wrap sm:flex-nowrap">
               <div className="flex border border-[rgba(102,102,100,0.5)] h-[56px] w-[167px] shrink-0">
                 <button
+                  type="button"
                   onClick={() => setOrderQty((q) => Math.max(1, q - 1))}
                   className="flex-1 flex items-center justify-center text-gray-500 text-[20px] font-semibold hover:bg-neutral-50 transition-colors"
                   aria-label="Decrease quantity"
@@ -331,6 +323,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                   {orderQty}
                 </div>
                 <button
+                  type="button"
                   onClick={() => setOrderQty((q) => q + 1)}
                   className="flex-1 flex items-center justify-center text-gray-500 text-[20px] font-semibold hover:bg-neutral-50 transition-colors"
                   aria-label="Increase quantity"
@@ -371,6 +364,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               {TABS.map((tab) => (
                 <button
                   key={tab}
+                  type="button"
                   onClick={() => setActiveTab(tab)}
                   className={`px-5 py-5 text-[15px] font-semibold tracking-[0.3px] whitespace-nowrap border-b-[3px] transition-colors ${
                     activeTab === tab

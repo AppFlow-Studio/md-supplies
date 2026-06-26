@@ -36,6 +36,7 @@ export type ProductOption = {
 export type ProductVariant = {
   id: string;
   title: string;
+  sku: string | null;
   availableForSale: boolean;
   quantityAvailable: number | null;
   selectedOptions: SelectedOption[];
@@ -133,6 +134,7 @@ export type CartLine = {
   merchandise: {
     id: string;
     title: string;
+    sku: string | null;
     selectedOptions: SelectedOption[];
     product: {
       id: string;
