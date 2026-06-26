@@ -134,6 +134,7 @@ export type CartLine = {
   merchandise: {
     id: string;
     title: string;
+    sku: string | null;
     selectedOptions: SelectedOption[];
     product: {
       id: string;
