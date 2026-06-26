@@ -7,7 +7,7 @@ import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { ManufacturersGrid } from '@/components/b2b/ManufacturersGrid'
 import { BrandGrid } from '@/components/brand/BrandGrid'
-import { PARTNERS } from '@/lib/partners'
+import { getActivePartners } from '@/lib/partners'
 import { BRANDS } from '@/lib/brands'
 
 export const metadata = buildMetadata({
@@ -94,8 +94,7 @@ export default function PartnersPage() {
           </h2>
         </FadeIn>
         <ManufacturersGrid
-          manufacturers={PARTNERS
-            .filter((p) => p.isActive)
+          manufacturers={getActivePartners()
             .map((p) => ({
               name: p.name,
               logo: p.logo.url,
