@@ -56,29 +56,6 @@ export function CartPageClient() {
     window.location.href = cart.checkoutUrl
   }
 
-  if (cart === null) {
-    return (
-      <div
-        className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14"
-        aria-busy="true"
-        aria-label="Loading cart"
-      >
-        <h1 className="text-navy-900 text-[32px] font-bold mb-8">Your Cart</h1>
-        <div className="flex flex-col gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex gap-4 animate-pulse" aria-hidden="true">
-              <div className="w-[72px] h-[72px] bg-gray-200 shrink-0" />
-              <div className="flex-1 flex flex-col gap-2 justify-center">
-                <div className="h-4 bg-gray-200 rounded w-2/3" />
-                <div className="h-3 bg-gray-200 rounded w-1/3" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   if (lines.length === 0) {
     return (
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14">

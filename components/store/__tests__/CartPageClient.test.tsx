@@ -80,7 +80,7 @@ function setupUseCart(overrides: Record<string, unknown> = {}) {
 }
 
 describe('CartPageClient', () => {
-  it('renders skeleton (aria-busy) when cart is null', () => {
+  it('renders empty state when cart is null', () => {
     vi.mocked(useCart).mockReturnValue({
       cart: null,
       isOpen: false,
@@ -93,7 +93,7 @@ describe('CartPageClient', () => {
       clearError: vi.fn(),
     } as unknown as ReturnType<typeof useCart>)
     render(<CartPageClient />)
-    expect(screen.getByLabelText('Loading cart')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Your cart is empty')).toBeInTheDocument()
   })
 
   it('renders empty state when cart has no lines', () => {
