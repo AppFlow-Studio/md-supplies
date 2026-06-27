@@ -56,4 +56,16 @@ describe('storefrontFetch error handling', () => {
     expect(timeoutSpy).toHaveBeenCalledWith(8000)
     timeoutSpy.mockRestore()
   })
+
+  it('logs and throws on fetch network/timeout error', async () => {
+    fetchMock.mockRejectedValue(new DOMException('signal timed out', 'TimeoutError'))
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { storefrontFetch } = await import('../storefront')
+    await expect(storefrontFetch('query { x }')).rejects.toThrow('signal timed out')
+    expect(spy).toHaveBeenCalledOnce()
+    const logged = JSON.parse(spy.mock.calls[0][0])
+    expect(logged.level).toBe('error')
+    expect(logged.context).toBe('storefront')
+    spy.mockRestore()
+  })
 })

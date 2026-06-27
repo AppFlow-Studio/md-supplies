@@ -30,13 +30,19 @@ const cachedRequest = cache(async function cachedRequest<T>(
     headers['Shopify-Storefront-Buyer-Country'] = country;
   }
 
-  const res = await fetch(STOREFRONT_API_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ query, variables }),
-    signal: AbortSignal.timeout(8000),
-    ...fetchOptions,
-  });
+  let res: Response;
+  try {
+    res = await fetch(STOREFRONT_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, variables }),
+      signal: AbortSignal.timeout(8000),
+      ...fetchOptions,
+    });
+  } catch (err) {
+    logServerError('storefront', err);
+    throw err;
+  }
 
   if (!res.ok) {
     const message = `Storefront API HTTP ${res.status}: ${res.statusText}`;

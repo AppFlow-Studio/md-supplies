@@ -34,7 +34,7 @@
 
 ### Approach chosen: Full single PR (Approach B)
 
-All deliverables ship in one PR touching six files with zero new npm dependencies:
+All deliverables ship in one PR touching eight files with zero new npm dependencies:
 
 | File | Change |
 |------|--------|

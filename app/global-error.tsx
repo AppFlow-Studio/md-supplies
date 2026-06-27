@@ -11,7 +11,7 @@ export default function GlobalError({
 
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-[#f9fafc]">
+      <body className="min-h-full flex flex-col bg-[#f9fafc]" style={{ fontFamily: "'Manrope', sans-serif" }}>
         <main className="flex-1 flex flex-col items-center justify-center px-4 text-center">
           <p className="text-teal-500 text-[15px] font-semibold tracking-[0.75px] uppercase mb-4">
             Something went wrong
