@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function GlobalError({
   reset,
@@ -29,12 +30,12 @@ export default function GlobalError({
             >
               Try Again
             </button>
-            <a
+            <Link
               href="/"
               className="border border-navy-900 text-navy-900 text-[18px] font-semibold px-8 h-[56px] flex items-center justify-center hover:bg-neutral-50 transition-colors"
             >
               Go Home
-            </a>
+            </Link>
           </div>
           <p className="text-gray-400 text-[12px] mt-8">
             Support code: {supportCode}
