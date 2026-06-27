@@ -2,9 +2,11 @@ import { cookies } from 'next/headers';
 import { cache } from 'react';
 import type { ShopifyResponse } from './types';
 import { loadEnvConfig } from '@next/env';
+import { serverEnv } from '@/lib/env.server';
+import { logServerError } from '@/lib/log-error';
 
 loadEnvConfig(process.cwd());
-const STOREFRONT_API_URL = `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2026-04/graphql.json`;
+const STOREFRONT_API_URL = `https://${serverEnv.shopifyStoreDomain}/api/2026-04/graphql.json`;
 
 // cachedRequest is wrapped with React's cache() to deduplicate identical
 // GraphQL calls within a single server-render request. React's cache()
@@ -22,21 +24,30 @@ const cachedRequest = cache(async function cachedRequest<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN!,
+    'X-Shopify-Storefront-Access-Token': serverEnv.shopifyStorefrontToken,
   };
   if (country && country !== 'US') {
     headers['Shopify-Storefront-Buyer-Country'] = country;
   }
 
-  const res = await fetch(STOREFRONT_API_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ query, variables }),
-    ...fetchOptions,
-  });
+  let res: Response;
+  try {
+    res = await fetch(STOREFRONT_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, variables }),
+      signal: AbortSignal.timeout(8000),
+      ...fetchOptions,
+    });
+  } catch (err) {
+    logServerError('storefront', err);
+    throw err;
+  }
 
   if (!res.ok) {
-    throw new Error(`Storefront API HTTP ${res.status}: ${res.statusText}`);
+    const message = `Storefront API HTTP ${res.status}: ${res.statusText}`;
+    logServerError('storefront', new Error(message));
+    throw new Error(message);
   }
 
   return res.json();
@@ -63,7 +74,9 @@ export async function storefrontFetch<T>(
   );
 
   if (json.errors?.length) {
-    throw new Error(json.errors.map((e) => e.message).join('\n'));
+    const message = json.errors.map((e: { message: string }) => e.message).join('\n');
+    logServerError('storefront', new Error(message));
+    throw new Error(message);
   }
 
   return json.data;

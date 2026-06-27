@@ -29,6 +29,7 @@ interface Props {
     after?: string
     filter?: string | string[]
     page?: string
+    cursors?: string
   }>
 }
 
@@ -62,7 +63,7 @@ function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
   const sp = await searchParams
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mdsupplies.com'
+  const base = SITE_URL
 
   const activeFilterStrings = parseFilterParam(sp.filter)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
@@ -91,9 +92,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
         pageType: 'category',
         title,
         description: description || undefined,
-        canonical: sp.after
-          ? `${base}/category/${slug}?page=${currentPage}&after=${sp.after}`
-          : `${base}/category/${slug}`,
+        canonical: `${base}/category/${slug}?page=${currentPage}`,
       })
     }
 
@@ -116,6 +115,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const { sortKey, reverse } = parseSortKey(sp.sort)
   const currentPage = parseInt(sp.page ?? '1', 10)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
+  const prevCursors = sp.cursors ? sp.cursors.split(',').filter(Boolean) : []
+
+  if (isNaN(currentPage) || currentPage < 1) notFound()
 
   const [data, subcategories, relatedCategories] = await Promise.all([
     storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
@@ -131,6 +133,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   ])
 
   if (!data.collection) notFound()
+
+  if (!isFiltered && currentPage > 1 && data.collection.products.nodes.length === 0) notFound()
 
   const clusterLinks = getClusterLinks(slug)
 
@@ -242,7 +246,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {/* Sort bar */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-gray-500 text-[15px]">
-              Showing {products.length} of {collection.products.filters?.[0] ? '' : ''} products
+              Showing {products.length} products
             </p>
             <CategorySort currentSort={sp.sort} activeFilters={activeFilterStrings} />
           </div>
@@ -299,6 +303,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               currentPage={currentPage}
               hasNext={pageInfo.hasNextPage}
               nextCursor={pageInfo.endCursor ?? null}
+              prevCursors={prevCursors}
+              currentAfter={sp.after ?? null}
               baseUrl={ROUTES.category(slug)}
             />
           )}

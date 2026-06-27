@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { BRANDS, brandHref, brandLogoUrl, type Brand } from '@/lib/brands'
+import { getSortedBrands, brandHref, brandLogoUrl, type Brand } from '@/lib/brands'
 import { BrandLogoImage } from '@/components/shared/BrandLogoImage'
 
-// Group the (already alphabetical) approved list into A–Z sections.
+// Group the alphabetically-sorted approved list into A–Z sections.
 function groupByLetter(brands: Brand[]) {
   const groups = new Map<string, Brand[]>()
   for (const b of brands) {
@@ -45,7 +45,7 @@ function BrandTile({ brand }: { brand: Brand }) {
 }
 
 export function BrandGrid() {
-  const groups = groupByLetter(BRANDS)
+  const groups = groupByLetter(getSortedBrands())
 
   return (
     <div className="flex flex-col gap-12">

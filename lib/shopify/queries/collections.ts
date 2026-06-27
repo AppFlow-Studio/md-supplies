@@ -126,3 +126,14 @@ export const GET_COLLECTIONS_AUDIT = `#graphql
     }
   }
 `;
+
+export const GET_COLLECTIONS_FOR_SITEMAP = `#graphql
+  query GetCollectionsForSitemap($first: Int!) {
+    collections(first: $first) {
+      nodes {
+        handle
+        updatedAt
+      }
+    }
+  }
+`;

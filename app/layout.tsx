@@ -55,15 +55,19 @@ export default async function RootLayout({
   const collections: SlimCollection[] = collectionsData.collections.nodes
   const menuItems = menuData.menu?.items ?? []
 
+  const isStaging = process.env.NEXT_PUBLIC_IS_STAGING === 'true'
+
   return (
     <html lang="en" className={`${manrope.variable} h-full antialiased`}>
-      {process.env.NEXT_PUBLIC_GTM_ID && (
+      {!isStaging && process.env.NEXT_PUBLIC_GTM_ID && (
         <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
       )}
       <body className="min-h-full flex flex-col">
-        <Suspense fallback={null}>
-          <PageViewTracker />
-        </Suspense>
+        {!isStaging && (
+          <Suspense fallback={null}>
+            <PageViewTracker />
+          </Suspense>
+        )}
         <SkipLink />
         <script
           type="application/ld+json"

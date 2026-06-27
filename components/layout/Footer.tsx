@@ -14,7 +14,7 @@ const EXPLORE = [
   { label: 'Industries', href: ROUTES.industries },
   { label: 'Blog', href: ROUTES.blog },
   { label: 'Solutions', href: ROUTES.solutions.occ },
-  { label: 'Wholesale / B2B', href: WHOLESALE_SOURCING_HREF },
+  { label: 'Wholesale / B2B', href: ROUTES.contact },
   { label: 'Returns', href: ROUTES.returns },
 ]
 
@@ -29,39 +29,7 @@ const COMPANY_HELP = [
   { label: 'Shipping Policy', href: ROUTES.policy('shipping') },
 ]
 
-const SOCIAL = [
-  {
-    label: 'Facebook',
-    href: '#',
-    svg: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Instagram',
-    href: '#',
-    svg: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
-        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-      </svg>
-    ),
-  },
-  {
-    label: 'LinkedIn',
-    href: '#',
-    svg: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" />
-        <rect x="2" y="9" width="4" height="12" />
-        <circle cx="4" cy="4" r="2" />
-      </svg>
-    ),
-  },
-]
+const LINKEDIN_HREF = 'http://LinkedIn.com/company/mdsupplies'
 
 interface FooterProps {
   collections: SlimCollection[]
@@ -90,16 +58,19 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
             </p>
 
             <div className="flex items-center gap-3">
-              {SOCIAL.map(({ label, svg, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="w-9 h-9 rounded-full bg-teal-500 text-white flex items-center justify-center hover:bg-[#006d92] transition-colors"
-                >
-                  {svg}
-                </a>
-              ))}
+              <a
+                href={LINKEDIN_HREF}
+                aria-label="LinkedIn"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-teal-500 text-white flex items-center justify-center hover:bg-[#006d92] transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" />
+                  <rect x="2" y="9" width="4" height="12" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
             </div>
           </div>
 
@@ -188,7 +159,7 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
           )}
 
           <Link
-            href={WHOLESALE_SOURCING_HREF}
+            href={ROUTES.contact}
             className="bg-teal-500 text-white text-sm font-semibold px-7 py-3 rounded-full hover:bg-[#006d92] transition-colors"
           >
             Wholesale Pricing

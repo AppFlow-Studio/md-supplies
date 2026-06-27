@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET } from '../route'
 
+vi.mock('@/lib/env.server', () => ({
+  serverEnv: {
+    bunnyCdnAccessKey: 'test-key',
+    bunnyCdnHostname: 'ny.storage.bunnycdn.com',
+    bunnyCdnZone: 'md-supplies',
+  },
+}))
+
 function makeRequest(path: string) {
   return new NextRequest(new URL(`http://localhost/api/bunny/${path}`))
 }
@@ -10,17 +18,11 @@ function makeParams(path: string) {
   return { params: Promise.resolve({ path: path.split('/') }) }
 }
 
-const ORIGINAL_ENV = { ...process.env }
-
 beforeEach(() => {
-  process.env.BUNNYCDN_STORAGE_ACCESS_KEY = 'test-key'
-  process.env.BUNNYCDN_STORAGE_HOSTNAME = 'ny.storage.bunnycdn.com'
-  process.env.BUNNYCDN_STORAGE_ZONE = 'md-supplies'
   vi.stubGlobal('fetch', vi.fn())
 })
 
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV }
   vi.unstubAllGlobals()
 })
 
@@ -51,15 +53,6 @@ describe('GET /api/bunny/[...path]', () => {
     )
 
     expect(res.status).toBe(404)
-  })
-
-  it('returns 404 without calling fetch when env vars are not configured', async () => {
-    delete process.env.BUNNYCDN_STORAGE_ACCESS_KEY
-
-    const res = await GET(makeRequest('mdsupplies/categories/gloves.webp'), makeParams('mdsupplies/categories/gloves.webp'))
-
-    expect(res.status).toBe(404)
-    expect(fetch).not.toHaveBeenCalled()
   })
 
   it('rejects path traversal segments with 400', async () => {

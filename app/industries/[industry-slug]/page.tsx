@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { buildMetadata } from '@/lib/seo'
-import { INDUSTRIES } from '@/lib/industries'
+import { INDUSTRIES, isIndustryComplete } from '@/lib/industries'
 import { IndustryPage } from '@/components/b2b/IndustryPage'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
@@ -28,6 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${industry.name} Medical Supplies — MDSupplies`,
     description: industry.description,
     slug: industry.slug,
+    // Thin pages (awaiting client FAQ copy) stay out of the index until complete.
+    noIndex: !isIndustryComplete(industry),
   })
 }
 

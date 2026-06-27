@@ -1,7 +1,8 @@
 import 'server-only';
 import type { ShopifyResponse } from './types';
+import { serverEnv } from '@/lib/env.server';
 
-const ADMIN_API_URL = `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2026-04/graphql.json`;
+const ADMIN_API_URL = `https://${serverEnv.shopifyStoreDomain}/admin/api/2026-04/graphql.json`;
 
 export async function adminFetch<T>(
   query: string,
@@ -11,7 +12,7 @@ export async function adminFetch<T>(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_ACCESS_TOKEN!,
+      'X-Shopify-Access-Token': serverEnv.shopifyAdminToken,
     },
     body: JSON.stringify({ query, variables }),
   });

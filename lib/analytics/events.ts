@@ -134,6 +134,8 @@ export function buildBeginCheckoutEvent(params: { currency: string; items: GA4It
   }
 }
 
+export type AnalyticsEvent = GA4EcommerceEvent | PageViewEvent | FormSubmitEvent
+
 export function buildFormSubmitEvent(params: { formName: string; details?: Record<string, string> }): FormSubmitEvent {
   return { event: 'form_submit', form_name: params.formName, ...(params.details ?? {}) }
 }
