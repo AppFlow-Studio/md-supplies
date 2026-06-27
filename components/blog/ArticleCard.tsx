@@ -18,11 +18,12 @@ export function ArticleCard({ article }: Props) {
     <article className="group flex flex-col border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow">
       <Link href={`/blog/${article.slug}`} className="flex flex-col flex-1">
         <div className="aspect-[16/9] overflow-hidden bg-navy-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={article.featuredImage.url}
-            alt={article.featuredImage.altText || article.title}
-            width={article.featuredImage.width}
-            height={article.featuredImage.height}
+            src={article.featuredImage?.url || '/images/pills_on_hands.png'}
+            alt={article.featuredImage?.altText || article.title}
+            width={article.featuredImage?.width}
+            height={article.featuredImage?.height}
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"

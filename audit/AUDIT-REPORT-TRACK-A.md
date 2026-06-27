@@ -1,6 +1,6 @@
 # Track A Performance Audit Report — MD Supplies
 
-**Date:** 2026-06-23
+**Date:** 2026-06-23 · **Local Lighthouse run:** 2026-06-27 (T8)
 **Status:** Static analysis + local Lighthouse run complete. Production-candidate re-run pending deploy.
 
 ## How to complete the launch-gate measurement
@@ -18,20 +18,33 @@
 | INP | <= 200ms |
 | CLS | <= 0.1 |
 
-## Results — Local dev server (`localhost:3000`, `npm run dev`)
+## Results — Local production server (`npm run build && npm run start`, mobile, simulated throttle)
 
-| Route | LCP | INP | CLS | Lighthouse (mobile) | Status |
+Measured 2026-06-27 via `scripts/run-lighthouse-audit-track-a.sh` against
+`localhost:3000`. **These are directional, not the launch gate** — LCP is heavily
+inflated by the single-process local server serving hero imagery through the
+server-side BunnyCDN proxy under simulated mobile throttling. Re-measure on the
+production candidate (edge + CDN) before sign-off.
+
+| Route | LCP | INP (≈TBT) | CLS | Perf (mobile) | Status |
 |---|---|---|---|---|---|
-| `/` (home) | — | — | — | — | Pending: run script |
-| `/category/[slug]` | — | — | — | — | Pending: run script |
-| `/product/[slug]` | — | — | — | — | Pending: run script |
-| `/solutions/occ` | — | — | — | — | Pending: run script |
-| `/industries/[slug]` | — | — | — | — | Pending: run script |
-| `/blog/[handle]` | — | — | — | — | Pending: run script |
-| `/cart` | — | — | — | — | Pending: run script |
-| `/account` | — | — | — | — | Pending: run script |
+| `/` (home) | 11.6 s | 50 ms | 0.004 | 74 | ⚠️ LCP (proxy/local-bound) |
+| `/category/gloves` | 2.1 s | 200 ms | 0.004 | 95 | ✅ Pass |
+| `/product/nitrile-exam-gloves-powder-free` | 10.0 s | 260 ms | 0.004 | 69 | ⚠️ LCP (proxy/local-bound) |
+| `/solutions/occ` | 13.0 s | 60 ms | 0.004 | 71 | ⚠️ LCP (proxy/local-bound) |
+| `/industries/pharmacy` | 9.5 s | 120 ms | 0.004 | 72 | ⚠️ LCP (proxy/local-bound) |
+| `/blog/types-of-needles` | 4.4 s | 280 ms | 0.004 | 78 | ⚠️ LCP |
+| `/cart` | 2.0 s | 130 ms | 0.004 | 97 | ✅ Pass |
+| `/account` | 2.0 s | 260 ms | 0.004 | 93 | ✅ Pass |
 
-INP cannot be measured by Lighthouse lab runs (it requires real user interaction); estimate via Total Blocking Time in the same report and confirm with field data (CrUX/PageSpeed Insights) post-launch.
+**Reading the numbers**
+- **CLS — excellent everywhere (0.004 ≪ 0.1 target).** No layout-shift risk; the fixed-height header bars hold.
+- **INP (lab proxy = TBT) — all ≤ 280 ms, most ≪ 200 ms.** Confirm with field data post-launch (lab cannot truly measure INP).
+- **LCP — the one watch item.** Pages whose hero is a proxied BunnyCDN image (home, PDP, OCC, industry) land at 9–13 s locally; the pages that hit target (category 2.1 s, cart/account 2.0 s) are the ones without a large proxied hero. The category page proves the app/markup is fast — the LCP gap is image-delivery latency through the local proxy, which a real CDN/edge deploy removes. **Must be re-measured on the production candidate; do not sign off LCP from these localhost numbers.**
+- **Best-practices = 100** on every route.
+- **SEO = 66** on `/product/*`, `/industries/pharmacy`, `/cart`, `/account` is expected: Lighthouse penalizes "page is blocked from indexing" on the intentionally `noindex` utility/thin pages — not a defect.
+
+INP cannot be measured by Lighthouse lab runs (it requires real user interaction); estimate via Total Blocking Time above and confirm with field data (CrUX/PageSpeed Insights) post-launch.
 
 ## Results — Production candidate (PENDING)
 

@@ -93,7 +93,6 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
       ? Math.round(((compareAt - price) / compareAt) * 100)
       : null
 
-  const qty = selectedVariant.quantityAvailable ?? null
   const restockDate = product.estimatedRestockDate
     ? new Date(product.estimatedRestockDate).toLocaleDateString('en-US', {
         month: 'long', day: 'numeric', year: 'numeric',
@@ -211,7 +210,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 <>
                   <span className="size-[8px] rounded-full shrink-0 bg-green-500" />
                   <span className="text-gray-500 text-[13px] tracking-[0.26px]">
-                    {qty !== null ? `In Stock – ${qty} available` : 'In Stock'}
+                    In Stock
                   </span>
                 </>
               )}
