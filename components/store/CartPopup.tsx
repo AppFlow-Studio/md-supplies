@@ -238,6 +238,13 @@ export function CartPopup() {
             >
               Proceed to Checkout
             </a>
+            <Link
+              href="/cart"
+              onClick={closeCart}
+              className="border border-navy-900 text-navy-900 h-[44px] flex items-center justify-center text-[14px] font-semibold tracking-[0.28px] hover:bg-navy-50 transition-colors"
+            >
+              Go to Cart
+            </Link>
             <button
               type="button"
               onClick={closeCart}
