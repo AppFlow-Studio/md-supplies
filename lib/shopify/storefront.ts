@@ -3,6 +3,7 @@ import { cache } from 'react';
 import type { ShopifyResponse } from './types';
 import { loadEnvConfig } from '@next/env';
 import { serverEnv } from '@/lib/env.server';
+import { logServerError } from '@/lib/log-error';
 
 loadEnvConfig(process.cwd());
 const STOREFRONT_API_URL = `https://${serverEnv.shopifyStoreDomain}/api/2026-04/graphql.json`;
@@ -33,11 +34,14 @@ const cachedRequest = cache(async function cachedRequest<T>(
     method: 'POST',
     headers,
     body: JSON.stringify({ query, variables }),
+    signal: AbortSignal.timeout(8000),
     ...fetchOptions,
   });
 
   if (!res.ok) {
-    throw new Error(`Storefront API HTTP ${res.status}: ${res.statusText}`);
+    const message = `Storefront API HTTP ${res.status}: ${res.statusText}`;
+    logServerError('storefront', new Error(message));
+    throw new Error(message);
   }
 
   return res.json();
@@ -64,7 +68,9 @@ export async function storefrontFetch<T>(
   );
 
   if (json.errors?.length) {
-    throw new Error(json.errors.map((e) => e.message).join('\n'));
+    const message = json.errors.map((e: { message: string }) => e.message).join('\n');
+    logServerError('storefront', new Error(message));
+    throw new Error(message);
   }
 
   return json.data;
