@@ -135,14 +135,15 @@ export function Header({ menuItems, collections }: HeaderProps) {
 
       {/* 3 — Main nav */}
       <nav className="bg-white border-b border-blue-50 h-18 flex items-center relative">
-        <div className="max-w-360 mx-auto px-4 md:px-8 w-full grid grid-cols-[auto_1fr_auto] md:grid-cols-3 items-center gap-4">
+        <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center gap-4">
           {/* Logo */}
-          <Link href="/">
+          <Link href="/" className="shrink-0">
             <Image src={'/images/logo.avif'} alt='logo' width={500} height={500} className='w-fit h-10 object-contain'/>
           </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center justify-center gap-5 lg:gap-6">
+          {/* Desktop nav links — shown only at xl where all items fit without
+              overflowing onto the actions column (see hamburger below xl) */}
+          <div className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-5 lg:gap-6">
 
             {/* Categories — mega-dropdown */}
             {categoriesItem && (
@@ -267,7 +268,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
                       {item.items.map((sub) => (
                         <Link
                           key={sub.id}
-                          href={ROUTES.subcategory(titleToSlug(item.title), titleToSlug(sub.title))}
+                          href={ROUTES.category(titleToSlug(sub.title))}
                           className="block px-4 py-2 text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 transition-colors"
                         >
                           {sub.title}
@@ -281,7 +282,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-3 shrink-0 ml-auto">
             <Link
               href={ROUTES.contact}
               className="hidden sm:flex bg-teal-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-[#006d92] transition-colors"
@@ -323,7 +324,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
             <button
               type="button"
               aria-label="Toggle menu"
-              className="md:hidden text-gray-500 hover:text-navy-900 transition-colors p-1"
+              className="xl:hidden text-gray-500 hover:text-navy-900 transition-colors p-1"
               onClick={() => setMobileOpen((v) => !v)}
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -333,7 +334,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
 
         {/* Mobile drawer */}
         {mobileOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-blue-50 shadow-lg z-50 max-h-[80vh] overflow-y-auto">
+          <div className="xl:hidden absolute top-full left-0 right-0 bg-white border-b border-blue-50 shadow-lg z-50 max-h-[80vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-neutral-50 border-b border-blue-50">
               {STATS.map(({ label, sublabel, icon: Icon }) => (
                 <div key={sublabel} className="flex items-center gap-1.5 text-xs text-navy-900">
@@ -433,7 +434,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
                         {item.items.map((sub) => (
                           <Link
                             key={sub.id}
-                            href={ROUTES.subcategory(titleToSlug(item.title), titleToSlug(sub.title))}
+                            href={ROUTES.category(titleToSlug(sub.title))}
                             onClick={() => setMobileOpen(false)}
                             className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
                           >
