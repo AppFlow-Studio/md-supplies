@@ -2,11 +2,11 @@ import type { MetadataRoute } from 'next'
 import { SITE_URL } from './constants'
 import { STAGING_GUARD } from './robots'
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
+import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
+import { getAllowedHandles } from '@/lib/category-nav'
 import { INDUSTRIES } from '@/lib/industries'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
@@ -27,22 +27,19 @@ const STATIC_URLS: SitemapEntry[] = [
   { url: `${SITE_URL}/policies/shipping`, changeFrequency: 'yearly', priority: 0.3 },
 ]
 
-function isExcludedCollectionHandle(handle: string): boolean {
-  return EXCLUDED_COLLECTION_HANDLES.has(handle) || handle === 'brands' || handle.startsWith('brands-')
-}
-
 async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
   try {
-    const data = await storefrontFetch<{ collections: { nodes: { handle: string }[] } }>(
-      GET_COLLECTIONS,
-      { first: 250 },
-    )
+    const data = await storefrontFetch<{
+      collections: { nodes: { handle: string; updatedAt: string }[] }
+    }>(GET_COLLECTIONS_FOR_SITEMAP, { first: 250 })
+    const allowed = getAllowedHandles()
     return data.collections.nodes
-      .filter(c => !isExcludedCollectionHandle(c.handle))
-      .map(c => ({
+      .filter((c) => allowed.has(c.handle))
+      .map((c) => ({
         url: `${SITE_URL}/category/${c.handle}`,
         changeFrequency: 'weekly' as const,
         priority: 0.8,
+        lastModified: new Date(c.updatedAt),
       }))
   } catch {
     return []

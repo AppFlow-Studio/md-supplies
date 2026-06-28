@@ -5,6 +5,10 @@ interface Props {
   currentPage: number
   hasNext: boolean
   nextCursor: string | null
+  /** "after" cursor values for pages 2…N-1, accumulated as the user pages forward */
+  prevCursors: string[]
+  /** The "after" param used to load the current page (null on page 1) */
+  currentAfter: string | null
   baseUrl: string
 }
 
@@ -47,27 +51,60 @@ function buildPages(
   return items
 }
 
+function buildNextHref(
+  currentPage: number,
+  nextCursor: string,
+  prevCursors: string[],
+  currentAfter: string | null,
+  baseUrl: string,
+): string {
+  // Append the current page's "after" cursor to the history so the next page
+  // can reconstruct a prev link back to here.
+  const newCursors = currentAfter ? [...prevCursors, currentAfter] : prevCursors
+  const p = new URLSearchParams({ page: String(currentPage + 1), after: nextCursor })
+  if (newCursors.length > 0) p.set('cursors', newCursors.join(','))
+  return `${baseUrl}?${p.toString()}`
+}
+
+function buildPrevHref(
+  currentPage: number,
+  prevCursors: string[],
+  baseUrl: string,
+): string {
+  if (currentPage <= 1) return baseUrl
+  // Page 2's prev = page 1 (base URL, no cursor needed)
+  if (currentPage === 2 || prevCursors.length === 0) return baseUrl
+  // Page 3+: pop the last cursor to get the "after" for page N-1
+  const prevAfter = prevCursors[prevCursors.length - 1]
+  const remaining = prevCursors.slice(0, -1)
+  const p = new URLSearchParams({ page: String(currentPage - 1), after: prevAfter })
+  if (remaining.length > 0) p.set('cursors', remaining.join(','))
+  return `${baseUrl}?${p.toString()}`
+}
+
 export function CategoryPagination({
   currentPage,
   hasNext,
   nextCursor,
+  prevCursors,
+  currentAfter,
   baseUrl,
 }: Props) {
   const hasPrev = currentPage > 1
 
   const nextHref =
     hasNext && nextCursor
-      ? `${baseUrl}?page=${currentPage + 1}&after=${encodeURIComponent(nextCursor)}`
+      ? buildNextHref(currentPage, nextCursor, prevCursors, currentAfter, baseUrl)
       : null
 
-  const prevHref = hasPrev ? baseUrl : null
+  const prevHref = hasPrev ? buildPrevHref(currentPage, prevCursors, baseUrl) : null
 
   if (!hasPrev && !hasNext) return null
 
   const pages = buildPages(currentPage, hasNext, nextHref, baseUrl)
 
   return (
-    <div className="flex items-center justify-center gap-2 pt-12">
+    <nav aria-label="Pagination" className="flex items-center justify-center gap-2 pt-12">
       {/* Prev arrow */}
       {prevHref ? (
         <Link
@@ -100,8 +137,6 @@ export function CategoryPagination({
               </span>
             )
           }
-
-
 
           if (item.isCurrent) {
             return (
@@ -151,6 +186,6 @@ export function CategoryPagination({
           <ChevronRight size={16} strokeWidth={2} />
         </span>
       )}
-    </div>
+    </nav>
   )
 }

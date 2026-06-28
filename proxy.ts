@@ -82,6 +82,10 @@ const REDIRECT_ENTRIES: RedirectEntry[] = [
   { from: '/articles/types-of-sutures.html',                   to: '/blog/types-of-sutures',  status: 301 },
   { from: '/articles/types-of-needles.html',                   to: '/blog/types-of-needles',  status: 301 },
 
+  // Account-scope cleanup (DEV-11): /b2b was a duplicate account dashboard.
+  // It is retired in favor of a single wholesale entry point at /contact.
+  { from: '/b2b',                                              to: '/contact',                 status: 301 },
+
   // TODO row 3  (Dynarex specimen container): { from: '<old-path>', to: '/category/needles-syringes', status: 301 }
   // TODO row 5  (Exel insulin syringe):        { from: '<old-path>', to: '/category/needles-syringes', status: 301 }
   // TODO row 9  (10cc syringe):                { from: '<old-path>', to: '/category/needles-syringes', status: 301 }

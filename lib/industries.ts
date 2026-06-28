@@ -1,3 +1,4 @@
+import { getIndustryImagePath } from '@/lib/bunnycdn'
 import type { FAQ } from '@/types/industry'
 
 export type { FAQ }
@@ -18,7 +19,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'urgent-care',
     collectionHandle: 'urgent-care',
     description: 'Exam gloves, wound care, diagnostics, and testing supplies.',
-    image: 'https://www.figma.com/api/mcp/asset/945dd7c5-715c-47e9-aca9-041bfa7e8af7',
+    image: getIndustryImagePath('industry-urgent-care.jpeg'),
     buyerType: 'Urgent care center owners, clinic managers, and medical directors sourcing high-turnover consumables for walk-in patient care.',
     faq: [
       {
@@ -48,7 +49,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'hrt-clinics',
     collectionHandle: 'hrt-clinics',
     description: 'Trocar kits, syringes, needles, and specialized hormone supplies.',
-    image: 'https://www.figma.com/api/mcp/asset/cca76797-f0a7-43e5-a222-aaa09b5ee04b',
+    image: getIndustryImagePath('industry-HRT-clinics-surgery-&-procedure.jpeg'),
     buyerType: 'Hormone replacement therapy clinic operators and nurse practitioners managing ongoing pellet insertion and injection protocols.',
     faq: [
       {
@@ -78,7 +79,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'ems',
     collectionHandle: 'ems',
     description: 'First responder bags, trauma supplies, and emergency kits.',
-    image: 'https://www.figma.com/api/mcp/asset/71a2cb23-2047-4c3a-802c-eed97241ab20',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'EMT coordinators, paramedic supervisors, and fire department supply officers restocking trauma and emergency response bags.',
   },
   {
@@ -86,7 +87,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'home-health',
     collectionHandle: 'home-health',
     description: 'Incontinence, wound care, and daily living aids.',
-    image: 'https://www.figma.com/api/mcp/asset/0f2a3758-05f9-43c4-8d28-6638add9f893',
+    image: getIndustryImagePath('industry-home-care.jpeg'),
     buyerType: 'Home health agency owners, visiting nurse supervisors, and care coordinators ordering supplies for patient homes and caregiver kits.',
     faq: [
       {
@@ -116,7 +117,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'long-term-care',
     collectionHandle: 'long-term-care',
     description: 'Bulk supplies for nursing homes and assisted living facilities.',
-    image: 'https://www.figma.com/api/mcp/asset/6af5fee4-a9c5-40c2-adb5-fa74a1b1d123',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Nursing home directors of nursing, assisted living administrators, and procurement managers ordering bulk disposables and resident-care supplies.',
   },
   {
@@ -124,7 +125,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'physical-therapy',
     collectionHandle: 'physical-therapy',
     description: 'Mobility equipment and therapy rehabilitation aids.',
-    image: 'https://www.figma.com/api/mcp/asset/1460eae8-a745-4069-9b03-ec6c0aa66d3e',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Physical therapists and practice owners sourcing mobility aids, exercise equipment, and patient rehabilitation supplies.',
   },
   {
@@ -132,7 +133,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'private-practice',
     collectionHandle: 'private-practice',
     description: 'Exam room essentials, diagnostics, and office supplies.',
-    image: 'https://www.figma.com/api/mcp/asset/11afc1ac-ebda-492a-b207-fd5ebf1f011e',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Independent physicians, specialty clinicians, and office managers equipping exam rooms and maintaining day-to-day clinical supplies.',
   },
   {
@@ -140,7 +141,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'dental',
     collectionHandle: 'dental',
     description: 'Gloves, sterilization, barriers, and instruments.',
-    image: 'https://www.figma.com/api/mcp/asset/056e863a-9c1f-438f-b82a-193c15217412',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Dental office managers and dentists purchasing infection control supplies, gloves, and instrument accessories for operatory use.',
   },
   {
@@ -148,7 +149,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'veterinary',
     collectionHandle: 'veterinary',
     description: 'Syringes, gloves, and veterinary wound care.',
-    image: 'https://www.figma.com/api/mcp/asset/2f348537-3f67-4143-8590-1301741bd382',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Veterinarians, vet techs, and clinic office managers sourcing exam gloves, syringes, and wound care for small and large animal practice.',
   },
   {
@@ -156,7 +157,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'community-health',
     collectionHandle: 'community-health',
     description: 'Affordable supplies for nonprofits and free clinics.',
-    image: 'https://www.figma.com/api/mcp/asset/39b439c4-4ab1-475d-ba23-32103852595a',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Nonprofit health center directors, free clinic managers, and grant-funded program coordinators sourcing cost-effective supplies for underserved communities.',
   },
   {
@@ -164,7 +165,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'clinics-doctors-offices',
     collectionHandle: 'clinics-doctors-offices',
     description: 'Exam room essentials, diagnostic supplies, gloves, and office consumables for outpatient practices.',
-    image: '',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Clinic owners, office managers, and medical directors sourcing exam room consumables, diagnostic supplies, and day-to-day clinical materials for outpatient practices.',
     faq: [
       {
@@ -194,7 +195,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'pharmacies',
     collectionHandle: 'pharmacies',
     description: 'Diabetic care, home monitoring, incontinence, and OTC medical supplies for pharmacy retail and patient support.',
-    image: '',
+    image: getIndustryImagePath('industry-pharmacies.jpeg'),
     buyerType: 'Pharmacy owners, buyers, and retail managers sourcing front-end medical supply inventory, diabetic care products, home monitoring devices, and patient-facing consumables.',
     faq: [
       {
@@ -220,3 +221,14 @@ export const INDUSTRIES: Industry[] = [
     ],
   },
 ]
+
+/**
+ * An industry page is "complete" (and therefore indexable) once it carries
+ * unique positioning plus client-approved FAQ copy. Pages still awaiting FAQ
+ * content are thin and should render `noindex,follow` until complete (E8 §9.2).
+ */
+export function isIndustryComplete(industry: Industry): boolean {
+  return Boolean(
+    industry.buyerType?.trim() && industry.description?.trim() && industry.faq?.length,
+  )
+}

@@ -3,25 +3,15 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { track } from '@/lib/analytics/track'
 import { buildFormSubmitEvent } from '@/lib/analytics/events'
+import { submitForm } from '@/lib/forms/submit'
+import { FACILITY_TYPES } from '@/lib/forms/schema'
 
 const BENEFITS = [
   "Product availability support",
   "Packaging and quantity guidance",
   "Item number / brand confirmation",
   "Reliable ordering assistance",
-];
-
-const FACULTY_TYPES = [
-  "Urgent Care Center",
-  "Hospital / Health System",
-  "HRT / Wellness Clinic",
-  "Home Care Agency",
-  "EMS / First Responder",
-  "Pharmacy",
-  "Physical Therapy",
-  "Other",
 ];
 
 const leftContainerVariants = {
@@ -42,8 +32,11 @@ export function WholesalePricing() {
     email: "",
     phone: "",
     facultyType: "",
+    website: "", // honeypot — must stay empty
   });
   const [status, setStatus] = useState<Status>('idle')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState<string | null>(null)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -52,16 +45,29 @@ export function WholesalePricing() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus('submitting')
-    try {
-      await fetch('/api/sourcing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
+    setFieldErrors({})
+    setServerError(null)
+
+    // Only enum/non-PII detail is sent to analytics — never name/email/phone.
+    const result = await submitForm({
+      url: '/api/sourcing',
+      payload: form,
+      analyticsEvent: buildFormSubmitEvent({
+        formName: 'sourcing_request',
+        details: { faculty_type: form.facultyType },
+      }),
+    })
+
+    if (result.ok) {
       setStatus('success')
-      track(buildFormSubmitEvent({ formName: 'sourcing_request', details: { faculty_type: form.facultyType } }))
-    } catch {
-      setStatus('error')
+      return
+    }
+
+    // Preserve the user's input for retry; surface what went wrong.
+    setStatus('error')
+    setFieldErrors(result.fields ?? {})
+    if (!result.fields) {
+      setServerError('Something went wrong. Please try again or email us directly.')
     }
   }
 
@@ -116,66 +122,102 @@ export function WholesalePricing() {
         >
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+              <label htmlFor="sourcing-name" className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
                 Faculty Name
               </label>
               <input
+                id="sourcing-name"
                 type="text"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 required
+                aria-invalid={!!fieldErrors.name}
+                aria-describedby={fieldErrors.name ? 'sourcing-name-error' : undefined}
                 className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
                 placeholder="Dr. Jane Smith"
               />
+              {fieldErrors.name && (
+                <p id="sourcing-name-error" className="text-red-600 text-[13px]">{fieldErrors.name}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+              <label htmlFor="sourcing-email" className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
                 Your Email
               </label>
               <input
+                id="sourcing-email"
                 type="email"
                 name="email"
                 value={form.email}
                 onChange={handleChange}
                 required
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? 'sourcing-email-error' : undefined}
                 className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
                 placeholder="jane@clinic.com"
               />
+              {fieldErrors.email && (
+                <p id="sourcing-email-error" className="text-red-600 text-[13px]">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+              <label htmlFor="sourcing-phone" className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
                 Phone Number
               </label>
               <input
+                id="sourcing-phone"
                 type="tel"
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
+                aria-invalid={!!fieldErrors.phone}
+                aria-describedby={fieldErrors.phone ? 'sourcing-phone-error' : undefined}
                 className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
                 placeholder="+1 (555) 000-0000"
               />
+              {fieldErrors.phone && (
+                <p id="sourcing-phone-error" className="text-red-600 text-[13px]">{fieldErrors.phone}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
+              <label htmlFor="sourcing-faculty" className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
                 Select Faculty Type
               </label>
               <select
+                id="sourcing-faculty"
                 name="facultyType"
                 value={form.facultyType}
                 onChange={handleChange}
                 required
+                aria-invalid={!!fieldErrors.facultyType}
+                aria-describedby={fieldErrors.facultyType ? 'sourcing-faculty-error' : undefined}
                 className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors appearance-none cursor-pointer"
               >
                 <option value="" disabled>Choose a type…</option>
-                {FACULTY_TYPES.map((t) => (
+                {FACILITY_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
+              {fieldErrors.facultyType && (
+                <p id="sourcing-faculty-error" className="text-red-600 text-[13px]">{fieldErrors.facultyType}</p>
+              )}
             </div>
+
+            {/* Honeypot — hidden from real users; bots that fill it are dropped. */}
+            <input
+              type="text"
+              name="website"
+              value={form.website}
+              onChange={handleChange}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="absolute left-[-9999px] top-[-9999px] h-0 w-0 opacity-0"
+            />
 
             {status === 'success' ? (
               <div className="mt-2 bg-teal-50 border border-teal-300 text-teal-800 text-[15px] font-medium py-5 px-6 text-center">
@@ -190,9 +232,9 @@ export function WholesalePricing() {
                 >
                   {status === 'submitting' ? 'SUBMITTING…' : 'SUBMIT APPLICATION'}
                 </button>
-                {status === 'error' && (
-                  <p className="text-red-600 text-[13px] text-center">
-                    Something went wrong. Please try again or email us directly.
+                {status === 'error' && (serverError || Object.keys(fieldErrors).length > 0) && (
+                  <p role="alert" className="text-red-600 text-[13px] text-center">
+                    {serverError ?? 'Please correct the highlighted fields and try again.'}
                   </p>
                 )}
               </>

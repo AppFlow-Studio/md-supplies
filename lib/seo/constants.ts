@@ -1,17 +1,9 @@
 import { GLOBAL_PRODUCT_PLACEHOLDER } from '@/lib/bunnycdn'
+import { SITE_ORIGIN, SITE_NAME } from '@/lib/site-config'
 
-export const SITE_NAME = 'MDSupplies' as const
+export { SITE_ORIGIN as SITE_URL, SITE_NAME }
 
-/** Base URL — configure via NEXT_PUBLIC_SITE_URL; trailing slash stripped. */
-export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mdsupplies.com'
-).replace(/\/$/, '')
-
-// No dedicated 1200x630 OG banner has been shot/uploaded yet — reuse the real
-// BunnyCDN medical-supplies placeholder so this resolves instead of 404ing.
-// Swap for a purpose-built banner once one exists.
-/** Fallback OG image used when a page supplies no page-specific image. */
-export const DEFAULT_OG_IMAGE = `${SITE_URL}${GLOBAL_PRODUCT_PLACEHOLDER}`
+export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}${GLOBAL_PRODUCT_PLACEHOLDER}`
 
 export const OG_IMAGE_WIDTH = 1200 as const
 export const OG_IMAGE_HEIGHT = 630 as const

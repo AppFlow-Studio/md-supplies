@@ -1,5 +1,5 @@
 import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
-import { ROADMAP_CATEGORIES, type RoadmapCategory } from '@/lib/category-nav'
+import { buildCategoryNav, ROADMAP_CATEGORIES, type RoadmapCategory } from '@/lib/category-nav'
 
 export type AuditCollectionInput = {
   handle: string
@@ -72,4 +72,43 @@ export function buildRoadmapCoverage(
       present.length === 0 ? 'unmapped' : category.matchedHandles.length > 1 ? 'synthesized' : 'mapped'
     return { displayName: category.displayName, navGroup: category.navGroup, status, matchedHandles: present }
   })
+}
+
+export type SurfaceReport = {
+  navPrimary: string[]
+  navMore: string[]
+  hubAll: string[]
+  relatedPool: string[]
+  orphanHandles: string[]
+  hubOnlyHandles: string[]
+  actionItems: string[]
+}
+
+export function buildSurfaceReport(
+  collections: AuditCollectionInput[],
+  roadmap: RoadmapCategory[] = ROADMAP_CATEGORIES,
+): SurfaceReport {
+  const liveHandles = new Set(collections.map((c) => c.handle))
+
+  const nav = buildCategoryNav(collections)
+  const navPrimary = nav.primary.map((e) => e.href.split('/').pop()!)
+  const navMore = nav.more.map((e) => e.href.split('/').pop()!)
+  const navAll = new Set([...navPrimary, ...navMore])
+
+  const allowed = new Set(roadmap.flatMap((c) => c.matchedHandles))
+  const hubAll = [...allowed].filter((h) => liveHandles.has(h))
+
+  const relatedPool = hubAll.filter((h) => !EXCLUDED_COLLECTION_HANDLES.has(h))
+
+  const orphanHandles = collections
+    .map((c) => c.handle)
+    .filter((h) => !allowed.has(h) && !EXCLUDED_COLLECTION_HANDLES.has(h))
+
+  const hubOnlyHandles = hubAll.filter((h) => !navAll.has(h))
+
+  const actionItems = roadmap
+    .filter((c) => !c.matchedHandles.some((h) => liveHandles.has(h)))
+    .map((c) => c.displayName)
+
+  return { navPrimary, navMore, hubAll, relatedPool, orphanHandles, hubOnlyHandles, actionItems }
 }

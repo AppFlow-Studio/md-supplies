@@ -24,7 +24,7 @@
 
 ### Interim state for customers
 
-Logged-out users see the full marketing account page with Log In / Create Account. Logged-in users see a read-only dashboard: profile info, order history table, saved address list. No mutations are possible — all edit/add/remove UI is visible but non-functional.
+Logged-out users see the full marketing account page with Log In / Create Account. Logged-in users see a strictly read-only dashboard: profile info, order history table, saved address list. No mutations are possible, and as of DEV-11 all mutation controls (address add/edit/remove, profile edit) are **hidden** for launch rather than shown as inert shells — so no control implies functionality that does not exist.
 
 ---
 
@@ -32,7 +32,7 @@ Logged-out users see the full marketing account page with Log In / Create Accoun
 
 ### Address management (add / edit / remove)
 
-**Current state:** `AccountView.tsx` renders "Add New", "Edit", and "Remove" buttons. These have no event handlers — they are display-only shells.
+**Current state:** As of DEV-11, `AccountView.tsx` no longer renders the "Add New", "Edit", or "Remove" address buttons (or the profile "Edit" controls). The saved-address list is read-only. The controls will be reintroduced together with working mutations.
 
 **What's needed to ship:** Shopify Customer Account API address mutations (`customerAddressCreate`, `customerAddressUpdate`, `customerAddressDelete`), a form modal or inline form, and a Server Action or API route to execute the mutation.
 

@@ -17,14 +17,18 @@ function setupDefaultMocks(overrides: {
   const products = overrides.products ?? []
   const articles = overrides.articles ?? []
 
-  mockFetch.mockImplementation((query: string) => {
-    if (query.includes('GetCollections(')) {
-      return Promise.resolve({ collections: { nodes: collections.map(h => ({ handle: h })) } })
+  mockFetch.mockImplementation((query: string, variables?: Record<string, unknown>) => {
+    if (query.includes('GetCollectionsForSitemap')) {
+      return Promise.resolve({
+        collections: {
+          nodes: collections.map((h) => ({ handle: h, updatedAt: '2026-06-01T00:00:00Z' })),
+        },
+      })
     }
     if (query.includes('GetAllProductHandles')) {
       return Promise.resolve({
         products: {
-          nodes: products.map(h => ({ handle: h })),
+          nodes: products.map((h) => ({ handle: h })),
           pageInfo: { hasNextPage: false, endCursor: '' },
         },
       })
@@ -32,12 +36,7 @@ function setupDefaultMocks(overrides: {
     if (query.includes('GetAllArticleHandles')) {
       return Promise.resolve({
         blogs: {
-          nodes: [
-            {
-              handle: 'news',
-              articles: { nodes: articles.map(h => ({ handle: h })) },
-            },
-          ],
+          nodes: [{ handle: 'news', articles: { nodes: articles.map((h) => ({ handle: h })) } }],
         },
       })
     }
@@ -65,31 +64,27 @@ describe('getSitemapUrls', () => {
     expect(urls.some(u => u.endsWith('/blog'))).toBe(true)
   })
 
-  it('emits /category/<handle> for each Shopify collection', async () => {
-    setupDefaultMocks({ collections: ['gloves', 'masks', 'exam-gloves-nitrile'] })
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+  it('emits /category/<handle> only for roadmap-allowed handles', async () => {
+    setupDefaultMocks({ collections: ['gloves', 'needles-syringes', 'non-roadmap-handle'] })
+    const urls = (await getSitemapUrls(false)).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/category/gloves')
-    expect(urls).toContain('https://mdsupplies.com/category/masks')
-    expect(urls).toContain('https://mdsupplies.com/category/exam-gloves-nitrile')
+    expect(urls).toContain('https://mdsupplies.com/category/needles-syringes')
+    expect(urls).not.toContain('https://mdsupplies.com/category/non-roadmap-handle')
   })
 
-  it('excludes brands and brands-* collection handles', async () => {
-    setupDefaultMocks({ collections: ['brands', 'brands-dynarex', 'gloves'] })
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
-    expect(urls.every(u => !u.includes('/brands'))).toBe(true)
-    expect(urls).toContain('https://mdsupplies.com/category/gloves')
-  })
-
-  it('excludes §2.4 removed and hidden-at-launch collection handles', async () => {
-    setupDefaultMocks({
-      collections: ['gloves', 'pharmaceuticals', 'beds', 'bariatric-beds', 'office-supplies'],
-    })
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+  it('excludes §2.4 removed and hidden-at-launch handles (not in allowlist)', async () => {
+    setupDefaultMocks({ collections: ['gloves', 'pharmaceuticals', 'office-supplies'] })
+    const urls = (await getSitemapUrls(false)).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/category/gloves')
     expect(urls).not.toContain('https://mdsupplies.com/category/pharmaceuticals')
-    expect(urls).not.toContain('https://mdsupplies.com/category/beds')
-    expect(urls).not.toContain('https://mdsupplies.com/category/bariatric-beds')
     expect(urls).not.toContain('https://mdsupplies.com/category/office-supplies')
+  })
+
+  it('includes lastmod on category entries from updatedAt', async () => {
+    setupDefaultMocks({ collections: ['gloves'] })
+    const entries = await getSitemapUrls(false)
+    const entry = entries.find((e) => e.url === 'https://mdsupplies.com/category/gloves')
+    expect(entry?.lastModified).toEqual(new Date('2026-06-01T00:00:00Z'))
   })
 
   it('emits /product/<handle> for each Shopify product', async () => {
@@ -102,7 +97,7 @@ describe('getSitemapUrls', () => {
   it('paginates products across multiple pages', async () => {
     let productCallCount = 0
     mockFetch.mockImplementation((query: string, variables?: Record<string, unknown>) => {
-      if (query.includes('GetCollections(')) {
+      if (query.includes('GetCollectionsForSitemap')) {
         return Promise.resolve({ collections: { nodes: [] } })
       }
       if (query.includes('GetAllProductHandles')) {

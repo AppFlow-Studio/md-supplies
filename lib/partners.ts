@@ -259,6 +259,31 @@ export function getPartnerBySlug(slug: string): Partner | undefined {
   return PARTNERS.find((p) => p.slug === slug)
 }
 
+/** Active partners in approved alphabetical order (E8 §6.2). */
 export function getActivePartners(): Partner[] {
-  return PARTNERS.filter((p) => p.isActive)
+  return PARTNERS.filter((p) => p.isActive).sort((a, b) =>
+    a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }),
+  )
+}
+
+/**
+ * Normalize a raw Shopify `product.vendor` string for alias matching: lowercase,
+ * strip a trailing corporate suffix (Inc/LLC/Corp/Co/Ltd), drop punctuation, and
+ * collapse whitespace. Used to reconcile imported vendor strings with the
+ * approved partner registry (E8: "normalize aliases post-import").
+ */
+function normalizeVendor(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[.,]/g, ' ')
+    .replace(/\b(inc|llc|corp|corporation|co|ltd|company)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Resolve a (possibly aliased) Shopify vendor string to its approved Partner. */
+export function partnerForVendor(vendor: string): Partner | undefined {
+  const normalized = normalizeVendor(vendor)
+  if (!normalized) return undefined
+  return PARTNERS.find((p) => normalizeVendor(p.vendorName) === normalized)
 }

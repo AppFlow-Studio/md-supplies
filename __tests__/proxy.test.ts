@@ -93,6 +93,12 @@ describe('proxy — 301 static redirects', () => {
     expect(res?.status).toBe(301)
     expect(res?.headers.get('Location')).toContain('/blog/types-of-needles')
   })
+
+  it('DEV-11: /b2b → /contact (single 301, account-scope cleanup)', () => {
+    const res = proxy(req('/b2b'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/contact')
+  })
 })
 
 describe('proxy — category-level 410s (§4.3)', () => {

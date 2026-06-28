@@ -1,23 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { track } from '@/lib/analytics/track'
 import { buildFormSubmitEvent } from '@/lib/analytics/events'
+import { submitForm } from '@/lib/forms/submit'
+import { SUBJECTS } from '@/lib/forms/schema'
 
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
-const SUBJECTS = [
-  'General inquiry',
-  'Product availability',
-  'Wholesale / B2B pricing',
-  'Order support',
-  'Returns & refunds',
-  'Other',
-]
-
 export function ContactForm() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '', website: '' })
   const [status, setStatus] = useState<Status>('idle')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState<string | null>(null)
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -28,17 +22,29 @@ export function ContactForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setStatus('submitting')
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) throw new Error('server')
+    setFieldErrors({})
+    setServerError(null)
+
+    // Only the non-PII subject is sent to analytics — never name/email/message.
+    const result = await submitForm({
+      url: '/api/contact',
+      payload: form,
+      analyticsEvent: buildFormSubmitEvent({
+        formName: 'contact',
+        details: { subject: form.subject || 'none' },
+      }),
+    })
+
+    if (result.ok) {
       setStatus('success')
-      track(buildFormSubmitEvent({ formName: 'contact', details: { subject: form.subject || 'none' } }))
-    } catch {
-      setStatus('error')
+      return
+    }
+
+    // Preserve the user's input for retry; surface what went wrong.
+    setStatus('error')
+    setFieldErrors(result.fields ?? {})
+    if (!result.fields) {
+      setServerError('Something went wrong. Please try again or email us directly.')
     }
   }
 
@@ -63,9 +69,12 @@ export function ContactForm() {
           value={form.name}
           onChange={handleChange}
           required
+          aria-invalid={!!fieldErrors.name}
+          aria-describedby={fieldErrors.name ? 'name-error' : undefined}
           placeholder="Dr. Jane Smith"
           className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-300"
         />
+        {fieldErrors.name && <p id="name-error" className="text-red-600 text-[13px]">{fieldErrors.name}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -79,9 +88,12 @@ export function ContactForm() {
           value={form.email}
           onChange={handleChange}
           required
+          aria-invalid={!!fieldErrors.email}
+          aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           placeholder="jane@clinic.com"
           className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-300"
         />
+        {fieldErrors.email && <p id="email-error" className="text-red-600 text-[13px]">{fieldErrors.email}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -113,14 +125,29 @@ export function ContactForm() {
           onChange={handleChange}
           required
           rows={5}
+          aria-invalid={!!fieldErrors.message}
+          aria-describedby={fieldErrors.message ? 'message-error' : undefined}
           placeholder="Tell us how we can help…"
           className="border border-navy-900/20 bg-white py-3 px-4 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-300 resize-none"
         />
+        {fieldErrors.message && <p id="message-error" className="text-red-600 text-[13px]">{fieldErrors.message}</p>}
       </div>
 
-      {status === 'error' && (
-        <p className="text-red-600 text-[13px]">
-          Something went wrong. Please try again or email us directly.
+      {/* Honeypot — hidden from real users; bots that fill it are dropped. */}
+      <input
+        type="text"
+        name="website"
+        value={form.website}
+        onChange={handleChange}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] top-[-9999px] h-0 w-0 opacity-0"
+      />
+
+      {status === 'error' && (serverError || Object.keys(fieldErrors).length > 0) && (
+        <p role="alert" className="text-red-600 text-[13px]">
+          {serverError ?? 'Please correct the highlighted fields and try again.'}
         </p>
       )}
 

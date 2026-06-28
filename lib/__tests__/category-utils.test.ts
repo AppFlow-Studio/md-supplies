@@ -45,4 +45,16 @@ describe('getRelatedCategories', () => {
     expect(slugs).not.toContain('gloves-nitrile')
     expect(slugs).toContain('wound-care')
   })
+
+  it('only returns roadmap-allowed handles as related options', async () => {
+    setupCollections([
+      { handle: 'gloves', title: 'Gloves' },
+      { handle: 'wound-care', title: 'Wound Care' },
+      { handle: 'non-roadmap-handle', title: 'Not In Roadmap' },
+    ])
+    const related = await getRelatedCategories('wound-care')
+    const slugs = related.map((c) => c.slug)
+    expect(slugs).toContain('gloves')
+    expect(slugs).not.toContain('non-roadmap-handle')
+  })
 })
