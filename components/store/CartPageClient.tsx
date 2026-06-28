@@ -15,7 +15,6 @@ export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (cart && cart.lines.nodes.length > 0) {
       track(
@@ -30,6 +29,7 @@ export function CartPageClient() {
         }),
       )
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {

@@ -79,7 +79,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'ems',
     collectionHandle: 'ems',
     description: 'First responder bags, trauma supplies, and emergency kits.',
-    image: 'https://www.figma.com/api/mcp/asset/71a2cb23-2047-4c3a-802c-eed97241ab20',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'EMT coordinators, paramedic supervisors, and fire department supply officers restocking trauma and emergency response bags.',
   },
   {
@@ -117,7 +117,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'long-term-care',
     collectionHandle: 'long-term-care',
     description: 'Bulk supplies for nursing homes and assisted living facilities.',
-    image: 'https://www.figma.com/api/mcp/asset/6af5fee4-a9c5-40c2-adb5-fa74a1b1d123',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Nursing home directors of nursing, assisted living administrators, and procurement managers ordering bulk disposables and resident-care supplies.',
   },
   {
@@ -125,7 +125,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'physical-therapy',
     collectionHandle: 'physical-therapy',
     description: 'Mobility equipment and therapy rehabilitation aids.',
-    image: 'https://www.figma.com/api/mcp/asset/1460eae8-a745-4069-9b03-ec6c0aa66d3e',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Physical therapists and practice owners sourcing mobility aids, exercise equipment, and patient rehabilitation supplies.',
   },
   {
@@ -133,7 +133,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'private-practice',
     collectionHandle: 'private-practice',
     description: 'Exam room essentials, diagnostics, and office supplies.',
-    image: 'https://www.figma.com/api/mcp/asset/11afc1ac-ebda-492a-b207-fd5ebf1f011e',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Independent physicians, specialty clinicians, and office managers equipping exam rooms and maintaining day-to-day clinical supplies.',
   },
   {
@@ -141,7 +141,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'dental',
     collectionHandle: 'dental',
     description: 'Gloves, sterilization, barriers, and instruments.',
-    image: 'https://www.figma.com/api/mcp/asset/056e863a-9c1f-438f-b82a-193c15217412',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Dental office managers and dentists purchasing infection control supplies, gloves, and instrument accessories for operatory use.',
   },
   {
@@ -149,7 +149,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'veterinary',
     collectionHandle: 'veterinary',
     description: 'Syringes, gloves, and veterinary wound care.',
-    image: 'https://www.figma.com/api/mcp/asset/2f348537-3f67-4143-8590-1301741bd382',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Veterinarians, vet techs, and clinic office managers sourcing exam gloves, syringes, and wound care for small and large animal practice.',
   },
   {
@@ -157,7 +157,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'community-health',
     collectionHandle: 'community-health',
     description: 'Affordable supplies for nonprofits and free clinics.',
-    image: 'https://www.figma.com/api/mcp/asset/39b439c4-4ab1-475d-ba23-32103852595a',
+    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Nonprofit health center directors, free clinic managers, and grant-funded program coordinators sourcing cost-effective supplies for underserved communities.',
   },
   {

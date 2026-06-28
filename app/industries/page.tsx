@@ -3,6 +3,7 @@ import { INDUSTRIES } from '@/lib/industries'
 import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
 import {BadgeCheck, FileText, Headset, MapPin, Truck} from "lucide-react";
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
+import { getIndustryImagePath } from '@/lib/bunnycdn'
 
 export const revalidate = 3600
 
@@ -20,7 +21,7 @@ export const metadata = {
   }),
 }
 
-const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/4cc83b0b-dc84-4fc6-82cc-35f7d6930005'
+const HERO_IMAGE = getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg")
 
 const STATS = [
   { value: '1,000+', label: 'ACTIVE ACCOUNTS' },
