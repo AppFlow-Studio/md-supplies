@@ -12,14 +12,19 @@ function optional(name: string, fallback: string): string {
   return process.env[name] || fallback
 }
 
+// Lazy getters: each variable is validated on first property access at runtime,
+// NOT at import time. This lets `next build` succeed with an empty env (CI runs
+// the build without secrets) while still throwing a clear error if a required
+// variable is actually needed to serve a request. Accessing a module that reads
+// `serverEnv.shopifyStoreDomain` at request time will throw if it is unset.
 export const serverEnv = {
-  shopifyStoreDomain:     required('SHOPIFY_STORE_DOMAIN'),
-  shopifyStorefrontToken: required('SHOPIFY_STOREFRONT_ACCESS_TOKEN'),
-  shopifyAdminToken:      required('SHOPIFY_ADMIN_ACCESS_TOKEN'),
-  resendApiKey:           required('RESEND_API_KEY'),
-  resendFromEmail:        optional('RESEND_FROM_EMAIL', 'noreply@mdsupplies.com'),
-  resendToEmail:          optional('RESEND_TO_EMAIL', 'team@mdsupplies.com'),
-  bunnyCdnAccessKey:      required('BUNNYCDN_STORAGE_ACCESS_KEY'),
-  bunnyCdnHostname:       optional('BUNNYCDN_STORAGE_HOSTNAME', 'ny.storage.bunnycdn.com'),
-  bunnyCdnZone:           optional('BUNNYCDN_STORAGE_ZONE', 'md-supplies'),
-} as const
+  get shopifyStoreDomain()     { return required('SHOPIFY_STORE_DOMAIN') },
+  get shopifyStorefrontToken() { return required('SHOPIFY_STOREFRONT_ACCESS_TOKEN') },
+  get shopifyAdminToken()      { return required('SHOPIFY_ADMIN_ACCESS_TOKEN') },
+  get resendApiKey()           { return required('RESEND_API_KEY') },
+  get resendFromEmail()        { return optional('RESEND_FROM_EMAIL', 'noreply@mdsupplies.com') },
+  get resendToEmail()          { return optional('RESEND_TO_EMAIL', 'team@mdsupplies.com') },
+  get bunnyCdnAccessKey()      { return required('BUNNYCDN_STORAGE_ACCESS_KEY') },
+  get bunnyCdnHostname()       { return optional('BUNNYCDN_STORAGE_HOSTNAME', 'ny.storage.bunnycdn.com') },
+  get bunnyCdnZone()           { return optional('BUNNYCDN_STORAGE_ZONE', 'md-supplies') },
+}

@@ -24,9 +24,6 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
   const image = product.images.nodes[0]
   const hasDiscount = compareAt !== null && compareAt > price
 
-  const stockQty = variant?.quantityAvailable ?? null
-  const isLowStock = product.availableForSale && stockQty !== null && stockQty <= 9 && stockQty > 0
-
   const href = categorySlug
     ? `/category/${categorySlug}/${product.handle}`
     : `/product/${product.handle}`
@@ -55,11 +52,6 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
           />
 
           {/* Stock badge — top-left corner */}
-          {isLowStock && (
-            <span className="absolute top-2 left-2 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 tracking-[0.2px] uppercase">
-              Low Stock
-            </span>
-          )}
           {!product.availableForSale && (
             <span className="absolute top-2 left-2 bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 tracking-[0.2px] uppercase">
               Out of Stock

@@ -54,15 +54,26 @@ describe('serverEnv — happy path', () => {
 })
 
 describe('serverEnv — missing required vars', () => {
-  it.each([
-    'SHOPIFY_STORE_DOMAIN',
-    'SHOPIFY_STOREFRONT_ACCESS_TOKEN',
-    'SHOPIFY_ADMIN_ACCESS_TOKEN',
-    'RESEND_API_KEY',
-    'BUNNYCDN_STORAGE_ACCESS_KEY',
-  ])('throws for missing %s', async (varName) => {
+  // Validation is lazy: importing the module must NOT throw (so `next build`
+  // succeeds with an empty env in CI). Accessing a missing required field at
+  // runtime is what throws.
+  const accessorByVar: Record<string, (e: typeof import('@/lib/env.server').serverEnv) => unknown> = {
+    SHOPIFY_STORE_DOMAIN: (e) => e.shopifyStoreDomain,
+    SHOPIFY_STOREFRONT_ACCESS_TOKEN: (e) => e.shopifyStorefrontToken,
+    SHOPIFY_ADMIN_ACCESS_TOKEN: (e) => e.shopifyAdminToken,
+    RESEND_API_KEY: (e) => e.resendApiKey,
+    BUNNYCDN_STORAGE_ACCESS_KEY: (e) => e.bunnyCdnAccessKey,
+  }
+
+  it('import does not throw even when required vars are missing', async () => {
+    // no env stubbed at all
+    await expect(import('@/lib/env.server')).resolves.toBeDefined()
+  })
+
+  it.each(Object.keys(accessorByVar))('throws on access for missing %s', async (varName) => {
     stubRequired(varName)
-    await expect(import('@/lib/env.server')).rejects.toThrow(
+    const { serverEnv } = await import('@/lib/env.server')
+    expect(() => accessorByVar[varName](serverEnv)).toThrow(
       `[env] Missing required server variable: ${varName}. Check .env.local (dev) or your deployment environment (prod).`
     )
   })

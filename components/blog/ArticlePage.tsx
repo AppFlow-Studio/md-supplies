@@ -50,10 +50,10 @@ export function ArticlePage({ article }: Props) {
       <div className="bg-navy-900 overflow-hidden h-[280px] sm:h-[380px] relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={article.featuredImage.url}
-          alt={article.featuredImage.altText}
-          width={article.featuredImage.width}
-          height={article.featuredImage.height}
+          src={article.featuredImage?.url || '/images/pills_on_hands.png'}
+          alt={article.featuredImage?.altText || article.title}
+          width={article.featuredImage?.width}
+          height={article.featuredImage?.height}
           fetchPriority="high"
           className="absolute inset-0 w-full h-full object-cover opacity-40"
         />
