@@ -56,12 +56,13 @@ export const GET_COLLECTION = `#graphql
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }
           }
-          images(first: 1) {
+          images(first: 6) {
             nodes { id url altText width height }
           }
-          variants(first: 1) {
+          variants(first: 10) {
             nodes {
               id
+              title
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale

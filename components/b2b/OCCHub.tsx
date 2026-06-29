@@ -43,7 +43,7 @@ export function OCCHubPage({ hub }: Props) {
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-16 md:py-20 lg:py-24">
           <AnimatedOCCHeroSection
             title={hub.title}
-            intro={hub.intro}
+            description={hub.intro}
             programExplanation={hub.programExplanation}
             freeShippingMessage={hub.freeShippingMessage}
           />

@@ -97,7 +97,7 @@ export type CollectionProduct = {
   tags: string[];
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
-  variants: { nodes: Pick<ProductVariant, 'id' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
+  variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
 };
 
 export type CollectionFilter = {

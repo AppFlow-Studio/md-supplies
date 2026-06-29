@@ -1,26 +1,80 @@
 'use client'
 
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { motion } from "framer-motion";
-import { FadeIn } from "@/components/ui/FadeIn";
-import type { CollectionProduct } from "@/lib/shopify/types";
+import { useState } from 'react'
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { FadeIn } from '@/components/ui/FadeIn'
+import { QuickAddModal } from '@/components/product/QuickAddModal'
+import type { CollectionProduct } from '@/lib/shopify/types'
+import type { ProductCardData } from '@/types/product'
 
 interface Props {
-  products: CollectionProduct[];
+  products: CollectionProduct[]
 }
 
 const containerVariants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08 } },
-};
+}
 
 const itemVariants = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-};
+}
+
+function toCardData(product: CollectionProduct): ProductCardData {
+  const image = product.images.nodes[0]
+  const firstVariant = product.variants.nodes[0]
+  const price = Math.round(
+    parseFloat(firstVariant?.price.amount ?? product.priceRange.minVariantPrice.amount) * 100,
+  )
+  const compareAtPrice = firstVariant?.compareAtPrice
+    ? Math.round(parseFloat(firstVariant.compareAtPrice.amount) * 100)
+    : undefined
+
+  return {
+    handle: product.handle,
+    title: product.title,
+    image: {
+      url: image?.url ?? '',
+      altText: image?.altText ?? product.title,
+      width: image?.width ?? 800,
+      height: image?.height ?? 800,
+    },
+    images: product.images.nodes.map((img) => ({
+      url: img.url,
+      altText: img.altText ?? product.title,
+      width: img.width ?? 800,
+      height: img.height ?? 800,
+    })),
+    brand: product.vendor,
+    vendor: product.vendor,
+    price,
+    compareAtPrice,
+    sku: '',
+    available: product.availableForSale,
+    hasFreeShipping: product.tags.includes('free-shipping'),
+    isRx: product.tags.includes('rx-required'),
+    variants: product.variants.nodes.map((v) => ({
+      id: v.id,
+      title: v.title,
+      price: Math.round(parseFloat(v.price.amount) * 100),
+      compareAtPrice: v.compareAtPrice
+        ? Math.round(parseFloat(v.compareAtPrice.amount) * 100)
+        : undefined,
+      available: v.availableForSale,
+    })),
+  }
+}
 
 export function PopularProducts({ products }: Props) {
+  const [openHandle, setOpenHandle] = useState<string | null>(null)
+
+  const openProduct = openHandle
+    ? products.find((p) => p.handle === openHandle) ?? null
+    : null
+
   return (
     <section className="w-full bg-neutral-50">
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14 md:py-16">
@@ -39,11 +93,11 @@ export function PopularProducts({ products }: Props) {
           viewport={{ once: true }}
         >
           {products.map((product) => {
-            const variant = product.variants.nodes[0];
+            const variant = product.variants.nodes[0]
             const price = parseFloat(
               variant?.price.amount ?? product.priceRange.minVariantPrice.amount,
-            );
-            const image = product.images.nodes[0];
+            )
+            const image = product.images.nodes[0]
 
             return (
               <motion.div key={product.id} variants={itemVariants} className="bg-white flex flex-col">
@@ -70,7 +124,7 @@ export function PopularProducts({ products }: Props) {
                       {product.vendor}
                     </span>
                     <span className="text-[13px] font-semibold text-gray-500/60 tracking-[0.26px]">
-                      {product.availableForSale ? "in stock" : "out of stock"}
+                      {product.availableForSale ? 'in stock' : 'out of stock'}
                     </span>
                   </div>
 
@@ -80,21 +134,32 @@ export function PopularProducts({ products }: Props) {
                   <p className="text-[18px] font-bold text-black tracking-[0.36px] mt-auto pt-1">
                     ${price.toFixed(2)} USD
                   </p>
-                  <Link
-                    href={`/product/${product.handle}`}
-                    className="mt-2 bg-navy-900 text-white text-[12px] font-semibold text-center py-2.5 flex items-center justify-center gap-1.5 hover:bg-navy-950 transition-colors"
-                  >
-                    <Plus size={13} />
-                    Quick Add
-                  </Link>
+
+                  {product.availableForSale && (
+                    <button
+                      type="button"
+                      onClick={() => setOpenHandle(product.handle)}
+                      className="cursor-pointer mt-2 bg-navy-900 text-white text-[12px] font-semibold text-center py-2.5 flex items-center justify-center gap-1.5 hover:bg-navy-950 transition-colors"
+                    >
+                      <Plus size={13} />
+                      Quick Add
+                    </button>
+                  )}
                 </div>
 
               </motion.div>
-            );
+            )
           })}
         </motion.div>
 
       </div>
+
+      {openProduct && (
+        <QuickAddModal
+          product={toCardData(openProduct)}
+          onClose={() => setOpenHandle(null)}
+        />
+      )}
     </section>
-  );
+  )
 }

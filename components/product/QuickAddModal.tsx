@@ -13,13 +13,11 @@ export function QuickAddModal({ product, onClose }: Props) {
   const modalRef = useRef<HTMLDivElement>(null)
   const titleId = `quick-add-title-${product.handle}`
 
-  // Scroll lock
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  // Focus trap + Escape key
   useEffect(() => {
     const modal = modalRef.current
     if (!modal) return
@@ -29,42 +27,30 @@ export function QuickAddModal({ product, onClose }: Props) {
     )
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
-
     first?.focus()
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose()
-        return
-      }
+      if (e.key === 'Escape') { onClose(); return }
       if (e.key === 'Tab') {
         if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault()
-            last?.focus()
-          }
+          if (document.activeElement === first) { e.preventDefault(); last?.focus() }
         } else {
-          if (document.activeElement === last) {
-            e.preventDefault()
-            first?.focus()
-          }
+          if (document.activeElement === last) { e.preventDefault(); first?.focus() }
         }
       }
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      aria-hidden="false"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Overlay */}
+      {/* Blurred overlay */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -75,25 +61,21 @@ export function QuickAddModal({ product, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full sm:max-w-md bg-white  shadow-xl"
+        className="relative z-10 w-[95vw] max-w-[920px] max-h-[90vh] bg-white shadow-2xl overflow-hidden"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-200">
-          <p className="text-sm font-medium text-gray-500">Quick Add</p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close quick add"
-            className="w-8 h-8 flex items-center justify-center  hover:bg-neutral-100 text-gray-500 transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close quick add"
+          className="absolute top-3 right-3 z-20 w-[30px] h-[30px] flex items-center justify-center text-[#666664] hover:text-[#0b172b] transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
 
-        {/* Content */}
-        <div className="px-5 py-5">
+        <div className="flex flex-col sm:flex-row max-h-[90vh] overflow-hidden">
           <QuickAddContent product={product} titleId={titleId} />
         </div>
       </div>

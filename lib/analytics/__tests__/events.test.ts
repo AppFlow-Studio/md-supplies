@@ -30,6 +30,7 @@ function makeProduct(overrides: Partial<CollectionProduct> = {}): CollectionProd
       nodes: [
         {
           id: 'gid://shopify/ProductVariant/10',
+          title: 'Default Title',
           price: { amount: '19.99', currencyCode: 'USD' },
           compareAtPrice: null,
           availableForSale: true,

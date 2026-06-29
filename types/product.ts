@@ -40,6 +40,7 @@ export interface ProductCardData {
   handle: string
   title: string
   image: { url: string; altText: string; width: number; height: number }
+  images?: { url: string; altText: string; width: number; height: number }[]
   brand: string
   vendor: string
   partnerVendor?: string
@@ -51,7 +52,7 @@ export interface ProductCardData {
   isOCC?: boolean
   hasFreeShipping?: boolean
   isRx?: boolean
-  variants: { id: string; title: string; price: number; available: boolean }[]
+  variants: { id: string; title: string; price: number; compareAtPrice?: number; available: boolean }[]
 }
 
 export interface Product {

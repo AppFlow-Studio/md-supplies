@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Plus } from 'lucide-react'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import type { ProductCardData } from '@/types/product'
 import { QuickAddModal } from '@/components/product/QuickAddModal'
+import {Plus} from "lucide-react";
 
 function toCardData(product: CollectionProduct): ProductCardData {
   const image = product.images.nodes[0]
@@ -12,6 +12,10 @@ function toCardData(product: CollectionProduct): ProductCardData {
   const price = Math.round(
     parseFloat(firstVariant?.price.amount ?? product.priceRange.minVariantPrice.amount) * 100,
   )
+  const compareAtPrice = firstVariant?.compareAtPrice
+    ? Math.round(parseFloat(firstVariant.compareAtPrice.amount) * 100)
+    : undefined
+
   return {
     handle: product.handle,
     title: product.title,
@@ -24,14 +28,18 @@ function toCardData(product: CollectionProduct): ProductCardData {
     brand: product.vendor,
     vendor: product.vendor,
     price,
+    compareAtPrice,
     sku: '',
     available: product.availableForSale,
     hasFreeShipping: product.tags.includes('free-shipping'),
     isRx: product.tags.includes('rx-required'),
-    variants: product.variants.nodes.map((v, i) => ({
+    variants: product.variants.nodes.map((v) => ({
       id: v.id,
-      title: `Option ${i + 1}`,
+      title: v.title,
       price: Math.round(parseFloat(v.price.amount) * 100),
+      compareAtPrice: v.compareAtPrice
+        ? Math.round(parseFloat(v.compareAtPrice.amount) * 100)
+        : undefined,
       available: v.availableForSale,
     })),
   }

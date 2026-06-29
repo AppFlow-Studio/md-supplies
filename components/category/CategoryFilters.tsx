@@ -80,46 +80,72 @@ function FilterGroup({
   )
 }
 
-const MAX_PRICE = 200000
+function parsePriceRange(filter: CollectionFilter): { min: number; max: number } {
+  try {
+    const parsed = JSON.parse(filter.values[0]?.input ?? '{}')
+    const min = Math.max(0, Math.floor(Number(parsed?.price?.min ?? 0)))
+    const max = Math.ceil(Number(parsed?.price?.max ?? 500))
+    if (isFinite(min) && isFinite(max) && max > min) return { min, max }
+  } catch { /* ignore */ }
+  return { min: 0, max: 500 }
+}
 
-function parsePriceMax(activeFilters: string[]): number {
+function calcStep(range: number): number {
+  if (range <= 20)    return 1
+  if (range <= 100)   return 2
+  if (range <= 500)   return 5
+  if (range <= 2000)  return 10
+  if (range <= 10000) return 50
+  return 100
+}
+
+function parseActivePriceMax(activeFilters: string[]): number | null {
   for (const f of activeFilters) {
     try {
       const parsed = JSON.parse(f)
       if (parsed?.price?.max !== undefined) return Number(parsed.price.max)
     } catch { /* ignore */ }
   }
-  return MAX_PRICE
+  return null
 }
 
 function PriceRangeFilter({
+  filter,
   activeFilters,
   onSetPrice,
 }: {
+  filter: CollectionFilter
   activeFilters: string[]
   onSetPrice: (input: string) => void
 }) {
-  const [open, setOpen] = useState(true)
-  const [value, setValue] = useState(() => parsePriceMax(activeFilters))
+  const { min: rangeMin, max: rangeMax } = parsePriceRange(filter)
+  const step = calcStep(rangeMax - rangeMin)
 
-  const pct = Math.round((value / MAX_PRICE) * 100)
+  const [open, setOpen] = useState(true)
+  const [value, setValue] = useState(() => {
+    const active = parseActivePriceMax(activeFilters)
+    return active !== null ? Math.min(active, rangeMax) : rangeMax
+  })
+
+  const atMax = value >= rangeMax
+  const pct   = Math.round(((value - rangeMin) / (rangeMax - rangeMin)) * 100)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(Number(e.target.value))
   }
 
   const handleCommit = () => {
-    if (value >= MAX_PRICE) {
+    if (atMax) {
       onSetPrice('')
     } else {
-      onSetPrice(JSON.stringify({ price: { min: 0, max: value } }))
+      onSetPrice(JSON.stringify({ price: { min: rangeMin, max: value } }))
     }
   }
 
-  const displayMax =
-    value >= MAX_PRICE
-      ? '$200,000 +'
-      : `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const fmt = (n: number) =>
+    n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const displayMax = atMax ? `$${fmt(rangeMax)}+` : `$${fmt(value)}`
 
   return (
     <div className="mb-7">
@@ -141,9 +167,9 @@ function PriceRangeFilter({
         <div>
           <input
             type="range"
-            min={0}
-            max={MAX_PRICE}
-            step={500}
+            min={rangeMin}
+            max={rangeMax}
+            step={step}
             value={value}
             onChange={handleChange}
             onMouseUp={handleCommit}
@@ -153,8 +179,12 @@ function PriceRangeFilter({
             aria-label="Maximum price"
           />
           <div className="flex justify-between mt-3">
-            <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">$0.00</span>
-            <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">{displayMax}</span>
+            <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">
+              ${fmt(rangeMin)}
+            </span>
+            <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">
+              {displayMax}
+            </span>
           </div>
         </div>
       )}
@@ -209,6 +239,7 @@ export function CategoryFilters({ filters, activeFilters, currentSort }: Props) 
           return (
             <PriceRangeFilter
               key={f.id}
+              filter={f}
               activeFilters={activeFilters}
               onSetPrice={setPriceFilter}
             />

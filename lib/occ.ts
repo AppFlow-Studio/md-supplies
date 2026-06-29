@@ -1,7 +1,7 @@
 import type { OCCHub } from '@/types/occ'
 
 export const OCC_HUB: OCCHub = {
-  title: 'Charity & Nonprofit Medical Supply Program',
+  title: 'OCC Solutions',
   intro: 'MDSupplies supports charitable organizations, nonprofits, and community programs with streamlined medical supply ordering, preferred pricing, and dedicated account support — whether you run a food pantry, a free clinic, a faith-based health ministry, or a community health drive.',
   programExplanation: 'Our Organized Customer Care (OCC) program is open to qualifying nonprofits and charitable organizations that need reliable access to medical and care supplies. Eligible organizations receive dedicated account management, priority fulfillment, and access to volume-based pricing tiers. We work with food banks, disaster relief teams, free clinics, faith-based ministries, school health programs, and other community-serving organizations.',
   freeShippingMessage: 'Qualifying OCC members may be eligible for free standard shipping on select product categories. Your account manager will confirm eligibility and applicable thresholds.',
@@ -45,6 +45,6 @@ export const OCC_HUB: OCCHub = {
       answer: 'Yes. Faith-based health ministries and church-affiliated community programs that provide care supplies to underserved populations are welcome to apply for OCC membership.',
     },
   ],
-  seoTitle: 'Charity & Nonprofit Medical Supply Program — MDSupplies',
+  seoTitle: 'OCC Solutions — MDSupplies',
   seoDescription: 'MDSupplies supports nonprofits, free clinics, food banks, faith-based ministries, and community organizations with streamlined medical supply ordering and preferred pricing through our OCC program.',
 }

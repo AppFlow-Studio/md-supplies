@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { X, ChevronRight } from 'lucide-react'
+import { X } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
 import type { Collection } from '@/lib/shopify/types'
@@ -152,13 +152,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     return qs ? `/category/${slug}?${qs}` : `/category/${slug}`
   }
 
-  const loadMoreUrl = (() => {
-    const p = new URLSearchParams()
-    if (sp.sort) p.set('sort', sp.sort)
-    activeFilterStrings.forEach((f) => p.append('filter', f))
-    if (pageInfo.endCursor) p.set('after', pageInfo.endCursor)
-    return `/category/${slug}?${p.toString()}`
-  })()
+  const persistParams = new URLSearchParams()
+  if (sp.sort) persistParams.set('sort', sp.sort)
+  activeFilterStrings.forEach((f) => persistParams.append('filter', f))
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -297,30 +293,16 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             itemListName={collection.title}
           />
 
-          {/* Clean-page pagination */}
-          {!isFiltered && (
-            <CategoryPagination
-              currentPage={currentPage}
-              hasNext={pageInfo.hasNextPage}
-              nextCursor={pageInfo.endCursor ?? null}
-              prevCursors={prevCursors}
-              currentAfter={sp.after ?? null}
-              baseUrl={ROUTES.category(slug)}
-            />
-          )}
-
-          {/* Filtered/sorted pages: Load More */}
-          {isFiltered && pageInfo.hasNextPage && (
-            <div className="flex items-center justify-center pt-12">
-              <Link
-                href={loadMoreUrl}
-                className="flex items-center gap-2 border border-navy-900 text-navy-900 text-[14px] font-semibold px-5 h-[44px] hover:bg-neutral-50 transition-colors"
-              >
-                Load More
-                <ChevronRight size={16} />
-              </Link>
-            </div>
-          )}
+          {/* Pagination — works for both plain and filtered/sorted views */}
+          <CategoryPagination
+            currentPage={currentPage}
+            hasNext={pageInfo.hasNextPage}
+            nextCursor={pageInfo.endCursor ?? null}
+            prevCursors={prevCursors}
+            currentAfter={sp.after ?? null}
+            baseUrl={ROUTES.category(slug)}
+            persistParams={persistParams}
+          />
         </div>
       </div>
 
