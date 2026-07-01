@@ -19,6 +19,7 @@ import { getClusterLinks } from '@/lib/cluster-links'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerPath } from '@/lib/bunnycdn'
+import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
 export const revalidate = 30
 
@@ -148,6 +149,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     const p = new URLSearchParams()
     if (sp.sort) p.set('sort', sp.sort)
     next.forEach((f) => p.append('filter', f))
+    withTrackingParams(p, sp)
     const qs = p.toString()
     return qs ? `/category/${slug}?${qs}` : `/category/${slug}`
   }
@@ -155,6 +157,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const persistParams = new URLSearchParams()
   if (sp.sort) persistParams.set('sort', sp.sort)
   activeFilterStrings.forEach((f) => persistParams.append('filter', f))
+  withTrackingParams(persistParams, sp)
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">

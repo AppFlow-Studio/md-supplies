@@ -27,6 +27,12 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: 'MD Supplies',
   description: 'Medical-Grade Supplies at Wholesale Prices',
+  // Bing Webmaster Tools site verification. Set NEXT_PUBLIC_BING_VERIFICATION to
+  // the token from Bing Webmaster ("meta tag" option, the `content` value) to
+  // emit <meta name="msvalidate.01" ...>. Left off until the token is provided.
+  ...(process.env.NEXT_PUBLIC_BING_VERIFICATION
+    ? { verification: { other: { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_VERIFICATION } } }
+    : {}),
 }
 
 export default async function RootLayout({
