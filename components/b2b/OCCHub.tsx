@@ -36,7 +36,7 @@ export function OCCHubPage({ hub }: Props) {
         <div className="sr-only">
           <p>{hub.title}</p>
           <p>{hub.intro}</p>
-          <h2>What is the OCC Program?</h2>
+          <h2>About the OCC Collection</h2>
           <p>{hub.programExplanation}</p>
           <p>{hub.freeShippingMessage}</p>
         </div>
@@ -56,7 +56,7 @@ export function OCCHubPage({ hub }: Props) {
         {/* Eligible categories */}
         {hub.eligibleCategories.length > 0 && (
           <section className="py-12 border-t border-gray-200">
-            <h2 className="text-xl font-bold text-navy-900 mb-5">OCC-Eligible Categories</h2>
+            <h2 className="text-xl font-bold text-navy-900 mb-5">Shop by Category</h2>
             <div className="flex flex-wrap gap-2">
               {hub.eligibleCategories.map((cat) => (
                 <Link
@@ -74,7 +74,7 @@ export function OCCHubPage({ hub }: Props) {
         {/* Eligible products */}
         {hub.eligibleProducts.length > 0 && (
           <section className="py-12 border-t border-gray-200">
-            <h2 className="text-xl font-bold text-navy-900 mb-6">OCC-Eligible Products</h2>
+            <h2 className="text-xl font-bold text-navy-900 mb-6">Featured OCC Shoebox Supplies</h2>
             <AnimatedOCCProducts products={hub.eligibleProducts} />
           </section>
         )}

@@ -18,8 +18,8 @@ import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { CategoryImage } from '@/components/shared/CategoryImage'
-import { getCategoryBannerPath } from '@/lib/bunnycdn'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
+import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 
 export const revalidate = 30
 
@@ -137,6 +137,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   if (!isFiltered && currentPage > 1 && data.collection.products.nodes.length === 0) notFound()
 
+  const banner = getCategoryBannerConfig(slug)
   const clusterLinks = getClusterLinks(slug)
 
   const { collection } = data
@@ -158,6 +159,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   if (sp.sort) persistParams.set('sort', sp.sort)
   activeFilterStrings.forEach((f) => persistParams.append('filter', f))
   withTrackingParams(persistParams, sp)
+
+  const filterLabelMap = new Map(
+    filters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
+  )
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -198,9 +203,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {/* Right: banner image — only on larger screens, matching the existing layout */}
           <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
             <CategoryImage
-              bannerPath={getCategoryBannerPath(slug)}
-              fallbackUrl={collection.image?.url}
-              alt={collection.image?.altText ?? collection.title}
+              bannerPath={banner.path}
+              alt={banner.alt}
             />
           </div>
         </div>
@@ -254,7 +258,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {activeFilterStrings.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
               {activeFilterStrings.map((f) => {
-                let label = f
+                let label = filterLabelMap.get(f) ?? f
                 try {
                   const parsed = JSON.parse(f)
                   if (parsed?.price) {
@@ -262,8 +266,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                     label = max >= 200000
                       ? `Price: $${Number(min).toLocaleString()}+`
                       : `Price: $${Number(min).toLocaleString()} – $${Number(max).toLocaleString()}`
-                  } else {
-                    label = String(Object.values(parsed).join(', '))
                   }
                 } catch { /* keep raw */ }
                 return (

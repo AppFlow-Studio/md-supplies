@@ -2,12 +2,16 @@ import { Accordion } from "@/components/ui/Accordion";
 
 const FAQ_ITEMS = [
   {
+    q: "Who can order from MDSupplies?",
+    a: "Anyone can order. MDSupplies is open to healthcare facilities, clinics, care teams, organizations, businesses, and individual customers. Most products are available for direct online ordering with no credentials required. A small number of regulated items may require professional verification at checkout — you'll be prompted if that applies to your order.",
+  },
+  {
     q: "How long does shipping take?",
     a: "Orders are processed through trusted medical supply partners, with shipping details and options provided at checkout.",
   },
   {
-    q: "Do you offer free shipping?",
-    a: "Yes! Free standard shipping on all orders over $150. Orders under $150 have a flat-rate fee based on location and weight.",
+    q: "How is shipping calculated?",
+    a: "Shipping rates and availability depend on the vendor and your order details. All options and costs are shown at checkout before you place your order.",
   },
   {
     q: "Do you accept insurance?",

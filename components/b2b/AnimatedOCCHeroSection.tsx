@@ -33,52 +33,57 @@ export function AnimatedOCCHeroSection({
   freeShippingMessage,
 }: Props) {
   return (
-    <div className="flex flex-col lg:flex-row relative min-h-[560px] lg:min-h-[680px]">
+    <div className="flex flex-col gap-0">
 
-      {/* ── Left: text column ── */}
-      <motion.div
-        className="lg:w-[50%] shrink-0 flex flex-col gap-5 lg:gap-6 lg:pb-[340px]"
-        variants={textContainer}
-        initial="hidden"
-        animate="show"
-      >
-        <motion.p variants={row} className="text-[#0086b1] text-[15px] font-semibold tracking-[0.3px] uppercase">
-          Shop by Industry
-        </motion.p>
+      {/* ── Hero row: text + image ── */}
+      <div className="flex flex-col lg:flex-row">
 
-        <motion.h1 variants={row} className="text-[44px] sm:text-[50px] font-semibold text-navy-900 leading-[1.2] tracking-tight">
-          {title}
-        </motion.h1>
+        {/* Left: text column */}
+        <motion.div
+          className="lg:w-[50%] shrink-0 flex flex-col gap-5 lg:gap-6 pb-8 lg:pb-10"
+          variants={textContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.p variants={row} className="text-[#0086b1] text-[15px] font-semibold tracking-[0.3px] uppercase">
+            Operation Christmas Child
+          </motion.p>
 
-        <motion.p variants={row} className="text-[18px] font-medium text-[#666664] leading-[30px]">
-          {description}
-        </motion.p>
-      </motion.div>
+          <motion.h1 variants={row} className="text-[44px] sm:text-[50px] font-semibold text-navy-900 leading-[1.2] tracking-tight">
+            {title}
+          </motion.h1>
 
-      {/* ── Right: hero image — bleeds to viewport edge on lg–1449px ── */}
-      <motion.div
-        className="flex-1 min-w-0 relative min-h-[300px] lg:min-h-0 lg:max-[1449px]:-mr-14 overflow-hidden"
-        variants={imageVariant}
-        initial="hidden"
-        animate="show"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/occ-hero.png"
-          alt="Healthcare professionals in a modern medical facility"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      </motion.div>
+          <motion.p variants={row} className="text-[18px] font-medium text-[#666664] leading-[30px]">
+            {description}
+          </motion.p>
+        </motion.div>
 
-      {/* ── Program explanation card ── */}
+        {/* Right: hero image */}
+        <motion.div
+          className="flex-1 min-w-0 relative min-h-[300px] lg:min-h-[420px] lg:max-[1449px]:-mr-14 overflow-hidden"
+          variants={imageVariant}
+          initial="hidden"
+          animate="show"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/occ-hero.png"
+            alt="Volunteers packing Operation Christmas Child shoebox gifts"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </motion.div>
+
+      </div>
+
+      {/* ── Program explanation card — flows below hero, no absolute positioning ── */}
       <motion.div
         initial={{ opacity: 0, y: 22 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.65, ease, delay: 0.45 }}
-        className="flex flex-col gap-5 bg-white z-10 px-8 py-8 lg:px-10 lg:absolute lg:bottom-4 lg:w-[60%] max-lg:w-full"
+        className="flex flex-col gap-5 bg-white px-8 py-8 lg:px-10 w-full lg:w-[60%] lg:-mt-16"
       >
         <h2 className="text-[30px] font-bold text-navy-900 tracking-[0.6px]">
-          What is the OCC Program?
+          About the OCC Collection
         </h2>
         <p className="text-[18px] text-[#666664] font-medium leading-[30px]">
           {programExplanation}

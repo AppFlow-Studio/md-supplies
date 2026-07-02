@@ -21,7 +21,7 @@ interface HeaderProps {
 }
 
 const ANNOUNCEMENTS = [
-  'FREE SHIPPING on eligible orders $150+',
+  'Serving facilities, organizations & individual customers',
   'Ordering support for clinics, pharmacies & care teams',
   'Shop medical supplies by category, brand, or industry',
 ]
