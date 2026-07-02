@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import type { CollectionFilter } from '@/lib/shopify/types'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
+import { parsePriceBounds, calcPriceStep } from '@/lib/shopify/filters'
 
 interface Props {
   filters: CollectionFilter[]
@@ -81,24 +82,6 @@ function FilterGroup({
   )
 }
 
-function parsePriceRange(filter: CollectionFilter): { min: number; max: number } {
-  try {
-    const parsed = JSON.parse(filter.values[0]?.input ?? '{}')
-    const min = Math.max(0, Math.floor(Number(parsed?.price?.min ?? 0)))
-    const max = Math.ceil(Number(parsed?.price?.max ?? 500))
-    if (isFinite(min) && isFinite(max) && max > min) return { min, max }
-  } catch { /* ignore */ }
-  return { min: 0, max: 500 }
-}
-
-function calcStep(range: number): number {
-  if (range <= 20)    return 1
-  if (range <= 100)   return 2
-  if (range <= 500)   return 5
-  if (range <= 2000)  return 10
-  if (range <= 10000) return 50
-  return 100
-}
 
 function parseActivePriceMax(activeFilters: string[]): number | null {
   for (const f of activeFilters) {
@@ -119,8 +102,8 @@ function PriceRangeFilter({
   activeFilters: string[]
   onSetPrice: (input: string) => void
 }) {
-  const { min: rangeMin, max: rangeMax } = parsePriceRange(filter)
-  const step = calcStep(rangeMax - rangeMin)
+  const { min: rangeMin, max: rangeMax } = parsePriceBounds(filter)
+  const step = calcPriceStep(rangeMax - rangeMin)
 
   const [open, setOpen] = useState(true)
   const [value, setValue] = useState(() => {
