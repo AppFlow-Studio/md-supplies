@@ -31,4 +31,34 @@ describe('SearchFilters price range', () => {
 
     expect(screen.getByText('$150.00+')).toBeInTheDocument()
   })
+
+  it('initializes the slider from an active price filter, clamped to the real max', () => {
+    render(
+      <SearchFilters
+        filters={[priceFilter]}
+        activeFilters={['{"price":{"min":0,"max":100}}']}
+        currentSort={undefined}
+        q="gloves"
+      />,
+    )
+
+    const slider = screen.getByLabelText('Maximum price') as HTMLInputElement
+    expect(slider.value).toBe('100')
+    expect(screen.getByText('$100.00')).toBeInTheDocument()
+  })
+
+  it('clamps an active price filter above the real max down to the max', () => {
+    render(
+      <SearchFilters
+        filters={[priceFilter]}
+        activeFilters={['{"price":{"min":0,"max":9999}}']}
+        currentSort={undefined}
+        q="gloves"
+      />,
+    )
+
+    const slider = screen.getByLabelText('Maximum price') as HTMLInputElement
+    expect(slider.value).toBe('150')
+    expect(screen.getByText('$150.00+')).toBeInTheDocument()
+  })
 })

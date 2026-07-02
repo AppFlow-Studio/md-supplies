@@ -82,7 +82,6 @@ function FilterGroup({
   )
 }
 
-
 function parseActivePriceMax(activeFilters: string[]): number | null {
   for (const f of activeFilters) {
     try {
