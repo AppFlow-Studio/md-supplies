@@ -53,3 +53,4 @@ next-env.d.ts
 # lighthouse raw output (regenerable; summarized in audit/*.md)
 /audit/lighthouse/
 /audit/lighthouse-track-a/
+.superpowers/
