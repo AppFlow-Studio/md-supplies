@@ -1,4 +1,4 @@
-import type { CollectionFilter } from './types'
+import type { CollectionFilter } from './types';
 
 export function getVisibleFilters(
   filters: CollectionFilter[],
