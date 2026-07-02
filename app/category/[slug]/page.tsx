@@ -20,6 +20,7 @@ import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
+import { getVisibleFilters } from '@/lib/shopify/filters'
 
 export const revalidate = 30
 
@@ -143,7 +144,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const { collection } = data
   const products = collection.products.nodes
   const { pageInfo } = collection.products
-  const filters = collection.products.filters ?? []
+  const rawFilters = collection.products.filters ?? []
+  const filters = getVisibleFilters(rawFilters, activeFilterStrings)
 
   const removeFilterUrl = (filterToRemove: string) => {
     const next = activeFilterStrings.filter((f) => f !== filterToRemove)
@@ -161,7 +163,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   withTrackingParams(persistParams, sp)
 
   const filterLabelMap = new Map(
-    filters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
+    rawFilters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
   )
 
   return (
