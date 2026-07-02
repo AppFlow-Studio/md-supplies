@@ -6,15 +6,12 @@ import { ROUTES } from '@/lib/routes'
 import { buildCategoryNav } from '@/lib/category-nav'
 import { LOGO_PATH } from '@/lib/bunnycdn'
 
-const WHOLESALE_SOURCING_HREF = '/#wholesale-sourcing'
-
 const EXPLORE = [
   { label: 'Brands', href: ROUTES.brands },
   { label: 'Partners', href: ROUTES.partners },
   { label: 'Industries', href: ROUTES.industries },
   { label: 'Blog', href: ROUTES.blog },
-  { label: 'Solutions', href: ROUTES.solutions.occ },
-  { label: 'Wholesale / B2B', href: ROUTES.contact },
+  { label: 'OCC', href: ROUTES.solutions.occ },
   { label: 'Returns', href: ROUTES.returns },
 ]
 
@@ -157,13 +154,6 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
               currentIsoCode={currentCountry}
             />
           )}
-
-          <Link
-            href={ROUTES.contact}
-            className="bg-teal-500 text-white text-sm font-semibold px-7 py-3 rounded-full hover:bg-[#006d92] transition-colors"
-          >
-            Wholesale Pricing
-          </Link>
         </div>
       </div>
     </footer>

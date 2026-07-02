@@ -120,6 +120,10 @@ export default async function SearchPage({ searchParams }: Props) {
     return `/search?${p.toString()}`
   })()
 
+  const filterLabelMap = new Map(
+    productFilters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
+  )
+
   return (
     <main className="bg-[#f9fafc] min-h-screen">
       {/* Search bar — keyed so controlled input resets on each new query */}
@@ -166,7 +170,7 @@ export default async function SearchPage({ searchParams }: Props) {
           {activeFilterStrings.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
               {activeFilterStrings.map((f) => {
-                let label = f
+                let label = filterLabelMap.get(f) ?? f
                 try {
                   const parsed = JSON.parse(f)
                   if (parsed?.price) {
@@ -174,8 +178,6 @@ export default async function SearchPage({ searchParams }: Props) {
                     label = max >= 200000
                       ? `Price: $${Number(min).toLocaleString()}+`
                       : `Price: $${Number(min).toLocaleString()} – $${Number(max).toLocaleString()}`
-                  } else {
-                    label = String(Object.values(parsed).join(', '))
                   }
                 } catch { /* keep raw */ }
                 return (

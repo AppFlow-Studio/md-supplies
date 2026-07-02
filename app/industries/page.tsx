@@ -88,7 +88,7 @@ export default function IndustriesPage() {
             <div className="bg-[rgba(0,193,255,0.2)] flex items-center gap-4 px-6 py-5 mt-2 max-w-[541px]">
               <div className="flex flex-col gap-0.5">
                 <span className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px]">OCC Program</span>
-                <span className="text-navy-900 text-[16px] font-semibold tracking-[0.32px]">Free shipping on all eligible items</span>
+                <span className="text-navy-900 text-[16px] font-semibold tracking-[0.32px]">Dedicated pricing, terms &amp; account support</span>
               </div>
               <Link href="/solutions/occ" className="group ml-auto text-teal-500 text-[15px] font-semibold whitespace-nowrap inline-flex items-center gap-1">
                 Shop OCC <AnimatedArrow size={14} />

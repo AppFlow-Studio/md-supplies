@@ -128,6 +128,22 @@ export const GET_COLLECTIONS_AUDIT = `#graphql
   }
 `;
 
+export const GET_COLLECTION_PRODUCT_CARDS = `#graphql
+  query GetCollectionProductCards($handle: String!, $first: Int!) {
+    collection(handle: $handle) {
+      products(first: $first, sortKey: BEST_SELLING) {
+        nodes {
+          handle
+          title
+          priceRange { minVariantPrice { amount currencyCode } }
+          images(first: 1) { nodes { url altText } }
+        }
+        pageInfo { hasNextPage endCursor }
+      }
+    }
+  }
+`;
+
 export const GET_COLLECTIONS_FOR_SITEMAP = `#graphql
   query GetCollectionsForSitemap($first: Int!) {
     collections(first: $first) {

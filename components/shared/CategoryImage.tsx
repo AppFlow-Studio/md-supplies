@@ -9,8 +9,8 @@ interface Props {
   alt: string
 }
 
-// Hero/banner fallback (§3.3): curated BunnyCDN banner first, Shopify
-// collection.image second, neutral panel last — never an empty/broken slot.
+// Fallback chain: approved BunnyCDN banner → neutral panel.
+// Shopify collection.image is intentionally excluded to prevent random product images appearing in the hero.
 export function CategoryImage({ bannerPath, fallbackUrl, alt }: Props) {
   const [bannerFailed, setBannerFailed] = useState(false)
   const [fallbackFailed, setFallbackFailed] = useState(false)

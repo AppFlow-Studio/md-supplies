@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
+import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
 const SORT_OPTIONS = [
   { value: 'RELEVANCE', label: 'Relevance' },
@@ -18,6 +19,7 @@ interface Props {
 
 export function SearchSort({ currentSort, activeFilters, q }: Props) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
 
   const selected = SORT_OPTIONS.find((o) => o.value === currentSort) ?? SORT_OPTIONS[0]
@@ -27,6 +29,7 @@ export function SearchSort({ currentSort, activeFilters, q }: Props) {
     if (q) params.set('q', q)
     if (value !== 'RELEVANCE') params.set('sort', value)
     activeFilters.forEach((f) => params.append('filter', f))
+    withTrackingParams(params, searchParams)
     const qs = params.toString()
     router.push(qs ? `/search?${qs}` : '/search')
     setOpen(false)

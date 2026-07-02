@@ -122,6 +122,15 @@ export const GET_PRODUCT_CARD_BY_HANDLE = `#graphql
   }
 `;
 
+export const GET_PRODUCT_CARD_FULL = `#graphql
+  ${PRODUCT_CARD_FRAGMENT}
+  query GetProductCardFull($handle: String!) {
+    product(handle: $handle) {
+      ...ProductCard
+    }
+  }
+`;
+
 export const GET_PRODUCT_RECS = `#graphql
   ${PRODUCT_CARD_FRAGMENT}
   query GetProductRecs($handle: String!) {
