@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
+import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
 const SORT_OPTIONS = [
   { value: 'COLLECTION_DEFAULT', label: 'Featured' },
@@ -20,6 +21,7 @@ interface Props {
 export function CategorySort({ currentSort, activeFilters }: Props) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
 
   const selected = SORT_OPTIONS.find((o) => o.value === currentSort) ?? SORT_OPTIONS[0]
@@ -28,6 +30,7 @@ export function CategorySort({ currentSort, activeFilters }: Props) {
     const params = new URLSearchParams()
     if (value !== 'COLLECTION_DEFAULT') params.set('sort', value)
     activeFilters.forEach((f) => params.append('filter', f))
+    withTrackingParams(params, searchParams)
     const qs = params.toString()
     router.push(qs ? `${pathname}?${qs}` : pathname)
     setOpen(false)

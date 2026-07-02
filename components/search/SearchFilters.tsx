@@ -1,9 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import type { CollectionFilter } from '@/lib/shopify/types'
+import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
 interface Props {
   filters: CollectionFilter[]
@@ -122,13 +123,19 @@ function PriceRangeFilter({
       <div className="h-px bg-gray-200 mb-5" />
       {open && (
         <div>
-          <input
-            type="range" min={0} max={MAX_PRICE} step={500} value={value}
-            onChange={handleChange} onMouseUp={handleCommit} onTouchEnd={handleCommit}
-            className="price-slider w-full"
-            style={{ '--slider-pct': `${pct}%` } as React.CSSProperties}
-            aria-label="Maximum price"
-          />
+          <div className="relative">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[5px] rounded-full bg-gray-200 pointer-events-none" />
+            <div
+              className="absolute left-0 top-1/2 -translate-y-1/2 h-[5px] rounded-full bg-navy-900 pointer-events-none"
+              style={{ width: `${pct}%` }}
+            />
+            <input
+              type="range" min={0} max={MAX_PRICE} step={500} value={value}
+              onChange={handleChange} onMouseUp={handleCommit} onTouchEnd={handleCommit}
+              className="price-slider w-full relative"
+              aria-label="Maximum price"
+            />
+          </div>
           <div className="flex justify-between mt-3">
             <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">$0.00</span>
             <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">{displayMax}</span>
@@ -141,12 +148,14 @@ function PriceRangeFilter({
 
 export function SearchFilters({ filters, activeFilters, currentSort, q }: Props) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const buildUrl = (nextFilters: string[]) => {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (currentSort) params.set('sort', currentSort)
     nextFilters.forEach((f) => params.append('filter', f))
+    withTrackingParams(params, searchParams)
     const qs = params.toString()
     return qs ? `/search?${qs}` : '/search'
   }

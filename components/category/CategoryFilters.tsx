@@ -1,9 +1,10 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import type { CollectionFilter } from '@/lib/shopify/types'
+import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
 interface Props {
   filters: CollectionFilter[]
@@ -195,11 +196,13 @@ function PriceRangeFilter({
 export function CategoryFilters({ filters, activeFilters, currentSort }: Props) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const buildUrl = (nextFilters: string[]) => {
     const params = new URLSearchParams()
     if (currentSort) params.set('sort', currentSort)
     nextFilters.forEach((f) => params.append('filter', f))
+    withTrackingParams(params, searchParams)
     const qs = params.toString()
     return qs ? `${pathname}?${qs}` : pathname
   }
