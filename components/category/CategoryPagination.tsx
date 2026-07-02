@@ -117,6 +117,7 @@ export function CategoryPagination({
       {prevHref ? (
         <Link
           href={prevHref}
+          scroll={false}
           aria-label="Previous page"
           className="flex size-[35px] items-center justify-center text-navy-900 hover:text-navy-950 transition-colors"
         >
@@ -181,6 +182,7 @@ export function CategoryPagination({
       {nextHref ? (
         <Link
           href={nextHref}
+          scroll={false}
           aria-label="Next page"
           className="flex size-[35px] items-center justify-center text-navy-900 hover:text-navy-950 transition-colors"
         >
