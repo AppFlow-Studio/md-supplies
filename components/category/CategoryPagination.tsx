@@ -163,6 +163,7 @@ export function CategoryPagination({
             <Link
               key={item.page}
               href={item.href}
+              scroll={false}
               className="flex size-[35px] items-center justify-center text-[13px] font-semibold tracking-[0.26px] text-black hover:text-navy-900 transition-colors"
             >
               {item.page}

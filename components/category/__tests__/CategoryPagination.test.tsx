@@ -95,4 +95,20 @@ describe('CategoryPagination scroll behavior', () => {
     const prevLink = screen.getByRole('link', { name: 'Previous page' })
     expect(prevLink).toHaveAttribute('data-scroll', 'false')
   })
+
+  it('disables scroll-to-top on a numbered page link', () => {
+    render(
+      <CategoryPagination
+        currentPage={1}
+        hasNext={true}
+        nextCursor="cursorA"
+        prevCursors={[]}
+        currentAfter={null}
+        baseUrl="/category/gloves"
+      />
+    )
+
+    const pageTwoLink = screen.getByRole('link', { name: '2' })
+    expect(pageTwoLink).toHaveAttribute('data-scroll', 'false')
+  })
 })
