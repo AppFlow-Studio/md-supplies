@@ -7,6 +7,11 @@ import { ROADMAP_CATEGORIES } from '@/lib/category-nav'
 // per-category product placeholder all resolve to the same file until dedicated
 // banner photography is uploaded. lib/bunnycdn.ts turns `file` into a proxy path.
 
+// Single source of truth for category hero banner assets.
+// `file` is the BunnyCDN filename relative to the categories/ zone path.
+// When Deepika delivers approved assets, update only the `file` value for each entry.
+// `alt` is used in the <img> alt attribute — describes the category, not the image.
+
 export type CategoryImageEntry = {
   /** Filename within the `categories/` folder on BunnyCDN storage. */
   file: string

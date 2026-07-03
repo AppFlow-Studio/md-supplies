@@ -70,7 +70,7 @@ export function ShopifyQuickAddButton({ product }: { product: CollectionProduct 
         type="button"
         onClick={handleOpen}
         aria-label={`Quick add ${product.title}`}
-        className="absolute top-2 right-2 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-navy-900 hover:text-white text-navy-900"
+        className="absolute bottom-2 right-2 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center opacity-100 scale-100 sm:opacity-0 sm:scale-90 sm:group-hover:opacity-100 sm:group-hover:scale-100 transition-[opacity,transform] duration-200 ease-out hover:bg-navy-900 hover:text-white text-navy-900"
       >
         <Plus size={16} />
       </button>

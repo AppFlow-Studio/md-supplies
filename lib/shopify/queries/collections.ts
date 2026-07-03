@@ -22,6 +22,19 @@ export const GET_COLLECTION_META = `#graphql
   }
 `;
 
+export const GET_COLLECTION_HERO = `#graphql
+  query GetCollectionHero($handle: String!) {
+    collection(handle: $handle) {
+      id
+      title
+      handle
+      description
+      descriptionHtml
+      image { id url altText width height }
+    }
+  }
+`;
+
 export const GET_COLLECTION = `#graphql
   query GetCollection(
     $handle: String!

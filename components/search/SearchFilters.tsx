@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import type { CollectionFilter } from '@/lib/shopify/types'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
+import { parsePriceBounds, calcPriceStep } from '@/lib/shopify/filters'
 
 interface Props {
   filters: CollectionFilter[]
@@ -75,40 +76,47 @@ function FilterGroup({
   )
 }
 
-const MAX_PRICE = 200000
-
-function parsePriceMax(activeFilters: string[]): number {
+function parseActivePriceMax(activeFilters: string[]): number | null {
   for (const f of activeFilters) {
     try {
       const parsed = JSON.parse(f)
       if (parsed?.price?.max !== undefined) return Number(parsed.price.max)
     } catch { /* ignore */ }
   }
-  return MAX_PRICE
+  return null
 }
 
 function PriceRangeFilter({
+  filter,
   activeFilters,
   onSetPrice,
 }: {
+  filter: CollectionFilter
   activeFilters: string[]
   onSetPrice: (input: string) => void
 }) {
-  const [open, setOpen] = useState(true)
-  const [value, setValue] = useState(() => parsePriceMax(activeFilters))
+  const { min: rangeMin, max: rangeMax } = parsePriceBounds(filter)
+  const step = calcPriceStep(rangeMax - rangeMin)
 
-  const pct = Math.round((value / MAX_PRICE) * 100)
+  const [open, setOpen] = useState(true)
+  const [value, setValue] = useState(() => {
+    const active = parseActivePriceMax(activeFilters)
+    return active !== null ? Math.min(active, rangeMax) : rangeMax
+  })
+
+  const atMax = value >= rangeMax
+  const pct = Math.round(((value - rangeMin) / (rangeMax - rangeMin)) * 100)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => setValue(Number(e.target.value))
 
   const handleCommit = () => {
-    onSetPrice(value >= MAX_PRICE ? '' : JSON.stringify({ price: { min: 0, max: value } }))
+    onSetPrice(atMax ? '' : JSON.stringify({ price: { min: rangeMin, max: value } }))
   }
 
-  const displayMax =
-    value >= MAX_PRICE
-      ? '$200,000 +'
-      : `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const fmt = (n: number) =>
+    n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const displayMax = atMax ? `$${fmt(rangeMax)}+` : `$${fmt(value)}`
 
   return (
     <div className="mb-7">
@@ -130,14 +138,14 @@ function PriceRangeFilter({
               style={{ width: `${pct}%` }}
             />
             <input
-              type="range" min={0} max={MAX_PRICE} step={500} value={value}
+              type="range" min={rangeMin} max={rangeMax} step={step} value={value}
               onChange={handleChange} onMouseUp={handleCommit} onTouchEnd={handleCommit}
               className="price-slider w-full relative"
               aria-label="Maximum price"
             />
           </div>
           <div className="flex justify-between mt-3">
-            <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">$0.00</span>
+            <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">${fmt(rangeMin)}</span>
             <span className="text-navy-900 text-[13px] font-semibold tracking-[0.26px]">{displayMax}</span>
           </div>
         </div>
@@ -190,7 +198,7 @@ export function SearchFilters({ filters, activeFilters, currentSort, q }: Props)
       )}
       {filters.map((f) => {
         if (f.type === 'PRICE_RANGE') {
-          return <PriceRangeFilter key={f.id} activeFilters={activeFilters} onSetPrice={setPriceFilter} />
+          return <PriceRangeFilter key={f.id} filter={f} activeFilters={activeFilters} onSetPrice={setPriceFilter} />
         }
         return <FilterGroup key={f.id} filter={f} activeFilters={activeFilters} onToggle={toggleFilter} />
       })}

@@ -50,6 +50,11 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 
+# manual QA sweep script + screenshots (regenerable, see docs/superpowers/plans QA handoffs)
+/qa-sweep.js
+/shots/
+
 # lighthouse raw output (regenerable; summarized in audit/*.md)
 /audit/lighthouse/
 /audit/lighthouse-track-a/
+.superpowers/

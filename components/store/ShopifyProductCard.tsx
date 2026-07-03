@@ -42,9 +42,9 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
 
   return (
     <div className="group relative bg-white flex flex-col">
-      <Link href={href} onClick={handleSelect} className="flex flex-col">
-        {/* Image */}
-        <div className="relative overflow-hidden bg-white aspect-square">
+      {/* Image */}
+      <div className="relative overflow-hidden bg-white aspect-square">
+        <Link href={href} onClick={handleSelect} className="block w-full h-full">
           <ProductImage
             src={image?.url}
             alt={image?.altText ?? product.title}
@@ -61,45 +61,45 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
           {!product.availableForSale && (
             <div className="absolute inset-0 bg-white/60" />
           )}
-        </div>
+        </Link>
 
-        {/* Info */}
-        <div className="px-[22px] pt-[19px] pb-[22px] flex flex-col">
-          <span className="text-[#0086b1] text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
-            {product.vendor}
-          </span>
-          <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
-            {product.title}
-          </p>
-          {(product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {product.tags.includes('free-shipping') && (
-                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-teal-500 text-white">
-                  Free Shipping
-                </span>
-              )}
-              {product.tags.includes('rx-required') && (
-                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-amber-600 text-white">
-                  RX Only
-                </span>
-              )}
-            </div>
-          )}
-          <div className="flex items-baseline gap-2">
-            <span className="text-black text-[18px] font-bold tracking-[0.36px]">
-              ${price.toFixed(2)}
-            </span>
-            {hasDiscount && (
-              <span className="text-gray-500 text-[14px] line-through tracking-[0.28px]">
-                ${compareAt!.toFixed(2)}
+        {/* Quick add — sibling of the image link, not nested inside it, so clicks never navigate */}
+        <ShopifyQuickAddButton product={product} />
+      </div>
+
+      {/* Info */}
+      <Link href={href} onClick={handleSelect} className="px-[22px] pt-[19px] pb-[22px] flex flex-col">
+        <span className="text-[#0086b1] text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
+          {product.vendor}
+        </span>
+        <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
+          {product.title}
+        </p>
+        {(product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {product.tags.includes('free-shipping') && (
+              <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-teal-500 text-white">
+                Free Shipping
+              </span>
+            )}
+            {product.tags.includes('rx-required') && (
+              <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-amber-600 text-white">
+                RX Only
               </span>
             )}
           </div>
+        )}
+        <div className="flex items-baseline gap-2">
+          <span className="text-black text-[18px] font-bold tracking-[0.36px]">
+            ${price.toFixed(2)}
+          </span>
+          {hasDiscount && (
+            <span className="text-gray-500 text-[14px] line-through tracking-[0.28px]">
+              ${compareAt!.toFixed(2)}
+            </span>
+          )}
         </div>
       </Link>
-
-      {/* Quick add button — sibling to <Link>, not inside it, so clicks never navigate */}
-      <ShopifyQuickAddButton product={product} />
     </div>
   )
 }

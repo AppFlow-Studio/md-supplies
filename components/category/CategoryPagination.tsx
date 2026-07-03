@@ -117,6 +117,7 @@ export function CategoryPagination({
       {prevHref ? (
         <Link
           href={prevHref}
+          scroll={false}
           aria-label="Previous page"
           className="flex size-[35px] items-center justify-center text-navy-900 hover:text-navy-950 transition-colors"
         >
@@ -162,6 +163,7 @@ export function CategoryPagination({
             <Link
               key={item.page}
               href={item.href}
+              scroll={false}
               className="flex size-[35px] items-center justify-center text-[13px] font-semibold tracking-[0.26px] text-black hover:text-navy-900 transition-colors"
             >
               {item.page}
@@ -181,6 +183,7 @@ export function CategoryPagination({
       {nextHref ? (
         <Link
           href={nextHref}
+          scroll={false}
           aria-label="Next page"
           className="flex size-[35px] items-center justify-center text-navy-900 hover:text-navy-950 transition-colors"
         >

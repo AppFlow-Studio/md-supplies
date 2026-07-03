@@ -1,15 +1,12 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { X } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
-import type { Collection } from '@/lib/shopify/types'
-import { CategoryFilters } from '@/components/category/CategoryFilters'
-import { CategorySort } from '@/components/category/CategorySort'
-import { ProductGrid } from '@/components/category/ProductGrid'
-import { CategoryPagination } from '@/components/category/CategoryPagination'
-import { FilterDrawer } from '@/components/category/FilterDrawer'
+import { GET_COLLECTION_HERO } from '@/lib/shopify/queries/collections'
+import type { CollectionHero } from '@/lib/shopify/types'
+import { CategoryResults } from '@/components/category/CategoryResults'
+import { CategoryResultsSkeleton } from '@/components/category/CategoryResultsSkeleton'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { buildMetadata } from '@/lib/seo'
 import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
@@ -18,20 +15,21 @@ import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { CategoryImage } from '@/components/shared/CategoryImage'
-import { withTrackingParams } from '@/lib/analytics/tracking-params'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 
 export const revalidate = 30
 
+export type CategorySearchParams = {
+  sort?: string
+  after?: string
+  filter?: string | string[]
+  page?: string
+  cursors?: string
+}
+
 interface Props {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{
-    sort?: string
-    after?: string
-    filter?: string | string[]
-    page?: string
-    cursors?: string
-  }>
+  searchParams: Promise<CategorySearchParams>
 }
 
 function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
@@ -49,18 +47,6 @@ function parseFilterParam(filter?: string | string[]): string[] {
   return Array.isArray(filter) ? filter : [filter]
 }
 
-function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
-  return filterStrings.flatMap((f) => {
-    try {
-      const parsed = JSON.parse(f)
-      return parsed ? [parsed] : []
-    } catch {
-      return []
-    }
-  })
-}
-
-
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
   const sp = await searchParams
@@ -71,9 +57,9 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const currentPage = parseInt(sp.page ?? '1', 10)
 
   try {
-    const data = await storefrontFetch<{ collection: Collection | null }>(
-      GET_COLLECTION,
-      { handle: slug, first: 1 },
+    const data = await storefrontFetch<{ collection: CollectionHero | null }>(
+      GET_COLLECTION_HERO,
+      { handle: slug },
     )
     if (!data.collection) return { title: 'Category | MD Supplies' }
     const { title, description } = data.collection
@@ -121,48 +107,17 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   if (isNaN(currentPage) || currentPage < 1) notFound()
 
   const [data, subcategories, relatedCategories] = await Promise.all([
-    storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
-      handle: slug,
-      first: 9,
-      after: sp.after ?? null,
-      sortKey,
-      reverse,
-      filters: parseFilters(activeFilterStrings),
-    }),
+    storefrontFetch<{ collection: CollectionHero | null }>(GET_COLLECTION_HERO, { handle: slug }),
     getSubcategories(slug),
     getRelatedCategories(slug),
   ])
 
   if (!data.collection) notFound()
 
-  if (!isFiltered && currentPage > 1 && data.collection.products.nodes.length === 0) notFound()
-
   const banner = getCategoryBannerConfig(slug)
   const clusterLinks = getClusterLinks(slug)
 
   const { collection } = data
-  const products = collection.products.nodes
-  const { pageInfo } = collection.products
-  const filters = collection.products.filters ?? []
-
-  const removeFilterUrl = (filterToRemove: string) => {
-    const next = activeFilterStrings.filter((f) => f !== filterToRemove)
-    const p = new URLSearchParams()
-    if (sp.sort) p.set('sort', sp.sort)
-    next.forEach((f) => p.append('filter', f))
-    withTrackingParams(p, sp)
-    const qs = p.toString()
-    return qs ? `/category/${slug}?${qs}` : `/category/${slug}`
-  }
-
-  const persistParams = new URLSearchParams()
-  if (sp.sort) persistParams.set('sort', sp.sort)
-  activeFilterStrings.forEach((f) => persistParams.append('filter', f))
-  withTrackingParams(persistParams, sp)
-
-  const filterLabelMap = new Map(
-    filters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
-  )
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -235,80 +190,19 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
       {/* Main layout */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
-        {/* Desktop filter sidebar */}
-        <aside className="hidden lg:block w-[280px] shrink-0 pr-10 sticky top-[140px]">
-          <CategoryFilters
-            filters={filters}
-            activeFilters={activeFilterStrings}
-            currentSort={sp.sort}
-          />
-        </aside>
-
-        {/* Product area */}
-        <div className="flex-1 min-w-0">
-          {/* Sort bar */}
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-gray-500 text-[15px]">
-              Showing {products.length} products
-            </p>
-            <CategorySort currentSort={sp.sort} activeFilters={activeFilterStrings} />
-          </div>
-
-          {/* Active filter chips */}
-          {activeFilterStrings.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              {activeFilterStrings.map((f) => {
-                let label = filterLabelMap.get(f) ?? f
-                try {
-                  const parsed = JSON.parse(f)
-                  if (parsed?.price) {
-                    const { min, max } = parsed.price
-                    label = max >= 200000
-                      ? `Price: $${Number(min).toLocaleString()}+`
-                      : `Price: $${Number(min).toLocaleString()} – $${Number(max).toLocaleString()}`
-                  }
-                } catch { /* keep raw */ }
-                return (
-                  <Link
-                    key={f}
-                    href={removeFilterUrl(f)}
-                    className="flex items-center gap-1 bg-navy-900 text-white text-[12px] font-medium px-3 h-[28px] hover:bg-navy-950 transition-colors"
-                  >
-                    {label}
-                    <X size={11} />
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Mobile filter drawer */}
-          <FilterDrawer
-            filters={filters}
-            activeFilters={activeFilterStrings}
-            currentSort={sp.sort}
-          />
-
-          {/* Product grid */}
-          <ProductGrid
-            products={products}
-            emptyStateHref={ROUTES.category(slug)}
-            categorySlug={data.collection.handle}
-            itemListId={data.collection.handle}
-            itemListName={collection.title}
-          />
-
-          {/* Pagination — works for both plain and filtered/sorted views */}
-          <CategoryPagination
+        <Suspense fallback={<CategoryResultsSkeleton />}>
+          <CategoryResults
+            slug={slug}
+            sortKey={sortKey}
+            reverse={reverse}
+            sortParam={sp.sort}
+            activeFilterStrings={activeFilterStrings}
             currentPage={currentPage}
-            hasNext={pageInfo.hasNextPage}
-            nextCursor={pageInfo.endCursor ?? null}
+            after={sp.after ?? null}
             prevCursors={prevCursors}
-            currentAfter={sp.after ?? null}
-            baseUrl={ROUTES.category(slug)}
-            persistParams={persistParams}
+            trackingParamsSource={sp}
           />
-        </div>
+        </Suspense>
       </div>
 
       {/* Related categories */}

@@ -128,6 +128,8 @@ export type Collection = {
   };
 };
 
+export type CollectionHero = Pick<Collection, 'id' | 'title' | 'handle' | 'description' | 'descriptionHtml' | 'image'>;
+
 export type CartLine = {
   id: string;
   quantity: number;

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { X } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { SEARCH_PRODUCTS } from '@/lib/shopify/queries/search'
+import { getVisibleFilters } from '@/lib/shopify/filters'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { SearchSort } from '@/components/search/SearchSort'
 import { SearchFilterDrawer } from '@/components/search/SearchFilterDrawer'
@@ -82,7 +83,7 @@ export default async function SearchPage({ searchParams }: Props) {
 
   let products: CollectionProduct[] = []
   let totalCount = 0
-  let productFilters: CollectionFilter[] = []
+  let rawProductFilters: CollectionFilter[] = []
   let pageInfo: PageInfo = { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }
 
   if (q.trim()) {
@@ -97,12 +98,14 @@ export default async function SearchPage({ searchParams }: Props) {
       })
       products = data.search.nodes
       totalCount = data.search.totalCount
-      productFilters = data.search.productFilters ?? []
+      rawProductFilters = data.search.productFilters ?? []
       pageInfo = data.search.pageInfo
     } catch {
       // network error — show empty state
     }
   }
+
+  const productFilters = getVisibleFilters(rawProductFilters, activeFilterStrings)
 
   const removeFilterUrl = (filterToRemove: string) => {
     const next = activeFilterStrings.filter((f) => f !== filterToRemove)
@@ -121,7 +124,7 @@ export default async function SearchPage({ searchParams }: Props) {
   })()
 
   const filterLabelMap = new Map(
-    productFilters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
+    rawProductFilters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
   )
 
   return (
@@ -136,7 +139,7 @@ export default async function SearchPage({ searchParams }: Props) {
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
         {/* Desktop filter sidebar — only when we have a query + filters */}
         {q.trim() && productFilters.length > 0 && (
-          <aside className="hidden lg:block w-[280px] shrink-0 pr-10 sticky top-[140px]">
+          <aside className="hidden lg:block w-[280px] shrink-0 pr-10 sticky top-[140px] max-h-[calc(100vh-160px)] overflow-y-auto">
             <SearchFilters
               filters={productFilters}
               activeFilters={activeFilterStrings}
