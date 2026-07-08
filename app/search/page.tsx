@@ -10,6 +10,7 @@ import { SearchFilterDrawer } from '@/components/search/SearchFilterDrawer'
 import { SearchBarForm } from '@/components/search/SearchBarForm'
 import { SearchResultsSection } from '@/components/search/SearchResultsSection'
 import type { CollectionProduct, CollectionFilter, PageInfo } from '@/lib/shopify/types'
+import { stripBlockedFacets, isAllowedFilterInput } from '@/lib/filter-registry'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,7 +43,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 function parseFilterParam(filter?: string | string[]): string[] {
   if (!filter) return []
-  return Array.isArray(filter) ? filter : [filter]
+  const raw = Array.isArray(filter) ? filter : [filter]
+  // Default-deny URL-supplied inputs (rejects tag filters and unknown keys).
+  return raw.filter(isAllowedFilterInput)
 }
 
 function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
@@ -97,7 +100,8 @@ export default async function SearchPage({ searchParams }: Props) {
       })
       products = data.search.nodes
       totalCount = data.search.totalCount
-      productFilters = data.search.productFilters ?? []
+      // Raw-tag facets never render, regardless of S&D configuration.
+      productFilters = stripBlockedFacets(data.search.productFilters ?? [])
       pageInfo = data.search.pageInfo
     } catch {
       // network error — show empty state
