@@ -29,12 +29,20 @@ const cachedRequest = cache(async function cachedRequest<T>(
     headers['Shopify-Storefront-Buyer-Country'] = country;
   }
 
-  const res = await fetch(`https://${serverEnv.shopifyStoreDomain}/api/2026-04/graphql.json`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ query, variables }),
-    ...fetchOptions,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`https://${serverEnv.shopifyStoreDomain}/api/2026-04/graphql.json`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, variables }),
+      // Fail fast instead of hanging a server render on a slow Storefront API.
+      signal: AbortSignal.timeout(8000),
+      ...fetchOptions,
+    });
+  } catch (err) {
+    logServerError('storefront', err);
+    throw err;
+  }
 
   if (!res.ok) {
     const message = `Storefront API HTTP ${res.status}: ${res.statusText}`;

@@ -2,8 +2,8 @@ import type { OCCHub } from '@/types/occ'
 
 export const OCC_HUB: OCCHub = {
   title: 'OCC Shoebox Supplies',
-  intro: 'Bulk supplies, hygiene items, school essentials, backpacks, and gifts for Operation Christmas Child shoebox shoppers, churches, nonprofits, and mission groups.',
-  programExplanation: 'Operation Christmas Child (OCC) is a global gift-box project that sends shoebox gifts to children in need in more than 100 countries. MDSupplies supplies churches, mission teams, nonprofits, and community groups with the bulk hygiene kits, school supplies, backpacks, crayons, coloring books, and gift items that fill those boxes. Whether you pack ten shoeboxes or ten thousand, we stock the quantities and variety you need to make every gift count.',
+  intro: 'Bulk supplies, hygiene items, school essentials, backpacks, and gifts for shoebox gift drives — churches, nonprofits, charities, and mission groups.',
+  programExplanation: 'Shoebox gift drives collect small, practical gifts — hygiene items, school supplies, toys, and more — and deliver them to children in need around the world. MDSupplies supplies churches, mission teams, nonprofits, and community groups with the bulk hygiene kits, school supplies, backpacks, crayons, coloring books, and gift items that fill those boxes. Whether you pack ten shoeboxes or ten thousand, we stock the quantities and variety you need to make every gift count.',
   freeShippingMessage: '',
   eligibleCategories: [
     { handle: 'hygiene-kits',    title: 'Hygiene Kits' },
