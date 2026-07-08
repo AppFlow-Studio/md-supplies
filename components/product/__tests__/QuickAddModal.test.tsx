@@ -20,6 +20,22 @@ vi.mock('next/link', () => ({
   ),
 }))
 
+// QuickAddContent calls useCart(); stub it so the modal renders without a CartProvider
+// (whose real implementation pulls in server actions).
+vi.mock('@/components/store/CartProvider', () => ({
+  useCart: () => ({
+    cart: null,
+    isOpen: false,
+    lastError: null,
+    addItem: vi.fn(),
+    removeItem: vi.fn(),
+    updateItem: vi.fn(),
+    openCart: vi.fn(),
+    closeCart: vi.fn(),
+    clearError: vi.fn(),
+  }),
+}))
+
 const product: ProductCardData = {
   handle: 'test-product',
   title: 'Test Product',

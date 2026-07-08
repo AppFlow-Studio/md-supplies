@@ -11,6 +11,7 @@ import { SearchFilterDrawer } from '@/components/search/SearchFilterDrawer'
 import { SearchBarForm } from '@/components/search/SearchBarForm'
 import { SearchResultsSection } from '@/components/search/SearchResultsSection'
 import type { CollectionProduct, CollectionFilter, PageInfo } from '@/lib/shopify/types'
+import { stripBlockedFacets, isAllowedFilterInput } from '@/lib/filter-registry'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,7 +44,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 function parseFilterParam(filter?: string | string[]): string[] {
   if (!filter) return []
-  return Array.isArray(filter) ? filter : [filter]
+  const raw = Array.isArray(filter) ? filter : [filter]
+  // Default-deny URL-supplied inputs (rejects tag filters and unknown keys).
+  return raw.filter(isAllowedFilterInput)
 }
 
 function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
@@ -83,7 +86,7 @@ export default async function SearchPage({ searchParams }: Props) {
 
   let products: CollectionProduct[] = []
   let totalCount = 0
-  let rawProductFilters: CollectionFilter[] = []
+  let productFilters: CollectionFilter[] = []
   let pageInfo: PageInfo = { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }
 
   if (q.trim()) {
@@ -98,14 +101,13 @@ export default async function SearchPage({ searchParams }: Props) {
       })
       products = data.search.nodes
       totalCount = data.search.totalCount
-      rawProductFilters = data.search.productFilters ?? []
+      // Raw-tag facets never render, regardless of S&D configuration.
+      productFilters = stripBlockedFacets(data.search.productFilters ?? [])
       pageInfo = data.search.pageInfo
     } catch {
       // network error — show empty state
     }
   }
-
-  const productFilters = getVisibleFilters(rawProductFilters, activeFilterStrings)
 
   const removeFilterUrl = (filterToRemove: string) => {
     const next = activeFilterStrings.filter((f) => f !== filterToRemove)
@@ -124,7 +126,7 @@ export default async function SearchPage({ searchParams }: Props) {
   })()
 
   const filterLabelMap = new Map(
-    rawProductFilters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
+    productFilters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
   )
 
   return (

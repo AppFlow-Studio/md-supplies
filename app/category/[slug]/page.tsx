@@ -16,6 +16,7 @@ import { getClusterLinks } from '@/lib/cluster-links'
 import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
+import { getAllowedFacets, isAllowedFilterInput } from '@/lib/filter-registry'
 
 export const revalidate = 30
 
@@ -44,7 +45,10 @@ function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
 
 function parseFilterParam(filter?: string | string[]): string[] {
   if (!filter) return []
-  return Array.isArray(filter) ? filter : [filter]
+  const raw = Array.isArray(filter) ? filter : [filter]
+  // Default-deny URL-supplied inputs (rejects tag filters and unknown keys)
+  // before they reach the Storefront API, chips, or pagination links.
+  return raw.filter(isAllowedFilterInput)
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -118,6 +122,29 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const clusterLinks = getClusterLinks(slug)
 
   const { collection } = data
+  const products = collection.products.nodes
+  const { pageInfo } = collection.products
+  // Registry gate: only allowlisted facet sources render for this collection.
+  const filters = getAllowedFacets(slug, collection.products.filters ?? [])
+
+  const removeFilterUrl = (filterToRemove: string) => {
+    const next = activeFilterStrings.filter((f) => f !== filterToRemove)
+    const p = new URLSearchParams()
+    if (sp.sort) p.set('sort', sp.sort)
+    next.forEach((f) => p.append('filter', f))
+    withTrackingParams(p, sp)
+    const qs = p.toString()
+    return qs ? `/category/${slug}?${qs}` : `/category/${slug}`
+  }
+
+  const persistParams = new URLSearchParams()
+  if (sp.sort) persistParams.set('sort', sp.sort)
+  activeFilterStrings.forEach((f) => persistParams.append('filter', f))
+  withTrackingParams(persistParams, sp)
+
+  const filterLabelMap = new Map(
+    filters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
+  )
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
