@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!partner) return { title: 'Partner Products | MD Supplies' }
   return {
     title: `${partner.name} Products | MD Supplies`,
-    description: `Shop all ${partner.name} medical supplies at wholesale prices.`,
+    description: `Shop all ${partner.name} medical supplies.`,
   }
 }
 

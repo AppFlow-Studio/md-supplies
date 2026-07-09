@@ -68,7 +68,7 @@ describe('contactSchema', () => {
     name: 'Dr. Jane Smith',
     email: 'jane@clinic.com',
     subject: SUBJECTS[0],
-    message: 'Hello, I have a question about wholesale pricing.',
+    message: 'Hello, I have a question about pricing.',
   }
 
   it('accepts a valid payload', () => {

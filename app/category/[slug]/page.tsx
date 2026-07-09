@@ -279,7 +279,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                   href={ROUTES.solutions.occ}
                   className="border border-teal-500 bg-teal-50 text-teal-700 text-[14px] px-4 py-2 hover:bg-teal-100 transition-colors inline-block"
                 >
-                  OCC Program — Volume Pricing
+                  OCC Program — Bulk Orders
                 </Link>
               </div>
             )}

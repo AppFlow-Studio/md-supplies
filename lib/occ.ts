@@ -26,19 +26,15 @@ export const OCC_HUB: OCCHub = {
     },
     {
       question: 'Can our church or nonprofit order in bulk?',
-      answer: 'Yes. We supply churches, mission teams, nonprofits, and community groups of any size. Whether you are packing a few dozen shoeboxes or organizing a large community drive, we carry the quantities you need. Contact our B2B team to discuss volume pricing.',
+      answer: 'Yes. We supply churches, mission teams, nonprofits, and community groups of any size. Whether you are packing a few dozen shoeboxes or organizing a large community drive, we carry the quantities you need.',
     },
     {
       question: 'What types of items are good for shoeboxes?',
       answer: 'Popular shoebox items include hygiene kits (toothbrushes, soap, washcloths), school supplies (crayons, coloring books, pencils, rulers), small toys, backpacks, and soft stuffed animals. We stock all of these categories in bulk.',
     },
     {
-      question: 'Do you offer volume pricing for OCC drives?',
-      answer: 'Yes. Approved accounts can access volume pricing tiers for large OCC orders. Contact us via the form below and mention your OCC drive — our team will set up your account and confirm applicable pricing.',
-    },
-    {
       question: 'How do I place a bulk OCC order?',
-      answer: 'Browse the OCC collection above and add items to your cart for standard checkout, or contact our B2B team to set up an account for volume orders, purchase orders, or net terms.',
+      answer: 'Browse the OCC collection above and add items to your cart for standard checkout, or contact our team for help planning a large OCC drive order.',
     },
   ],
   seoTitle: 'OCC Shoebox Supplies — Bulk Kits, Hygiene & Gifts | MDSupplies',

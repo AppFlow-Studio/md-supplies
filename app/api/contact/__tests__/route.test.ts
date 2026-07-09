@@ -31,7 +31,7 @@ const valid = {
   name: 'Dr. Jane Smith',
   email: 'jane@clinic.com',
   subject: SUBJECTS[0],
-  message: 'I have a question about wholesale pricing.',
+  message: 'I have a question about pricing.',
 }
 
 beforeEach(() => {

@@ -13,7 +13,7 @@ export const revalidate = 60
 
 export const metadata = buildMetadata({
   pageType: 'categories-hub',
-  description: 'Browse all medical supply categories at wholesale prices — gloves, wound care, needles, IV therapy, and more. Serving clinics, urgent care, and B2B buyers.',
+  description: 'Browse all medical supply categories — gloves, wound care, needles, IV therapy, and more. Serving clinics, urgent care, and B2B buyers.',
 })
 
 type CollectionNode = {
@@ -60,7 +60,7 @@ export default async function CategoriesPage() {
           All Medical Supply Categories
         </h1>
         <p className="text-gray-500 text-[16px] max-w-2xl leading-relaxed">
-          Browse our complete catalog of wholesale medical supplies — from gloves to IV therapy,
+          Browse our complete catalog of medical supplies — from gloves to IV therapy,
           organized for fast ordering. Trusted by clinics, urgent care centers, and B2B buyers nationwide.
         </p>
       </div>

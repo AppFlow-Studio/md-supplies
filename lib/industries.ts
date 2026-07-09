@@ -27,10 +27,6 @@ export const INDUSTRIES: Industry[] = [
         answer: 'Urgent care centers typically order high volumes of exam gloves, wound care dressings, rapid diagnostic test kits, IV supplies, and disposable exam room consumables. MDSupplies carries all of these categories with bulk ordering options.',
       },
       {
-        question: 'Can urgent care centers order in bulk to reduce per-unit cost?',
-        answer: 'Yes. MDSupplies offers volume-based pricing for facilities that order regularly. Contact our B2B team to discuss account setup and volume pricing tiers for your center.',
-      },
-      {
         question: 'Do you carry point-of-care testing and rapid diagnostic supplies?',
         answer: 'We carry testing supplies including rapid test kits, urine dipsticks, and specimen collection materials. Browse our diagnostics and testing category to see current availability.',
       },
@@ -59,10 +55,6 @@ export const INDUSTRIES: Industry[] = [
       {
         question: 'What needle and syringe options are available for hormone injection protocols?',
         answer: 'We carry a range of needle gauges and lengths suitable for intramuscular and subcutaneous hormone injections, as well as sterile syringes in the volumes commonly used for HRT protocols. Browse needles and syringes for available sizes.',
-      },
-      {
-        question: 'Can I order procedure supplies in the quantities needed for a high-volume HRT practice?',
-        answer: 'Yes. We offer bulk and case-quantity ordering for clinics that perform procedures regularly. Contact our B2B team to discuss volume pricing options for your practice.',
       },
       {
         question: 'Are your supplies appropriate for in-office procedure rooms?',
@@ -97,10 +89,6 @@ export const INDUSTRIES: Industry[] = [
       {
         question: 'Can I order supplies on behalf of multiple patients from one account?',
         answer: 'Yes. Our B2B account structure supports agency-level purchasing where one account manager can place and track orders across multiple patient assignments. Contact our team to set up your account.',
-      },
-      {
-        question: 'Do you offer bulk pricing for home health agencies?',
-        answer: 'We offer volume-based pricing for agencies that order regularly. Reach out to our B2B team to discuss pricing tiers based on your anticipated order volume.',
       },
       {
         question: 'Are incontinence and personal care products available in case quantities?',
@@ -177,10 +165,6 @@ export const INDUSTRIES: Industry[] = [
         answer: 'Yes. Contact our B2B team to discuss account setup and recurring order options. We can help you establish consistent order cycles so your exam rooms stay stocked without manual reordering each time.',
       },
       {
-        question: 'Do you offer volume pricing for clinics that order regularly?',
-        answer: 'We offer volume-based pricing for practices that maintain consistent ordering. Contact our B2B team to discuss pricing tiers appropriate for your practice\'s order volume.',
-      },
-      {
         question: 'How do I find supplies specific to my specialty?',
         answer: 'Browse by category on MDSupplies — we carry supplies relevant to primary care, dermatology, OB/GYN, pediatrics, and other outpatient specialties. Use the search bar to look up specific items or contact our team for sourcing assistance.',
       },
@@ -200,11 +184,7 @@ export const INDUSTRIES: Industry[] = [
     faq: [
       {
         question: 'What medical supplies can pharmacies stock and sell to patients?',
-        answer: 'Pharmacies commonly stock diabetic care supplies, blood glucose monitors, lancets, incontinence products, wound care items, compression stockings, and mobility aids. MDSupplies carries these categories with wholesale ordering options suitable for pharmacy purchasing.',
-      },
-      {
-        question: 'Do you offer wholesale pricing for pharmacy buyers?',
-        answer: 'Yes. We offer volume-based pricing for pharmacy accounts that order regularly. Contact our B2B team to set up a pharmacy account and discuss pricing tiers.',
+        answer: 'Pharmacies commonly stock diabetic care supplies, blood glucose monitors, lancets, incontinence products, wound care items, compression stockings, and mobility aids. MDSupplies carries these categories with ordering options suitable for pharmacy purchasing.',
       },
       {
         question: 'Can I source diabetic care supplies and home monitoring equipment through MDSupplies?',

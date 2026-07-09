@@ -19,7 +19,7 @@ const FEATURES: { Icon: LucideIcon; title: string; description: string }[] = [
   {
     Icon: Tag,
     title: "Competitive Pricing",
-    description: "Transparent wholesale pricing across medical supply categories, with no inflated markups.",
+    description: "Transparent pricing across medical supply categories, with no inflated markups.",
   },
   {
     Icon: RotateCcw,

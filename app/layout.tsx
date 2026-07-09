@@ -26,7 +26,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: 'MD Supplies',
-  description: 'Medical-Grade Supplies at Wholesale Prices',
+  description: 'Medical-Grade Supplies, Delivered Fast',
 }
 
 export default async function RootLayout({

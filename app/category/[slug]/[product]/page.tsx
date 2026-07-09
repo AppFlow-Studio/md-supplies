@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return buildMetadata({
       pageType: 'product',
       title: p.title,
-      description: p.description.slice(0, 155) || `Buy ${p.title} at wholesale prices from MDSupplies`,
+      description: p.description.slice(0, 155) || `Buy ${p.title} from MDSupplies`,
       slug: handle,
       image: p.images.nodes[0]?.url,
     })

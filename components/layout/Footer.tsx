@@ -49,7 +49,7 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
             </Link>
 
             <p className="text-sm text-gray-500 leading-relaxed mb-7 max-w-sm">
-              MDSupplies.com is a wholesale medical supply ecommerce company serving
+              MDSupplies.com is a medical supply ecommerce company serving
               clinics, urgent care centers, HRT practices, home care agencies, and
               institutional buyers nationwide.
             </p>
