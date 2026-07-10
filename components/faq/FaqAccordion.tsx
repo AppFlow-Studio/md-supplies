@@ -19,11 +19,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Do I need a prescription to order?",
-    a: "Most products do not require a prescription as they are sold wholesale to licensed healthcare facilities. Certain regulated items may require valid professional credentials, which you will be prompted to provide at checkout.",
+    a: "Most products do not require a prescription. Certain regulated items may require valid professional credentials, which you will be prompted to provide at checkout.",
   },
   {
     q: "What's your return policy?",
-    a: "We accept returns on unopened, undamaged products within 30 days of delivery. Items must be in original packaging. Contact support to initiate a return and receive a prepaid shipping label.",
+    a: "Return policies vary by vendor. We accept returns on unopened, undamaged products in their original packaging. Contact support to initiate a return and we'll walk you through the process.",
   },
   {
     q: "Are your products authentic?",
@@ -31,11 +31,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Do you offer bulk or volume pricing?",
-    a: "Yes. Approved B2B accounts receive volume discounts of up to 25%, net 30 payment terms, and a dedicated account manager. Apply via the Wholesale Pricing form at the bottom of this page.",
+    a: "Yes. For bulk or high-volume orders, reach out through the sourcing form at the bottom of this page or the contact page and our team will help with pricing and availability.",
   },
   {
     q: "Can I pay with a purchase order or get net terms?",
-    a: "Net 30 terms are available for approved B2B accounts. We also accept purchase orders from qualified institutions. Apply for a wholesale account to get started.",
+    a: "We accept purchase orders from qualified institutions. Contact our team to get started.",
   },
   {
     q: "How do I track my order?",

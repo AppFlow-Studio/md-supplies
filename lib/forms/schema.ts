@@ -22,7 +22,7 @@ export const FACILITY_TYPES = [
 export const SUBJECTS = [
   'General inquiry',
   'Product availability',
-  'Wholesale / B2B pricing',
+  'Bulk order pricing',
   'Order support',
   'Returns & refunds',
   'Other',

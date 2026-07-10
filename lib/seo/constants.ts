@@ -11,4 +11,4 @@ export const OG_IMAGE_HEIGHT = 630 as const
 export const DEFAULT_TITLE = `${SITE_NAME} — Medical & Dental Supplies`
 
 export const DEFAULT_DESCRIPTION =
-  'Medical-grade supplies at wholesale prices. Trusted by urgent care centers, HRT clinics, home health agencies, and first responders.'
+  'Medical-grade supplies at competitive prices. Trusted by urgent care centers, HRT clinics, home health agencies, and first responders.'

@@ -56,7 +56,7 @@ const TESTIMONIALS = [
     practice: "Urgent Care Director",
   },
   {
-    quote: "The wholesale pricing and Net 30 terms are a game-changer for our HRT practice. We've cut supply costs by nearly 30%.",
+    quote: "The competitive pricing is a game-changer for our HRT practice. We've cut supply costs by nearly 30%.",
     name: "James Reeves, PA-C",
     practice: "HRT Clinic Owner",
   },

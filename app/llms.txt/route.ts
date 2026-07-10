@@ -6,7 +6,7 @@ import { SITE_URL } from '@/lib/seo/constants'
 export async function GET(): Promise<Response> {
   const body = `# MDSupplies
 
-> MDSupplies.com is a wholesale medical supply ecommerce company serving clinics, urgent care centers, HRT practices, home care agencies, and institutional buyers nationwide.
+> MDSupplies.com is a medical supply ecommerce company serving clinics, urgent care centers, HRT practices, home care agencies, and customers nationwide.
 
 ## Shop
 - [All Categories](${SITE_URL}/categories): Browse every product category.

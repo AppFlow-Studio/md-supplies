@@ -77,7 +77,7 @@ export default async function BlogPage() {
         </div>
       </section>
 
-      {/* ── Wholesale CTA ── */}
+      {/* ── Sourcing CTA ── */}
       <WholesalePricing />
     </main>
   );

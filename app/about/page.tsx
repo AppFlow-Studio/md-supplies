@@ -12,13 +12,13 @@ const IMG_PRODUCTS  = "/images/about/products.png";
 const _aboutCanonical = buildCanonical({ path: '/about' })
 export const metadata = {
   title: 'About Us | MDSupplies',
-  description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing and trusted brands.',
+  description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with competitive pricing and trusted brands.',
   robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
   alternates: { canonical: _aboutCanonical },
   ...buildOg({
     pageType: 'homepage',
     title: 'About Us | MDSupplies',
-    description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with wholesale pricing and trusted brands.',
+    description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with competitive pricing and trusted brands.',
     url: _aboutCanonical,
   }),
 }
@@ -50,7 +50,7 @@ export default function AboutPage() {
             <FadeIn delay={0.2}>
               <p className="text-gray-500 text-[18px] font-medium leading-[1.65] max-w-[516px]">
                 We serve clinics, urgent care centers, HRT practices, and first responders with
-                wholesale pricing and brands you already know.
+                competitive pricing and brands you already know.
               </p>
             </FadeIn>
             <FadeIn delay={0.3}>
@@ -291,10 +291,10 @@ export default function AboutPage() {
                   Shop All Products
                 </Link>
                 <Link
-                  href="/wholesale"
+                  href="/contact"
                   className="border border-white text-white text-[18px] font-semibold tracking-[0.36px] px-10 py-[18px] hover:bg-white/10 transition-colors"
                 >
-                  Get B2B Quote
+                  Contact Us
                 </Link>
               </div>
             </div>

@@ -66,7 +66,7 @@ export default function IndustriesPage() {
             </h1>
 
             <p className="text-gray-500 text-[18px] leading-[30px] max-w-[541px]">
-              Whether you run an urgent care clinic, HRT practice, or home health agency — we stock the products you need with fast fulfillment and wholesale pricing.
+              Whether you run an urgent care clinic, HRT practice, or home health agency — we stock the products you need with fast fulfillment and competitive pricing.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">

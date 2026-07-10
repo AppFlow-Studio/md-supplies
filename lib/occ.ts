@@ -26,7 +26,7 @@ export const OCC_HUB: OCCHub = {
     },
     {
       question: 'Can our church or nonprofit order in bulk?',
-      answer: 'Yes. We supply churches, mission teams, nonprofits, and community groups of any size. Whether you are packing a few dozen shoeboxes or organizing a large community drive, we carry the quantities you need. Contact our B2B team to discuss volume pricing.',
+      answer: 'Yes. We supply churches, mission teams, nonprofits, and community groups of any size. Whether you are packing a few dozen shoeboxes or organizing a large community drive, we carry the quantities you need. Contact our team to discuss volume pricing.',
     },
     {
       question: 'What types of items are good for shoeboxes?',
@@ -38,7 +38,7 @@ export const OCC_HUB: OCCHub = {
     },
     {
       question: 'How do I place a bulk OCC order?',
-      answer: 'Browse the OCC collection above and add items to your cart for standard checkout, or contact our B2B team to set up an account for volume orders, purchase orders, or net terms.',
+      answer: 'Browse the OCC collection above and add items to your cart for standard checkout, or contact our team to set up an account for volume orders, purchase orders, or net terms.',
     },
   ],
   seoTitle: 'OCC Shoebox Supplies — Bulk Kits, Hygiene & Gifts | MDSupplies',

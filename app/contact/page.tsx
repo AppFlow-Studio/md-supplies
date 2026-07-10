@@ -5,13 +5,13 @@ const _canonical = buildCanonical({ path: '/contact' })
 
 export const metadata = {
   title: 'Contact Us | MDSupplies',
-  description: 'Get in touch with the MDSupplies team for wholesale inquiries, product questions, or order support.',
+  description: 'Get in touch with the MDSupplies team for bulk order inquiries, product questions, or order support.',
   robots: buildRobots({ pageType: 'homepage' }),
   alternates: { canonical: _canonical },
   ...buildOg({
     pageType: 'homepage',
     title: 'Contact Us | MDSupplies',
-    description: 'Get in touch with the MDSupplies team for wholesale inquiries, product questions, or order support.',
+    description: 'Get in touch with the MDSupplies team for bulk order inquiries, product questions, or order support.',
     url: _canonical,
   }),
 }
@@ -23,7 +23,7 @@ export default function ContactPage() {
         <div className="max-w-[640px]">
           <h1 className="text-navy-900 text-[32px] font-bold mb-2">Contact Us</h1>
           <p className="text-gray-500 text-[15px] leading-[1.75] mb-10">
-            Have a question about an order, product availability, or wholesale pricing?
+            Have a question about an order, product availability, or pricing?
             Fill out the form and our team will get back to you within one business day.
           </p>
           <ContactForm />

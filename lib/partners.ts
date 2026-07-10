@@ -22,7 +22,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'wound-care', title: 'Wound Care' },
     ],
     seoTitle: 'AD Surgical Products | MDSupplies',
-    seoDescription: 'Shop AD Surgical sutures, wound closure, and procedure kits at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop AD Surgical sutures, wound closure, and procedure kits at competitive prices through MDSupplies.',
   },
   {
     slug: 'cordx',
@@ -45,7 +45,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'rapid-tests', title: 'Rapid Tests' },
     ],
     seoTitle: 'CorDx Rapid Diagnostic Products | MDSupplies',
-    seoDescription: 'Shop CorDx rapid diagnostic testing solutions at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop CorDx rapid diagnostic testing solutions at competitive prices through MDSupplies.',
   },
   {
     slug: 'dukal',
@@ -69,7 +69,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'exam-room', title: 'Exam Room' },
     ],
     seoTitle: 'Dukal Medical Products | MDSupplies',
-    seoDescription: 'Shop Dukal wound care, surgical, and disposable medical products at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop Dukal wound care, surgical, and disposable medical products at competitive prices through MDSupplies.',
   },
   {
     slug: 'dynarex',
@@ -93,7 +93,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'wound-care', title: 'Wound Care' },
     ],
     seoTitle: 'Dynarex Medical Products | MDSupplies',
-    seoDescription: 'Shop Dynarex gloves, wound care, and disposable medical supplies at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop Dynarex gloves, wound care, and disposable medical supplies at competitive prices through MDSupplies.',
   },
   {
     slug: 'drive-medical',
@@ -116,7 +116,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'mobility-aids', title: 'Mobility Aids' },
     ],
     seoTitle: 'Drive Medical Products | MDSupplies',
-    seoDescription: 'Shop Drive Medical durable medical equipment and mobility aids at wholesale prices.',
+    seoDescription: 'Shop Drive Medical durable medical equipment and mobility aids at competitive prices.',
   },
   {
     slug: 'kadara',
@@ -138,7 +138,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'medical-supplies', title: 'Medical Supplies' },
     ],
     seoTitle: 'Kadara Medical Supply Products | MDSupplies',
-    seoDescription: 'Shop Kadara innovative medical supply solutions at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop Kadara innovative medical supply solutions at competitive prices through MDSupplies.',
   },
   {
     slug: 'kemp-usa',
@@ -161,7 +161,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'first-aid', title: 'First Aid' },
     ],
     seoTitle: 'Kemp USA Emergency & Medical Equipment | MDSupplies',
-    seoDescription: 'Shop Kemp USA medical equipment and emergency response supplies at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop Kemp USA medical equipment and emergency response supplies at competitive prices through MDSupplies.',
   },
   {
     slug: 'graham-field',
@@ -184,7 +184,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'rehabilitation', title: 'Rehabilitation' },
     ],
     seoTitle: 'Graham Field Medical Products | MDSupplies',
-    seoDescription: 'Shop Graham Field durable medical equipment and rehabilitation solutions at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop Graham Field durable medical equipment and rehabilitation solutions at competitive prices through MDSupplies.',
   },
   {
     slug: 'truecare',
@@ -207,7 +207,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'disposables', title: 'Disposables' },
     ],
     seoTitle: 'TrueCare Wound Care & Disposable Supplies | MDSupplies',
-    seoDescription: 'Shop TrueCare wound care and disposable medical supply solutions at wholesale prices through MDSupplies.',
+    seoDescription: 'Shop TrueCare wound care and disposable medical supply solutions at competitive prices through MDSupplies.',
   },
   {
     slug: 'dawn-mist',
@@ -230,7 +230,7 @@ export const PARTNERS: Partner[] = [
       { handle: 'hygiene', title: 'Hygiene Supplies' },
     ],
     seoTitle: 'Dawn Mist Products | MDSupplies',
-    seoDescription: 'Browse Dawn Mist personal care and hygiene products available at wholesale prices through MDSupplies.',
+    seoDescription: 'Browse Dawn Mist personal care and hygiene products available at competitive prices through MDSupplies.',
   },
   {
     slug: 'lumex',

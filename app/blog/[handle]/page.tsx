@@ -287,7 +287,7 @@ export default async function ArticlePage({ params }: Props) {
         </div>
       </div>
 
-      {/* ── Wholesale CTA ── */}
+      {/* ── Sourcing CTA ── */}
       <WholesalePricing />
 
     </main>

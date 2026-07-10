@@ -28,7 +28,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'Can urgent care centers order in bulk to reduce per-unit cost?',
-        answer: 'Yes. MDSupplies offers volume-based pricing for facilities that order regularly. Contact our B2B team to discuss account setup and volume pricing tiers for your center.',
+        answer: 'Yes. MDSupplies offers volume-based pricing for facilities that order regularly. Contact our team to discuss account setup and volume pricing tiers for your center.',
       },
       {
         question: 'Do you carry point-of-care testing and rapid diagnostic supplies?',
@@ -36,7 +36,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'How do I set up a recurring supply order for my urgent care center?',
-        answer: 'Contact our B2B team to discuss account management options. We can help you establish preferred ordering quantities and streamline reordering so your facility stays stocked without manual intervention each cycle.',
+        answer: 'Contact our team to discuss account management options. We can help you establish preferred ordering quantities and streamline reordering so your facility stays stocked without manual intervention each cycle.',
       },
       {
         question: 'Are wound care and laceration supplies available for urgent care use?',
@@ -62,7 +62,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'Can I order procedure supplies in the quantities needed for a high-volume HRT practice?',
-        answer: 'Yes. We offer bulk and case-quantity ordering for clinics that perform procedures regularly. Contact our B2B team to discuss volume pricing options for your practice.',
+        answer: 'Yes. We offer bulk and case-quantity ordering for clinics that perform procedures regularly. Contact our team to discuss volume pricing options for your practice.',
       },
       {
         question: 'Are your supplies appropriate for in-office procedure rooms?',
@@ -96,11 +96,11 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'Can I order supplies on behalf of multiple patients from one account?',
-        answer: 'Yes. Our B2B account structure supports agency-level purchasing where one account manager can place and track orders across multiple patient assignments. Contact our team to set up your account.',
+        answer: 'Yes. Our account structure supports agency-level purchasing where one account manager can place and track orders across multiple patient assignments. Contact our team to set up your account.',
       },
       {
         question: 'Do you offer bulk pricing for home health agencies?',
-        answer: 'We offer volume-based pricing for agencies that order regularly. Reach out to our B2B team to discuss pricing tiers based on your anticipated order volume.',
+        answer: 'We offer volume-based pricing for agencies that order regularly. Reach out to our team to discuss pricing tiers based on your anticipated order volume.',
       },
       {
         question: 'Are incontinence and personal care products available in case quantities?',
@@ -108,7 +108,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'What is the best way to manage supply orders for a distributed care team?',
-        answer: 'Contact our B2B team to discuss account management options. We can help you organize ordering by care team or territory so your coordinators can track and replenish supplies efficiently.',
+        answer: 'Contact our team to discuss account management options. We can help you organize ordering by care team or territory so your coordinators can track and replenish supplies efficiently.',
       },
     ],
   },
@@ -174,11 +174,11 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'Can I set up a standing order or recurring supply arrangement for my practice?',
-        answer: 'Yes. Contact our B2B team to discuss account setup and recurring order options. We can help you establish consistent order cycles so your exam rooms stay stocked without manual reordering each time.',
+        answer: 'Yes. Contact our team to discuss account setup and recurring order options. We can help you establish consistent order cycles so your exam rooms stay stocked without manual reordering each time.',
       },
       {
         question: 'Do you offer volume pricing for clinics that order regularly?',
-        answer: 'We offer volume-based pricing for practices that maintain consistent ordering. Contact our B2B team to discuss pricing tiers appropriate for your practice\'s order volume.',
+        answer: 'We offer volume-based pricing for practices that maintain consistent ordering. Contact our team to discuss pricing tiers appropriate for your practice\'s order volume.',
       },
       {
         question: 'How do I find supplies specific to my specialty?',
@@ -200,11 +200,11 @@ export const INDUSTRIES: Industry[] = [
     faq: [
       {
         question: 'What medical supplies can pharmacies stock and sell to patients?',
-        answer: 'Pharmacies commonly stock diabetic care supplies, blood glucose monitors, lancets, incontinence products, wound care items, compression stockings, and mobility aids. MDSupplies carries these categories with wholesale ordering options suitable for pharmacy purchasing.',
+        answer: 'Pharmacies commonly stock diabetic care supplies, blood glucose monitors, lancets, incontinence products, wound care items, compression stockings, and mobility aids. MDSupplies carries these categories with flexible ordering options suitable for pharmacy purchasing.',
       },
       {
-        question: 'Do you offer wholesale pricing for pharmacy buyers?',
-        answer: 'Yes. We offer volume-based pricing for pharmacy accounts that order regularly. Contact our B2B team to set up a pharmacy account and discuss pricing tiers.',
+        question: 'Do you offer volume pricing for pharmacy buyers?',
+        answer: 'Yes. We offer volume-based pricing for pharmacy accounts that order regularly. Contact our team to set up a pharmacy account and discuss pricing tiers.',
       },
       {
         question: 'Can I source diabetic care supplies and home monitoring equipment through MDSupplies?',
@@ -216,7 +216,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'How do I manage recurring supply orders for my pharmacy?',
-        answer: 'Contact our B2B team to discuss account management and recurring order options. We can help you establish a consistent ordering cycle aligned with your pharmacy\'s inventory replenishment schedule.',
+        answer: 'Contact our team to discuss account management and recurring order options. We can help you establish a consistent ordering cycle aligned with your pharmacy\'s inventory replenishment schedule.',
       },
     ],
   },
