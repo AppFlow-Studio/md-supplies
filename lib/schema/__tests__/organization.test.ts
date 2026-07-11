@@ -59,7 +59,7 @@ describe('buildOrganizationSchema — with real NAP filled in', () => {
       },
     }))
     const { buildOrganizationSchema: fresh } = await import('../organization')
-    const schema = fresh() as Record<string, Record<string, unknown>>
+    const schema = fresh() as unknown as Record<string, Record<string, unknown>>
     expect(schema.address).toEqual({
       '@type': 'PostalAddress',
       streetAddress: '1 Main St',
