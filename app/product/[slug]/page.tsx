@@ -84,6 +84,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: product.seo?.description || trimDescription(`${brand} — ${product.description}`, 155),
       slug,
       image: product.images.nodes[0]?.url,
+      imageWidth: product.images.nodes[0]?.width,
+      imageHeight: product.images.nodes[0]?.height,
     })
   } catch {
     return buildMetadata({ pageType: 'product', title: 'Product' })
