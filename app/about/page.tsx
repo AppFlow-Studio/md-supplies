@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { buildMetadata } from '@/lib/seo'
+import { SITE_URL } from '@/lib/seo/constants'
 import { ShieldCheck, Package, Headphones } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
 
-const IMG_HERO      = "/images/about/hero.png";
+const IMG_HERO      = "/images/about/HERO.png";
 const IMG_BRANDS    = "/images/about/brands.png";
 const IMG_WAREHOUSE = "/images/about/warehouse.png";
 const IMG_PRODUCTS  = "/images/about/products.png";
@@ -14,6 +15,7 @@ export const metadata = buildMetadata({
   title: 'About Us',
   description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with trusted brands and fast fulfillment.',
   slug: 'about',
+  image: `${SITE_URL}${IMG_HERO}`,
 })
 
 export default function AboutPage() {
