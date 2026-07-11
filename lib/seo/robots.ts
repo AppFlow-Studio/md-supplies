@@ -1,10 +1,13 @@
 import type { PageType, RobotsInput } from './types'
+import { IS_STAGING } from '@/lib/site-config'
 
 /**
  * True when the site is running in staging mode.
  * Consumed by Track A (A4) for sitemap / robots.txt generation.
+ * Derived in lib/site-config.ts: VERCEL_ENV !== 'production' means staging
+ * automatically (M11); NEXT_PUBLIC_IS_STAGING is the manual override.
  */
-export const STAGING_GUARD = process.env.NEXT_PUBLIC_IS_STAGING === 'true'
+export const STAGING_GUARD = IS_STAGING
 
 const UTILITY_TYPES = new Set<PageType>(['utility'])
 

@@ -7,13 +7,36 @@ import type { Product, CollectionProduct, ProductMetafields } from '@/lib/shopif
 import { ProductView } from '@/components/product/ProductView'
 import { PARTNERS } from '@/lib/partners'
 import { ProductSchema } from '@/components/schema/ProductSchema'
+import { normalizeGtin } from '@/lib/gtin'
+import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 
 export const revalidate = 30
 
+// On-demand ISR: no product paths are prerendered at build (large catalog),
+// but declaring generateStaticParams opts the route into static generation —
+// each product renders on first hit, is cached per `revalidate`, and is
+// invalidated by the Shopify webhook via cache tags (app/api/revalidate).
+export function generateStaticParams(): { slug: string }[] {
+  return []
+}
+
 interface Props {
   params: Promise<{ slug: string }>
+}
+
+// Data cache: 5-minute background revalidate, plus on-demand invalidation from
+// the Shopify products/* webhook via the per-handle tag (app/api/revalidate).
+function productFetchOptions(slug: string) {
+  return { next: { revalidate: 300, tags: ['shopify', 'products', `product:${slug}`] } }
+}
+
+// Offer freshness hint (M6): +30 days, date-only per Google's examples. The
+// page regenerates via ISR, so the window rolls forward on every
+// revalidation. Server-only helper — runs per-request, not in client render.
+function buildPriceValidUntil(): string {
+  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
 // Shopify returns metafields as `{ value: string } | null`, not bare strings.
@@ -56,7 +79,11 @@ function normalizeProduct(raw: RawProduct): Product {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   try {
-    const data = await storefrontFetch<{ product: RawProduct | null }>(GET_PRODUCT, { handle: slug })
+    const data = await storefrontFetch<{ product: RawProduct | null }>(
+      GET_PRODUCT,
+      { handle: slug },
+      productFetchOptions(slug),
+    )
     if (!data.product) return buildMetadata({ pageType: 'product', title: 'Product' })
     const product = normalizeProduct(data.product)
     const brand = product.brandName ?? product.vendor
@@ -66,6 +93,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: product.seo?.description || trimDescription(`${brand} — ${product.description}`, 155),
       slug,
       image: product.images.nodes[0]?.url,
+      imageWidth: product.images.nodes[0]?.width,
+      imageHeight: product.images.nodes[0]?.height,
     })
   } catch {
     return buildMetadata({ pageType: 'product', title: 'Product' })
@@ -75,7 +104,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
 
-  const rawData = await storefrontFetch<{ product: RawProduct | null }>(GET_PRODUCT, { handle: slug })
+  const rawData = await storefrontFetch<{ product: RawProduct | null }>(
+    GET_PRODUCT,
+    { handle: slug },
+    productFetchOptions(slug),
+  )
   if (!rawData.product) notFound()
 
   const product = normalizeProduct(rawData.product)
@@ -87,6 +120,7 @@ export default async function ProductPage({ params }: Props) {
   const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
     GET_PRODUCT_RECS,
     { handle: slug },
+    productFetchOptions(slug),
   ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
   const relatedProducts = recsData.related
@@ -101,12 +135,18 @@ export default async function ProductPage({ params }: Props) {
     description: product.description,
     image: product.images.nodes[0]?.url ?? '',
     sku: firstVariant?.sku || slug,
+    // gtin only when the Shopify barcode is a checksum-valid GTIN — most
+    // barcodes in this catalog are SKU copies and must not be emitted (M5).
+    gtin: normalizeGtin(firstVariant?.barcode),
     brand: product.brandName ?? product.vendor,
     price: parseFloat(firstVariant?.price?.amount ?? '0'),
     priceCurrency: firstVariant?.price?.currencyCode ?? 'USD',
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
+    priceValidUntil: buildPriceValidUntil(),
+    ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
+    ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }
 
   const breadcrumbItems = [

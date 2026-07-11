@@ -1,5 +1,6 @@
 import {
   SITE_NAME,
+  SITE_URL,
   DEFAULT_OG_IMAGE,
   OG_IMAGE_WIDTH,
   OG_IMAGE_HEIGHT,
@@ -17,6 +18,13 @@ interface OgInput {
   description: string
   url: string
   image?: string
+  imageWidth?: number
+  imageHeight?: number
+}
+
+/** Resolves a root-relative path (e.g. `/api/bunny/...`) to an absolute URL; leaves absolute URLs untouched. */
+function resolveImageUrl(image: string): string {
+  return image.startsWith('/') ? `${SITE_URL}${image}` : image
 }
 
 /**
@@ -24,8 +32,9 @@ interface OgInput {
  * The OG image slot is always populated — falls back to the default site OG image.
  */
 export function buildOg(input: OgInput) {
-  const { pageType, title, description, url, image } = input
-  const imageUrl = image?.trim() || DEFAULT_OG_IMAGE
+  const { pageType, title, description, url, image, imageWidth, imageHeight } = input
+  const trimmed = image?.trim()
+  const imageUrl = trimmed ? resolveImageUrl(trimmed) : DEFAULT_OG_IMAGE
 
   return {
     openGraph: {
@@ -33,7 +42,12 @@ export function buildOg(input: OgInput) {
       description,
       url,
       siteName: SITE_NAME,
-      images: [{ url: imageUrl, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: title }],
+      images: [{
+        url: imageUrl,
+        width: imageWidth ?? OG_IMAGE_WIDTH,
+        height: imageHeight ?? OG_IMAGE_HEIGHT,
+        alt: title,
+      }],
       type: ogType(pageType),
     },
     twitter: {

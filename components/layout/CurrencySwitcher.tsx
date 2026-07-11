@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect, useTransition } from 'react'
+import { useState, useRef, useEffect, useTransition, useSyncExternalStore } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { setMarketCountry } from '@/app/actions/market'
 import type { AvailableCountry } from '@/lib/shopify/types'
 
@@ -12,16 +11,32 @@ function isoToFlag(iso: string): string {
     .replace(/./g, (ch) => String.fromCodePoint(0x1f1e6 + ch.charCodeAt(0) - 65))
 }
 
-interface Props {
-  availableCountries: AvailableCountry[]
-  currentIsoCode: string
+// The market_country cookie is deliberately read client-side: a server-side
+// cookies() read in the layout opted the entire site out of ISR (audit H1).
+// useSyncExternalStore renders the 'US' server snapshot during SSR/hydration
+// and the real cookie value right after, without a hydration mismatch.
+const cookieListeners = new Set<() => void>()
+function subscribeMarketCookie(listener: () => void): () => void {
+  cookieListeners.add(listener)
+  return () => cookieListeners.delete(listener)
+}
+function notifyMarketCookieChanged() {
+  cookieListeners.forEach((listener) => listener())
+}
+function readMarketCookie(): string {
+  const match = document.cookie.match(/(?:^|;\s*)market_country=([^;]+)/)
+  return match ? decodeURIComponent(match[1]) : 'US'
 }
 
-export function CurrencySwitcher({ availableCountries, currentIsoCode }: Props) {
+interface Props {
+  availableCountries: AvailableCountry[]
+}
+
+export function CurrencySwitcher({ availableCountries }: Props) {
   const [open, setOpen] = useState(false)
+  const currentIsoCode = useSyncExternalStore(subscribeMarketCookie, readMarketCookie, () => 'US')
   const [isPending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
-  const router = useRouter()
 
   const current =
     availableCountries.find((c) => c.isoCode === currentIsoCode) ?? availableCountries[0]
@@ -40,7 +55,7 @@ export function CurrencySwitcher({ availableCountries, currentIsoCode }: Props) 
     setOpen(false)
     startTransition(async () => {
       await setMarketCountry(country.isoCode)
-      router.refresh()
+      notifyMarketCookieChanged()
     })
   }
 

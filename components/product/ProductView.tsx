@@ -153,6 +153,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 key={images[activeImg]?.id ?? activeImg}
                 src={images[activeImg]?.url}
                 alt={images[activeImg]?.altText ?? product.title}
+                sizes="(max-width: 1024px) 100vw, 52vw"
                 priority
               />
             </div>
@@ -169,7 +170,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                         : 'border border-gray-200 hover:border-navy-900'
                     }`}
                   >
-                    <ProductImage src={img.url} alt={img.altText ?? product.title} />
+                    <ProductImage src={img.url} alt={img.altText ?? product.title} sizes="120px" />
                   </button>
                 ))}
               </div>
@@ -382,14 +383,14 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               <div className="flex flex-col gap-8 max-w-[760px]">
                 {/* Item Number */}
                 <div>
-                  <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Item Number</p>
+                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Item Number</h2>
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantSku}</p>
                 </div>
 
                 {/* Brand Name */}
                 {brandDisplay && (
                   <div>
-                    <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Brand Name</p>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Brand Name</h2>
                     <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{brandDisplay}</p>
                   </div>
                 )}
@@ -397,7 +398,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {/* Description */}
                 {(product.descriptionHtml || product.description) && (
                   <div>
-                    <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Description</p>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Description</h2>
                     <div
                       className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] prose max-w-none prose-p:mb-4 prose-ul:pl-5 prose-li:mb-1"
                       dangerouslySetInnerHTML={{ __html: product.descriptionHtml || product.description }}
@@ -408,12 +409,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {/* Specs table */}
                 {SPEC_ROWS.length > 0 && (
                   <div>
-                    <p className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-4">Specifications</p>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-4">Specifications</h2>
                     <table className="w-full max-w-[600px]">
                       <tbody>
                         {SPEC_ROWS.map(({ label, value }, i) => (
                           <tr key={label} className={i % 2 === 0 ? 'bg-neutral-50' : 'bg-white'}>
-                            <td className="py-3 px-4 text-[14px] font-semibold text-navy-900 w-[200px]">{label}</td>
+                            <th scope="row" className="py-3 px-4 text-[14px] font-semibold text-navy-900 w-[200px]">{label}</th>
                             <td className="py-3 px-4 text-[14px] text-gray-500">{value}</td>
                           </tr>
                         ))}
@@ -534,7 +535,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               {relatedProducts.slice(4).map((item) => (
                 <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
                   <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                    <ProductImage src={item.images.nodes[0]?.url} alt={item.images.nodes[0]?.altText ?? item.title} />
+                    <ProductImage src={item.images.nodes[0]?.url} alt={item.images.nodes[0]?.altText ?? item.title} sizes="201px" />
                   </div>
                   <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
                     <p className="text-black text-[14px] font-semibold leading-5 line-clamp-2">

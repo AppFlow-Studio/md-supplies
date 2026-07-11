@@ -54,6 +54,7 @@ export const GET_PRODUCT = `#graphql
           id
           title
           sku
+          barcode
           availableForSale
 
           selectedOptions { name value }
@@ -152,6 +153,7 @@ export const GET_ALL_PRODUCT_HANDLES = `#graphql
     products(first: $first, after: $after) {
       nodes {
         handle
+        updatedAt
       }
       pageInfo {
         hasNextPage

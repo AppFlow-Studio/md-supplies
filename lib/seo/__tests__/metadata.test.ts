@@ -104,6 +104,38 @@ describe('buildMetadata — fallbacks (never blank)', () => {
     expect((images![0] as { url: string }).url).toBe('https://cdn.example.com/img.jpg')
   })
 
+  it('OG image uses custom width/height when provided', () => {
+    const m = buildMetadata({
+      pageType: 'product',
+      title: 'Syringe',
+      image: 'https://cdn.example.com/img.jpg',
+      imageWidth: 1600,
+      imageHeight: 900,
+    })
+    const images = (m.openGraph as { images?: { width: number; height: number }[] })?.images
+    expect(images![0].width).toBe(1600)
+    expect(images![0].height).toBe(900)
+  })
+
+  it('OG image falls back to 1200x630 when no dimensions given', () => {
+    const m = buildMetadata({ pageType: 'product', title: 'Syringe', image: 'https://cdn.example.com/img.jpg' })
+    const images = (m.openGraph as { images?: { width: number; height: number }[] })?.images
+    expect(images![0].width).toBe(1200)
+    expect(images![0].height).toBe(630)
+  })
+
+  it('OG image resolves a root-relative path to an absolute URL', () => {
+    const m = buildMetadata({ pageType: 'static', title: 'About', image: '/images/about/HERO.png' })
+    const images = (m.openGraph as { images?: { url: string }[] })?.images
+    expect(images![0].url).toBe(`${BASE}/images/about/HERO.png`)
+  })
+
+  it('OG image leaves an already-absolute URL untouched', () => {
+    const m = buildMetadata({ pageType: 'product', title: 'Syringe', image: 'https://cdn.shopify.com/img.jpg' })
+    const images = (m.openGraph as { images?: { url: string }[] })?.images
+    expect(images![0].url).toBe('https://cdn.shopify.com/img.jpg')
+  })
+
   it('subcategory falls back gracefully without parentSlug', () => {
     const m = buildMetadata({ pageType: 'subcategory', title: 'Nitrile' })
     expect(m.title).toBe('Nitrile — MDSupplies')

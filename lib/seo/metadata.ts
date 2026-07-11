@@ -113,6 +113,8 @@ export function buildMetadata(input: MetadataInput): Metadata {
     slug,
     parentSlug,
     image,
+    imageWidth,
+    imageHeight,
     noIndex = false,
   } = input
 
@@ -127,6 +129,8 @@ export function buildMetadata(input: MetadataInput): Metadata {
     description: resolvedDescription,
     url: canonical,
     image,
+    imageWidth,
+    imageHeight,
   })
 
   return {

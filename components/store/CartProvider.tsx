@@ -4,10 +4,11 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   useCallback,
   type ReactNode,
 } from 'react'
-import { addToCart, removeFromCart, updateCartLine } from '@/app/actions/cart'
+import { addToCart, getCart, removeFromCart, updateCartLine } from '@/app/actions/cart'
 import type { Cart } from '@/lib/shopify/types'
 import { track } from '@/lib/analytics/track'
 import { buildAddToCartEvent, buildViewCartEvent } from '@/lib/analytics/events'
@@ -26,16 +27,24 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null)
 
-export function CartProvider({
-  children,
-  initialCart,
-}: {
-  children: ReactNode
-  initialCart: Cart | null
-}) {
-  const [cart, setCart] = useState<Cart | null>(initialCart)
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [cart, setCart] = useState<Cart | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [lastError, setLastError] = useState<string | null>(null)
+
+  // The cart hydrates client-side (the cart_id cookie can't be read during a
+  // server render without opting the whole route out of ISR — audit H1).
+  // `prev ?? fetched` keeps a cart the user already mutated before this
+  // initial fetch resolved.
+  useEffect(() => {
+    let cancelled = false
+    getCart()
+      .then((fetched) => {
+        if (!cancelled && fetched) setCart((prev) => prev ?? fetched)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const addItem = useCallback(async (variantId: string, qty: number) => {
     try {

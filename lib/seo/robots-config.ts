@@ -17,7 +17,9 @@ export function getRobotsConfig(isStaging: boolean = STAGING_GUARD): MetadataRou
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/account/', '/cart', '/search', '/internal/', '/b2b'],
+      // /category-browse/ is the internal dynamic twin of /category/ (proxy
+      // rewrite target for ?sort/filter/page) — never crawled directly.
+      disallow: ['/api/', '/account/', '/cart', '/search', '/internal/', '/b2b', '/category-browse/'],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   }

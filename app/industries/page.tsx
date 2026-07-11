@@ -1,20 +1,22 @@
 import Link from 'next/link'
 import { INDUSTRIES } from '@/lib/industries'
 import { buildMetadata } from '@/lib/seo'
+import { SITE_URL } from '@/lib/seo/constants'
 import {BadgeCheck, FileText, Headset, MapPin, Truck} from "lucide-react";
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { getIndustryImagePath } from '@/lib/bunnycdn'
 
 export const revalidate = 3600
 
+const HERO_IMAGE = getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg")
+
 export const metadata = buildMetadata({
   pageType: 'static',
   title: 'Shop by Industry',
   description: 'Medical supplies curated for your specialty — urgent care, EMS, pharmacy, physical therapy, and more.',
   slug: 'industries',
+  image: `${SITE_URL}${HERO_IMAGE}`,
 })
-
-const HERO_IMAGE = getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg")
 
 const STATS = [
   { value: '1,000+', label: 'ACTIVE ACCOUNTS' },

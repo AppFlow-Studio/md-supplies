@@ -4,6 +4,8 @@ vi.mock('next/server', () => ({
   NextResponse: {
     redirect: (url: URL, status: number) =>
       new Response(null, { status, headers: { Location: url.toString() } }),
+    rewrite: (url: URL) =>
+      new Response(null, { status: 200, headers: { 'x-middleware-rewrite': url.toString() } }),
   },
 }))
 
@@ -15,8 +17,14 @@ const PRODUCT_ROWS = productRedirects as { from: string; to: string }[]
 
 function req(pathname: string, search = ''): NextRequest {
   const base = 'https://mdsupplies.com'
+  const url = new URL(`${base}${pathname}${search}`)
   return {
-    nextUrl: { pathname, search },
+    nextUrl: {
+      pathname,
+      search,
+      searchParams: url.searchParams,
+      clone: () => new URL(url.toString()),
+    },
     url: `${base}${pathname}${search}`,
   } as unknown as NextRequest
 }
@@ -241,5 +249,33 @@ describe('proxy — brands wildcard', () => {
   it('/brandsomething passes through (not a brands prefix)', () => {
     const res = proxy(req('/brandsomething'))
     expect(res).toBeUndefined()
+  })
+})
+
+describe('proxy — category query variants rewrite to /category-browse (H1)', () => {
+  it('rewrites /category/gloves?page=2, preserving the query', () => {
+    const res = proxy(req('/category/gloves', '?page=2'))
+    expect(res?.headers.get('x-middleware-rewrite')).toBe(
+      'https://mdsupplies.com/category-browse/gloves?page=2',
+    )
+  })
+
+  it('rewrites sort and filter variants', () => {
+    expect(proxy(req('/category/gloves', '?sort=PRICE_ASC'))?.headers.get('x-middleware-rewrite'))
+      .toContain('/category-browse/gloves')
+    expect(proxy(req('/category/gloves', '?filter=size:large'))?.headers.get('x-middleware-rewrite'))
+      .toContain('/category-browse/gloves')
+  })
+
+  it('does not rewrite the canonical category page (no query)', () => {
+    expect(proxy(req('/category/gloves'))).toBeUndefined()
+  })
+
+  it('does not rewrite tracking-only queries (utm/gclid do not change results)', () => {
+    expect(proxy(req('/category/gloves', '?utm_source=chatgpt.com&gclid=x'))).toBeUndefined()
+  })
+
+  it('does not rewrite subcategory/product paths under /category', () => {
+    expect(proxy(req('/category/gloves/nitrile-exam-gloves', '?page=2'))).toBeUndefined()
   })
 })

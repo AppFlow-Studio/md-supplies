@@ -33,7 +33,11 @@ interface ProductsResult {
 
 async function fetchProductByHandle(handle: string): Promise<CollectionProduct | null> {
   try {
-    const data = await storefrontFetch<ProductResult>(GET_PRODUCT_CARD_FULL, { handle })
+    const data = await storefrontFetch<ProductResult>(
+      GET_PRODUCT_CARD_FULL,
+      { handle },
+      { next: { revalidate: 300, tags: ['shopify', 'products', `product:${handle}`] } },
+    )
     return data.product
   } catch {
     return null
@@ -46,7 +50,11 @@ export default async function Home() {
     fetchProductByHandle(POPULAR_PRODUCT_HANDLES[1]),
     fetchProductByHandle(POPULAR_PRODUCT_HANDLES[2]),
     fetchProductByHandle(POPULAR_PRODUCT_HANDLES[3]),
-    storefrontFetch<ProductsResult>(GET_PRODUCTS, { first: 8, sortKey: 'BEST_SELLING' }),
+    storefrontFetch<ProductsResult>(
+      GET_PRODUCTS,
+      { first: 8, sortKey: 'BEST_SELLING' },
+      { next: { revalidate: 300, tags: ['shopify', 'products'] } },
+    ),
   ])
 
   const bestsellers = fallbackData.products.nodes

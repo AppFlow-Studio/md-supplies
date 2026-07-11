@@ -19,6 +19,21 @@ import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
 
 export const revalidate = 30
 
+// On-demand ISR: nothing prerendered at build; pages render on first hit,
+// cache per `revalidate`, and are invalidated by webhook cache tags.
+export function generateStaticParams(): { slug: string; product: string }[] {
+  return []
+}
+
+// Data cache: 5-minute background revalidate, plus on-demand invalidation from
+// the Shopify webhooks via per-handle tags (app/api/revalidate).
+function productFetchOptions(handle: string) {
+  return { next: { revalidate: 300, tags: ['shopify', 'products', `product:${handle}`] } }
+}
+function collectionFetchOptions(handle: string) {
+  return { next: { revalidate: 300, tags: ['shopify', 'collections', `collection:${handle}`] } }
+}
+
 interface Props {
   params: Promise<{ slug: string; product: string }>
 }
@@ -30,6 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const subData = await storefrontFetch<{ collection: Collection | null }>(
     GET_COLLECTION,
     { handle: subHandle, first: 1, after: null, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [] },
+    collectionFetchOptions(subHandle),
   ).catch(() => ({ collection: null }))
 
   if (subData.collection) {
@@ -43,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    const data = await storefrontFetch<{ product: Product | null }>(GET_PRODUCT, { handle })
+    const data = await storefrontFetch<{ product: Product | null }>(GET_PRODUCT, { handle }, productFetchOptions(handle))
     if (!data.product) return buildMetadata({ pageType: 'product', slug: handle })
     const p = data.product
     return buildMetadata({
@@ -63,17 +79,22 @@ export default async function CategoryProductPage({ params }: Props) {
   const subHandle = `${slug}-${handle}`
 
   const [subData, parentMeta] = await Promise.all([
-    storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
-      handle: subHandle,
-      first: 12,
-      after: null,
-      sortKey: 'COLLECTION_DEFAULT',
-      reverse: false,
-      filters: [],
-    }).catch(() => ({ collection: null })),
+    storefrontFetch<{ collection: Collection | null }>(
+      GET_COLLECTION,
+      {
+        handle: subHandle,
+        first: 12,
+        after: null,
+        sortKey: 'COLLECTION_DEFAULT',
+        reverse: false,
+        filters: [],
+      },
+      collectionFetchOptions(subHandle),
+    ).catch(() => ({ collection: null })),
     storefrontFetch<{ collection: { title: string; handle: string } | null }>(
       GET_COLLECTION_META,
       { handle: slug },
+      collectionFetchOptions(slug),
     ).catch(() => ({ collection: null })),
   ])
 
@@ -204,7 +225,11 @@ export default async function CategoryProductPage({ params }: Props) {
   }
 
   // Fall back to product
-  const productData = await storefrontFetch<{ product: Product | null }>(GET_PRODUCT, { handle })
+  const productData = await storefrontFetch<{ product: Product | null }>(
+    GET_PRODUCT,
+    { handle },
+    productFetchOptions(handle),
+  )
 
   if (!productData.product) notFound()
   if (productData.product.variants.nodes.length === 0) notFound()
@@ -216,7 +241,7 @@ export default async function CategoryProductPage({ params }: Props) {
   const recsData = await storefrontFetch<{
     related: CollectionProduct[]
     complementary: CollectionProduct[]
-  }>(GET_PRODUCT_RECS, { handle }).catch(() => ({
+  }>(GET_PRODUCT_RECS, { handle }, productFetchOptions(handle)).catch(() => ({
     related: [] as CollectionProduct[],
     complementary: [] as CollectionProduct[],
   }))

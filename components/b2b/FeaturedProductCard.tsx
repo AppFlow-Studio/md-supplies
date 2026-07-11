@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Package } from 'lucide-react'
 import { ROUTES } from '@/lib/routes'
+import { ProductImage } from '@/components/shared/ProductImage'
 
 interface Props {
   product: {
@@ -22,17 +23,13 @@ export function FeaturedProductCard({ product }: Props) {
       className="group flex flex-col h-full overflow-hidden bg-white border border-gray-100 hover:border-teal-400 hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}
-      <div className="aspect-square w-full overflow-hidden bg-neutral-50 flex items-center justify-center">
+      <div className="relative aspect-square w-full overflow-hidden bg-neutral-50 flex items-center justify-center">
         {product.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <ProductImage
             src={product.image}
             alt={product.title}
-            width={400}
-            height={400}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-contain transition-transform duration-300 ease-out group-hover:scale-[1.06]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-contain transition-transform duration-300 ease-out group-hover:scale-[1.06]"
           />
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 text-gray-300">

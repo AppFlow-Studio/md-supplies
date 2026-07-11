@@ -153,6 +153,42 @@ describe('ShopifyProductCard', () => {
     expect(button.className).not.toContain('group-hover')
   })
 
+  it('routes the product image through next/image with responsive sizes, lazy by default', () => {
+    const product = makeProduct()
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+      />,
+    )
+
+    const img = screen.getByRole('img', { name: 'Gloves' })
+    expect(img.getAttribute('src')).toContain('/_next/image?url=')
+    expect(img).toHaveAttribute('srcset')
+    expect(img).toHaveAttribute('sizes')
+    expect(img).toHaveAttribute('loading', 'lazy')
+    expect(img).not.toHaveAttribute('fetchpriority')
+  })
+
+  it('marks above-the-fold tiles eager with fetchpriority="high" via imagePriority', () => {
+    const product = makeProduct()
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+        imagePriority
+      />,
+    )
+
+    const img = screen.getByRole('img', { name: 'Gloves' })
+    expect(img).toHaveAttribute('loading', 'eager')
+    expect(img).toHaveAttribute('fetchpriority', 'high')
+  })
+
   it('renders no quick-add button for an unavailable product', () => {
     const product = makeProduct({ availableForSale: false })
     render(

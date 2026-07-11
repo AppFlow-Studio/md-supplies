@@ -133,6 +133,23 @@ export function proxy(request: NextRequest): Response | undefined {
     const newPath = pathname.replace(/^\/brands/, '/partners')
     return NextResponse.redirect(new URL(newPath, request.url), 301)
   }
+
+  // ── Category query variants → dynamic twin route (audit H1) ────────────────
+  //
+  // /category/[slug] is statically generated (ISR) and therefore cannot read
+  // searchParams at request time. Requests whose query actually changes the
+  // rendered results (?sort/filter/page — tracking params like utm_* don't)
+  // are rewritten to /category-browse/[slug], a dynamic route rendering the
+  // same view. Rewrite (not redirect): the canonical URL stays in the bar.
+  const categoryMatch = pathname.match(/^\/category\/([^/]+)$/)
+  if (categoryMatch) {
+    const query = request.nextUrl.searchParams
+    if (query.has('sort') || query.has('filter') || query.has('page')) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/category-browse/${categoryMatch[1]}`
+      return NextResponse.rewrite(url)
+    }
+  }
 }
 
 export const config = {

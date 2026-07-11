@@ -21,6 +21,10 @@ export const serverEnv = {
   get shopifyStoreDomain()     { return required('SHOPIFY_STORE_DOMAIN') },
   get shopifyStorefrontToken() { return required('SHOPIFY_STOREFRONT_ACCESS_TOKEN') },
   get shopifyAdminToken()      { return required('SHOPIFY_ADMIN_ACCESS_TOKEN') },
+  // HMAC secret for verifying Shopify webhooks (app/api/revalidate). For
+  // admin-created webhooks this is the shared secret shown under
+  // Settings → Notifications → Webhooks in the Shopify admin.
+  get shopifyWebhookSecret()   { return required('SHOPIFY_WEBHOOK_SECRET') },
   get resendApiKey()           { return required('RESEND_API_KEY') },
   get resendFromEmail()        { return optional('RESEND_FROM_EMAIL', 'noreply@mdsupplies.com') },
   get resendToEmail()          { return optional('RESEND_TO_EMAIL', 'team@mdsupplies.com') },

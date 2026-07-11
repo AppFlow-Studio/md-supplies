@@ -1,18 +1,13 @@
 /**
- * Trims a description to fit within a meta-description budget.
- *
- * Google truncates SERP snippets around 155–160 characters, so callers pass a
- * `maxLength` (typically 155). Whitespace is collapsed first, then the string is
- * cut on a word boundary and an ellipsis is appended. Text already within budget
- * is returned untouched (no trailing ellipsis).
+ * Trims text to at most `maxLength` characters without cutting mid-word.
+ * Used to cap meta descriptions when the Shopify `seo.description` enrichment
+ * field is unavailable and we must fall back to raw body copy.
  */
-export function trimDescription(text: string, maxLength: number): string {
-  const normalized = text.replace(/\s+/g, ' ').trim()
-  if (normalized.length <= maxLength) return normalized
+export function trimDescription(text: string, maxLength = 155): string {
+  const trimmed = text.trim()
+  if (trimmed.length <= maxLength) return trimmed
 
-  // Reserve one character for the ellipsis.
-  const sliced = normalized.slice(0, maxLength - 1)
+  const sliced = trimmed.slice(0, maxLength)
   const lastSpace = sliced.lastIndexOf(' ')
-  const trimmed = (lastSpace > 0 ? sliced.slice(0, lastSpace) : sliced).trimEnd()
-  return `${trimmed}…`
+  return (lastSpace > 0 ? sliced.slice(0, lastSpace) : sliced).trimEnd()
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { buildRobots } from '../robots'
 
 describe('buildRobots', () => {
@@ -33,5 +33,26 @@ describe('buildRobots', () => {
 
   it('staging guard takes priority over noIndex and isThinContent', () => {
     expect(buildRobots({ pageType: 'category', isStaging: true, noIndex: true, isThinContent: true })).toBe('noindex,nofollow')
+  })
+})
+
+// M11: staging must be automatic on Vercel preview deploys — nobody sets a flag.
+describe('STAGING_GUARD auto-derivation from VERCEL_ENV', () => {
+  it('a preview deploy is noindex,nofollow with no manual flag set', async () => {
+    vi.resetModules()
+    vi.stubEnv('VERCEL_ENV', 'preview')
+    const { buildRobots: freshBuildRobots } = await import('../robots')
+    expect(freshBuildRobots({ pageType: 'homepage' })).toBe('noindex,nofollow')
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  it('a preview deploy gets a Disallow-everything robots.txt with no manual flag', async () => {
+    vi.resetModules()
+    vi.stubEnv('VERCEL_ENV', 'preview')
+    const { getRobotsConfig } = await import('../robots-config')
+    expect(getRobotsConfig()).toEqual({ rules: { userAgent: '*', disallow: '/' } })
+    vi.unstubAllEnvs()
+    vi.resetModules()
   })
 })

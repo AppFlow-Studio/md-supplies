@@ -26,6 +26,10 @@ export interface MetadataInput {
   parentSlug?: string
   /** Absolute OG image URL; falls back to the default site-wide OG image. */
   image?: string
+  /** Actual pixel width of `image`, if known — overrides the 1200×630 default declared size. */
+  imageWidth?: number
+  /** Actual pixel height of `image`, if known — overrides the 1200×630 default declared size. */
+  imageHeight?: number
   /** Explicitly force noindex regardless of page type. */
   noIndex?: boolean
   /** Explicit canonical URL override — bypasses the slug-derived canonical. */

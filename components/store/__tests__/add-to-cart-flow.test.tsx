@@ -6,6 +6,7 @@ import { CartPopup } from '../CartPopup'
 // CartProvider imports cart server actions
 vi.mock('@/app/actions/cart', () => ({
   addToCart: vi.fn(),
+  getCart: vi.fn(async () => null),
   removeFromCart: vi.fn(),
   updateCartLine: vi.fn(),
 }))
@@ -48,7 +49,7 @@ function OpenCartButton() {
 describe('cart open/close integration', () => {
   it('opening the cart via context renders the dialog with aria-modal=true', async () => {
     render(
-      <CartProvider initialCart={null}>
+      <CartProvider>
         <OpenCartButton />
         <CartPopup />
       </CartProvider>,

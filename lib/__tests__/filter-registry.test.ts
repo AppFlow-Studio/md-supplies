@@ -48,11 +48,11 @@ const HOSTILE_FACETS: CollectionFilter[] = [
   facet('filter.p.m.custom.material', 'Material'),
   facet('filter.p.m.custom.glove_size', 'Glove size'),
   facet('filter.p.m.custom.needle_gauge', 'Needle gauge'),
-  facet('filter.p.m.custom.length', 'Length'),
+  facet('filter.p.m.custom.needle_length', 'Length'),
   facet('filter.p.m.custom.volume', 'Volume'),
   facet('filter.p.m.custom.order_size', 'Order size'),
   facet('filter.p.m.custom.weight', 'Weight'),
-  facet('filter.p.m.custom.size', 'Size'),
+  facet('filter.p.m.custom.size_length_', 'Size'),
   facet('filter.p.m.internal.ops_flag', 'Ops flag'),
   facet('filter.v.m.internal.ops_flag', 'Ops flag (variant)'),
 ]
@@ -125,7 +125,7 @@ describe('page-specific facet sets', () => {
     expect(ids).toEqual(
       expect.arrayContaining([
         'filter.p.m.custom.needle_gauge',
-        'filter.p.m.custom.length',
+        'filter.p.m.custom.needle_length',
         'filter.p.m.custom.volume',
         'filter.p.m.custom.order_size',
       ]),
@@ -136,7 +136,7 @@ describe('page-specific facet sets', () => {
   it('Mobility shows weight + size', () => {
     const ids = getAllowedFacets('mobility', HOSTILE_FACETS).map((f) => f.id)
     expect(ids).toContain('filter.p.m.custom.weight')
-    expect(ids).toContain('filter.p.m.custom.size')
+    expect(ids).toContain('filter.p.m.custom.size_length_')
     expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
   })
 
@@ -198,5 +198,45 @@ describe('isAllowedFilterObject (server-action-supplied filter objects)', () => 
     expect(isAllowedFilterObject([])).toBe(false)
     expect(isAllowedFilterObject({})).toBe(false)
     expect(isAllowedFilterObject('not an object')).toBe(false)
+  })
+})
+
+describe('filter VALUE validation (NF17) — allowed keys with hostile values are rejected', () => {
+  it('rejects malformed price objects', () => {
+    expect(isAllowedFilterInput('{"price":"cheap"}')).toBe(false)
+    expect(isAllowedFilterInput('{"price":{"min":-5,"max":10}}')).toBe(false)
+    expect(isAllowedFilterInput('{"price":{"min":50,"max":10}}')).toBe(false)
+    expect(isAllowedFilterInput('{"price":{"min":null}}')).toBe(false)
+    expect(isAllowedFilterInput('{"price":{"max":"1e999"}}')).toBe(false)
+    expect(isAllowedFilterInput('{"price":{}}')).toBe(false)
+    expect(isAllowedFilterInput('{"price":{"max":10,"extra":1}}')).toBe(false)
+  })
+
+  it('rejects non-string / oversized / empty string values', () => {
+    expect(isAllowedFilterInput('{"productVendor":123}')).toBe(false)
+    expect(isAllowedFilterInput('{"productVendor":""}')).toBe(false)
+    expect(isAllowedFilterInput(`{"productVendor":"${'x'.repeat(200)}"}`)).toBe(false)
+    expect(isAllowedFilterInput('{"available":"yes"}')).toBe(false)
+  })
+
+  it('rejects metafield/variantOption objects with wrong shapes', () => {
+    expect(isAllowedFilterInput('{"productMetafield":{"namespace":"custom"}}')).toBe(false)
+    expect(isAllowedFilterInput('{"productMetafield":{"namespace":"custom","key":"material","value":"a","extra":1}}')).toBe(false)
+    expect(isAllowedFilterInput('{"variantOption":{"name":"size"}}')).toBe(false)
+    expect(isAllowedFilterInput('{"variantOption":"size=M"}')).toBe(false)
+    expect(isAllowedFilterInput('{"category":{"id":""}}')).toBe(false)
+    expect(isAllowedFilterInput('{"category":"gloves"}')).toBe(false)
+  })
+
+  it('BLOCKED_TAG_PATTERNS are enforced on string values under allowed keys', () => {
+    expect(isAllowedFilterInput('{"productType":"compliance:fda-510k"}')).toBe(false)
+    expect(isAllowedFilterInput('{"productVendor":"partner:medplus"}')).toBe(false)
+    expect(isAllowedFilterInput('{"productMetafield":{"namespace":"custom","key":"material","value":"discontinued"}}')).toBe(false)
+    // Normal values still pass
+    expect(isAllowedFilterInput('{"productType":"Exam Gloves"}')).toBe(true)
+  })
+
+  it('still accepts valid category-id objects', () => {
+    expect(isAllowedFilterInput('{"category":{"id":"gid://shopify/TaxonomyCategory/hb-1"}}')).toBe(true)
   })
 })

@@ -5,6 +5,7 @@ import { ChevronLeft, Truck } from 'lucide-react'
 import { getSession, isSessionExpiring } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { GET_ORDER_DETAILS } from '@/lib/shopify/queries/customer'
+import { ProductImage } from '@/components/shared/ProductImage'
 
 export const metadata: Metadata = {
   title: 'Order Details | MD Supplies',
@@ -142,12 +143,14 @@ export default async function OrderDetailPage({ params }: Props) {
                 return (
                   <div key={i} className="flex items-center gap-4 px-8 py-5">
                     {item.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.image.url}
-                        alt={item.image.altText ?? item.title ?? 'Product'}
-                        className="w-[64px] h-[64px] object-cover border border-gray-200 shrink-0"
-                      />
+                      <div className="relative w-[64px] h-[64px] border border-gray-200 shrink-0 overflow-hidden">
+                        <ProductImage
+                          src={item.image.url}
+                          alt={item.image.altText ?? item.title ?? 'Product'}
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
                     ) : (
                       <div className="w-[64px] h-[64px] bg-neutral-100 border border-gray-200 shrink-0" />
                     )}

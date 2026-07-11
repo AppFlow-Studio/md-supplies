@@ -38,9 +38,19 @@ jobs:
         run: npx vitest run
 
       - name: Build
-        # No secrets are provided: the build must succeed with an empty env.
-        # lib/resend.ts is lazy, so a missing RESEND_API_KEY does not break it.
-        run: npx next build
+        # Since the ISR restore (H1), static pages (home, categories, blog…)
+        # prerender at build time and fetch live Shopify data — the build now
+        # needs Storefront credentials, exactly like on Vercel. Other secrets
+        # (Resend, Bunny, webhook) stay lazy and are NOT needed to build.
+        env:
+          SHOPIFY_STORE_DOMAIN: ${{ secrets.SHOPIFY_STORE_DOMAIN }}
+          SHOPIFY_STOREFRONT_ACCESS_TOKEN: ${{ secrets.SHOPIFY_STOREFRONT_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$SHOPIFY_STORE_DOMAIN" ] || [ -z "$SHOPIFY_STOREFRONT_ACCESS_TOKEN" ]; then
+            echo "::error::SHOPIFY_STORE_DOMAIN / SHOPIFY_STOREFRONT_ACCESS_TOKEN are not set in repo Actions secrets. The build prerenders ISR pages with live Shopify data and cannot run without them (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          npx next build
 
       - name: Forbidden-content scan (no committed secrets)
         run: |

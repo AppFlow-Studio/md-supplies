@@ -15,6 +15,10 @@ import type { Cart } from '@/lib/shopify/types'
 
 const CART_COOKIE = 'cart_id'
 
+// Cart data is per-user and cart mutations must never be replayed from the
+// shared data cache — every storefrontFetch below opts out of caching.
+const NO_STORE = { cache: 'no-store' } as const
+
 type UserError = { message: string }
 
 function assertNoUserErrors(errors: UserError[] | undefined, context: string) {
@@ -27,7 +31,7 @@ export async function getCart(): Promise<Cart | null> {
   const cartId = (await cookies()).get(CART_COOKIE)?.value
   if (!cartId) return null
   try {
-    const data = await storefrontFetch<{ cart: Cart | null }>(GET_CART, { cartId })
+    const data = await storefrontFetch<{ cart: Cart | null }>(GET_CART, { cartId }, NO_STORE)
     return data.cart
   } catch (err) {
     console.error('[getCart] failed:', err)
@@ -40,6 +44,7 @@ async function createCart(variantId: string, quantity: number): Promise<Cart> {
   const data = await storefrontFetch<{ cartCreate: { cart: Cart; userErrors: UserError[] } }>(
     CREATE_CART,
     { lines: [{ merchandiseId: variantId, quantity }] },
+    NO_STORE,
   )
   assertNoUserErrors(data.cartCreate.userErrors, 'cartCreate')
   const cart = data.cartCreate.cart
@@ -63,6 +68,7 @@ export async function addToCart(variantId: string, quantity: number): Promise<Ca
     const data = await storefrontFetch<{ cartLinesAdd: { cart: Cart; userErrors: UserError[] } }>(
       ADD_CART_LINES,
       { cartId, lines: [{ merchandiseId: variantId, quantity }] },
+      NO_STORE,
     )
     assertNoUserErrors(data.cartLinesAdd.userErrors, 'cartLinesAdd')
     return data.cartLinesAdd.cart
@@ -79,6 +85,7 @@ export async function updateCartLine(lineId: string, quantity: number): Promise<
   const data = await storefrontFetch<{ cartLinesUpdate: { cart: Cart; userErrors: UserError[] } }>(
     UPDATE_CART_LINES,
     { cartId, lines: [{ id: lineId, quantity }] },
+    NO_STORE,
   )
   assertNoUserErrors(data.cartLinesUpdate.userErrors, 'cartLinesUpdate')
   return data.cartLinesUpdate.cart
@@ -90,6 +97,7 @@ export async function removeFromCart(lineId: string): Promise<Cart> {
   const data = await storefrontFetch<{ cartLinesRemove: { cart: Cart; userErrors: UserError[] } }>(
     REMOVE_CART_LINES,
     { cartId, lineIds: [lineId] },
+    NO_STORE,
   )
   assertNoUserErrors(data.cartLinesRemove.userErrors, 'cartLinesRemove')
   return data.cartLinesRemove.cart
@@ -101,6 +109,7 @@ export async function setCartAttribute(key: string, value: string): Promise<Cart
   const data = await storefrontFetch<{ cartAttributesUpdate: { cart: Cart; userErrors: UserError[] } }>(
     SET_CART_ATTRIBUTES,
     { cartId, attributes: [{ key, value }] },
+    NO_STORE,
   )
   assertNoUserErrors(data.cartAttributesUpdate.userErrors, 'cartAttributesUpdate')
   return data.cartAttributesUpdate.cart
