@@ -31,10 +31,9 @@ const LINKEDIN_HREF = 'http://LinkedIn.com/company/mdsupplies'
 interface FooterProps {
   collections: SlimCollection[]
   availableCountries?: AvailableCountry[]
-  currentCountry?: string
 }
 
-export function Footer({ collections, availableCountries = [], currentCountry = 'US' }: FooterProps) {
+export function Footer({ collections, availableCountries = [] }: FooterProps) {
   const categoryNav = buildCategoryNav(collections)
 
   return (
@@ -149,10 +148,7 @@ export function Footer({ collections, availableCountries = [], currentCountry = 
           </p>
 
           {availableCountries.length > 1 && (
-            <CurrencySwitcher
-              availableCountries={availableCountries}
-              currentIsoCode={currentCountry}
-            />
+            <CurrencySwitcher availableCountries={availableCountries} />
           )}
         </div>
       </div>

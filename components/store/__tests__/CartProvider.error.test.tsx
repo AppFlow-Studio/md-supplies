@@ -5,6 +5,7 @@ import { addToCart, removeFromCart, updateCartLine } from '@/app/actions/cart'
 
 vi.mock('@/app/actions/cart', () => ({
   addToCart: vi.fn(),
+  getCart: vi.fn(async () => null),
   removeFromCart: vi.fn(),
   updateCartLine: vi.fn(),
 }))
@@ -41,7 +42,7 @@ describe('CartProvider error state', () => {
     let capturedError: string | null = null
 
     render(
-      <CartProvider initialCart={null}>
+      <CartProvider>
         <ErrorHarness onError={(e) => { capturedError = e }} onClear={vi.fn()} />
       </CartProvider>,
     )
@@ -56,7 +57,7 @@ describe('CartProvider error state', () => {
     let capturedError: string | null = null
 
     render(
-      <CartProvider initialCart={null}>
+      <CartProvider>
         <ErrorHarness onError={(e) => { capturedError = e }} onClear={vi.fn()} />
       </CartProvider>,
     )
@@ -72,7 +73,7 @@ describe('CartProvider error state', () => {
     const onClear = vi.fn()
 
     render(
-      <CartProvider initialCart={null}>
+      <CartProvider>
         <ErrorHarness onError={(e) => { capturedError = e }} onClear={onClear} />
       </CartProvider>,
     )
@@ -89,7 +90,7 @@ describe('CartProvider error state', () => {
     let capturedError: string | null = null
 
     render(
-      <CartProvider initialCart={null}>
+      <CartProvider>
         <ErrorHarness onError={(e) => { capturedError = e }} onClear={vi.fn()} />
       </CartProvider>,
     )

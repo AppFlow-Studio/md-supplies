@@ -8,7 +8,8 @@ function read(file: string): string {
 
 const FILES = [
   'app/page.tsx',
-  'app/category/[slug]/page.tsx',
+  // /category/[slug] and /category-browse/[slug] both render this shared view
+  'components/category/CategoryPageView.tsx',
   'app/category/[slug]/[product]/page.tsx',
   'app/product/[slug]/page.tsx',
   'app/industries/page.tsx',

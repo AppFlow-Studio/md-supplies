@@ -153,6 +153,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 key={images[activeImg]?.id ?? activeImg}
                 src={images[activeImg]?.url}
                 alt={images[activeImg]?.altText ?? product.title}
+                sizes="(max-width: 1024px) 100vw, 52vw"
                 priority
               />
             </div>
@@ -169,7 +170,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                         : 'border border-gray-200 hover:border-navy-900'
                     }`}
                   >
-                    <ProductImage src={img.url} alt={img.altText ?? product.title} />
+                    <ProductImage src={img.url} alt={img.altText ?? product.title} sizes="120px" />
                   </button>
                 ))}
               </div>
@@ -534,7 +535,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               {relatedProducts.slice(4).map((item) => (
                 <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
                   <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                    <ProductImage src={item.images.nodes[0]?.url} alt={item.images.nodes[0]?.altText ?? item.title} />
+                    <ProductImage src={item.images.nodes[0]?.url} alt={item.images.nodes[0]?.altText ?? item.title} sizes="201px" />
                   </div>
                   <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
                     <p className="text-black text-[14px] font-semibold leading-5 line-clamp-2">

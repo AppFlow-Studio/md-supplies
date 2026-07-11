@@ -7,6 +7,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { Search, X, ArrowRight, Tag } from 'lucide-react'
 import type { PredictiveResults } from '@/app/api/search/predictive/route'
+import { ProductImage } from '@/components/shared/ProductImage'
 
 function sanitizeStyledText(raw: string): string {
   return raw
@@ -205,13 +206,13 @@ export function SearchDropdown({ onClose }: Props) {
                         onClick={() => navigate(`/product/${p.handle}`)}
                         className={`w-full flex items-center gap-3 px-4 py-1.5 text-left transition-colors focus:outline-none ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
                       >
-                        <div className="w-8 h-8 shrink-0 border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden">
+                        <div className="relative w-8 h-8 shrink-0 border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden">
                           {p.featuredImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <ProductImage
                               src={p.featuredImage.url}
                               alt={p.featuredImage.altText ?? p.title}
-                              className="w-full h-full object-contain"
+                              sizes="32px"
+                              className="object-contain"
                             />
                           ) : (
                             <span className="text-[9px] font-bold text-gray-300 uppercase leading-none text-center px-0.5">

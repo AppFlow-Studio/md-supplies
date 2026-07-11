@@ -18,6 +18,7 @@ const fetchAllCollections = cache(async (): Promise<SlimCollection[]> => {
     const data = await storefrontFetch<{ collections: { nodes: SlimCollection[] } }>(
       GET_COLLECTIONS,
       { first: 250 },
+      { next: { revalidate: 3600, tags: ['shopify', 'collections'] } },
     )
     return data.collections.nodes
   } catch {

@@ -51,6 +51,9 @@ export function ProductGrid({
           itemListId={itemListId}
           itemListName={itemListName}
           index={index}
+          // First xl row (3 tiles) is above the fold — eager + fetchpriority
+          // high so the category LCP image isn't lazy-loaded.
+          imagePriority={index < 3}
         />
       ))}
     </div>

@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { QuickAddModal } from '@/components/product/QuickAddModal'
+import { ProductImage } from '@/components/shared/ProductImage'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import type { ProductCardData } from '@/types/product'
 
@@ -104,18 +105,13 @@ export function PopularProducts({ products }: Props) {
 
                 <Link
                   href={`/product/${product.handle}`}
-                  className="group overflow-hidden aspect-square bg-gray-50 block"
+                  className="group relative overflow-hidden aspect-square bg-gray-50 block"
                 >
-                  {image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={image.url}
-                      alt={image.altText ?? product.title}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-100" />
-                  )}
+                  <ProductImage
+                    src={image?.url}
+                    alt={image?.altText ?? product.title}
+                    className="object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
                 </Link>
 
                 <div className="flex flex-col gap-1.5 p-3 flex-1">

@@ -159,6 +159,7 @@ describe('CategoryResults deterministic page-N pagination', () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ first: 28, after: null }),
+      expect.objectContaining({ next: expect.objectContaining({ tags: expect.arrayContaining(['collection:gloves']) }) }),
     )
   })
 

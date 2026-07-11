@@ -12,8 +12,22 @@ import { SITE_URL } from '@/lib/seo/constants'
 
 export const revalidate = 30
 
+// On-demand ISR: no product paths are prerendered at build (large catalog),
+// but declaring generateStaticParams opts the route into static generation —
+// each product renders on first hit, is cached per `revalidate`, and is
+// invalidated by the Shopify webhook via cache tags (app/api/revalidate).
+export function generateStaticParams(): { slug: string }[] {
+  return []
+}
+
 interface Props {
   params: Promise<{ slug: string }>
+}
+
+// Data cache: 5-minute background revalidate, plus on-demand invalidation from
+// the Shopify products/* webhook via the per-handle tag (app/api/revalidate).
+function productFetchOptions(slug: string) {
+  return { next: { revalidate: 300, tags: ['shopify', 'products', `product:${slug}`] } }
 }
 
 // Shopify returns metafields as `{ value: string } | null`, not bare strings.
@@ -56,7 +70,11 @@ function normalizeProduct(raw: RawProduct): Product {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   try {
-    const data = await storefrontFetch<{ product: RawProduct | null }>(GET_PRODUCT, { handle: slug })
+    const data = await storefrontFetch<{ product: RawProduct | null }>(
+      GET_PRODUCT,
+      { handle: slug },
+      productFetchOptions(slug),
+    )
     if (!data.product) return buildMetadata({ pageType: 'product', title: 'Product' })
     const product = normalizeProduct(data.product)
     const brand = product.brandName ?? product.vendor
@@ -75,7 +93,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
 
-  const rawData = await storefrontFetch<{ product: RawProduct | null }>(GET_PRODUCT, { handle: slug })
+  const rawData = await storefrontFetch<{ product: RawProduct | null }>(
+    GET_PRODUCT,
+    { handle: slug },
+    productFetchOptions(slug),
+  )
   if (!rawData.product) notFound()
 
   const product = normalizeProduct(rawData.product)
@@ -87,6 +109,7 @@ export default async function ProductPage({ params }: Props) {
   const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
     GET_PRODUCT_RECS,
     { handle: slug },
+    productFetchOptions(slug),
   ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
   const relatedProducts = recsData.related

@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
 
   images: {
+    // AVIF preferred (≈20% smaller), WebP fallback for older browsers.
+    formats: ["image/avif", "image/webp"],
     // localPatterns is an allowlist: once set, every other local next/image
     // src is blocked, so pre-existing local images (e.g. /images/logo.avif)
     // must be listed alongside the BunnyCDN proxy path.

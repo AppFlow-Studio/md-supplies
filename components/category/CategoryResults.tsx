@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { X } from 'lucide-react'
@@ -66,14 +67,18 @@ export async function CategoryResults({
 
   let data: { collection: Collection | null }
   try {
-    data = await storefrontFetch<{ collection: Collection | null }>(GET_COLLECTION, {
-      handle: slug,
-      first,
-      after: null,
-      sortKey,
-      reverse,
-      filters: parseFilters(activeFilterStrings),
-    })
+    data = await storefrontFetch<{ collection: Collection | null }>(
+      GET_COLLECTION,
+      {
+        handle: slug,
+        first,
+        after: null,
+        sortKey,
+        reverse,
+        filters: parseFilters(activeFilterStrings),
+      },
+      { next: { revalidate: 300, tags: ['shopify', 'products', 'collections', `collection:${slug}`] } },
+    )
   } catch (err) {
     // A transient Storefront failure shouldn't take down a deep page with a
     // full error page — bounce back to page 1 (filters/sort intact)
@@ -115,13 +120,19 @@ export async function CategoryResults({
 
   return (
     <>
-      {/* Desktop filter sidebar */}
+      {/* Desktop filter sidebar. Suspense boundary: CategoryFilters reads
+          useSearchParams(), which on the statically-generated category route
+          would otherwise bail the WHOLE page out to client rendering and cache
+          an empty shell (audit H1). The boundary confines the client-side
+          render to the filter rail. */}
       <aside className="hidden lg:block w-[280px] shrink-0 pr-10 sticky top-[140px] max-h-[calc(100vh-160px)] overflow-y-auto">
-        <CategoryFilters
-          filters={filters}
-          activeFilters={activeFilterStrings}
-          currentSort={sortParam}
-        />
+        <Suspense fallback={null}>
+          <CategoryFilters
+            filters={filters}
+            activeFilters={activeFilterStrings}
+            currentSort={sortParam}
+          />
+        </Suspense>
       </aside>
 
       {/* Product area */}
@@ -132,7 +143,11 @@ export async function CategoryResults({
             <p className="text-gray-500 text-[15px]">
               Showing {products.length} products
             </p>
-            <CategorySort currentSort={sortParam} activeFilters={activeFilterStrings} />
+            {/* Suspense: CategorySort reads useSearchParams() — see the
+                sidebar boundary note above. */}
+            <Suspense fallback={null}>
+              <CategorySort currentSort={sortParam} activeFilters={activeFilterStrings} />
+            </Suspense>
           </div>
 
           {/* Active filter chips */}
@@ -163,12 +178,14 @@ export async function CategoryResults({
             </div>
           )}
 
-          {/* Mobile filter drawer */}
-          <FilterDrawer
-            filters={filters}
-            activeFilters={activeFilterStrings}
-            currentSort={sortParam}
-          />
+          {/* Mobile filter drawer (renders CategoryFilters → useSearchParams) */}
+          <Suspense fallback={null}>
+            <FilterDrawer
+              filters={filters}
+              activeFilters={activeFilterStrings}
+              currentSort={sortParam}
+            />
+          </Suspense>
 
           {/* Product grid */}
           <ProductGrid

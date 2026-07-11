@@ -13,9 +13,11 @@ interface Props {
   itemListId?: string
   itemListName?: string
   index?: number
+  /** Above-the-fold tile: load its image eagerly with fetchpriority="high". */
+  imagePriority?: boolean
 }
 
-export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0 }: Props) {
+export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false }: Props) {
   const variant = product.variants.nodes[0]
   const price = parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount)
   const compareAt = variant?.compareAtPrice
@@ -49,6 +51,8 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             src={image?.url}
             alt={image?.altText ?? product.title}
             categoryHandle={categorySlug}
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            priority={imagePriority}
           />
 
           {/* Stock badge — top-left corner */}
