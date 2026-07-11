@@ -342,8 +342,8 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <div className="flex flex-wrap gap-5 pt-1">
               {[
                 { icon: <ShieldCheck size={15} className="text-gray-500" />, label: 'QUALITY CERTIFIED' },
-                { icon: <Truck size={15} className="text-gray-500" />, label: 'RELIABLE FULFILLMENT' },
-                { icon: <RotateCcw size={15} className="text-gray-500" />, label: '30-DAY RETURN' },
+                { icon: <Truck size={15} className="text-gray-500" />, label: 'FAST SHIPPING' },
+                { icon: <RotateCcw size={15} className="text-gray-500" />, label: 'RELIABLE FULFILLMENT' },
               ].map(({ icon, label }) => (
                 <div key={label} className="flex items-center gap-2">
                   {icon}
@@ -471,12 +471,11 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               <div className="flex flex-col gap-4 max-w-[760px]">
                 <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
                   Orders are processed through trusted medical supply partners with clear product
-                  and shipping details. Bulk orders of 10+ cases qualify for additional volume
-                  discounts. Contact your account manager or use the B2B quote form for custom pricing.
+                  and shipping details, and ship fast so your facility stays stocked.
                 </p>
                 <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                  Returns are accepted within 30 days of delivery for unopened, undamaged items in
-                  original packaging. Contact support to initiate a return authorization.
+                  Return policies vary by vendor. Returns are accepted for unopened, undamaged items
+                  in original packaging — contact support to initiate a return authorization.
                 </p>
               </div>
             )}

@@ -179,12 +179,18 @@ const ALLOWED_INPUT_KEYS = new Set([
   'taxonomyMetafield',
 ])
 
+/** Same allowlist gate as isAllowedFilterInput, for filter values that
+ *  arrive already parsed (e.g. server-action params) rather than as JSON
+ *  strings from the URL. */
+export function isAllowedFilterObject(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const keys = Object.keys(value)
+  return keys.length > 0 && keys.every((k) => ALLOWED_INPUT_KEYS.has(k))
+}
+
 export function isAllowedFilterInput(input: string): boolean {
   try {
-    const parsed: unknown = JSON.parse(input)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return false
-    const keys = Object.keys(parsed)
-    return keys.length > 0 && keys.every((k) => ALLOWED_INPUT_KEYS.has(k))
+    return isAllowedFilterObject(JSON.parse(input))
   } catch {
     return false
   }

@@ -1,18 +1,11 @@
-import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
+import { buildMetadata } from '@/lib/seo'
 
-const _returnsCanonical = buildCanonical({ path: '/returns' })
-export const metadata = {
-  title: 'Returns | MDSupplies',
-  description: 'MD Supplies return policy and return request instructions.',
-  robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-  alternates: { canonical: _returnsCanonical },
-  ...buildOg({
-    pageType: 'homepage',
-    title: 'Returns | MDSupplies',
-    description: 'MD Supplies return policy and return request instructions.',
-    url: _returnsCanonical,
-  }),
-}
+export const metadata = buildMetadata({
+  pageType: 'static',
+  title: 'Returns',
+  description: 'MDSupplies return policy and return request instructions.',
+  slug: 'returns',
+})
 
 export default function ReturnsPage() {
   return (

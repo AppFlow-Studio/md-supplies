@@ -1,21 +1,14 @@
 import { FaqAccordion }    from "@/components/faq/FaqAccordion";
-import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
+import { buildMetadata } from '@/lib/seo'
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
 
-const _faqCanonical = buildCanonical({ path: '/faq' })
-export const metadata = {
-  title: 'FAQ | MDSupplies',
-  description: 'Frequently asked questions about MD Supplies — shipping, returns, product authenticity, and wholesale pricing.',
-  robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-  alternates: { canonical: _faqCanonical },
-  ...buildOg({
-    pageType: 'homepage',
-    title: 'FAQ | MDSupplies',
-    description: 'Frequently asked questions about MD Supplies — shipping, returns, product authenticity, and wholesale pricing.',
-    url: _faqCanonical,
-  }),
-}
+export const metadata = buildMetadata({
+  pageType: 'static',
+  title: 'FAQ',
+  description: 'Frequently asked questions about MDSupplies — shipping, returns, and product authenticity.',
+  slug: 'faq',
+})
 
 export default function FaqPage() {
   return (
@@ -47,7 +40,7 @@ export default function FaqPage() {
 
               <FadeIn delay={0.2}>
                 <p className="text-gray-500 text-[15px] leading-[1.65] max-w-80">
-                  For wholesale inquiries, bulk orders, or questions not answered
+                  For order questions or anything not answered
                   below, our support team responds within 2 hours.
                 </p>
               </FadeIn>
@@ -74,7 +67,7 @@ export default function FaqPage() {
         </div>
       </section>
 
-      {/* ── Wholesale CTA (reused) ── */}
+      {/* ── Sourcing CTA (reused) ── */}
       <WholesalePricing />
 
     </main>

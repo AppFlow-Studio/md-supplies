@@ -133,7 +133,7 @@ describe('ShopifyProductCard', () => {
     expect(trackMock).toHaveBeenCalledOnce()
   })
 
-  it('positions the quick-add button bottom-right and hides it behind a desktop hover reveal', () => {
+  it('positions the quick-add button bottom-right and keeps it always visible', () => {
     const product = makeProduct()
     render(
       <ShopifyProductCard
@@ -148,11 +148,9 @@ describe('ShopifyProductCard', () => {
     expect(button.className).toContain('bottom-2')
     expect(button.className).toContain('right-2')
     expect(button.className).not.toContain('top-2')
-    // Mobile: visible by default
-    expect(button.className).toContain('opacity-100')
-    // Desktop (sm:+): hidden until hover
-    expect(button.className).toContain('sm:opacity-0')
-    expect(button.className).toContain('sm:group-hover:opacity-100')
+    // Always visible — no hover-reveal on any breakpoint
+    expect(button.className).not.toContain('opacity-0')
+    expect(button.className).not.toContain('group-hover')
   })
 
   it('renders no quick-add button for an unavailable product', () => {

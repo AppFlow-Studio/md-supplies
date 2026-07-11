@@ -14,6 +14,11 @@ export type Money = {
   currencyCode: string;
 };
 
+export type Seo = {
+  title: string | null;
+  description: string | null;
+};
+
 export type ProductImage = {
   id: string;
   url: string;
@@ -86,6 +91,7 @@ export type Product = {
   images: { nodes: ProductImage[] };
   variants: { nodes: ProductVariant[] };
   options: ProductOption[];
+  seo: Seo;
 } & ProductMetafields;
 
 export type CollectionProduct = {
@@ -121,6 +127,7 @@ export type Collection = {
   description: string;
   descriptionHtml: string;
   image: ProductImage | null;
+  seo: Seo;
   products: {
     nodes: CollectionProduct[];
     pageInfo: PageInfo;
@@ -128,7 +135,7 @@ export type Collection = {
   };
 };
 
-export type CollectionHero = Pick<Collection, 'id' | 'title' | 'handle' | 'description' | 'descriptionHtml' | 'image'>;
+export type CollectionHero = Pick<Collection, 'id' | 'title' | 'handle' | 'description' | 'descriptionHtml' | 'image' | 'seo'>;
 
 export type CartLine = {
   id: string;
@@ -239,6 +246,7 @@ export type BlogArticleSummary = {
 export type BlogArticle = BlogArticleSummary & {
   contentHtml: string;
   tags: string[];
+  seo: Seo | null;
 };
 
 export type ShopifyBlog = {

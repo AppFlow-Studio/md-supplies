@@ -27,16 +27,12 @@ export const INDUSTRIES: Industry[] = [
         answer: 'Urgent care centers typically order high volumes of exam gloves, wound care dressings, rapid diagnostic test kits, IV supplies, and disposable exam room consumables. MDSupplies carries all of these categories with bulk ordering options.',
       },
       {
-        question: 'Can urgent care centers order in bulk to reduce per-unit cost?',
-        answer: 'Yes. MDSupplies offers volume-based pricing for facilities that order regularly. Contact our B2B team to discuss account setup and volume pricing tiers for your center.',
-      },
-      {
         question: 'Do you carry point-of-care testing and rapid diagnostic supplies?',
         answer: 'We carry testing supplies including rapid test kits, urine dipsticks, and specimen collection materials. Browse our diagnostics and testing category to see current availability.',
       },
       {
         question: 'How do I set up a recurring supply order for my urgent care center?',
-        answer: 'Contact our B2B team to discuss account management options. We can help you establish preferred ordering quantities and streamline reordering so your facility stays stocked without manual intervention each cycle.',
+        answer: 'Contact our team to discuss account management options. We can help you establish preferred ordering quantities and streamline reordering so your facility stays stocked without manual intervention each cycle.',
       },
       {
         question: 'Are wound care and laceration supplies available for urgent care use?',
@@ -61,10 +57,6 @@ export const INDUSTRIES: Industry[] = [
         answer: 'We carry a range of needle gauges and lengths suitable for intramuscular and subcutaneous hormone injections, as well as sterile syringes in the volumes commonly used for HRT protocols. Browse needles and syringes for available sizes.',
       },
       {
-        question: 'Can I order procedure supplies in the quantities needed for a high-volume HRT practice?',
-        answer: 'Yes. We offer bulk and case-quantity ordering for clinics that perform procedures regularly. Contact our B2B team to discuss volume pricing options for your practice.',
-      },
-      {
         question: 'Are your supplies appropriate for in-office procedure rooms?',
         answer: 'Our products are sourced from established medical supply manufacturers and are intended for use in licensed clinical settings. Review each product listing for manufacturer specifications and intended use.',
       },
@@ -79,7 +71,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'ems',
     collectionHandle: 'ems',
     description: 'First responder bags, trauma supplies, and emergency kits.',
-    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
+    image: getIndustryImagePath('industry-ems-first-responders.jpeg'),
     buyerType: 'EMT coordinators, paramedic supervisors, and fire department supply officers restocking trauma and emergency response bags.',
   },
   {
@@ -96,11 +88,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'Can I order supplies on behalf of multiple patients from one account?',
-        answer: 'Yes. Our B2B account structure supports agency-level purchasing where one account manager can place and track orders across multiple patient assignments. Contact our team to set up your account.',
-      },
-      {
-        question: 'Do you offer bulk pricing for home health agencies?',
-        answer: 'We offer volume-based pricing for agencies that order regularly. Reach out to our B2B team to discuss pricing tiers based on your anticipated order volume.',
+        answer: 'Yes. Our account structure supports agency-level purchasing where one account manager can place and track orders across multiple patient assignments. Contact our team to set up your account.',
       },
       {
         question: 'Are incontinence and personal care products available in case quantities?',
@@ -108,7 +96,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'What is the best way to manage supply orders for a distributed care team?',
-        answer: 'Contact our B2B team to discuss account management options. We can help you organize ordering by care team or territory so your coordinators can track and replenish supplies efficiently.',
+        answer: 'Contact our team to discuss account management options. We can help you organize ordering by care team or territory so your coordinators can track and replenish supplies efficiently.',
       },
     ],
   },
@@ -117,7 +105,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'long-term-care',
     collectionHandle: 'long-term-care',
     description: 'Bulk supplies for nursing homes and assisted living facilities.',
-    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
+    image: getIndustryImagePath('industry-long-term-care.jpeg'),
     buyerType: 'Nursing home directors of nursing, assisted living administrators, and procurement managers ordering bulk disposables and resident-care supplies.',
   },
   {
@@ -125,7 +113,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'physical-therapy',
     collectionHandle: 'physical-therapy',
     description: 'Mobility equipment and therapy rehabilitation aids.',
-    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
+    image: getIndustryImagePath('industry-physical-therapy-supplies.jpeg'),
     buyerType: 'Physical therapists and practice owners sourcing mobility aids, exercise equipment, and patient rehabilitation supplies.',
   },
   {
@@ -133,7 +121,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'private-practice',
     collectionHandle: 'private-practice',
     description: 'Exam room essentials, diagnostics, and office supplies.',
-    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
+    image: getIndustryImagePath('industry-private-practice-supplies.jpeg'),
     buyerType: 'Independent physicians, specialty clinicians, and office managers equipping exam rooms and maintaining day-to-day clinical supplies.',
   },
   {
@@ -141,7 +129,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'dental',
     collectionHandle: 'dental',
     description: 'Gloves, sterilization, barriers, and instruments.',
-    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
+    image: getIndustryImagePath('industry-dental.jpeg'),
     buyerType: 'Dental office managers and dentists purchasing infection control supplies, gloves, and instrument accessories for operatory use.',
   },
   {
@@ -149,7 +137,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'veterinary',
     collectionHandle: 'veterinary',
     description: 'Syringes, gloves, and veterinary wound care.',
-    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
+    image: getIndustryImagePath('industry-veterinary.jpeg'),
     buyerType: 'Veterinarians, vet techs, and clinic office managers sourcing exam gloves, syringes, and wound care for small and large animal practice.',
   },
   {
@@ -157,7 +145,7 @@ export const INDUSTRIES: Industry[] = [
     slug: 'community-health',
     collectionHandle: 'community-health',
     description: 'Affordable supplies for nonprofits and free clinics.',
-    image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
+    image: getIndustryImagePath('industry-community-health-supplies.jpeg'),
     buyerType: 'Nonprofit health center directors, free clinic managers, and grant-funded program coordinators sourcing cost-effective supplies for underserved communities.',
   },
   {
@@ -175,10 +163,6 @@ export const INDUSTRIES: Industry[] = [
       {
         question: 'Can I set up a standing order or recurring supply arrangement for my practice?',
         answer: 'Yes. Contact our B2B team to discuss account setup and recurring order options. We can help you establish consistent order cycles so your exam rooms stay stocked without manual reordering each time.',
-      },
-      {
-        question: 'Do you offer volume pricing for clinics that order regularly?',
-        answer: 'We offer volume-based pricing for practices that maintain consistent ordering. Contact our B2B team to discuss pricing tiers appropriate for your practice\'s order volume.',
       },
       {
         question: 'How do I find supplies specific to my specialty?',
@@ -200,11 +184,7 @@ export const INDUSTRIES: Industry[] = [
     faq: [
       {
         question: 'What medical supplies can pharmacies stock and sell to patients?',
-        answer: 'Pharmacies commonly stock diabetic care supplies, blood glucose monitors, lancets, incontinence products, wound care items, compression stockings, and mobility aids. MDSupplies carries these categories with wholesale ordering options suitable for pharmacy purchasing.',
-      },
-      {
-        question: 'Do you offer wholesale pricing for pharmacy buyers?',
-        answer: 'Yes. We offer volume-based pricing for pharmacy accounts that order regularly. Contact our B2B team to set up a pharmacy account and discuss pricing tiers.',
+        answer: 'Pharmacies commonly stock diabetic care supplies, blood glucose monitors, lancets, incontinence products, wound care items, compression stockings, and mobility aids. MDSupplies carries these categories with ordering options suitable for pharmacy purchasing.',
       },
       {
         question: 'Can I source diabetic care supplies and home monitoring equipment through MDSupplies?',
@@ -216,7 +196,7 @@ export const INDUSTRIES: Industry[] = [
       },
       {
         question: 'How do I manage recurring supply orders for my pharmacy?',
-        answer: 'Contact our B2B team to discuss account management and recurring order options. We can help you establish a consistent ordering cycle aligned with your pharmacy\'s inventory replenishment schedule.',
+        answer: 'Contact our team to discuss account management and recurring order options. We can help you establish a consistent ordering cycle aligned with your pharmacy\'s inventory replenishment schedule.',
       },
     ],
   },

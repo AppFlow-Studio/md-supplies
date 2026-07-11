@@ -268,7 +268,7 @@ export default async function PartnerDetailPage({ params }: Props) {
                   </p>
                 </div>
                 <p className="text-white/70 text-[13px] leading-[1.6]">
-                  Browse the full {partner.name} catalog on MDSupplies at wholesale pricing for healthcare providers.
+                  Browse the full {partner.name} catalog on MDSupplies for healthcare providers.
                 </p>
                 <Link
                   href={`/partners/${partner.slug}/products`}
@@ -281,9 +281,9 @@ export default async function PartnerDetailPage({ params }: Props) {
 
             <FadeIn delay={0.06}>
               <div className="bg-[#f9fafc] border border-gray-200 p-6 flex flex-col gap-3">
-                <p className="text-navy-900 font-semibold text-[15px]">Wholesale Inquiries</p>
+                <p className="text-navy-900 font-semibold text-[15px]">Partner Inquiries</p>
                 <p className="text-gray-500 text-[13px] leading-[1.6]">
-                  Interested in bulk pricing or becoming a distribution partner? Get in touch with our team.
+                  Interested in becoming a distribution partner? Get in touch with our team.
                 </p>
                 <Link
                   href="/contact"

@@ -1,31 +1,28 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION_HERO } from '@/lib/shopify/queries/collections'
 import type { CollectionHero } from '@/lib/shopify/types'
 import { CategoryResults } from '@/components/category/CategoryResults'
-import { CategoryResultsSkeleton } from '@/components/category/CategoryResultsSkeleton'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
-import { buildMetadata } from '@/lib/seo'
+import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
-import { getSubcategories, getRelatedCategories } from '@/lib/category-utils'
+import { getSubcategories, getRelatedCategories, MAX_CATEGORY_PAGE } from '@/lib/category-utils'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
+import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
 export const revalidate = 30
 
 export type CategorySearchParams = {
   sort?: string
-  after?: string
   filter?: string | string[]
   page?: string
-  cursors?: string
 }
 
 interface Props {
@@ -51,6 +48,18 @@ function parseFilterParam(filter?: string | string[]): string[] {
   return raw.filter(isAllowedFilterInput)
 }
 
+// Beyond MAX_CATEGORY_PAGE the deterministic per-page fetch in CategoryResults
+// would need a Storefront `first` larger than the API allows — bounce to
+// page 1 instead of erroring, mirroring the fetch-failure fallback there.
+function page1RedirectUrl(slug: string, sp: CategorySearchParams, activeFilterStrings: string[]): string {
+  const p = new URLSearchParams()
+  if (sp.sort) p.set('sort', sp.sort)
+  activeFilterStrings.forEach((f) => p.append('filter', f))
+  withTrackingParams(p, sp)
+  const qs = p.toString()
+  return qs ? `${ROUTES.category(slug)}?${qs}` : ROUTES.category(slug)
+}
+
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
   const sp = await searchParams
@@ -58,21 +67,24 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   const activeFilterStrings = parseFilterParam(sp.filter)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
-  const currentPage = parseInt(sp.page ?? '1', 10)
+  const requestedPage = parseInt(sp.page ?? '1', 10)
+  const currentPage = requestedPage > MAX_CATEGORY_PAGE ? 1 : requestedPage
 
   try {
     const data = await storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
       { handle: slug },
     )
-    if (!data.collection) return { title: 'Category | MD Supplies' }
-    const { title, description } = data.collection
+    if (!data.collection) return buildMetadata({ pageType: 'category', title: 'Category' })
+    const { title, description, seo } = data.collection
+    const metaTitle = seo?.title || title
+    const metaDescription = seo?.description || (description ? trimDescription(description, 155) : undefined)
 
     if (isFiltered) {
       return buildMetadata({
         pageType: 'category',
-        title,
-        description: description || undefined,
+        title: metaTitle,
+        description: metaDescription,
         canonical: `${base}/category/${slug}`,
         noIndex: true,
       })
@@ -81,20 +93,20 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     if (currentPage > 1) {
       return buildMetadata({
         pageType: 'category',
-        title,
-        description: description || undefined,
+        title: metaTitle,
+        description: metaDescription,
         canonical: `${base}/category/${slug}?page=${currentPage}`,
       })
     }
 
     return buildMetadata({
       pageType: 'category',
-      title,
+      title: metaTitle,
       slug,
-      description: description || undefined,
+      description: metaDescription,
     })
   } catch {
-    return { title: 'Category | MD Supplies' }
+    return buildMetadata({ pageType: 'category', title: 'Category' })
   }
 }
 
@@ -106,9 +118,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const { sortKey, reverse } = parseSortKey(sp.sort)
   const currentPage = parseInt(sp.page ?? '1', 10)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
-  const prevCursors = sp.cursors ? sp.cursors.split(',').filter(Boolean) : []
 
   if (isNaN(currentPage) || currentPage < 1) notFound()
+  if (currentPage > MAX_CATEGORY_PAGE) redirect(page1RedirectUrl(slug, sp, activeFilterStrings))
 
   const [data, subcategories, relatedCategories] = await Promise.all([
     storefrontFetch<{ collection: CollectionHero | null }>(GET_COLLECTION_HERO, { handle: slug }),
@@ -194,19 +206,15 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
       {/* Main layout */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
-        <Suspense fallback={<CategoryResultsSkeleton />}>
-          <CategoryResults
-            slug={slug}
-            sortKey={sortKey}
-            reverse={reverse}
-            sortParam={sp.sort}
-            activeFilterStrings={activeFilterStrings}
-            currentPage={currentPage}
-            after={sp.after ?? null}
-            prevCursors={prevCursors}
-            trackingParamsSource={sp}
-          />
-        </Suspense>
+        <CategoryResults
+          slug={slug}
+          sortKey={sortKey}
+          reverse={reverse}
+          sortParam={sp.sort}
+          activeFilterStrings={activeFilterStrings}
+          currentPage={currentPage}
+          trackingParamsSource={sp}
+        />
       </div>
 
       {/* Related categories */}
@@ -279,7 +287,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                   href={ROUTES.solutions.occ}
                   className="border border-teal-500 bg-teal-50 text-teal-700 text-[14px] px-4 py-2 hover:bg-teal-100 transition-colors inline-block"
                 >
-                  OCC Program — Volume Pricing
+                  OCC Program — Bulk Orders
                 </Link>
               </div>
             )}

@@ -13,8 +13,8 @@ vi.mock('next/link', () => ({
 
 afterEach(cleanup)
 
-describe('CategoryPagination filter/sort persistence', () => {
-  it('carries sort and filter params into the next-page link', () => {
+describe('CategoryPagination page links', () => {
+  it('links directly to page N without carrying any cursor state', () => {
     const persistParams = new URLSearchParams()
     persistParams.set('sort', 'PRICE_ASC')
     persistParams.append('filter', '{"v":"latex"}')
@@ -23,9 +23,6 @@ describe('CategoryPagination filter/sort persistence', () => {
       <CategoryPagination
         currentPage={1}
         hasNext={true}
-        nextCursor="cursorA"
-        prevCursors={[]}
-        currentAfter={null}
         baseUrl="/category/gloves"
         persistParams={persistParams}
       />
@@ -36,79 +33,52 @@ describe('CategoryPagination filter/sort persistence', () => {
     expect(params.get('sort')).toBe('PRICE_ASC')
     expect(params.getAll('filter')).toEqual(['{"v":"latex"}'])
     expect(params.get('page')).toBe('2')
-    expect(params.get('after')).toBe('cursorA')
+    expect(params.has('after')).toBe(false)
+    expect(params.has('cursors')).toBe(false)
   })
 
-  it('carries sort and filter params into the previous-page link', () => {
+  it('omits the page param entirely when linking back to page 1', () => {
     const persistParams = new URLSearchParams()
     persistParams.set('sort', 'CREATED')
-    persistParams.append('filter', '{"v":"nitrile"}')
 
     render(
       <CategoryPagination
         currentPage={2}
         hasNext={false}
-        nextCursor={null}
-        prevCursors={['cursorA']}
-        currentAfter="cursorB"
         baseUrl="/category/gloves"
         persistParams={persistParams}
       />
     )
 
     const prevLink = screen.getByRole('link', { name: 'Previous page' })
-    const params = new URLSearchParams(prevLink.getAttribute('href')?.split('?')[1])
-    expect(params.get('sort')).toBe('CREATED')
-    expect(params.getAll('filter')).toEqual(['{"v":"nitrile"}'])
+    expect(prevLink.getAttribute('href')).toBe('/category/gloves?sort=CREATED')
+  })
+
+  it('computes a direct href for a numbered page with no prior page having been visited', () => {
+    render(
+      <CategoryPagination currentPage={5} hasNext={true} baseUrl="/category/gloves" />
+    )
+
+    const pageSixLink = screen.getByRole('link', { name: '6' })
+    expect(pageSixLink.getAttribute('href')).toBe('/category/gloves?page=6')
+    const page1Link = screen.getByRole('link', { name: '1' })
+    expect(page1Link.getAttribute('href')).toBe('/category/gloves')
   })
 })
 
 describe('CategoryPagination scroll behavior', () => {
   it('disables scroll-to-top on the next-page link', () => {
-    render(
-      <CategoryPagination
-        currentPage={1}
-        hasNext={true}
-        nextCursor="cursorA"
-        prevCursors={[]}
-        currentAfter={null}
-        baseUrl="/category/gloves"
-      />
-    )
-
-    const nextLink = screen.getByRole('link', { name: 'Next page' })
-    expect(nextLink).toHaveAttribute('data-scroll', 'false')
+    render(<CategoryPagination currentPage={1} hasNext={true} baseUrl="/category/gloves" />)
+    expect(screen.getByRole('link', { name: 'Next page' })).toHaveAttribute('data-scroll', 'false')
   })
 
   it('disables scroll-to-top on the previous-page link', () => {
-    render(
-      <CategoryPagination
-        currentPage={2}
-        hasNext={false}
-        nextCursor={null}
-        prevCursors={['cursorA']}
-        currentAfter="cursorB"
-        baseUrl="/category/gloves"
-      />
-    )
-
-    const prevLink = screen.getByRole('link', { name: 'Previous page' })
-    expect(prevLink).toHaveAttribute('data-scroll', 'false')
+    render(<CategoryPagination currentPage={2} hasNext={false} baseUrl="/category/gloves" />)
+    expect(screen.getByRole('link', { name: 'Previous page' })).toHaveAttribute('data-scroll', 'false')
   })
 
   it('disables scroll-to-top on a numbered page link', () => {
-    render(
-      <CategoryPagination
-        currentPage={1}
-        hasNext={true}
-        nextCursor="cursorA"
-        prevCursors={[]}
-        currentAfter={null}
-        baseUrl="/category/gloves"
-      />
-    )
-
-    const pageTwoLink = screen.getByRole('link', { name: '2' })
-    expect(pageTwoLink).toHaveAttribute('data-scroll', 'false')
+    render(<CategoryPagination currentPage={1} hasNext={true} baseUrl="/category/gloves" />)
+    expect(screen.getByRole('link', { name: '2' })).toHaveAttribute('data-scroll', 'false')
   })
 })

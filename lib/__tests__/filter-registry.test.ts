@@ -6,6 +6,7 @@ import {
   stripBlockedFacets,
   isBlockedFacetId,
   isAllowedFilterInput,
+  isAllowedFilterObject,
   ALL_ALLOWED_RULES,
   DEFAULT_FACET_RULES,
   BLOCKED_TAG_PATTERNS,
@@ -179,5 +180,23 @@ describe('isAllowedFilterInput (URL ?filter= values)', () => {
     expect(isAllowedFilterInput('null')).toBe(false)
     expect(isAllowedFilterInput('[]')).toBe(false)
     expect(isAllowedFilterInput('{}')).toBe(false)
+  })
+})
+
+describe('isAllowedFilterObject (server-action-supplied filter objects)', () => {
+  it('accepts already-parsed objects with known ProductFilter keys', () => {
+    expect(isAllowedFilterObject({ available: true })).toBe(true)
+    expect(isAllowedFilterObject({ price: { min: 0, max: 50 } })).toBe(true)
+    expect(isAllowedFilterObject({ productVendor: 'Medline' })).toBe(true)
+  })
+
+  it('rejects raw-tag objects and unknown keys, mirroring isAllowedFilterInput', () => {
+    expect(isAllowedFilterObject({ tag: 'consolidation-duplicate' })).toBe(false)
+    expect(isAllowedFilterObject({ tag: 'compliance:fda-510k' })).toBe(false)
+    expect(isAllowedFilterObject({ somethingElse: 1 })).toBe(false)
+    expect(isAllowedFilterObject(null)).toBe(false)
+    expect(isAllowedFilterObject([])).toBe(false)
+    expect(isAllowedFilterObject({})).toBe(false)
+    expect(isAllowedFilterObject('not an object')).toBe(false)
   })
 })

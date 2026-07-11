@@ -11,6 +11,7 @@ export type PageType =
   | 'occ'
   | 'blog-hub'
   | 'blog-article'
+  | 'static'
   | 'utility'
 
 export interface MetadataInput {

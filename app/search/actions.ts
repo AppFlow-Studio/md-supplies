@@ -2,6 +2,7 @@
 
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { SEARCH_PRODUCTS } from '@/lib/shopify/queries/search'
+import { isAllowedFilterObject } from '@/lib/filter-registry'
 import type { CollectionProduct, PageInfo } from '@/lib/shopify/types'
 
 interface SearchData {
@@ -11,6 +12,11 @@ interface SearchData {
   }
 }
 
+// Server actions are publicly invokable, so params here are as untrusted as
+// URL-supplied ones — same default-deny gate the search/category pages use.
+const ALLOWED_SORT_KEYS = new Set(['RELEVANCE', 'PRICE'])
+const MAX_QUERY_LENGTH = 200
+
 export async function loadMoreSearchProducts(params: {
   q: string
   after: string
@@ -19,12 +25,12 @@ export async function loadMoreSearchProducts(params: {
   filters: Record<string, unknown>[]
 }): Promise<{ products: CollectionProduct[]; pageInfo: PageInfo }> {
   const data = await storefrontFetch<SearchData>(SEARCH_PRODUCTS, {
-    query: params.q,
+    query: params.q.slice(0, MAX_QUERY_LENGTH),
     first: 12,
     after: params.after,
-    sortKey: params.sortKey,
+    sortKey: ALLOWED_SORT_KEYS.has(params.sortKey) ? params.sortKey : 'RELEVANCE',
     reverse: params.reverse,
-    filters: params.filters,
+    filters: params.filters.filter(isAllowedFilterObject),
   })
   return {
     products: data.search.nodes,

@@ -36,6 +36,10 @@ export const GET_ARTICLE = `#graphql
         author { name }
         image { url altText width height }
         tags
+        seo {
+          title
+          description
+        }
       }
     }
   }

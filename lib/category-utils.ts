@@ -4,6 +4,13 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
 import { getAllowedHandles } from '@/lib/category-nav'
 
+// Page size and the Storefront API `first` argument ceiling (250) that bounds
+// how deep deterministic category pagination can go before falling back to
+// page 1 instead of requesting more items than Shopify allows in one query.
+export const CATEGORY_PAGE_SIZE = 9
+const STOREFRONT_MAX_FIRST = 250
+export const MAX_CATEGORY_PAGE = Math.floor((STOREFRONT_MAX_FIRST - 1) / CATEGORY_PAGE_SIZE)
+
 type SlimCollection = { handle: string; title: string }
 
 const fetchAllCollections = cache(async (): Promise<SlimCollection[]> => {

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
+import { buildMetadata } from '@/lib/seo'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -8,19 +8,19 @@ interface Props {
 
 const POLICIES: Record<string, { title: string; description: string; intro: string }> = {
   privacy: {
-    title: 'Privacy Policy | MDSupplies',
+    title: 'Privacy Policy',
     description: 'How MDSupplies collects, uses, and protects your information.',
     intro:
       'This Privacy Policy describes how MDSupplies collects, uses, and safeguards the information you provide when you use our website and place orders. Full details are being finalized.',
   },
   terms: {
-    title: 'Terms of Service | MDSupplies',
+    title: 'Terms of Service',
     description: 'The terms and conditions governing use of MDSupplies.com.',
     intro:
       'These Terms of Service govern your access to and use of MDSupplies.com, including browsing, account registration, and purchases. Full details are being finalized.',
   },
   shipping: {
-    title: 'Shipping Policy | MDSupplies',
+    title: 'Shipping Policy',
     description: 'MDSupplies shipping methods, processing, and delivery information.',
     intro:
       'This Shipping Policy explains our order processing, available shipping methods, and delivery information. Available methods and estimated timeframes are shown at checkout. Full details are being finalized.',
@@ -36,19 +36,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const policy = POLICIES[slug]
   if (!policy) return {}
 
-  const canonical = buildCanonical({ path: `/policies/${slug}` })
-  return {
+  return buildMetadata({
+    pageType: 'static',
     title: policy.title,
     description: policy.description,
-    robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-    alternates: { canonical },
-    ...buildOg({
-      pageType: 'homepage',
-      title: policy.title,
-      description: policy.description,
-      url: canonical,
-    }),
-  }
+    slug: `policies/${slug}`,
+  })
 }
 
 export default async function PolicyPage({ params }: Props) {
@@ -56,7 +49,7 @@ export default async function PolicyPage({ params }: Props) {
   const policy = POLICIES[slug]
   if (!policy) notFound()
 
-  const heading = policy.title.split(' | ')[0]
+  const heading = policy.title
 
   return (
     <main className="bg-[#f9fafc] min-h-screen">

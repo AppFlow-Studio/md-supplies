@@ -9,6 +9,7 @@ export const STATIC_ARTICLES: Record<string, BlogArticle> = {
     publishedAt: '2026-06-17T00:00:00Z',
     author: { name: 'MDSupplies Editorial Team' },
     image: null,
+    seo: null,
     tags: ['Needles', 'Clinical Guide'],
     contentHtml: `
 <h2>Understanding Needle Gauge</h2>
@@ -62,6 +63,7 @@ export const STATIC_ARTICLES: Record<string, BlogArticle> = {
     publishedAt: '2026-06-17T00:00:00Z',
     author: { name: 'MDSupplies Editorial Team' },
     image: null,
+    seo: null,
     tags: ['Sutures', 'Wound Care', 'Clinical Guide'],
     contentHtml: `
 <h2>Absorbable vs. Non-Absorbable Sutures</h2>

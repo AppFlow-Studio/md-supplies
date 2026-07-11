@@ -29,8 +29,27 @@ function resolvePath(pageType: PageType, slug?: string, parentSlug?: string): st
     case 'occ':            return '/solutions/occ'
     case 'blog-hub':       return '/blog'
     case 'blog-article':   return slug ? `/blog/${slug}` : '/blog'
+    case 'static':         return slug ? `/${slug}` : '/'
     case 'utility':        return slug ? `/${slug}` : '/'
   }
+}
+
+/** Google's SERP title display cuts off around this many characters. */
+const MAX_TITLE_LENGTH = 60
+
+/**
+ * Appends the brand suffix only if the result fits the SERP display limit.
+ * A long enriched/product title is more valuable than a truncated brand tag,
+ * so once the budget is blown the suffix is dropped rather than overflowing.
+ */
+function withBrandSuffix(base: string, suffix: string): string {
+  const full = `${base}${suffix}`
+  if (full.length <= MAX_TITLE_LENGTH) return full
+  if (base.length <= MAX_TITLE_LENGTH) return base
+
+  const sliced = base.slice(0, MAX_TITLE_LENGTH)
+  const lastSpace = sliced.lastIndexOf(' ')
+  return (lastSpace > 20 ? sliced.slice(0, lastSpace) : sliced).trimEnd()
 }
 
 /**
@@ -39,36 +58,39 @@ function resolvePath(pageType: PageType, slug?: string, parentSlug?: string): st
  */
 function resolveTitle(pageType: PageType, title?: string, parentSlug?: string): string {
   const t = title?.trim() ?? ''
+  const suffix = ` — ${SITE_NAME}`
 
   switch (pageType) {
     case 'homepage':
       return DEFAULT_TITLE
     case 'categories-hub':
-      return `All Categories — ${SITE_NAME}`
+      return `All Categories${suffix}`
     case 'category':
-      return t ? `${t} — ${SITE_NAME}` : DEFAULT_TITLE
+      return t ? withBrandSuffix(t, suffix) : DEFAULT_TITLE
     case 'subcategory': {
       const parent = parentSlug ? slugToTitle(parentSlug) : ''
-      if (t && parent) return `${t} — ${parent} — ${SITE_NAME}`
-      if (t) return `${t} — ${SITE_NAME}`
+      if (t && parent) return withBrandSuffix(`${t} — ${parent}`, suffix)
+      if (t) return withBrandSuffix(t, suffix)
       return DEFAULT_TITLE
     }
     case 'product':
-      return t ? `${t} — ${SITE_NAME}` : DEFAULT_TITLE
+      return t ? withBrandSuffix(t, suffix) : DEFAULT_TITLE
     case 'partners':
-      return `Our Partners — ${SITE_NAME}`
+      return `Our Partners${suffix}`
     case 'partner-detail':
-      return t ? `${t} — ${SITE_NAME} Partner` : `Partners — ${SITE_NAME}`
+      return t ? withBrandSuffix(t, `${suffix} Partner`) : `Partners${suffix}`
     case 'industry':
-      return t ? `${t} Supplies — ${SITE_NAME}` : DEFAULT_TITLE
+      return t ? withBrandSuffix(`${t} Supplies`, suffix) : DEFAULT_TITLE
     case 'occ':
-      return `OCC Solutions — ${SITE_NAME}`
+      return `OCC Solutions${suffix}`
     case 'blog-hub':
-      return `Blog — ${SITE_NAME}`
+      return `Blog${suffix}`
     case 'blog-article':
-      return t ? `${t} — ${SITE_NAME} Blog` : `Blog — ${SITE_NAME}`
+      return t ? withBrandSuffix(t, `${suffix} Blog`) : `Blog${suffix}`
+    case 'static':
+      return t ? withBrandSuffix(t, suffix) : SITE_NAME
     case 'utility':
-      return t ? `${t} — ${SITE_NAME}` : SITE_NAME
+      return t ? withBrandSuffix(t, suffix) : SITE_NAME
   }
 }
 

@@ -19,12 +19,12 @@ const FEATURES: { Icon: LucideIcon; title: string; description: string }[] = [
   {
     Icon: Tag,
     title: "Competitive Pricing",
-    description: "Transparent wholesale pricing across medical supply categories, with no inflated markups.",
+    description: "Transparent pricing across medical supply categories, with no inflated markups.",
   },
   {
     Icon: RotateCcw,
-    title: "30 Day Returns",
-    description: "Easy hassle-free returns on all unopened products",
+    title: "Easy Returns",
+    description: "Hassle-free returns on unopened products",
   },
 ];
 
