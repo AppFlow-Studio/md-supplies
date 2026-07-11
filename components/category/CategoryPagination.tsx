@@ -4,9 +4,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 interface Props {
   currentPage: number
   hasNext: boolean
-  nextCursor: string | null
-  prevCursors: string[]
-  currentAfter: string | null
   baseUrl: string
   /** Sort/filter params to carry through every page link (e.g. sort, filter[]). */
   persistParams?: URLSearchParams
@@ -16,34 +13,43 @@ type PageItem =
   | { kind: 'page'; page: number; href: string | null; isCurrent: boolean }
   | { kind: 'ellipsis'; key: string }
 
+function pageHref(baseUrl: string, persistParams: URLSearchParams, page: number): string {
+  const p = new URLSearchParams(persistParams)
+  if (page > 1) p.set('page', String(page))
+  else p.delete('page')
+  const qs = p.toString()
+  return qs ? `${baseUrl}?${qs}` : baseUrl
+}
+
 function buildPages(
   currentPage: number,
   hasNext: boolean,
-  nextHref: string | null,
-  page1Url: string,
+  baseUrl: string,
+  persistParams: URLSearchParams,
 ): PageItem[] {
   const items: PageItem[] = []
+  const href = (page: number) => pageHref(baseUrl, persistParams, page)
 
   if (currentPage === 1) {
     items.push({ kind: 'page', page: 1, href: null, isCurrent: true })
     if (hasNext) {
-      items.push({ kind: 'page', page: 2, href: nextHref, isCurrent: false })
+      items.push({ kind: 'page', page: 2, href: href(2), isCurrent: false })
       items.push({ kind: 'ellipsis', key: 'end' })
     }
   } else if (currentPage === 2) {
-    items.push({ kind: 'page', page: 1, href: page1Url, isCurrent: false })
+    items.push({ kind: 'page', page: 1, href: href(1), isCurrent: false })
     items.push({ kind: 'page', page: 2, href: null, isCurrent: true })
     if (hasNext) {
-      items.push({ kind: 'page', page: 3, href: nextHref, isCurrent: false })
+      items.push({ kind: 'page', page: 3, href: href(3), isCurrent: false })
       items.push({ kind: 'ellipsis', key: 'end' })
     }
   } else {
     // currentPage >= 3
-    items.push({ kind: 'page', page: 1, href: page1Url, isCurrent: false })
+    items.push({ kind: 'page', page: 1, href: href(1), isCurrent: false })
     items.push({ kind: 'ellipsis', key: 'start' })
     items.push({ kind: 'page', page: currentPage, href: null, isCurrent: true })
     if (hasNext) {
-      items.push({ kind: 'page', page: currentPage + 1, href: nextHref, isCurrent: false })
+      items.push({ kind: 'page', page: currentPage + 1, href: href(currentPage + 1), isCurrent: false })
       items.push({ kind: 'ellipsis', key: 'end' })
     }
   }
@@ -51,65 +57,19 @@ function buildPages(
   return items
 }
 
-function buildNextHref(
-  currentPage: number,
-  nextCursor: string,
-  prevCursors: string[],
-  currentAfter: string | null,
-  baseUrl: string,
-  persistParams: URLSearchParams,
-): string {
-  const newCursors = currentAfter ? [...prevCursors, currentAfter] : prevCursors
-  const p = new URLSearchParams(persistParams)
-  p.set('page', String(currentPage + 1))
-  p.set('after', nextCursor)
-  if (newCursors.length > 0) p.set('cursors', newCursors.join(','))
-  return `${baseUrl}?${p.toString()}`
-}
-
-function buildPrevHref(
-  currentPage: number,
-  prevCursors: string[],
-  baseUrl: string,
-  persistParams: URLSearchParams,
-): string {
-  const qs = persistParams.toString()
-  const page1Url = qs ? `${baseUrl}?${qs}` : baseUrl
-  if (currentPage <= 2 || prevCursors.length === 0) return page1Url
-  const prevAfter = prevCursors[prevCursors.length - 1]
-  const remaining = prevCursors.slice(0, -1)
-  const p = new URLSearchParams(persistParams)
-  p.set('page', String(currentPage - 1))
-  p.set('after', prevAfter)
-  if (remaining.length > 0) p.set('cursors', remaining.join(','))
-  return `${baseUrl}?${p.toString()}`
-}
-
 export function CategoryPagination({
   currentPage,
   hasNext,
-  nextCursor,
-  prevCursors,
-  currentAfter,
   baseUrl,
   persistParams = new URLSearchParams(),
 }: Props) {
   const hasPrev = currentPage > 1
 
-  const nextHref =
-    hasNext && nextCursor
-      ? buildNextHref(currentPage, nextCursor, prevCursors, currentAfter, baseUrl, persistParams)
-      : null
-
-  const prevHref = hasPrev
-    ? buildPrevHref(currentPage, prevCursors, baseUrl, persistParams)
-    : null
-
   if (!hasPrev && !hasNext) return null
 
-  const qs = persistParams.toString()
-  const page1Url = qs ? `${baseUrl}?${qs}` : baseUrl
-  const pages = buildPages(currentPage, hasNext, nextHref, page1Url)
+  const nextHref = hasNext ? pageHref(baseUrl, persistParams, currentPage + 1) : null
+  const prevHref = hasPrev ? pageHref(baseUrl, persistParams, currentPage - 1) : null
+  const pages = buildPages(currentPage, hasNext, baseUrl, persistParams)
 
   return (
     <nav aria-label="Pagination" className="flex items-center justify-center gap-2 pt-12">
