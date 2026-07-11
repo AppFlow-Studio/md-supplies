@@ -5,6 +5,7 @@ import type { AvailableCountry, SlimCollection } from '@/lib/shopify/types'
 import { ROUTES } from '@/lib/routes'
 import { buildCategoryNav } from '@/lib/category-nav'
 import { LOGO_PATH } from '@/lib/bunnycdn'
+import { SITE_CONTACT, formatAddress } from '@/lib/site-contact'
 
 const EXPLORE = [
   { label: 'Brands', href: ROUTES.brands },
@@ -25,8 +26,6 @@ const COMPANY_HELP = [
   { label: 'Terms of Service', href: ROUTES.policy('terms') },
   { label: 'Shipping Policy', href: ROUTES.policy('shipping') },
 ]
-
-const LINKEDIN_HREF = 'http://LinkedIn.com/company/mdsupplies'
 
 interface FooterProps {
   collections: SlimCollection[]
@@ -53,9 +52,28 @@ export function Footer({ collections, availableCountries = [] }: FooterProps) {
               customers nationwide.
             </p>
 
+            {/* Visible NAP (M12): sourced from lib/site-contact.ts — must stay
+                identical to /contact and the Organization schema. Phone and
+                address appear once the real values are filled in there. */}
+            <address className="not-italic text-sm text-gray-500 leading-relaxed mb-7 space-y-1">
+              {SITE_CONTACT.address && <p>{formatAddress(SITE_CONTACT.address)}</p>}
+              {SITE_CONTACT.phone && (
+                <p>
+                  <a href={`tel:${SITE_CONTACT.phone}`} className="hover:text-teal-500 transition-colors">
+                    {SITE_CONTACT.phoneDisplay ?? SITE_CONTACT.phone}
+                  </a>
+                </p>
+              )}
+              <p>
+                <a href={`mailto:${SITE_CONTACT.email}`} className="hover:text-teal-500 transition-colors">
+                  {SITE_CONTACT.email}
+                </a>
+              </p>
+            </address>
+
             <div className="flex items-center gap-3">
               <a
-                href={LINKEDIN_HREF}
+                href={SITE_CONTACT.linkedIn}
                 aria-label="LinkedIn"
                 target="_blank"
                 rel="noopener noreferrer"
