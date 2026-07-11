@@ -44,19 +44,26 @@ const PRODUCT_TYPE = exact('productType', 'filter.p.type', 'filter.p.product_typ
 const CATEGORY = exact('category', 'filter.p.category')
 
 // Approved product metafields, human name → ns/key.
-// TODO(Izzy): confirm exact ns/key pairs from the metafield definitions.
-// Definitions must be single_line_text_field / boolean / number_integer /
-// number_decimal with BOTH "filterable" and Storefront access enabled,
-// or the facet never appears regardless of this registry.
+// Verified against the live Storefront API (2026-07-12): collection facet ids
+// for gloves / needles-syringes / mobility confirm namespace `custom` and the
+// exact keys below. `size` is live as `size_length_` (trailing underscore)
+// and `length` as `needle_length` — the previous guesses never matched and
+// silently dropped those facets. `volume` / `weight` / `tests_for` do not
+// appear in any sampled collection's live facets yet (S&D not configured or
+// no Storefront access) — they stay registered and simply fail closed until
+// the definitions go live. Definitions must be single_line_text_field /
+// boolean / number_integer / number_decimal with BOTH "filterable" and
+// Storefront access enabled, or the facet never appears regardless of this
+// registry.
 const METAFIELD_NS = 'custom'
 export const APPROVED_METAFIELDS = {
   material: metafield(METAFIELD_NS, 'material'),
-  size: metafield(METAFIELD_NS, 'size'),
+  size: metafield(METAFIELD_NS, 'size_length_'),
   gloveSize: metafield(METAFIELD_NS, 'glove_size'),
   needleGauge: metafield(METAFIELD_NS, 'needle_gauge'),
   orderSize: metafield(METAFIELD_NS, 'order_size'),
   testsFor: metafield(METAFIELD_NS, 'tests_for'),
-  length: metafield(METAFIELD_NS, 'length'),
+  length: metafield(METAFIELD_NS, 'needle_length'),
   volume: metafield(METAFIELD_NS, 'volume'),
   weight: metafield(METAFIELD_NS, 'weight'),
 } as const
@@ -67,8 +74,11 @@ export function isBlockedFacetId(facetId: string): boolean {
 }
 
 // Internal taxonomy/ops tag values that must never leak into the UI.
-// (Values of the tag facet — blocked wholesale via isBlockedFacetId — and
-// also rejected as URL-supplied filter inputs below.)
+// Enforced in two places: the tag facet itself is blocked wholesale via
+// isBlockedFacetId, and every STRING VALUE inside URL/action-supplied filter
+// objects is rejected when it matches one of these patterns (see
+// isSaneString below) — so an internal tag can't be smuggled through an
+// allowed key like productType or a metafield value.
 export const BLOCKED_TAG_PATTERNS: readonly RegExp[] = [
   /^brand:/i,
   /^category:/i,
@@ -167,25 +177,83 @@ export function stripBlockedFacets(facets: CollectionFilter[]): CollectionFilter
 // ?filter= values come straight from the URL, so they get the same
 // default-deny treatment before being forwarded to the Storefront API:
 // tag filters are rejected outright, unknown keys are rejected.
-const ALLOWED_INPUT_KEYS = new Set([
-  'available',
-  'price',
-  'productType',
-  'productVendor',
-  'variantOption',
-  'productMetafield',
-  'variantMetafield',
-  'category',
-  'taxonomyMetafield',
-])
+const MAX_STRING_VALUE_LENGTH = 128
+
+// A user-supplied string forwarded to the Storefront API: non-empty, bounded,
+// and never an internal ops tag (BLOCKED_TAG_PATTERNS enforcement point).
+function isSaneString(v: unknown): boolean {
+  return (
+    typeof v === 'string' &&
+    v.length > 0 &&
+    v.length <= MAX_STRING_VALUE_LENGTH &&
+    !BLOCKED_TAG_PATTERNS.some((p) => p.test(v))
+  )
+}
+
+function isFiniteNonNegative(v: unknown): boolean {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0
+}
+
+// {namespace, key, value} triple used by product/variant/taxonomy metafield
+// filters — exactly these keys, all sane strings.
+function isMetafieldValue(v: unknown): boolean {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return false
+  const o = v as Record<string, unknown>
+  const keys = Object.keys(o).sort()
+  return (
+    keys.join(',') === 'key,namespace,value' &&
+    isSaneString(o.namespace) && isSaneString(o.key) && isSaneString(o.value)
+  )
+}
+
+// Per-key VALUE validation (NF17): keys named in ALLOWED_INPUT_KEYS but
+// carrying a malformed or out-of-shape value are rejected too — the key
+// check alone let arbitrary payloads through under an allowed key.
+const INPUT_VALIDATORS: Record<string, (v: unknown) => boolean> = {
+  available: (v) => typeof v === 'boolean',
+  price: (v) => {
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return false
+    const o = v as Record<string, unknown>
+    const keys = Object.keys(o)
+    if (keys.length === 0 || !keys.every((k) => k === 'min' || k === 'max')) return false
+    if (o.min !== undefined && !isFiniteNonNegative(o.min)) return false
+    if (o.max !== undefined && !isFiniteNonNegative(o.max)) return false
+    if (o.min !== undefined && o.max !== undefined && (o.min as number) > (o.max as number)) return false
+    return true
+  },
+  productType: isSaneString,
+  productVendor: isSaneString,
+  variantOption: (v) => {
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return false
+    const o = v as Record<string, unknown>
+    return (
+      Object.keys(o).sort().join(',') === 'name,value' &&
+      isSaneString(o.name) && isSaneString(o.value)
+    )
+  },
+  productMetafield: isMetafieldValue,
+  variantMetafield: isMetafieldValue,
+  taxonomyMetafield: isMetafieldValue,
+  category: (v) => {
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return false
+    const o = v as Record<string, unknown>
+    return Object.keys(o).join(',') === 'id' && isSaneString(o.id)
+  },
+}
 
 /** Same allowlist gate as isAllowedFilterInput, for filter values that
  *  arrive already parsed (e.g. server-action params) rather than as JSON
- *  strings from the URL. */
+ *  strings from the URL. Validates keys AND value shapes (default-deny). */
 export function isAllowedFilterObject(value: unknown): boolean {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
-  const keys = Object.keys(value)
-  return keys.length > 0 && keys.every((k) => ALLOWED_INPUT_KEYS.has(k))
+  const entries = Object.entries(value)
+  return (
+    entries.length > 0 &&
+    entries.every(([k, v]) => {
+      const validate = INPUT_VALIDATORS[k]
+      return validate !== undefined && validate(v)
+    })
+  )
 }
 
 export function isAllowedFilterInput(input: string): boolean {

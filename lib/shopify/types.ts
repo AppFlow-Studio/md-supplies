@@ -42,6 +42,8 @@ export type ProductVariant = {
   id: string;
   title: string;
   sku: string | null;
+  /** Shopify barcode field; often junk (SKU copies) — see lib/gtin.ts. */
+  barcode?: string | null;
   availableForSale: boolean;
   quantityAvailable: number | null;
   selectedOptions: SelectedOption[];

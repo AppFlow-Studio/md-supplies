@@ -54,6 +54,7 @@ export const GET_PRODUCT = `#graphql
           id
           title
           sku
+          barcode
           availableForSale
 
           selectedOptions { name value }

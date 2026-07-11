@@ -13,8 +13,12 @@ interface Props {
   availability: 'InStock' | 'OutOfStock' | 'PreOrder'
   url: string
   seller: string
-  returnPolicy?: string
-  shippingDetails?: string
+  /** ISO date (YYYY-MM-DD) the offer price is valid until (M6). */
+  priceValidUntil?: string
+  /** Structured MerchantReturnPolicy JSON-LD fragment (lib/merchant-policy.ts). */
+  returnPolicy?: Record<string, unknown>
+  /** Structured OfferShippingDetails JSON-LD fragment (lib/merchant-policy.ts). */
+  shippingDetails?: Record<string, unknown>
 }
 
 export function ProductSchema({
@@ -30,6 +34,7 @@ export function ProductSchema({
   availability,
   url,
   seller,
+  priceValidUntil,
   returnPolicy,
   shippingDetails,
 }: Props) {
@@ -52,10 +57,14 @@ export function ProductSchema({
     },
   }
 
+  // Never fabricate identifiers or policies: each field is emitted only when
+  // a real value exists (gtin is pre-validated by lib/gtin.ts).
   if (mpn) schema.mpn = mpn
   if (gtin) schema.gtin = gtin
-  if (returnPolicy) (schema.offers as Record<string, unknown>).hasMerchantReturnPolicy = returnPolicy
-  if (shippingDetails) (schema.offers as Record<string, unknown>).shippingDetails = shippingDetails
+  const offers = schema.offers as Record<string, unknown>
+  if (priceValidUntil) offers.priceValidUntil = priceValidUntil
+  if (returnPolicy) offers.hasMerchantReturnPolicy = returnPolicy
+  if (shippingDetails) offers.shippingDetails = shippingDetails
 
   return (
     <script
