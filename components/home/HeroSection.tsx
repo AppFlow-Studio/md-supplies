@@ -1,8 +1,5 @@
-'use client'
-
 import Link from "next/link";
 import Image from "next/image";
-import { FadeIn } from "@/components/ui/FadeIn";
 import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
 import type { CollectionProduct } from "@/lib/shopify/types";
 import { Van } from "lucide-react";
@@ -64,74 +61,64 @@ export function HeroSection({ products }: Props) {
           <div className="flex-1 min-w-0 flex flex-col items-start gap-5 sm:gap-6">
 
             {/* Badge — no icon per Figma design */}
-            <FadeIn delay={0}>
-              <div className="inline-flex bg-[rgba(0,193,255,0.2)] rounded-full px-5 py-2">
-                <span className="text-[15px] font-semibold tracking-[0.3px] text-teal-500">
-                  CERTIFIED MEDICAL SUPPLIER
-                </span>
-              </div>
-            </FadeIn>
+            <div className="inline-flex bg-[rgba(0,193,255,0.2)] rounded-full px-5 py-2">
+              <span className="text-[15px] font-semibold tracking-[0.3px] text-teal-500">
+                CERTIFIED MEDICAL SUPPLIER
+              </span>
+            </div>
 
             {/* Heading */}
-            <FadeIn delay={0.1}>
-              <h1 className="text-[38px] sm:text-[46px] lg:text-[55px] font-semibold leading-[1.2] tracking-[0.9px] text-navy-900">
-                Medical Supplies for{" "}
-                <span className="text-teal-500">Clinics, Facilities &amp; Everyday Orders</span>
-              </h1>
-            </FadeIn>
+            <h1 className="text-[38px] sm:text-[46px] lg:text-[55px] font-semibold leading-[1.2] tracking-[0.9px] text-navy-900">
+              Medical Supplies for{" "}
+              <span className="text-teal-500">Clinics, Facilities &amp; Everyday Orders</span>
+            </h1>
 
             {/* Description */}
-            <FadeIn delay={0.2}>
-              <p className="text-gray-500 text-[18px] leading-[30px] tracking-[0.36px] max-w-[516px]">
-                Shop 8,000+ medical, home care, testing, mobility, and care supplies online.
-                MDSupplies serves healthcare teams, organizations, businesses, and individual
-                customers with clear product access and reliable ordering support.
-              </p>
-            </FadeIn>
+            <p className="text-gray-500 text-[18px] leading-[30px] tracking-[0.36px] max-w-[516px]">
+              Shop 8,000+ medical, home care, testing, mobility, and care supplies online.
+              MDSupplies serves healthcare teams, organizations, businesses, and individual
+              customers with clear product access and reliable ordering support.
+            </p>
 
             {/* CTAs */}
-            <FadeIn delay={0.3}>
-              <div className="flex flex-wrap items-center gap-4">
-                <Link
-                  href="/categories"
-                  className="bg-navy-900 text-white border border-navy-900 text-[18px] font-semibold px-[52px] py-[17px] hover:bg-white hover:text-navy-900 hover:border-teal-500 transition-colors tracking-[0.36px]"
-                >
-                  Shop All Products
-                </Link>
-                <Link
-                  href="/categories"
-                  className="border border-navy-900 text-navy-900 text-[18px] font-semibold px-[52px] py-[17px] hover:bg-navy-900 hover:text-white transition-colors tracking-[0.36px]"
-                >
-                  Find Supplies by Category
-                </Link>
-              </div>
-            </FadeIn>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                href="/categories"
+                className="bg-navy-900 text-white border border-navy-900 text-[18px] font-semibold px-[52px] py-[17px] hover:bg-white hover:text-navy-900 hover:border-teal-500 transition-colors tracking-[0.36px]"
+              >
+                Shop All Products
+              </Link>
+              <Link
+                href="/categories"
+                className="border border-navy-900 text-navy-900 text-[18px] font-semibold px-[52px] py-[17px] hover:bg-navy-900 hover:text-white transition-colors tracking-[0.36px]"
+              >
+                Find Supplies by Category
+              </Link>
+            </div>
 
             {/* OCC Program box */}
-            <FadeIn delay={0.4}>
-              <div className="bg-[rgba(0,193,255,0.2)] px-5 py-4 flex items-center gap-4 w-full max-w-[539px]">
-                <Van className="w-10 h-9"/>
-                <div className="flex-1">
-                  <p className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px] leading-snug">
-                    OCC Program
-                  </p>
-                  <p className="text-navy-900 text-[16px] font-semibold tracking-[0.32px] leading-snug mt-0.5">
-                    Dedicated pricing, terms &amp; account support
-                  </p>
-                </div>
-                <Link
-                  href="/solutions/occ"
-                  className="group text-teal-500 text-[15px] font-semibold shrink-0 tracking-[0.3px] inline-flex items-center gap-1"
-                >
-                  Shop OCC <AnimatedArrow size={14} />
-                </Link>
+            <div className="bg-[rgba(0,193,255,0.2)] px-5 py-4 flex items-center gap-4 w-full max-w-[539px]">
+              <Van className="w-10 h-9"/>
+              <div className="flex-1">
+                <p className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px] leading-snug">
+                  OCC Program
+                </p>
+                <p className="text-navy-900 text-[16px] font-semibold tracking-[0.32px] leading-snug mt-0.5">
+                  Dedicated pricing, terms &amp; account support
+                </p>
               </div>
-            </FadeIn>
+              <Link
+                href="/solutions/occ"
+                className="group text-teal-500 text-[15px] font-semibold shrink-0 tracking-[0.3px] inline-flex items-center gap-1"
+              >
+                Shop OCC <AnimatedArrow size={14} />
+              </Link>
+            </div>
 
           </div>
 
           {/* ── Right: product grid ── */}
-          <FadeIn delay={0.2} className="w-full sm:w-105 lg:w-115 xl:w-135 shrink-0">
+          <div className="w-full sm:w-105 lg:w-115 xl:w-135 shrink-0">
             <div className="flex gap-3 sm:gap-4">
               <div className="flex flex-col gap-3 sm:gap-4 flex-1 mt-8">
                 {products && [products[0], products[2]].filter(Boolean).map((p, i) => (
@@ -144,7 +131,7 @@ export function HeroSection({ products }: Props) {
                 ))}
               </div>
             </div>
-          </FadeIn>
+          </div>
 
         </div>
       </div>
