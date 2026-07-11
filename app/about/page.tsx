@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
+import { buildMetadata } from '@/lib/seo'
 import { ShieldCheck, Package, Headphones } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
@@ -9,19 +9,12 @@ const IMG_BRANDS    = "/images/about/brands.png";
 const IMG_WAREHOUSE = "/images/about/warehouse.png";
 const IMG_PRODUCTS  = "/images/about/products.png";
 
-const _aboutCanonical = buildCanonical({ path: '/about' })
-export const metadata = {
-  title: 'About Us | MDSupplies',
+export const metadata = buildMetadata({
+  pageType: 'static',
+  title: 'About Us',
   description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with trusted brands and fast fulfillment.',
-  robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-  alternates: { canonical: _aboutCanonical },
-  ...buildOg({
-    pageType: 'homepage',
-    title: 'About Us | MDSupplies',
-    description: 'MDSupplies serves clinics, urgent care centers, HRT practices, and first responders with trusted brands and fast fulfillment.',
-    url: _aboutCanonical,
-  }),
-}
+  slug: 'about',
+})
 
 export default function AboutPage() {
   return (

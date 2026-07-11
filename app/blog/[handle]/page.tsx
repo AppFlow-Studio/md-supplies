@@ -12,7 +12,7 @@ import {
 import type { BlogArticle, ShopifyBlog, BlogArticleSummary } from "@/lib/shopify/types";
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, trimDescription } from "@/lib/seo";
 import { BlogPostingSchema } from "@/components/schema/BlogPostingSchema";
 import { BreadcrumbSchema } from "@/components/schema/BreadcrumbSchema";
 import { SITE_URL } from "@/lib/seo/constants";
@@ -84,8 +84,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const article = STATIC_ARTICLES[handle]
     return buildMetadata({
       pageType: 'blog-article',
-      title: article.title,
-      description: article.excerpt?.slice(0, 155) ?? undefined,
+      title: article.seo?.title || article.title,
+      description: article.seo?.description || (article.excerpt ? trimDescription(article.excerpt, 155) : undefined),
       slug: handle,
       image: article.image?.url,
     })
@@ -97,8 +97,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { article } = found;
     return buildMetadata({
       pageType: 'blog-article',
-      title: article.title,
-      description: article.excerpt?.slice(0, 155) ?? undefined,
+      title: article.seo?.title || article.title,
+      description: article.seo?.description || (article.excerpt ? trimDescription(article.excerpt, 155) : undefined),
       slug: handle,
       image: article.image ? toAbsoluteUrl(article.image.url) : undefined,
     });
@@ -151,7 +151,7 @@ export default async function ArticlePage({ params }: Props) {
         featuredImage={toAbsoluteUrl(heroSrc)}
         publishedAt={article.publishedAt}
         authorName={article.author.name}
-        publisherName="MD Supplies"
+        publisherName="MDSupplies"
         publisherLogo={`${SITE_URL}${LOGO_PATH}`}
       />
       <BreadcrumbSchema

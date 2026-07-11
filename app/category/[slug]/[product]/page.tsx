@@ -9,7 +9,7 @@ import { ProductView } from '@/components/product/ProductView'
 import { ProductGrid } from '@/components/category/ProductGrid'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { getSiblingSubcategories, getRelatedCategories } from '@/lib/category-utils'
-import { buildMetadata } from '@/lib/seo'
+import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
@@ -33,11 +33,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ).catch(() => ({ collection: null }))
 
   if (subData.collection) {
-    const { title, description } = subData.collection
+    const { title, description, seo } = subData.collection
     return buildMetadata({
       pageType: 'subcategory',
-      title,
-      description: description || undefined,
+      title: seo?.title || title,
+      description: seo?.description || (description ? trimDescription(description, 155) : undefined),
       canonical: `${SITE_URL}/category/${slug}/${handle}`,
     })
   }
@@ -48,8 +48,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const p = data.product
     return buildMetadata({
       pageType: 'product',
-      title: p.title,
-      description: p.description.slice(0, 155) || `Buy ${p.title} from MDSupplies`,
+      title: p.seo?.title || p.title,
+      description: p.seo?.description || (p.description ? trimDescription(p.description, 155) : `Buy ${p.title} from MDSupplies`),
       slug: handle,
       image: p.images.nodes[0]?.url,
     })

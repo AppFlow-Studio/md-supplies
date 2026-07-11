@@ -1,25 +1,18 @@
 import Link from 'next/link'
 import { INDUSTRIES } from '@/lib/industries'
-import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
+import { buildMetadata } from '@/lib/seo'
 import {BadgeCheck, FileText, Headset, MapPin, Truck} from "lucide-react";
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { getIndustryImagePath } from '@/lib/bunnycdn'
 
 export const revalidate = 3600
 
-const _industriesCanonical = buildCanonical({ path: '/industries' })
-export const metadata = {
-  title: 'Shop by Industry | MDSupplies',
+export const metadata = buildMetadata({
+  pageType: 'static',
+  title: 'Shop by Industry',
   description: 'Medical supplies curated for your specialty — urgent care, EMS, pharmacy, physical therapy, and more.',
-  robots: buildRobots({ pageType: 'homepage' }), // non-utility type → index,follow; staging guard applied
-  alternates: { canonical: _industriesCanonical },
-  ...buildOg({
-    pageType: 'homepage',
-    title: 'Shop by Industry | MDSupplies',
-    description: 'Medical supplies curated for your specialty — urgent care, EMS, pharmacy, physical therapy, and more.',
-    url: _industriesCanonical,
-  }),
-}
+  slug: 'industries',
+})
 
 const HERO_IMAGE = getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg")
 

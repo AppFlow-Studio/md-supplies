@@ -1,20 +1,12 @@
-import { buildCanonical, buildRobots, buildOg } from '@/lib/seo'
+import { buildMetadata } from '@/lib/seo'
 import { ContactForm } from './ContactForm'
 
-const _canonical = buildCanonical({ path: '/contact' })
-
-export const metadata = {
-  title: 'Contact Us | MDSupplies',
+export const metadata = buildMetadata({
+  pageType: 'static',
+  title: 'Contact Us',
   description: 'Get in touch with the MDSupplies team for product questions or order support.',
-  robots: buildRobots({ pageType: 'homepage' }),
-  alternates: { canonical: _canonical },
-  ...buildOg({
-    pageType: 'homepage',
-    title: 'Contact Us | MDSupplies',
-    description: 'Get in touch with the MDSupplies team for product questions or order support.',
-    url: _canonical,
-  }),
-}
+  slug: 'contact',
+})
 
 export default function ContactPage() {
   return (

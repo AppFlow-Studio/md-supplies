@@ -31,6 +31,10 @@ export const GET_COLLECTION_HERO = `#graphql
       description
       descriptionHtml
       image { id url altText width height }
+      seo {
+        title
+        description
+      }
     }
   }
 `;
@@ -51,6 +55,10 @@ export const GET_COLLECTION = `#graphql
       description
       descriptionHtml
       image { id url altText width height }
+      seo {
+        title
+        description
+      }
       products(
         first: $first
         after: $after

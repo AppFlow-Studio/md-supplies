@@ -4,6 +4,7 @@ export { buildRobots, STAGING_GUARD } from './robots'
 export { buildOg } from './og'
 export { getSitemapUrls } from './sitemap'
 export { getRobotsConfig } from './robots-config'
+export { trimDescription } from './text'
 export type {
   PageType,
   MetadataInput,

@@ -66,6 +66,10 @@ export const GET_PRODUCT = `#graphql
         name
         values
       }
+      seo {
+        title
+        description
+      }
 
     }
   }

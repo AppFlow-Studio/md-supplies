@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
+import { buildMetadata } from '@/lib/seo'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
 import { getPartnerBySlug, PARTNERS } from '@/lib/partners'
@@ -34,11 +35,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { 'partner-slug': slug } = await params
   const partner = getPartnerBySlug(slug)
-  if (!partner) return { title: 'Partner Products | MD Supplies' }
-  return {
-    title: `${partner.name} Products | MD Supplies`,
+  if (!partner) return buildMetadata({ pageType: 'static', title: 'Partner Products' })
+  return buildMetadata({
+    pageType: 'static',
+    title: `${partner.name} Products`,
     description: `Shop all ${partner.name} medical supplies.`,
-  }
+    slug: `partners/${partner.slug}/products`,
+  })
 }
 
 export default async function PartnerProductsPage({ params, searchParams }: Props) {

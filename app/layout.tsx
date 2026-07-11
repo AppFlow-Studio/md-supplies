@@ -25,7 +25,7 @@ const manrope = Manrope({
 })
 
 export const metadata: Metadata = {
-  title: 'MD Supplies',
+  title: 'MDSupplies',
   description: 'Medical-Grade Supplies, Delivered Fast',
 }
 
