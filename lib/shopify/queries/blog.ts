@@ -51,7 +51,7 @@ export const GET_ALL_ARTICLE_HANDLES = `#graphql
       nodes {
         handle
         articles(first: 50) {
-          nodes { handle }
+          nodes { handle publishedAt }
         }
       }
     }

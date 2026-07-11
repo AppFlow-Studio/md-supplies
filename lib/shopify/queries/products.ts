@@ -152,6 +152,7 @@ export const GET_ALL_PRODUCT_HANDLES = `#graphql
     products(first: $first, after: $after) {
       nodes {
         handle
+        updatedAt
       }
       pageInfo {
         hasNextPage

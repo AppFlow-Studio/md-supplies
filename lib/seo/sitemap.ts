@@ -48,13 +48,13 @@ async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
 
 type ProductHandlesResponse = {
   products: {
-    nodes: { handle: string }[]
+    nodes: { handle: string; updatedAt: string }[]
     pageInfo: { hasNextPage: boolean; endCursor: string }
   }
 }
 
 async function fetchProductUrls(): Promise<SitemapEntry[]> {
-  const handles: string[] = []
+  const products: { handle: string; updatedAt: string }[] = []
   let cursor: string | null = null
 
   try {
@@ -63,7 +63,7 @@ async function fetchProductUrls(): Promise<SitemapEntry[]> {
         GET_ALL_PRODUCT_HANDLES, { first: 250, after: cursor },
       )
 
-      for (const p of data.products.nodes) handles.push(p.handle)
+      products.push(...data.products.nodes)
 
       const nextCursor = data.products.pageInfo.endCursor
       if (!data.products.pageInfo.hasNextPage || !nextCursor || nextCursor === cursor) break
@@ -73,17 +73,20 @@ async function fetchProductUrls(): Promise<SitemapEntry[]> {
     return []
   }
 
-  return handles.map(h => ({
-    url: `${SITE_URL}/product/${h}`,
+  return products.map(p => ({
+    url: `${SITE_URL}/product/${p.handle}`,
     changeFrequency: 'weekly' as const,
     priority: 0.6,
+    lastModified: new Date(p.updatedAt),
   }))
 }
 
 async function fetchArticleUrls(): Promise<SitemapEntry[]> {
   try {
     const data = await storefrontFetch<{
-      blogs: { nodes: { handle: string; articles: { nodes: { handle: string }[] } }[] }
+      blogs: {
+        nodes: { handle: string; articles: { nodes: { handle: string; publishedAt: string }[] } }[]
+      }
     }>(GET_ALL_ARTICLE_HANDLES)
 
     return data.blogs.nodes.flatMap(blog =>
@@ -91,6 +94,7 @@ async function fetchArticleUrls(): Promise<SitemapEntry[]> {
         url: `${SITE_URL}/blog/${a.handle}`,
         changeFrequency: 'monthly' as const,
         priority: 0.5,
+        lastModified: new Date(a.publishedAt),
       })),
     )
   } catch {

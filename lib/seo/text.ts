@@ -1,12 +1,13 @@
 /**
- * Trim free-form text to a meta-description length, cutting at a word
- * boundary so descriptions never end mid-word. Collapses whitespace first
- * (Shopify descriptions often contain newlines/double spaces).
+ * Trims text to at most `maxLength` characters without cutting mid-word.
+ * Used to cap meta descriptions when the Shopify `seo.description` enrichment
+ * field is unavailable and we must fall back to raw body copy.
  */
 export function trimDescription(text: string, maxLength = 155): string {
-  const clean = text.replace(/\s+/g, ' ').trim()
-  if (clean.length <= maxLength) return clean
-  const cut = clean.slice(0, maxLength - 1)
-  const lastSpace = cut.lastIndexOf(' ')
-  return `${lastSpace > 0 ? cut.slice(0, lastSpace) : cut}…`
+  const trimmed = text.trim()
+  if (trimmed.length <= maxLength) return trimmed
+
+  const sliced = trimmed.slice(0, maxLength)
+  const lastSpace = sliced.lastIndexOf(' ')
+  return (lastSpace > 0 ? sliced.slice(0, lastSpace) : sliced).trimEnd()
 }

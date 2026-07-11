@@ -28,7 +28,7 @@ function setupDefaultMocks(overrides: {
     if (query.includes('GetAllProductHandles')) {
       return Promise.resolve({
         products: {
-          nodes: products.map((h) => ({ handle: h })),
+          nodes: products.map((h) => ({ handle: h, updatedAt: '2026-06-01T00:00:00Z' })),
           pageInfo: { hasNextPage: false, endCursor: '' },
         },
       })
@@ -36,7 +36,10 @@ function setupDefaultMocks(overrides: {
     if (query.includes('GetAllArticleHandles')) {
       return Promise.resolve({
         blogs: {
-          nodes: [{ handle: 'news', articles: { nodes: articles.map((h) => ({ handle: h })) } }],
+          nodes: [{
+            handle: 'news',
+            articles: { nodes: articles.map((h) => ({ handle: h, publishedAt: '2026-06-01T00:00:00Z' })) },
+          }],
         },
       })
     }
@@ -92,6 +95,20 @@ describe('getSitemapUrls', () => {
     const urls = (await getSitemapUrls(false)).map(e => e.url)
     expect(urls).toContain('https://mdsupplies.com/product/exam-gloves-3xl')
     expect(urls).toContain('https://mdsupplies.com/product/surgical-mask-50pk')
+  })
+
+  it('includes lastmod on product entries from updatedAt', async () => {
+    setupDefaultMocks({ products: ['exam-gloves-3xl'] })
+    const entries = await getSitemapUrls(false)
+    const entry = entries.find((e) => e.url === 'https://mdsupplies.com/product/exam-gloves-3xl')
+    expect(entry?.lastModified).toEqual(new Date('2026-06-01T00:00:00Z'))
+  })
+
+  it('includes lastmod on article entries from publishedAt', async () => {
+    setupDefaultMocks({ articles: ['hrt-supply-guide'] })
+    const entries = await getSitemapUrls(false)
+    const entry = entries.find((e) => e.url === 'https://mdsupplies.com/blog/hrt-supply-guide')
+    expect(entry?.lastModified).toEqual(new Date('2026-06-01T00:00:00Z'))
   })
 
   it('paginates products across multiple pages', async () => {
