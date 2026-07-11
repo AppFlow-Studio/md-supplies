@@ -91,6 +91,7 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
         description: metaDescription,
         canonical: `${base}/category/${slug}`,
         noIndex: true,
+        image: data.collection.image?.url,
       })
     }
 
@@ -100,6 +101,7 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
         title: metaTitle,
         description: metaDescription,
         canonical: `${base}/category/${slug}?page=${currentPage}`,
+        image: data.collection.image?.url,
       })
     }
 
@@ -108,6 +110,7 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
       title: metaTitle,
       slug,
       description: metaDescription,
+      image: data.collection.image?.url,
     })
   } catch {
     return buildMetadata({ pageType: 'category', title: 'Category' })
