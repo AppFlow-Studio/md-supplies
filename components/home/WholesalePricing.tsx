@@ -72,7 +72,7 @@ export function WholesalePricing() {
   }
 
   return (
-    <section id="wholesale-sourcing" className="w-full bg-neutral-50 overflow-hidden relative">
+    <section id="sourcing-help" className="w-full bg-neutral-50 overflow-hidden relative">
       <div className="mx-auto flex flex-col lg:flex-row min-h-[580px]">
 
         {/* ── Left: teal panel ── */}

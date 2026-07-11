@@ -3,6 +3,7 @@ import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { storefrontFetch } from "@/lib/shopify/storefront";
 import { GET_BLOGS_WITH_ARTICLES } from "@/lib/shopify/queries/blog";
 import type { ShopifyBlog, BlogArticleSummary } from "@/lib/shopify/types";
+import { withBlogImage } from "@/lib/blog-images";
 import { buildMetadata } from '@/lib/seo'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
@@ -24,12 +25,11 @@ export default async function BlogPage() {
       GET_BLOGS_WITH_ARTICLES,
       { first: 50 },
     );
-    articles = data.blogs.nodes.flatMap((b) => b.articles.nodes);
+    articles = data.blogs.nodes.flatMap((b) => b.articles.nodes).map(withBlogImage);
   } catch {
     // If Shopify blog is not yet set up, articles stays empty — page still renders
   }
 
-    console.log(articles)
   return (
 
     <main id="main-content" className="bg-[#f9fafc]">
@@ -77,7 +77,7 @@ export default async function BlogPage() {
         </div>
       </section>
 
-      {/* ── Wholesale CTA ── */}
+      {/* ── Sourcing CTA ── */}
       <WholesalePricing />
     </main>
   );

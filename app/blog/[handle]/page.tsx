@@ -18,8 +18,14 @@ import { BreadcrumbSchema } from "@/components/schema/BreadcrumbSchema";
 import { SITE_URL } from "@/lib/seo/constants";
 import { STATIC_ARTICLES } from '@/lib/blog-static'
 import { LOGO_PATH } from "@/lib/bunnycdn";
+import { withBlogImage } from "@/lib/blog-images";
 
 export const revalidate = 3600;
+
+/** Shopify image URLs are absolute; BunnyCDN proxy paths are site-relative. */
+function toAbsoluteUrl(url: string): string {
+  return url.startsWith('/') ? `${SITE_URL}${url}` : url;
+}
 
 interface Props {
   params: Promise<{ handle: string }>;
@@ -42,7 +48,7 @@ async function findArticle(
     }>(GET_ARTICLE, { blogHandle: blog.handle, articleHandle: handle });
 
     if (result.blog?.articleByHandle) {
-      return { blogHandle: blog.handle, article: result.blog.articleByHandle };
+      return { blogHandle: blog.handle, article: withBlogImage(result.blog.articleByHandle) };
     }
   }
   return null;
@@ -94,7 +100,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: article.title,
       description: article.excerpt?.slice(0, 155) ?? undefined,
       slug: handle,
-      image: article.image?.url,
+      image: article.image ? toAbsoluteUrl(article.image.url) : undefined,
     });
   } catch {
     return buildMetadata({ pageType: 'blog-article', slug: handle });
@@ -118,7 +124,8 @@ export default async function ArticlePage({ params }: Props) {
     relatedArticles = blogsData.blogs.nodes
       .flatMap((b) => b.articles.nodes)
       .filter((a) => a.handle !== handle)
-      .slice(0, 3);
+      .slice(0, 3)
+      .map(withBlogImage);
   } catch {
     // silently skip
   }
@@ -141,7 +148,7 @@ export default async function ArticlePage({ params }: Props) {
         title={article.title}
         description={article.excerpt ?? article.title}
         url={`${SITE_URL}/blog/${article.handle}`}
-        featuredImage={heroSrc}
+        featuredImage={toAbsoluteUrl(heroSrc)}
         publishedAt={article.publishedAt}
         authorName={article.author.name}
         publisherName="MD Supplies"
@@ -287,7 +294,7 @@ export default async function ArticlePage({ params }: Props) {
         </div>
       </div>
 
-      {/* ── Wholesale CTA ── */}
+      {/* ── Sourcing CTA ── */}
       <WholesalePricing />
 
     </main>

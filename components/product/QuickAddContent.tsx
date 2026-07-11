@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
-import { ShieldCheck, Truck, RotateCcw, Loader2, Minus, Plus } from 'lucide-react'
+import { ShieldCheck, Truck, Loader2, Minus, Plus } from 'lucide-react'
 import { useCart } from '@/components/store/CartProvider'
 import type { ProductCardData } from '@/types/product'
 
@@ -245,11 +245,7 @@ export function QuickAddContent({ product, titleId }: Props) {
           </div>
           <div className="flex items-center gap-1.5">
             <Truck size={12} className="text-[#666664] shrink-0" />
-            <span className="text-[#666664] text-[11px] tracking-[0.22px]">2-3 DAY DELIVERY</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <RotateCcw size={12} className="text-[#666664] shrink-0" />
-            <span className="text-[#666664] text-[11px] tracking-[0.22px]">30-DAY RETURN</span>
+            <span className="text-[#666664] text-[11px] tracking-[0.22px]">FAST SHIPPING</span>
           </div>
         </div>
       </div>

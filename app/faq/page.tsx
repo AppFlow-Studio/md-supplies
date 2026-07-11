@@ -74,7 +74,7 @@ export default function FaqPage() {
         </div>
       </section>
 
-      {/* ── Wholesale CTA (reused) ── */}
+      {/* ── Sourcing CTA (reused) ── */}
       <WholesalePricing />
 
     </main>

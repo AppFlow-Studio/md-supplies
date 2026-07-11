@@ -53,3 +53,9 @@ const INDUSTRIES_PATH = 'industries'
 export function getIndustryImagePath(filename: string): string {
   return `${PROXY_PREFIX}/${INDUSTRIES_PATH}/${filename}`
 }
+
+const BLOGS_PATH = 'blogs'
+
+export function getBlogImagePath(filename: string): string {
+  return `${PROXY_PREFIX}/${BLOGS_PATH}/${filename}`
+}
