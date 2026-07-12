@@ -11,6 +11,7 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { getSiblingSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
+import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
@@ -252,6 +253,13 @@ export default async function CategoryProductPage({ params }: Props) {
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">
+      {/* og:type `product` is outside Next's Metadata union — rendered here
+          and hoisted into <head> by React 19 (audit L10). */}
+      <meta property="og:type" content="product" />
+      <BreadcrumbSchema
+        items={[...breadcrumbs, { label: productData.product.title }]}
+        currentUrl={`${SITE_URL}/category/${slug}/${handle}`}
+      />
       <ProductView
         product={productData.product}
         relatedProducts={recsData.related}

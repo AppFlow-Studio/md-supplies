@@ -23,10 +23,10 @@ export function PartnerDetail({ partner }: Props) {
       />
       <BreadcrumbSchema
         items={[
-          { name: 'Home', item: SITE_URL },
-          { name: 'Partners', item: `${SITE_URL}/partners` },
-          { name: partner.name, item: pageUrl },
+          { label: 'Partners', href: '/partners' },
+          { label: partner.name },
         ]}
+        currentUrl={pageUrl}
       />
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">

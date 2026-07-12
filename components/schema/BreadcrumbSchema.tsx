@@ -1,29 +1,32 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
+import { buildBreadcrumbListSchema } from '@/lib/schema'
 
 interface BreadcrumbItem {
-  name: string
-  item: string
+  label: string
+  /** Root-relative path (e.g. `/blog`). Omit on the final crumb. */
+  href?: string
 }
 
 interface Props {
+  /** Crumbs after Home — the builder prepends Home itself. */
   items: BreadcrumbItem[]
+  /** Absolute URL of the current page, used as the final crumb's `item`. */
+  currentUrl?: string
 }
 
-export function BreadcrumbSchema({ items }: Props) {
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map((crumb, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: crumb.name,
-      item: crumb.item,
-    })),
-  }
+/**
+ * The single JSON-LD breadcrumb emitter: a thin <script> wrapper around
+ * lib/schema's `buildBreadcrumbListSchema`, so every page emits a
+ * structurally identical BreadcrumbList (audit I2 consolidated the two
+ * divergent builders into this one).
+ */
+export function BreadcrumbSchema({ items, currentUrl }: Props) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
+      dangerouslySetInnerHTML={{
+        __html: safeJsonLd(buildBreadcrumbListSchema(items, currentUrl)),
+      }}
     />
   )
 }

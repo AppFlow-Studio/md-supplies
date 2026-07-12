@@ -27,10 +27,7 @@ export default function PartnersPage() {
         url={`${SITE_URL}/partners`}
       />
       <BreadcrumbSchema
-        items={[
-          { name: 'Home', item: SITE_URL },
-          { name: 'Partners', item: `${SITE_URL}/partners` },
-        ]}
+        items={[{ label: 'Partners', href: '/partners' }]}
       />
 
       {/* ─── Hero ─── */}

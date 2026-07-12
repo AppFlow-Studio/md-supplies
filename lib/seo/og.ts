@@ -7,8 +7,13 @@ import {
 } from './constants'
 import type { PageType } from './types'
 
-function ogType(pageType: PageType): 'website' | 'article' {
+// `product` is a valid og:type but is NOT in Next's OpenGraphType union, so
+// the Metadata API can't emit it. For product pages we omit og:type here and
+// the product page renders <meta property="og:type" content="product" />
+// itself — React 19 hoists it into <head> (audit L10).
+function ogType(pageType: PageType): 'website' | 'article' | undefined {
   if (pageType === 'blog-article') return 'article'
+  if (pageType === 'product') return undefined
   return 'website'
 }
 
@@ -48,7 +53,7 @@ export function buildOg(input: OgInput) {
         height: imageHeight ?? OG_IMAGE_HEIGHT,
         alt: title,
       }],
-      type: ogType(pageType),
+      ...(ogType(pageType) ? { type: ogType(pageType) } : {}),
     },
     twitter: {
       card: 'summary_large_image' as const,

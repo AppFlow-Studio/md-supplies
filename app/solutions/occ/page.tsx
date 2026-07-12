@@ -89,10 +89,7 @@ export default async function OCCPage() {
         url={`${SITE_URL}/solutions/occ`}
       />
       <BreadcrumbSchema
-        items={[
-          { name: 'Home', item: SITE_URL },
-          { name: 'OCC',  item: `${SITE_URL}/solutions/occ` },
-        ]}
+        items={[{ label: 'OCC', href: '/solutions/occ' }]}
       />
       <OCCHubPage hub={{ ...OCC_HUB, eligibleProducts: liveProducts }} />
     </>

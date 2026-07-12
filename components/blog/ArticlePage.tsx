@@ -40,10 +40,10 @@ export function ArticlePage({ article }: Props) {
       />
       <BreadcrumbSchema
         items={[
-          { name: 'Home', item: SITE_URL },
-          { name: 'Blog', item: `${SITE_URL}/blog` },
-          { name: article.title, item: pageUrl },
+          { label: 'Blog', href: '/blog' },
+          { label: article.title },
         ]}
+        currentUrl={pageUrl}
       />
 
       {/* Hero image — fetchPriority high (above fold) */}
