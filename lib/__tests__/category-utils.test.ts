@@ -58,3 +58,33 @@ describe('getRelatedCategories', () => {
     expect(slugs).not.toContain('non-roadmap-handle')
   })
 })
+
+import { getPrimaryCollection } from '@/lib/category-utils'
+import { getAllowedHandles } from '@/lib/category-nav'
+import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
+
+describe('getPrimaryCollection', () => {
+  const allowedHandle = [...getAllowedHandles()][0]
+  const excludedHandle = [...EXCLUDED_COLLECTION_HANDLES][0]
+
+  it('prefers the first roadmap-approved collection', () => {
+    const picked = getPrimaryCollection([
+      { handle: 'random-unmapped', title: 'Random' },
+      { handle: allowedHandle, title: 'Approved' },
+    ])
+    expect(picked?.handle).toBe(allowedHandle)
+  })
+
+  it('falls back to the first non-excluded collection', () => {
+    const picked = getPrimaryCollection([
+      { handle: excludedHandle, title: 'Excluded' },
+      { handle: 'some-collection', title: 'Some' },
+    ])
+    expect(picked?.handle).toBe('some-collection')
+  })
+
+  it('returns null when every collection is excluded or the list is empty', () => {
+    expect(getPrimaryCollection([])).toBeNull()
+    expect(getPrimaryCollection([{ handle: excludedHandle, title: 'X' }])).toBeNull()
+  })
+})

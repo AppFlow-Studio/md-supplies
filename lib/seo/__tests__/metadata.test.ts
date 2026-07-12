@@ -192,9 +192,9 @@ describe('buildMetadata — og:type', () => {
     expect((m.openGraph as { type?: string })?.type).toBe('article')
   })
 
-  it('product uses website type', () => {
+  it('product omits og:type from metadata — the page hoists og:type=product itself (L10)', () => {
     const m = buildMetadata({ pageType: 'product', title: 'Syringe' })
-    expect((m.openGraph as { type?: string })?.type).toBe('website')
+    expect((m.openGraph as { type?: string })?.type).toBeUndefined()
   })
 
   it('everything else uses website type', () => {

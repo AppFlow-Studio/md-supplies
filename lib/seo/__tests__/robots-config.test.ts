@@ -41,11 +41,35 @@ describe('getRobotsConfig', () => {
     expect(disallowed).toContain('/cart')
   })
 
-  it('disallows /search on production', () => {
+  it('does NOT disallow /search — noindex,follow meta is the single mechanism (L19)', () => {
     const cfg = getRobotsConfig(false)
     const rules = Array.isArray(cfg.rules) ? cfg.rules[0] : cfg.rules
     const disallowed = Array.isArray(rules.disallow) ? rules.disallow : [rules.disallow]
-    expect(disallowed).toContain('/search')
+    expect(disallowed).not.toContain('/search')
+  })
+
+  it('explicitly allows the major AI crawlers with the same path restrictions (L5)', () => {
+    const cfg = getRobotsConfig(false)
+    const rules = Array.isArray(cfg.rules) ? cfg.rules : [cfg.rules]
+    const aiRule = rules.find(
+      (r) => Array.isArray(r.userAgent) && r.userAgent.includes('GPTBot'),
+    )
+    expect(aiRule).toBeDefined()
+    expect(aiRule!.allow).toBe('/')
+    for (const bot of ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'Google-Extended', 'CCBot']) {
+      expect(aiRule!.userAgent).toContain(bot)
+    }
+    const wildcard = rules.find((r) => r.userAgent === '*')
+    expect(aiRule!.disallow).toEqual(wildcard!.disallow)
+  })
+
+  it('blocks Bytespider outright (L5)', () => {
+    const cfg = getRobotsConfig(false)
+    const rules = Array.isArray(cfg.rules) ? cfg.rules : [cfg.rules]
+    const byte = rules.find((r) => r.userAgent === 'Bytespider')
+    expect(byte).toBeDefined()
+    expect(byte!.disallow).toBe('/')
+    expect(byte!.allow).toBeUndefined()
   })
 
   it('disallows /internal/ on production', () => {

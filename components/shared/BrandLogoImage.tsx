@@ -7,6 +7,9 @@ interface Props {
   src?: string
   /** Brand name — used for alt text and the text fallback. */
   name: string
+  /** Intrinsic dimensions of the logo file — reserve the aspect ratio before load (no CLS). */
+  width?: number
+  height?: number
   /** Classes applied to the <img>. */
   className?: string
   /** Classes applied to the text fallback span. */
@@ -18,7 +21,7 @@ interface Props {
  * missing or fails to load. Guarantees no broken-image placeholders ever
  * appear (closeout §6 / §13.1).
  */
-export function BrandLogoImage({ src, name, className, fallbackClassName }: Props) {
+export function BrandLogoImage({ src, name, width, height, className, fallbackClassName }: Props) {
   const [failed, setFailed] = useState(false)
 
   if (!src || failed) {
@@ -39,6 +42,8 @@ export function BrandLogoImage({ src, name, className, fallbackClassName }: Prop
     <img
       src={src}
       alt={`${name} logo`}
+      width={width}
+      height={height}
       className={className}
       loading="lazy"
       decoding="async"

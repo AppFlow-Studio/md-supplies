@@ -71,6 +71,9 @@ export const GET_PRODUCT = `#graphql
         title
         description
       }
+      collections(first: 10) {
+        nodes { handle title }
+      }
 
     }
   }

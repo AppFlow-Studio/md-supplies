@@ -6,6 +6,7 @@ import { getSession, isSessionExpiring } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { GET_ORDER_DETAILS } from '@/lib/shopify/queries/customer'
 import { ProductImage } from '@/components/shared/ProductImage'
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 export const metadata: Metadata = {
   title: 'Order Details | MD Supplies',
@@ -146,7 +147,7 @@ export default async function OrderDetailPage({ params }: Props) {
                       <div className="relative w-[64px] h-[64px] border border-gray-200 shrink-0 overflow-hidden">
                         <ProductImage
                           src={item.image.url}
-                          alt={item.image.altText ?? item.title ?? 'Product'}
+                          alt={cleanShopifyAlt(item.image.altText) ?? item.title ?? 'Product'}
                           sizes="64px"
                           className="object-cover"
                         />

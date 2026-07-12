@@ -1,13 +1,13 @@
-'use client'
-
-import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { FadeIn } from '@/components/ui/FadeIn'
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { BrandLogoImage } from '@/components/shared/BrandLogoImage'
 
 interface Manufacturer {
   name: string
   logo: string
+  logoWidth?: number
+  logoHeight?: number
   description: string
   vendorSlug: string
 }
@@ -20,14 +20,7 @@ export function ManufacturersGrid({ manufacturers }: Props) {
   return (
     <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {manufacturers.map((m, i) => (
-        <motion.div
-          key={m.vendorSlug}
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.45, ease: 'easeOut', delay: (i % 3) * 0.08 }}
-          className="h-full"
-        >
+        <FadeIn key={m.vendorSlug} delay={(i % 3) * 0.08} className="h-full">
           <Link
             href={`/partners/${m.vendorSlug}`}
             className="group flex flex-col bg-white h-full min-h-[258px] hover:shadow-lg transition-shadow duration-200"
@@ -36,6 +29,8 @@ export function ManufacturersGrid({ manufacturers }: Props) {
               <BrandLogoImage
                 src={m.logo}
                 name={m.name}
+                width={m.logoWidth}
+                height={m.logoHeight}
                 className="max-h-[50px] w-auto max-w-[210px] object-contain"
                 fallbackClassName="font-bold text-[18px] tracking-[0.04em] text-navy-900 select-none"
               />
@@ -52,7 +47,7 @@ export function ManufacturersGrid({ manufacturers }: Props) {
               </span>
             </div>
           </Link>
-        </motion.div>
+        </FadeIn>
       ))}
     </div>
   )

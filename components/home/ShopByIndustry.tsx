@@ -1,21 +1,8 @@
-'use client'
-
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { INDUSTRIES } from '@/lib/industries'
 import { ROUTES } from '@/lib/routes'
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-}
 
 export function ShopByIndustry() {
   return (
@@ -34,15 +21,9 @@ export function ShopByIndustry() {
           </Link>
         </FadeIn>
 
-        <motion.div
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-        >
-          {INDUSTRIES.slice(0,4).map(({ name, slug, image }) => (
-            <motion.div key={slug} variants={itemVariants}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          {INDUSTRIES.slice(0,4).map(({ name, slug, image }, i) => (
+            <FadeIn key={slug} delay={i * 0.08}>
               <Link
                 href={ROUTES.industry(slug)}
                 className="group relative overflow-hidden aspect-[314/390] block"
@@ -51,6 +32,8 @@ export function ShopByIndustry() {
                 <img
                   src={image}
                   alt={name}
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/65 transition-opacity duration-300 group-hover:opacity-0" />
@@ -58,9 +41,9 @@ export function ShopByIndustry() {
                   {name}
                 </span>
               </Link>
-            </motion.div>
+            </FadeIn>
           ))}
-        </motion.div>
+        </div>
 
       </div>
     </section>

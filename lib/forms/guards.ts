@@ -41,6 +41,25 @@ export function assertAllowedOrigin(req: Request): Allowed {
   return { ok: true }
 }
 
+/**
+ * Origin check for GET endpoints (predictive search). Browsers omit `Origin`
+ * on same-origin GET fetches and may strip `Referer`, so — unlike
+ * `assertAllowedOrigin` — absence is allowed; only a *present, foreign*
+ * Origin/Referer is rejected. This blocks cross-site scripted abuse from
+ * browsers while never breaking legitimate same-origin users.
+ */
+export function assertNoForeignOrigin(req: Request): Allowed {
+  const requestHost = req.headers.get('host')
+  const siteHost = hostOf(process.env.NEXT_PUBLIC_SITE_URL ?? null)
+  const allowedHosts = new Set([requestHost, siteHost].filter(Boolean) as string[])
+
+  const claimedHost =
+    hostOf(req.headers.get('origin')) ?? hostOf(req.headers.get('referer'))
+
+  if (claimedHost && !allowedHosts.has(claimedHost)) return { ok: false, status: 403 }
+  return { ok: true }
+}
+
 type BoundedResult =
   | { ok: true; data: unknown }
   | { ok: false; status: 413 | 400 }

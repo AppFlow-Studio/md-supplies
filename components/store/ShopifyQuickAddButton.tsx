@@ -5,6 +5,7 @@ import type { CollectionProduct } from '@/lib/shopify/types'
 import type { ProductCardData } from '@/types/product'
 import { QuickAddModal } from '@/components/product/QuickAddModal'
 import {Plus} from "lucide-react";
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 function toCardData(product: CollectionProduct): ProductCardData {
   const image = product.images.nodes[0]
@@ -21,7 +22,7 @@ function toCardData(product: CollectionProduct): ProductCardData {
     title: product.title,
     image: {
       url: image?.url ?? '',
-      altText: image?.altText ?? product.title,
+      altText: cleanShopifyAlt(image?.altText) ?? product.title,
       width: image?.width ?? 800,
       height: image?.height ?? 800,
     },

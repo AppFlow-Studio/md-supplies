@@ -33,7 +33,6 @@ Add each row below with the exact scopes shown. Server-only secrets must never a
 |---|---|---|---|---|
 | `SHOPIFY_STORE_DOMAIN` | ✅ | ✅ | ✅ | `daebb2-76.myshopify.com` |
 | `SHOPIFY_STOREFRONT_ACCESS_TOKEN` | ✅ | ✅ | ✅ | Secret — from 1Password |
-| `SHOPIFY_ADMIN_ACCESS_TOKEN` | ✅ | ✅ | — | Secret — from 1Password |
 | `SHOPIFY_CUSTOMER_ACCOUNT_URL` | ✅ | ✅ | ✅ | `https://shopify.com/authentication/71167377624` |
 | `SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID` | ✅ | ✅ | ✅ | `87bb2a4d-7725-4c9d-8494-84c908432f0f` |
 | `NEXT_PUBLIC_SITE_URL` | ✅ | ✅ | — | **Production:** `https://mdsupplies.com` · **Preview:** see note below |

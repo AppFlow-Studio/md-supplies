@@ -3,6 +3,7 @@ import {
   filterRegistry,
   getAllowedFacets,
   getFacetRules,
+  getSearchFacets,
   stripBlockedFacets,
   isBlockedFacetId,
   isAllowedFilterInput,
@@ -157,6 +158,28 @@ describe('isBlockedFacetId / stripBlockedFacets', () => {
     const out = stripBlockedFacets(HOSTILE_FACETS)
     expect(out.map((f) => f.id)).not.toContain('filter.p.tag')
     expect(out.map((f) => f.id)).toContain('filter.v.availability')
+  })
+})
+
+describe('getSearchFacets (NF3 — search-wide registry allowlist)', () => {
+  it('allows availability/price/vendor/productType and approved metafields', () => {
+    const facets = [
+      facet('filter.v.availability'),
+      facet('filter.v.price'),
+      facet('filter.p.vendor'),
+      facet('filter.p.type'),
+      facet('filter.p.m.custom.material'),
+    ]
+    expect(getSearchFacets(facets).map((f) => f.id)).toEqual(facets.map((f) => f.id))
+  })
+
+  it('drops raw tag facets and any facet not on the search allowlist', () => {
+    const facets = [
+      facet('filter.p.tag'),
+      facet('filter.p.category'),
+      facet('filter.v.option.color'),
+    ]
+    expect(getSearchFacets(facets)).toEqual([])
   })
 })
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { FadeIn } from "@/components/ui/FadeIn";
 import { BlogCard } from "./BlogCard";
 import { Pagination } from "./Pagination";
 import type { BlogArticleSummary } from "@/lib/shopify/types";
@@ -11,16 +11,6 @@ interface Props {
 }
 
 const POSTS_PER_PAGE = 9;
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
-};
 
 export function BlogGrid({ articles }: Props) {
   const [page, setPage] = useState(1);
@@ -36,15 +26,13 @@ export function BlogGrid({ articles }: Props) {
 
   return (
     <div ref={gridRef} className="flex flex-col gap-10">
-      <motion.div
+      {/* key={page} remounts the grid so the reveal replays on page change */}
+      <div
         key={page}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[22px] gap-y-[28px] items-stretch"
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
       >
-        {visible.map((article) => (
-          <motion.div key={article.id} variants={itemVariants} className="h-full">
+        {visible.map((article, i) => (
+          <FadeIn key={article.id} delay={i * 0.07} className="h-full">
             <BlogCard
               slug={article.handle}
               date={new Date(article.publishedAt).toLocaleDateString("en-US", {
@@ -56,9 +44,9 @@ export function BlogGrid({ articles }: Props) {
               excerpt={article.excerpt ?? ""}
               image={article.image}
             />
-          </motion.div>
+          </FadeIn>
         ))}
-      </motion.div>
+      </div>
 
       {totalPages > 1 && (
         <Pagination currentPage={page} totalPages={totalPages} onPageChange={goToPage} />

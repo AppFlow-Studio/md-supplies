@@ -1,8 +1,5 @@
-'use client'
-
 import { Truck, ShieldCheck, Tag, RotateCcw } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { motion } from "framer-motion";
 import { FadeIn } from "@/components/ui/FadeIn";
 
 const FEATURES: { Icon: LucideIcon; title: string; description: string }[] = [
@@ -27,16 +24,6 @@ const FEATURES: { Icon: LucideIcon; title: string; description: string }[] = [
     description: "Hassle-free returns on unopened products",
   },
 ];
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-};
 
 function FeatureCard({ Icon, title, description }: (typeof FEATURES)[0]) {
   return (
@@ -63,19 +50,13 @@ export function WhyChooseUs() {
           </h2>
         </FadeIn>
 
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-        >
-          <motion.div variants={itemVariants}><FeatureCard {...FEATURES[0]} /></motion.div>
-          <motion.div variants={itemVariants}><FeatureCard {...FEATURES[1]} /></motion.div>
+        <div className="grid grid-cols-1 sm:grid-cols-2">
+          <FadeIn><FeatureCard {...FEATURES[0]} /></FadeIn>
+          <FadeIn delay={0.08}><FeatureCard {...FEATURES[1]} /></FadeIn>
           <div className="sm:col-span-2 h-px bg-white/10" />
-          <motion.div variants={itemVariants}><FeatureCard {...FEATURES[2]} /></motion.div>
-          <motion.div variants={itemVariants}><FeatureCard {...FEATURES[3]} /></motion.div>
-        </motion.div>
+          <FadeIn delay={0.16}><FeatureCard {...FEATURES[2]} /></FadeIn>
+          <FadeIn delay={0.24}><FeatureCard {...FEATURES[3]} /></FadeIn>
+        </div>
 
       </div>
     </section>

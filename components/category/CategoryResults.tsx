@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { X } from 'lucide-react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
+import { buildCollectionItemListSchema, jsonLdSafe } from '@/lib/schema'
+import { SITE_URL } from '@/lib/seo/constants'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
 import type { Collection } from '@/lib/shopify/types'
 import { getVisibleFilters } from '@/lib/shopify/filters'
@@ -120,6 +122,22 @@ export async function CategoryResults({
 
   return (
     <>
+      {/* ItemList of this page's visible products (audit L16) — canonical
+          (unfiltered) views only, positions continue across pages. */}
+      {!isFiltered && products.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLdSafe(
+              buildCollectionItemListSchema(
+                products,
+                (handle) => `${SITE_URL}${ROUTES.product(handle)}`,
+                startIndex + 1,
+              ),
+            ),
+          }}
+        />
+      )}
       {/* Desktop filter sidebar. Suspense boundary: CategoryFilters reads
           useSearchParams(), which on the statically-generated category route
           would otherwise bail the WHOLE page out to client rendering and cache

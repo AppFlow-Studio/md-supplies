@@ -205,7 +205,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
         <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src={'/images/logo.avif'} alt='logo' width={500} height={500} className='w-fit h-10 object-contain'/>
+            <Image src={'/images/logo.avif'} alt='MDSupplies' width={500} height={500} className='w-fit h-10 object-contain'/>
           </Link>
 
           {/* Desktop nav links — shown only at xl where all items fit without

@@ -1,7 +1,4 @@
-'use client'
-
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { ROUTES } from '@/lib/routes';
 import {AnimatedArrow} from "@/components/ui/AnimatedArrow";
@@ -16,16 +13,6 @@ const CATEGORIES = [
   { title: 'Exam Room',          handle: 'exam-room',           icon: '/icons/category-logo-7.svg' },
   { title: 'Mobility',           handle: 'mobility',            icon: '/icons/category-logo-8.svg' },
 ]
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-};
 
 export function PopularCategories() {
   return (
@@ -44,15 +31,9 @@ export function PopularCategories() {
           </Link>
         </FadeIn>
 
-        <motion.div
-          className="grid grid-cols-2 sm:grid-cols-4 gap-px border border-[rgba(0,0,0,0.1)] bg-[rgba(0,0,0,0.1)]"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-        >
-          {CATEGORIES.map(({ title, handle, icon }) => (
-            <motion.div key={handle} variants={itemVariants}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px border border-[rgba(0,0,0,0.1)] bg-[rgba(0,0,0,0.1)]">
+          {CATEGORIES.map(({ title, handle, icon }, i) => (
+            <FadeIn key={handle} delay={i * 0.06} className="h-full">
               <Link
                 href={ROUTES.category(handle)}
                 className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-10 px-4 h-full"
@@ -63,6 +44,10 @@ export function PopularCategories() {
                     src={icon}
                     alt=""
                     aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                    width={32}
+                    height={32}
                     className="w-8 h-8 object-contain"
                   />
                 </div>
@@ -70,9 +55,9 @@ export function PopularCategories() {
                   {title}
                 </span>
               </Link>
-            </motion.div>
+            </FadeIn>
           ))}
-        </motion.div>
+        </div>
 
       </div>
     </section>

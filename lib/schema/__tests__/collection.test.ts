@@ -54,3 +54,33 @@ describe('buildCollectionPageSchema', () => {
     expect('image' in schema).toBe(false)
   })
 })
+
+import { buildCollectionItemListSchema } from '../collection'
+
+describe('buildCollectionItemListSchema', () => {
+  const url = (h: string) => `https://mdsupplies.com/product/${h}`
+
+  it('lists products with position, name and url', () => {
+    const schema = buildCollectionItemListSchema(
+      [
+        { title: 'Nitrile Gloves', handle: 'nitrile-gloves' },
+        { title: 'Latex Gloves', handle: 'latex-gloves' },
+      ],
+      url,
+    )
+    expect(schema['@type']).toBe('ItemList')
+    expect(schema.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Nitrile Gloves', url: 'https://mdsupplies.com/product/nitrile-gloves' },
+      { '@type': 'ListItem', position: 2, name: 'Latex Gloves', url: 'https://mdsupplies.com/product/latex-gloves' },
+    ])
+  })
+
+  it('continues positions across pages via startPosition', () => {
+    const schema = buildCollectionItemListSchema(
+      [{ title: 'P10', handle: 'p10' }],
+      url,
+      10,
+    )
+    expect(schema.itemListElement[0].position).toBe(10)
+  })
+})

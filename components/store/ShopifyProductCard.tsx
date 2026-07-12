@@ -6,6 +6,7 @@ import { ShopifyQuickAddButton } from './ShopifyQuickAddButton'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { track } from '@/lib/analytics/track'
 import { buildSelectItemEvent, toGA4Item, currencyOf } from '@/lib/analytics/events'
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 interface Props {
   product: CollectionProduct
@@ -49,7 +50,7 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
         <Link href={href} onClick={handleSelect} className="block w-full h-full">
           <ProductImage
             src={image?.url}
-            alt={image?.altText ?? product.title}
+            alt={cleanShopifyAlt(image?.altText) ?? product.title}
             categoryHandle={categorySlug}
             sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
             priority={imagePriority}

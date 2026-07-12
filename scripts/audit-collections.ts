@@ -1,3 +1,8 @@
+// Run with the react-server condition so the `server-only` guard inside
+// lib/shopify/storefront.ts resolves to its empty stub, and env vars come
+// from .env.local (loaded below — storefront.ts no longer loads them):
+//   NODE_OPTIONS='--conditions=react-server' npx tsx scripts/audit-collections.ts
+import { loadEnvConfig } from '@next/env'
 import { writeFileSync } from 'fs'
 import { storefrontFetch } from '../lib/shopify/storefront'
 import { GET_COLLECTIONS_AUDIT } from '../lib/shopify/queries/collections'
@@ -24,6 +29,8 @@ function statusIcon(flag: boolean): string {
 function handleList(handles: string[]): string {
   return handles.length === 0 ? '_none_' : handles.map((h) => `\`${h}\``).join(', ')
 }
+
+loadEnvConfig(process.cwd())
 
 async function main() {
   const data = await storefrontFetch<{ collections: { nodes: RawCollection[] } }>(

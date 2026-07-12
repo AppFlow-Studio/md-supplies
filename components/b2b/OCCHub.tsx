@@ -24,10 +24,10 @@ export function OCCHubPage({ hub }: Props) {
       />
       <BreadcrumbSchema
         items={[
-          { name: 'Home',      item: SITE_URL                },
-          { name: 'Solutions', item: `${SITE_URL}/solutions` },
-          { name: 'OCC',       item: pageUrl                 },
+          { label: 'Solutions', href: '/solutions' },
+          { label: 'OCC' },
         ]}
+        currentUrl={pageUrl}
       />
 
       {/* ── Hero ── */}

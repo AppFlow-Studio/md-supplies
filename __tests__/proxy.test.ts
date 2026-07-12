@@ -6,6 +6,13 @@ vi.mock('next/server', () => ({
       new Response(null, { status, headers: { Location: url.toString() } }),
     rewrite: (url: URL) =>
       new Response(null, { status: 200, headers: { 'x-middleware-rewrite': url.toString() } }),
+    next: (init?: { request?: { headers?: Headers } }) => {
+      const res = new Response(null, { status: 200 })
+      if (init?.request?.headers) {
+        res.headers.set('x-nonce-forwarded', init.request.headers.get('x-nonce') ?? '')
+      }
+      return res
+    },
   },
 }))
 
@@ -14,6 +21,15 @@ import { proxy } from '../proxy'
 import productRedirects from '../docs/redirects-ready.json'
 
 const PRODUCT_ROWS = productRedirects as { from: string; to: string }[]
+
+// proxy() now always returns a Response (it stamps CSP headers on every
+// path, including pass-through) instead of `undefined` — this asserts the
+// "no redirect/rewrite happened" case that `toBeUndefined()` used to check.
+function expectPassThrough(res: Response): void {
+  expect(res.status).toBe(200)
+  expect(res.headers.get('Location')).toBeNull()
+  expect(res.headers.get('x-middleware-rewrite')).toBeNull()
+}
 
 function req(pathname: string, search = ''): NextRequest {
   const base = 'https://mdsupplies.com'
@@ -127,20 +143,19 @@ describe('proxy — category-level 410s (§4.3)', () => {
 
   it('does not 410 a live category whose slug merely starts with a gone slug', () => {
     // `bedside-care` must not be swallowed by the gone slug `beds`.
-    expect(proxy(req('/category/bedside-care'))).toBeUndefined()
-    expect(proxy(req('/category/bed-pans'))).toBeUndefined()
+    expectPassThrough(proxy(req('/category/bedside-care')))
+    expectPassThrough(proxy(req('/category/bed-pans')))
   })
 
   it('does not 410 a live category', () => {
-    expect(proxy(req('/category/gloves'))).toBeUndefined()
-    expect(proxy(req('/category/wound-care'))).toBeUndefined()
+    expectPassThrough(proxy(req('/category/gloves')))
+    expectPassThrough(proxy(req('/category/wound-care')))
   })
 })
 
 describe('proxy — path normalization (pass-through for unknown)', () => {
   it('passes through unknown paths', () => {
-    const res = proxy(req('/some-random-page'))
-    expect(res).toBeUndefined()
+    expectPassThrough(proxy(req('/some-random-page')))
   })
 
   it('passes through canonical targets (no chains)', () => {
@@ -150,7 +165,7 @@ describe('proxy — path normalization (pass-through for unknown)', () => {
       '/blog/types-of-sutures', '/blog/types-of-needles',
     ]
     for (const target of targets) {
-      expect(proxy(req(target))).toBeUndefined()
+      expectPassThrough(proxy(req(target)))
     }
   })
 })
@@ -175,9 +190,9 @@ describe('proxy — bulk product catalog 301s', () => {
   })
 
   it('the singular canonical target passes through (no chain / no double redirect)', () => {
-    expect(
+    expectPassThrough(
       proxy(req('/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101')),
-    ).toBeUndefined()
+    )
   })
 })
 
@@ -221,7 +236,10 @@ describe('proxy — full product redirect map (programmatic sweep)', () => {
   it('every singular canonical target passes through (no double redirect)', () => {
     const chained: string[] = []
     for (const { to } of PRODUCT_ROWS) {
-      if (proxy(req(singular(to))) !== undefined) chained.push(singular(to))
+      const res = proxy(req(singular(to)))
+      if (res.headers.get('Location') || res.headers.get('x-middleware-rewrite')) {
+        chained.push(singular(to))
+      }
     }
     expect(chained).toEqual([])
   })
@@ -247,8 +265,7 @@ describe('proxy — brands wildcard', () => {
   })
 
   it('/brandsomething passes through (not a brands prefix)', () => {
-    const res = proxy(req('/brandsomething'))
-    expect(res).toBeUndefined()
+    expectPassThrough(proxy(req('/brandsomething')))
   })
 })
 
@@ -268,14 +285,58 @@ describe('proxy — category query variants rewrite to /category-browse (H1)', (
   })
 
   it('does not rewrite the canonical category page (no query)', () => {
-    expect(proxy(req('/category/gloves'))).toBeUndefined()
+    expectPassThrough(proxy(req('/category/gloves')))
   })
 
   it('does not rewrite tracking-only queries (utm/gclid do not change results)', () => {
-    expect(proxy(req('/category/gloves', '?utm_source=chatgpt.com&gclid=x'))).toBeUndefined()
+    expectPassThrough(proxy(req('/category/gloves', '?utm_source=chatgpt.com&gclid=x')))
   })
 
   it('does not rewrite subcategory/product paths under /category', () => {
-    expect(proxy(req('/category/gloves/nitrile-exam-gloves', '?page=2'))).toBeUndefined()
+    expectPassThrough(proxy(req('/category/gloves/nitrile-exam-gloves', '?page=2')))
+  })
+})
+
+describe('proxy — CSP + nonce (M10)', () => {
+  it('sets an enforcing CSP with a nonce on every response', () => {
+    const res = proxy(req('/'))
+    const csp = res.headers.get('Content-Security-Policy')
+    expect(csp).toMatch(/'nonce-[^']+'/)
+    const scriptSrc = csp!.split('; ').find((d) => d.startsWith('script-src'))!
+    expect(scriptSrc).not.toContain('unsafe-inline')
+  })
+
+  it('sets a parallel Report-Only header', () => {
+    const res = proxy(req('/'))
+    expect(res.headers.get('Content-Security-Policy-Report-Only')).toBeTruthy()
+  })
+
+  it('forwards the same nonce as a request header for Server Components to read', () => {
+    const res = proxy(req('/'))
+    const csp = res.headers.get('Content-Security-Policy')!
+    const nonce = csp.match(/'nonce-([^']+)'/)![1]
+    expect(res.headers.get('x-nonce-forwarded')).toBe(nonce)
+  })
+
+  it('every request gets a different nonce', () => {
+    const n1 = proxy(req('/')).headers.get('Content-Security-Policy')
+    const n2 = proxy(req('/')).headers.get('Content-Security-Policy')
+    expect(n1).not.toBe(n2)
+  })
+
+  it('redirects still carry the CSP headers', () => {
+    const res = proxy(req('/brands'))
+    expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
+  })
+
+  it('410s still carry the CSP headers', () => {
+    const res = proxy(req('/category/beds'))
+    expect(res.status).toBe(410)
+    expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
+  })
+
+  it('rewrites still carry the CSP headers', () => {
+    const res = proxy(req('/category/gloves', '?page=2'))
+    expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
   })
 })

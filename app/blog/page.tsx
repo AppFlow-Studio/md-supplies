@@ -39,10 +39,7 @@ export default async function BlogPage() {
         url={`${SITE_URL}/blog`}
       />
       <BreadcrumbSchema
-        items={[
-          { name: 'Home', item: SITE_URL },
-          { name: 'Blog', item: `${SITE_URL}/blog` },
-        ]}
+        items={[{ label: 'Blog', href: '/blog' }]}
       />
       {/* ── Page header ── */}
       <section className="w-full bg-[#f9fafc] border-b border-gray-200">

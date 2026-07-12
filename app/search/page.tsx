@@ -11,7 +11,8 @@ import { SearchFilterDrawer } from '@/components/search/SearchFilterDrawer'
 import { SearchBarForm } from '@/components/search/SearchBarForm'
 import { SearchResultsSection } from '@/components/search/SearchResultsSection'
 import type { CollectionProduct, CollectionFilter, PageInfo } from '@/lib/shopify/types'
-import { stripBlockedFacets, isAllowedFilterInput } from '@/lib/filter-registry'
+import { redirect } from 'next/navigation'
+import { getSearchFacets, isAllowedFilterInput } from '@/lib/filter-registry'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,6 +90,17 @@ export default async function SearchPage({ searchParams }: Props) {
   let productFilters: CollectionFilter[] = []
   let pageInfo: PageInfo = { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }
 
+  // Target for the bad-cursor redirect below: same q/sort/filter, no
+  // `after` — i.e. exactly what a fresh page-1 visit would build.
+  const page1Url = (() => {
+    const p = new URLSearchParams()
+    if (q) p.set('q', q)
+    if (sp.sort) p.set('sort', sp.sort)
+    activeFilterStrings.forEach((f) => p.append('filter', f))
+    const qs = p.toString()
+    return qs ? `/search?${qs}` : '/search'
+  })()
+
   if (q.trim()) {
     try {
       const data = await storefrontFetch<SearchData>(SEARCH_PRODUCTS, {
@@ -101,11 +113,20 @@ export default async function SearchPage({ searchParams }: Props) {
       })
       products = data.search.nodes
       totalCount = data.search.totalCount
-      // Raw-tag facets never render, regardless of S&D configuration.
-      productFilters = stripBlockedFacets(data.search.productFilters ?? [])
+      // Registry gate: only sources approved anywhere in the search
+      // allowlist may reach the filter rail (NF3) — the Storefront
+      // `productFilters` response is untrusted input.
+      productFilters = getSearchFacets(data.search.productFilters ?? [])
       pageInfo = data.search.pageInfo
     } catch {
-      // network error — show empty state
+      // NF10: an expired/mangled `after` cursor throws here just like any
+      // other Storefront error, but it isn't a genuinely empty result —
+      // bounce to page 1 (q/sort/filter intact) instead of rendering a
+      // false "No results". Errors with no cursor involved keep the
+      // original behavior (empty state) since there's no lower fallback.
+      if (sp.after) {
+        redirect(page1Url)
+      }
     }
   }
 
