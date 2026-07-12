@@ -7,6 +7,7 @@ import { isRateLimited, clientIp } from '@/lib/rate-limit'
 // The client debounces keystrokes at 280ms (~3.5 req/s max), so 60/min per IP
 // leaves generous headroom for real users while capping scripted loops.
 const RATE_LIMIT = { limit: 60, windowMs: 60_000 }
+import { getAllowedHandles } from '@/lib/category-nav'
 
 export interface PredictiveProduct {
   id: string
@@ -32,6 +33,8 @@ export interface PredictiveResults {
   queries: PredictiveQuery[]
 }
 
+const MAX_Q_LENGTH = 100
+
 export async function GET(req: NextRequest) {
   if (!assertNoForeignOrigin(req).ok) {
     return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 })
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
+  const q = (req.nextUrl.searchParams.get('q') ?? '').trim().slice(0, MAX_Q_LENGTH)
 
   if (q.length < 2) {
     return NextResponse.json<PredictiveResults>({ products: [], collections: [], queries: [] })
@@ -53,7 +56,14 @@ export async function GET(req: NextRequest) {
       { q, limit: 6 },
       { cache: 'no-store' },
     )
-    return NextResponse.json<PredictiveResults>(data.predictiveSearch)
+    // NF4: predictiveSearch returns every matching collection verbatim,
+    // including internal/ops collections deliberately absent from the nav
+    // registry. Gate against the same allowlist the header nav uses.
+    const allowedHandles = getAllowedHandles()
+    return NextResponse.json<PredictiveResults>({
+      ...data.predictiveSearch,
+      collections: data.predictiveSearch.collections.filter((c) => allowedHandles.has(c.handle)),
+    })
   } catch {
     return NextResponse.json<PredictiveResults>({ products: [], collections: [], queries: [] })
   }

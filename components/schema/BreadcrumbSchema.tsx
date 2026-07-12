@@ -1,5 +1,5 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
-import { buildBreadcrumbListSchema } from '@/lib/schema'
+import { getNonce } from '@/lib/csp-nonce'
 
 interface BreadcrumbItem {
   label: string
@@ -14,19 +14,23 @@ interface Props {
   currentUrl?: string
 }
 
-/**
- * The single JSON-LD breadcrumb emitter: a thin <script> wrapper around
- * lib/schema's `buildBreadcrumbListSchema`, so every page emits a
- * structurally identical BreadcrumbList (audit I2 consolidated the two
- * divergent builders into this one).
- */
-export function BreadcrumbSchema({ items, currentUrl }: Props) {
+export async function BreadcrumbSchema({ items }: Props) {
+  const nonce = await getNonce()
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: crumb.item,
+    })),
+  }
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: safeJsonLd(buildBreadcrumbListSchema(items, currentUrl)),
-      }}
+      nonce={nonce}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   )
 }

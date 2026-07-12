@@ -16,6 +16,7 @@ import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
+import { getNonce } from '@/lib/csp-nonce'
 
 // Shared server-rendered category page, used by two routes:
 //  - app/category/[slug]           — static/ISR canonical view (sp is {})
@@ -124,6 +125,7 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
 }
 
 export async function CategoryPageView({ slug, sp }: { slug: string; sp: CategorySearchParams }) {
+  const nonce = await getNonce()
   const activeFilterStrings = parseFilterParam(sp.filter)
   const { sortKey, reverse } = parseSortKey(sp.sort)
   const currentPage = parseInt(sp.page ?? '1', 10)
@@ -329,6 +331,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         <>
           <script
             type="application/ld+json"
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
                 buildCollectionPageSchema({
@@ -342,6 +345,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           />
           <script
             type="application/ld+json"
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
                 buildBreadcrumbListSchema(

@@ -8,6 +8,7 @@ import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
 import { getAllowedHandles, buildCategoryNav } from '@/lib/category-nav'
+import { getNonce } from '@/lib/csp-nonce'
 
 export const revalidate = 60
 
@@ -25,6 +26,7 @@ type CollectionNode = {
 }
 
 export default async function CategoriesPage() {
+  const nonce = await getNonce()
   let collections: CollectionNode[] = []
   try {
     const data = await storefrontFetch<{ collections: { nodes: CollectionNode[] } }>(
@@ -148,6 +150,7 @@ export default async function CategoriesPage() {
 
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: jsonLdSafe(
             buildBreadcrumbListSchema(

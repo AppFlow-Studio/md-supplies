@@ -1,4 +1,5 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
+import { getNonce } from '@/lib/csp-nonce'
 
 interface FAQ {
   question: string
@@ -9,7 +10,8 @@ interface Props {
   faq: FAQ[]
 }
 
-export function FAQSchema({ faq }: Props) {
+export async function FAQSchema({ faq }: Props) {
+  const nonce = await getNonce()
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -25,6 +27,7 @@ export function FAQSchema({ faq }: Props) {
   return (
     <script
       type="application/ld+json"
+      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   )

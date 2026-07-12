@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { ProductGrid } from '@/components/category/ProductGrid'
@@ -38,6 +39,8 @@ export function SearchResultsSection({
   const [products, setProducts] = useState(initialProducts)
   const [pageInfo, setPageInfo] = useState(initialPageInfo)
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   function loadMore() {
     if (!pageInfo.endCursor) return
@@ -51,6 +54,16 @@ export function SearchResultsSection({
       })
       setProducts((prev) => [...prev, ...result.products])
       setPageInfo(result.pageInfo)
+
+      // NF13: URL never changed on Load More, so back-navigation landed on
+      // the original unpaginated page-1 URL and lost the shopper's place.
+      // Mirror category's URL-driven pagination by reflecting the new
+      // cursor here (shallow — no scroll, no server refetch since state is
+      // already updated above).
+      const params = new URLSearchParams(searchParams)
+      if (result.pageInfo.endCursor) params.set('after', result.pageInfo.endCursor)
+      else params.delete('after')
+      router.replace(`/search?${params.toString()}`, { scroll: false })
     })
   }
 
