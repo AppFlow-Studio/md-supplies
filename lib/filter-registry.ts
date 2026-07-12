@@ -136,6 +136,28 @@ export const filterRegistry: Record<string, FacetRule[]> = {
 // Safe default for any collection without an explicit registry entry.
 export const DEFAULT_FACET_RULES: FacetRule[] = [AVAILABILITY, PRICE, VENDOR]
 
+// Search spans every collection, so unlike getAllowedFacets there is no
+// collection handle to key a per-collection allowlist on. One registry
+// entry covers all of search: the same non-tag sources approved anywhere
+// (availability/price/vendor/productType) plus every approved metafield,
+// since a search result set can span collections with different metafield
+// registries.
+export const SEARCH_FACET_RULES: FacetRule[] = [
+  AVAILABILITY,
+  PRICE,
+  VENDOR,
+  PRODUCT_TYPE,
+  ...Object.values(APPROVED_METAFIELDS),
+]
+
+/** The single gate for search-page facets — mirrors getAllowedFacets but
+ *  keyed on the search-wide allowlist instead of a collection handle. */
+export function getSearchFacets(facets: CollectionFilter[]): CollectionFilter[] {
+  return facets.filter(
+    (facet) => !isBlockedFacetId(facet.id) && SEARCH_FACET_RULES.some((rule) => rule.matches(facet.id)),
+  )
+}
+
 // Sources that MAY be referenced by registry entries (spec §"Allowed filter
 // sources"). Exported so the guard test can assert registry entries never
 // reference anything outside this set.

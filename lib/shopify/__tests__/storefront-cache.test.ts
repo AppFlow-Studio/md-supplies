@@ -29,7 +29,6 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
   vi.stubEnv('SHOPIFY_STORE_DOMAIN', 'test.myshopify.com')
   vi.stubEnv('SHOPIFY_STOREFRONT_ACCESS_TOKEN', 'test-token')
-  vi.stubEnv('SHOPIFY_ADMIN_ACCESS_TOKEN', 'admin-token')
   vi.stubEnv('RESEND_API_KEY', 're_test')
   vi.stubEnv('BUNNYCDN_STORAGE_ACCESS_KEY', 'bunny-key')
 })

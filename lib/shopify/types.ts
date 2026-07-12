@@ -94,6 +94,9 @@ export type Product = {
   variants: { nodes: ProductVariant[] };
   options: ProductOption[];
   seo: Seo;
+  /** Collections this product belongs to — used to pick the primary category
+      for the /product/ breadcrumb (audit L12). */
+  collections: { nodes: { handle: string; title: string }[] };
 } & ProductMetafields;
 
 export type CollectionProduct = {

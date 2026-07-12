@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 const REQUIRED: Record<string, string> = {
   SHOPIFY_STORE_DOMAIN: 'test.myshopify.com',
   SHOPIFY_STOREFRONT_ACCESS_TOKEN: 'sf-token',
-  SHOPIFY_ADMIN_ACCESS_TOKEN: 'admin-token',
   RESEND_API_KEY: 're_test',
   BUNNYCDN_STORAGE_ACCESS_KEY: 'bunny-key',
 }
@@ -29,7 +28,6 @@ describe('serverEnv — happy path', () => {
     const { serverEnv } = await import('@/lib/env.server')
     expect(serverEnv.shopifyStoreDomain).toBe('test.myshopify.com')
     expect(serverEnv.shopifyStorefrontToken).toBe('sf-token')
-    expect(serverEnv.shopifyAdminToken).toBe('admin-token')
     expect(serverEnv.resendApiKey).toBe('re_test')
     expect(serverEnv.bunnyCdnAccessKey).toBe('bunny-key')
   })
@@ -60,7 +58,6 @@ describe('serverEnv — missing required vars', () => {
   const accessorByVar: Record<string, (e: typeof import('@/lib/env.server').serverEnv) => unknown> = {
     SHOPIFY_STORE_DOMAIN: (e) => e.shopifyStoreDomain,
     SHOPIFY_STOREFRONT_ACCESS_TOKEN: (e) => e.shopifyStorefrontToken,
-    SHOPIFY_ADMIN_ACCESS_TOKEN: (e) => e.shopifyAdminToken,
     RESEND_API_KEY: (e) => e.resendApiKey,
     BUNNYCDN_STORAGE_ACCESS_KEY: (e) => e.bunnyCdnAccessKey,
   }

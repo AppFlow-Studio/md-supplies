@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { motion } from "framer-motion";
+import { FadeIn } from "@/components/ui/FadeIn";
 import { buildFormSubmitEvent } from '@/lib/analytics/events'
 import { submitForm } from '@/lib/forms/submit'
 import { FACILITY_TYPES } from '@/lib/forms/schema'
@@ -13,16 +13,6 @@ const BENEFITS = [
   "Item number / brand confirmation",
   "Reliable ordering assistance",
 ];
-
-const leftContainerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
-};
-
-const leftItemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-};
 
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
@@ -76,50 +66,43 @@ export function WholesalePricing() {
       <div className="mx-auto flex flex-col lg:flex-row min-h-[580px]">
 
         {/* ── Left: teal panel ── */}
-        <motion.div
-          className="bg-teal-500 flex-1 px-8 sm:px-12 lg:px-16 py-14 md:py-32 flex flex-col justify-center gap-6"
-          variants={leftContainerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-        >
-          <motion.div variants={leftItemVariants} className="inline-flex items-center self-start bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-2">
+        <div className="bg-teal-500 flex-1 px-8 sm:px-12 lg:px-16 py-14 md:py-32 flex flex-col justify-center gap-6">
+          <FadeIn className="inline-flex items-center self-start bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-2">
             <span className="text-[13px] font-semibold tracking-[0.06em] text-white uppercase">
               For Healthcare Professionals
             </span>
-          </motion.div>
+          </FadeIn>
 
-          <motion.h2 variants={leftItemVariants} className="text-[38px] sm:text-[45px] font-bold text-white leading-[1.15] tracking-[0.9px] max-w-[460px]">
+          <FadeIn as="h2" delay={0.1} className="text-[38px] sm:text-[45px] font-bold text-white leading-[1.15] tracking-[0.9px] max-w-[460px]">
             Need Help Sourcing Medical Supplies?
-          </motion.h2>
+          </FadeIn>
 
-          <motion.p variants={leftItemVariants} className="text-white text-[15px] font-normal leading-[1.9] max-w-[490px]">
+          <FadeIn as="p" delay={0.2} className="text-white text-[15px] font-normal leading-[1.9] max-w-[490px]">
             Tell us what you’re looking for and our team will help confirm product availability, packaging options, item details, and the best ordering path for your needs.
-          </motion.p>
+          </FadeIn>
 
-          <motion.ul variants={leftItemVariants} className="flex flex-col gap-3">
+          <FadeIn as="ul" delay={0.3} className="flex flex-col gap-3">
             {BENEFITS.map((item) => (
               <li key={item} className="flex items-center gap-3 text-white text-[15px]">
                 <Check size={12} className="shrink-0 text-white" strokeWidth={3} />
                 {item}
               </li>
             ))}
-          </motion.ul>
-        </motion.div>
+          </FadeIn>
+        </div>
         {/* Spacer — desktop only, reserves room for the absolute form */}
         <div className="hidden lg:block w-[40%] shrink-0" />
 
         {/* ── Right: form panel ── */}
-        <motion.div
-          initial={{ opacity: 0, x: 32 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.55, ease: 'easeOut', delay: 0.2 }}
-          viewport={{ once: true }}
+        <div
           className="bg-white w-full px-8 sm:px-12 py-14
                      lg:absolute lg:top-1/2 lg:-translate-y-1/2 lg:right-[8%] lg:w-[560px] lg:px-14 lg:py-16
                      xl:w-[642px]
                      flex flex-col justify-center"
         >
+          {/* FadeIn lives INSIDE the positioned panel: .fade-in animates
+              transform, which would clobber lg:-translate-y-1/2 on this div. */}
+          <FadeIn from="right" delay={0.2}>
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="sourcing-name" className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
@@ -241,7 +224,8 @@ export function WholesalePricing() {
             )}
 
           </form>
-        </motion.div>
+          </FadeIn>
+        </div>
 
       </div>
     </section>

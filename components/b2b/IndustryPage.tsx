@@ -24,10 +24,10 @@ export function IndustryPage({ industry }: Props) {
       />
       <BreadcrumbSchema
         items={[
-          { name: 'Home', item: SITE_URL },
-          { name: 'Industries', item: `${SITE_URL}/industries` },
-          { name: industry.name, item: pageUrl },
+          { label: 'Industries', href: '/industries' },
+          { label: industry.name },
         ]}
+        currentUrl={pageUrl}
       />
 
       {/* Hero image */}

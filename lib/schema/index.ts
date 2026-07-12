@@ -1,6 +1,6 @@
 export { buildOrganizationSchema } from './organization'
 export { buildWebSiteSchema } from './website'
-export { buildCollectionPageSchema } from './collection'
+export { buildCollectionPageSchema, buildCollectionItemListSchema } from './collection'
 export { buildBreadcrumbListSchema } from './breadcrumb'
 
 // Re-export the canonical safe serializer so callers import from one place.

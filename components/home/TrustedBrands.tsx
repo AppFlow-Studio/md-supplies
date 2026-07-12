@@ -9,6 +9,8 @@ import { HOMEPAGE_BRANDS_WITH_LOGO, brandLogoUrl } from "@/lib/brands";
 const BRANDS = HOMEPAGE_BRANDS_WITH_LOGO.map((b) => ({
   name: b.name,
   img: brandLogoUrl(b)!,
+  width: b.logoWidth,
+  height: b.logoHeight,
 }));
 
 // Self-contained marquee styles. Kept in-component (not globals.css) so the carousel
@@ -37,7 +39,14 @@ const MARQUEE_CSS = `
 }
 `;
 
-function BrandLogo({ name, img }: { name: string; img: string }) {
+interface BrandLogoProps {
+  name: string;
+  img: string;
+  width?: number;
+  height?: number;
+}
+
+function BrandLogo({ name, img, width, height }: BrandLogoProps) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
@@ -49,10 +58,16 @@ function BrandLogo({ name, img }: { name: string; img: string }) {
   }
 
   return (
+    // lazy: the marquee sits below the fold and renders every logo twice for
+    // the loop — eager copies get preloaded by React ahead of the LCP image.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={img}
       alt={name}
+      width={width}
+      height={height}
+      loading="lazy"
+      decoding="async"
       className="h-8 sm:h-10 w-auto max-w-[160px] object-contain grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all duration-300"
       onError={() => setFailed(true)}
     />
@@ -61,13 +76,13 @@ function BrandLogo({ name, img }: { name: string; img: string }) {
 
 // A single logo cell. ~22px trailing gap keeps even spacing and makes the
 // -50% marquee loop perfectly periodic.
-function BrandCell({ name, img, hidden }: { name: string; img: string; hidden?: boolean }) {
+function BrandCell({ hidden, ...logo }: BrandLogoProps & { hidden?: boolean }) {
   return (
     <div
       className="mr-[22px] flex shrink-0 items-center justify-center"
       aria-hidden={hidden || undefined}
     >
-      <BrandLogo name={name} img={img} />
+      <BrandLogo {...logo} />
     </div>
   );
 }

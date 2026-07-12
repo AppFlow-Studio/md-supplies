@@ -10,6 +10,7 @@ import { GET_PRODUCTS, GET_PRODUCT_CARD_FULL } from '@/lib/shopify/queries/produ
 import type { CollectionProduct } from '@/lib/shopify/types';
 import { buildMetadata } from '@/lib/seo'
 import { buildWebSiteSchema, jsonLdSafe } from '@/lib/schema'
+import { getNonce } from '@/lib/csp-nonce'
 
 export const revalidate = 60
 
@@ -45,6 +46,7 @@ async function fetchProductByHandle(handle: string): Promise<CollectionProduct |
 }
 
 export default async function Home() {
+  const nonce = await getNonce()
   const [p0, p1, p2, p3, fallbackData] = await Promise.all([
     fetchProductByHandle(POPULAR_PRODUCT_HANDLES[0]),
     fetchProductByHandle(POPULAR_PRODUCT_HANDLES[1]),
@@ -85,6 +87,7 @@ export default async function Home() {
     <main id="main-content">
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildWebSiteSchema()) }}
       />
       <HeroSection products={heroProducts} />

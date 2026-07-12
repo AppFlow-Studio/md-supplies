@@ -11,11 +11,13 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { getSiblingSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
+import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
+import { getNonce } from '@/lib/csp-nonce'
 
 export const revalidate = 30
 
@@ -75,6 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CategoryProductPage({ params }: Props) {
+  const nonce = await getNonce()
   const { slug, product: handle } = await params
   const subHandle = `${slug}-${handle}`
 
@@ -208,6 +211,7 @@ export default async function CategoryProductPage({ params }: Props) {
 
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: jsonLdSafe(
               buildBreadcrumbListSchema(
@@ -252,6 +256,13 @@ export default async function CategoryProductPage({ params }: Props) {
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">
+      {/* og:type `product` is outside Next's Metadata union — rendered here
+          and hoisted into <head> by React 19 (audit L10). */}
+      <meta property="og:type" content="product" />
+      <BreadcrumbSchema
+        items={[...breadcrumbs, { label: productData.product.title }]}
+        currentUrl={`${SITE_URL}/category/${slug}/${handle}`}
+      />
       <ProductView
         product={productData.product}
         relatedProducts={recsData.related}

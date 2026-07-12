@@ -8,14 +8,13 @@ describe('next.config headers()', () => {
     expect(rules[0].source).toBe('/(.*)')
   })
 
-  it('includes all five required security headers', async () => {
+  it('includes all four required static security headers', async () => {
     const rules = await nextConfig.headers!()
     const keys = rules[0].headers.map((h) => h.key)
     expect(keys).toContain('X-Content-Type-Options')
     expect(keys).toContain('X-Frame-Options')
     expect(keys).toContain('Referrer-Policy')
     expect(keys).toContain('Permissions-Policy')
-    expect(keys).toContain('Content-Security-Policy-Report-Only')
   })
 
   it('X-Content-Type-Options is nosniff', async () => {
@@ -36,21 +35,13 @@ describe('next.config headers()', () => {
     expect(h?.value).toBe('strict-origin-when-cross-origin')
   })
 
-  it('CSP Report-Only contains required directives and sources', async () => {
-    const rules = await nextConfig.headers!()
-    const h = rules[0].headers.find((h) => h.key === 'Content-Security-Policy-Report-Only')
-    const value = h?.value ?? ''
-    expect(value).toContain("default-src 'self'")
-    expect(value).toContain('https://www.googletagmanager.com')
-    expect(value).toContain('https://cdn.shopify.com')
-    expect(value).toContain("object-src 'none'")
-    expect(value).toContain("frame-ancestors 'self'")
-    expect(value).toContain("base-uri 'self'")
-  })
-
-  it('does NOT ship an enforcing Content-Security-Policy header', async () => {
+  // CSP (enforcing + Report-Only) is generated per-request in proxy.ts, not
+  // here — a fresh nonce needs a request, which this static config doesn't
+  // have. Covered by lib/__tests__/csp.test.ts and __tests__/proxy.test.ts.
+  it('does not ship any Content-Security-Policy header from this static config', async () => {
     const rules = await nextConfig.headers!()
     const keys = rules[0].headers.map((h) => h.key)
     expect(keys).not.toContain('Content-Security-Policy')
+    expect(keys).not.toContain('Content-Security-Policy-Report-Only')
   })
 })

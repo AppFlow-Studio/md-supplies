@@ -156,10 +156,10 @@ export default async function ArticlePage({ params }: Props) {
       />
       <BreadcrumbSchema
         items={[
-          { name: "Home", item: SITE_URL },
-          { name: "Blog", item: `${SITE_URL}/blog` },
-          { name: article.title, item: `${SITE_URL}/blog/${article.handle}` },
+          { label: "Blog", href: "/blog" },
+          { label: article.title },
         ]}
+        currentUrl={`${SITE_URL}/blog/${article.handle}`}
       />
 
       {/* ── Hero image with breadcrumb overlay ── */}

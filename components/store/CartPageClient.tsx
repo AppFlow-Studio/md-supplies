@@ -10,6 +10,7 @@ import { track } from '@/lib/analytics/track'
 import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/events'
 import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
@@ -92,7 +93,7 @@ export function CartPageClient() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={image.url}
-                      alt={image.altText ?? line.merchandise.product.title}
+                      alt={cleanShopifyAlt(image.altText) ?? line.merchandise.product.title}
                       className="w-full h-full object-contain"
                     />
                   )}

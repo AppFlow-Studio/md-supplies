@@ -11,6 +11,8 @@ import { normalizeGtin } from '@/lib/gtin'
 import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
+import { getPrimaryCollection } from '@/lib/category-utils'
+import { ROUTES } from '@/lib/routes'
 
 export const revalidate = 30
 
@@ -149,20 +151,29 @@ export default async function ProductPage({ params }: Props) {
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }
 
-  const breadcrumbItems = [
-    { name: 'Home', item: SITE_URL },
-    { name: 'Shop', item: `${SITE_URL}/categories` },
-    { name: product.title, item: productUrl },
-  ]
+  // Contextual middle crumb (audit L12): the product's primary approved
+  // collection, matching what the nested /category/<slug>/<product> route
+  // shows. Falls back to the generic Shop crumb when none qualifies.
+  const primaryCollection = getPrimaryCollection(product.collections?.nodes ?? [])
+  const categoryCrumb = primaryCollection
+    ? { label: primaryCollection.title, href: ROUTES.category(primaryCollection.handle) }
+    : { label: 'Shop', href: '/categories' }
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">
+      {/* og:type `product` is outside Next's Metadata union — rendered here
+          and hoisted into <head> by React 19 (audit L10). */}
+      <meta property="og:type" content="product" />
       <ProductSchema {...schemaProps} />
-      <BreadcrumbSchema items={breadcrumbItems} />
+      <BreadcrumbSchema
+        items={[categoryCrumb, { label: product.title }]}
+        currentUrl={productUrl}
+      />
       <ProductView
         product={product}
         relatedProducts={relatedProducts}
         complementaryProducts={complementaryProducts}
+        breadcrumbs={[categoryCrumb]}
         partnerSlug={partner?.slug ?? null}
       />
     </main>

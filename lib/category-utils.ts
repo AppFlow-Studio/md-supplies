@@ -72,3 +72,17 @@ export async function getRelatedCategories(
     .slice(0, 6)
     .map((c) => ({ label: c.title, slug: c.handle }))
 }
+
+/**
+ * Picks the product's primary category for breadcrumbs (audit L12): the first
+ * of its collections that is an approved, navigable category (in the roadmap
+ * allowlist and not excluded), falling back to the first non-excluded
+ * collection, else null (caller keeps its generic "Shop" crumb).
+ */
+export function getPrimaryCollection(
+  collections: { handle: string; title: string }[],
+): { handle: string; title: string } | null {
+  const allowed = getAllowedHandles()
+  const navigable = collections.filter((c) => !EXCLUDED_COLLECTION_HANDLES.has(c.handle))
+  return navigable.find((c) => allowed.has(c.handle)) ?? navigable[0] ?? null
+}

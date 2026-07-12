@@ -1,18 +1,10 @@
 import type { NextConfig } from "next";
 
-const CSP_REPORT_ONLY = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com",
-  "font-src 'self'",
-  "connect-src 'self' https://daebb2-76.myshopify.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net",
-  "frame-src https://shopify.com https://checkout.shopify.com https://daebb2-76.myshopify.com",
-  "frame-ancestors 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-].join('; ')
-
+// Content-Security-Policy (enforcing + Report-Only) is NOT set here: it needs
+// a fresh nonce per request (lib/csp.ts), which this static headers() config
+// can't generate — it runs once at build/server-start, not per request. Both
+// CSP headers are set in proxy.ts instead. See
+// docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md (M10).
 const nextConfig: NextConfig = {
   // Allow the dev server to be reached through ngrok. Next blocks cross-origin
   // dev requests by default, which breaks the HMR WebSocket and hydration when
@@ -48,7 +40,6 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options",          value: "SAMEORIGIN" },
           { key: "Referrer-Policy",          value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy",       value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
         ],
       },
     ]

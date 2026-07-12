@@ -1,22 +1,10 @@
-'use client'
-
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { FadeIn } from "@/components/ui/FadeIn";
 import type { BlogArticleSummary } from "@/lib/shopify/types";
 
 interface Props {
   articles: BlogArticleSummary[];
 }
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-};
 
 export function MoreArticles({ articles }: Props) {
   if (articles.length === 0) return null;
@@ -27,15 +15,9 @@ export function MoreArticles({ articles }: Props) {
         <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-8">
           More Articles
         </h2>
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[22px] gap-y-6"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-        >
-          {articles.map((a) => (
-            <motion.div key={a.id} variants={itemVariants}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-[22px] gap-y-6">
+          {articles.map((a, i) => (
+            <FadeIn key={a.id} delay={i * 0.08}>
               <Link
                 href={`/blog/${a.handle}`}
                 className="group flex flex-col gap-3"
@@ -65,9 +47,9 @@ export function MoreArticles({ articles }: Props) {
                   </p>
                 </div>
               </Link>
-            </motion.div>
+            </FadeIn>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

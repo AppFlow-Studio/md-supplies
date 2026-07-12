@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { ShieldCheck, Truck, Loader2, Minus, Plus } from 'lucide-react'
 import { useCart } from '@/components/store/CartProvider'
 import type { ProductCardData } from '@/types/product'
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -70,7 +71,7 @@ export function QuickAddContent({ product, titleId }: Props) {
         <div className="relative w-full aspect-square max-w-[340px]">
           <Image
             src={allImages[activeImg]?.url ?? ''}
-            alt={allImages[activeImg]?.altText ?? product.title}
+            alt={cleanShopifyAlt(allImages[activeImg]?.altText) ?? product.title}
             fill
             sizes="(max-width: 640px) 80vw, (max-width: 920px) 40vw, 340px"
             className="object-contain"
@@ -95,7 +96,7 @@ export function QuickAddContent({ product, titleId }: Props) {
               >
                 <Image
                   src={img.url}
-                  alt={img.altText || `Product image ${i + 1}`}
+                  alt={cleanShopifyAlt(img.altText) ?? `Product image ${i + 1}`}
                   fill
                   sizes="64px"
                   className="object-contain"
