@@ -203,3 +203,23 @@ input[type="range"]::-moz-range-thumb {
   padding: 0.6rem 1rem;
   border-bottom: 1px solid #d9d9d9;
 }
+
+/* ── Scroll-reveal utility (components/ui/FadeIn.tsx) ─────────────────────────
+   Hidden until the shared IntersectionObserver adds .is-visible. Replaces the
+   framer-motion whileInView reveals (audit M24). */
+.fade-in {
+  opacity: 0;
+  transform: var(--fade-from, translateY(24px));
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.fade-in.is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

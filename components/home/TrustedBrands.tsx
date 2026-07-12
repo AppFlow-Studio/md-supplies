@@ -58,12 +58,16 @@ function BrandLogo({ name, img, width, height }: BrandLogoProps) {
   }
 
   return (
+    // lazy: the marquee sits below the fold and renders every logo twice for
+    // the loop — eager copies get preloaded by React ahead of the LCP image.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={img}
       alt={name}
       width={width}
       height={height}
+      loading="lazy"
+      decoding="async"
       className="h-8 sm:h-10 w-auto max-w-[160px] object-contain grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all duration-300"
       onError={() => setFailed(true)}
     />

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { QuickAddModal } from '@/components/product/QuickAddModal'
 import { ProductImage } from '@/components/shared/ProductImage'
@@ -13,16 +12,6 @@ import { cleanShopifyAlt } from '@/lib/alt-text'
 
 interface Props {
   products: CollectionProduct[]
-}
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 }
 
 function toCardData(product: CollectionProduct): ProductCardData {
@@ -87,14 +76,8 @@ export function PopularProducts({ products }: Props) {
           </h2>
         </FadeIn>
 
-        <motion.div
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-        >
-          {products.map((product) => {
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {products.map((product, i) => {
             const variant = product.variants.nodes[0]
             const price = parseFloat(
               variant?.price.amount ?? product.priceRange.minVariantPrice.amount,
@@ -102,7 +85,7 @@ export function PopularProducts({ products }: Props) {
             const image = product.images.nodes[0]
 
             return (
-              <motion.div key={product.id} variants={itemVariants} className="bg-white flex flex-col">
+              <FadeIn key={product.id} delay={i * 0.08} className="bg-white flex flex-col">
 
                 <Link
                   href={`/product/${product.handle}`}
@@ -144,10 +127,10 @@ export function PopularProducts({ products }: Props) {
                   )}
                 </div>
 
-              </motion.div>
+              </FadeIn>
             )
           })}
-        </motion.div>
+        </div>
 
       </div>
 

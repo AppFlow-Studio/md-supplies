@@ -16,7 +16,6 @@ import { GET_MENU } from '@/lib/shopify/queries/menu'
 import { buildOrganizationSchema, jsonLdSafe } from '@/lib/schema'
 import { IS_STAGING, SITE_ORIGIN } from '@/lib/site-config'
 import type { LocalizationData, AvailableCountry, SlimCollection, ShopifyMenu } from '@/lib/shopify/types'
-import { MotionConfig } from 'framer-motion'
 
 const manrope = Manrope({
   variable: '--font-manrope',
@@ -77,17 +76,18 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildOrganizationSchema()) }}
         />
-        <MotionConfig reducedMotion="user">
-          <CartProvider>
-            <Header menuItems={menuItems} collections={collections} />
-            {children}
-            <Footer
-              collections={collections}
-              availableCountries={availableCountries}
-            />
-            <CartPopup />
-          </CartProvider>
-        </MotionConfig>
+        {/* Reduced-motion is honored in CSS (globals.css .fade-in) — the old
+            framer <MotionConfig reducedMotion="user"> pulled the whole motion
+            runtime into the shared bundle (audit M24). */}
+        <CartProvider>
+          <Header menuItems={menuItems} collections={collections} />
+          {children}
+          <Footer
+            collections={collections}
+            availableCountries={availableCountries}
+          />
+          <CartPopup />
+        </CartProvider>
       </body>
     </html>
   )
