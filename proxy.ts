@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import productRedirects from './docs/redirects-ready.json'
+import { buildCsp, generateNonce } from '@/lib/csp'
 
 type Redirect301 = { from: string; to: string; status: 301 }
 type Gone410    = { from: string; status: 410 }
@@ -98,18 +99,37 @@ const REDIRECT_ENTRIES: RedirectEntry[] = [
   // TODO row 24 (glucose testing):             { from: '<old-path>', to: '/category/testing',           status: 301 }
 ]
 
-export function proxy(request: NextRequest): Response | undefined {
+// Stamps the enforcing + parallel Report-Only CSP headers (M10) onto every
+// response this proxy returns — redirects and 410s included, not just
+// pass-through. Report-Only mirrors the enforcing policy: it's not a
+// staging step here (we're already enforcing), it's an ongoing regression
+// canary that keeps reporting violations independently of what enforcing
+// already blocked.
+function withCsp(response: Response, nonce: string): Response {
+  const isDev = process.env.NODE_ENV === 'development'
+  const csp = buildCsp(nonce, isDev)
+  response.headers.set('Content-Security-Policy', csp)
+  response.headers.set('Content-Security-Policy-Report-Only', csp)
+  return response
+}
+
+export function proxy(request: NextRequest): Response {
+  // Generated once per request, before any branch below — every response
+  // path (redirect/410/rewrite/pass-through) must carry the same nonce a
+  // downstream Server Component would read via lib/csp-nonce.ts.
+  const nonce = generateNonce()
+
   const raw = request.nextUrl.pathname
   // Normalize encoded paths (+, %20) to match old Magento/WooCommerce-style URLs
   const pathname = raw.replace(/\+/g, ' ')
 
   // Definitive removal first: permanently-gone categories (§4.3).
-  if (isGoneCategory(pathname)) return new Response(null, { status: 410 })
+  if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), nonce)
 
   for (const entry of REDIRECT_ENTRIES) {
     if (pathname !== entry.from) continue
-    if (entry.status === 410) return new Response(null, { status: 410 })
-    return NextResponse.redirect(new URL(entry.to, request.url), 301)
+    if (entry.status === 410) return withCsp(new Response(null, { status: 410 }), nonce)
+    return withCsp(NextResponse.redirect(new URL(entry.to, request.url), 301), nonce)
   }
 
   // Bulk product catalog 301s (consolidated/discontinued handles) — exact match.
@@ -117,7 +137,7 @@ export function proxy(request: NextRequest): Response | undefined {
   // naive plural→singular rewrite.
   const productTarget = PRODUCT_REDIRECTS.get(pathname)
   if (productTarget) {
-    return NextResponse.redirect(new URL(productTarget, request.url), 301)
+    return withCsp(NextResponse.redirect(new URL(productTarget, request.url), 301), nonce)
   }
 
   // Blanket plural→singular fallback: any other legacy `/products/<handle>` URL
@@ -125,13 +145,13 @@ export function proxy(request: NextRequest): Response | undefined {
   // with an unchanged handle (and so are not enumerated in redirects-ready.json).
   if (pathname.startsWith('/products/')) {
     const newPath = pathname.replace(/^\/products\//, '/product/')
-    return NextResponse.redirect(new URL(newPath, request.url), 301)
+    return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), nonce)
   }
 
   // Brands → Partners wildcard (T1 consolidation)
   if (pathname === '/brands' || pathname.startsWith('/brands/')) {
     const newPath = pathname.replace(/^\/brands/, '/partners')
-    return NextResponse.redirect(new URL(newPath, request.url), 301)
+    return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), nonce)
   }
 
   // ── Category query variants → dynamic twin route (audit H1) ────────────────
@@ -141,15 +161,28 @@ export function proxy(request: NextRequest): Response | undefined {
   // rendered results (?sort/filter/page — tracking params like utm_* don't)
   // are rewritten to /category-browse/[slug], a dynamic route rendering the
   // same view. Rewrite (not redirect): the canonical URL stays in the bar.
+  //
+  // NOTE (M10): since the CSP nonce (below) now forces every route dynamic
+  // anyway, this rewrite is no longer load-bearing — both sides render
+  // dynamically now. Left in place as still-correct, not-yet-cleaned-up
+  // behavior; not touched by the CSP change.
   const categoryMatch = pathname.match(/^\/category\/([^/]+)$/)
   if (categoryMatch) {
     const query = request.nextUrl.searchParams
     if (query.has('sort') || query.has('filter') || query.has('page')) {
       const url = request.nextUrl.clone()
       url.pathname = `/category-browse/${categoryMatch[1]}`
-      return NextResponse.rewrite(url)
+      return withCsp(NextResponse.rewrite(url), nonce)
     }
   }
+
+  // Pass-through: forward the nonce as a request header so downstream Server
+  // Components can read it via headers() (lib/csp-nonce.ts), and set it on
+  // the response so the browser enforces against the matching nonce'd
+  // inline scripts Next.js renders for this request.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-nonce', nonce)
+  return withCsp(NextResponse.next({ request: { headers: requestHeaders } }), nonce)
 }
 
 export const config = {

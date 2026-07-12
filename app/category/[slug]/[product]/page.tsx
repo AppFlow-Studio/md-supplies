@@ -16,6 +16,7 @@ import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
+import { getNonce } from '@/lib/csp-nonce'
 
 export const revalidate = 30
 
@@ -75,6 +76,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CategoryProductPage({ params }: Props) {
+  const nonce = await getNonce()
   const { slug, product: handle } = await params
   const subHandle = `${slug}-${handle}`
 
@@ -208,6 +210,7 @@ export default async function CategoryProductPage({ params }: Props) {
 
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: jsonLdSafe(
               buildBreadcrumbListSchema(

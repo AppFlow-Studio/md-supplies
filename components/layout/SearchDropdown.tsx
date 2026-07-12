@@ -2,17 +2,30 @@
 
 import {
   useState, useEffect, useRef, useCallback,
-  type KeyboardEvent, type FormEvent,
+  type KeyboardEvent, type FormEvent, type MouseEvent,
 } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Search, X, ArrowRight, Tag } from 'lucide-react'
 import type { PredictiveResults } from '@/app/api/search/predictive/route'
 import { ProductImage } from '@/components/shared/ProductImage'
 
-function sanitizeStyledText(raw: string): string {
-  return raw
-    .replace(/<(?!\/?(?:mark|span)\b)[^>]*>/gi, '')
-    .replace(/<(mark|span)\s[^>]*>/gi, '<$1>')
+const ALLOWED_STYLED_TEXT_TAGS = new Set(['mark', 'span'])
+
+// Rebuilds every tag from its captured name only — the previous two-pass
+// regex used a whitespace-gated pattern to strip attributes
+// (`<(mark|span)\s[^>]*>`), so `<span/onclick=…>` (no space before the
+// attribute) matched neither the strip pass nor the attribute-strip pass
+// and reached dangerouslySetInnerHTML verbatim. Capturing the tag name via
+// a character class ([a-zA-Z][a-zA-Z0-9]*) stops at the first non-letter
+// character regardless of what follows it (space, `/`, or `>`), so this
+// can't be bypassed the same way — every attribute is always discarded.
+export function sanitizeStyledText(raw: string): string {
+  return raw.replace(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)[^>]*>/g, (_match, slash: string, name: string) => {
+    const tag = name.toLowerCase()
+    if (!ALLOWED_STYLED_TEXT_TAGS.has(tag)) return ''
+    return `<${slash}${tag}>`
+  })
 }
 
 interface Props {
@@ -44,6 +57,13 @@ export function SearchDropdown({ onClose }: Props) {
   const [fetched, setFetched] = useState<{ for: string; data: PredictiveResults }>({ for: '', data: EMPTY })
   const [activeIdx, setActiveIdx] = useState(-1)
 
+  // Bounded query→results cache: repeated queries (retyping, arrow-key
+  // revisits) are served without a network round trip. FIFO eviction, not
+  // LRU — simplicity over perfect recency for a session-scoped cache this
+  // small.
+  const cacheRef = useRef<Map<string, PredictiveResults>>(new Map())
+  const MAX_CACHE_ENTRIES = 30
+
   const debouncedQuery = useDebounce(query, 280)
 
   const isActiveQuery = debouncedQuery.length >= 2
@@ -57,17 +77,31 @@ export function SearchDropdown({ onClose }: Props) {
 
   useEffect(() => {
     if (debouncedQuery.length < 2) return
-    let cancelled = false
-    fetch(`/api/search/predictive?q=${encodeURIComponent(debouncedQuery)}`)
+
+    const cached = cacheRef.current.get(debouncedQuery)
+    if (cached) {
+      setFetched({ for: debouncedQuery, data: cached })
+      setActiveIdx(-1)
+      return
+    }
+
+    const controller = new AbortController()
+    fetch(`/api/search/predictive?q=${encodeURIComponent(debouncedQuery)}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data: PredictiveResults) => {
-        if (!cancelled) {
-          setFetched({ for: debouncedQuery, data })
-          setActiveIdx(-1)
+        if (cacheRef.current.size >= MAX_CACHE_ENTRIES) {
+          const oldestKey = cacheRef.current.keys().next().value
+          if (oldestKey !== undefined) cacheRef.current.delete(oldestKey)
         }
+        cacheRef.current.set(debouncedQuery, data)
+        setFetched({ for: debouncedQuery, data })
+        setActiveIdx(-1)
       })
-      .catch(() => { if (!cancelled) setFetched({ for: debouncedQuery, data: EMPTY }) })
-    return () => { cancelled = true }
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        setFetched({ for: debouncedQuery, data: EMPTY })
+      })
+    return () => controller.abort()
   }, [debouncedQuery])
 
   const hasResults =
@@ -85,6 +119,15 @@ export function SearchDropdown({ onClose }: Props) {
     router.push(href)
     onClose()
   }, [router, onClose])
+
+  // Only intercept a plain left-click: middle-click (auxclick, never fires
+  // this handler) and modified clicks (ctrl/cmd/shift — open in new
+  // tab/window) must fall through to native <a> behavior (NF15).
+  const onItemClick = useCallback((e: MouseEvent, href: string) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    e.preventDefault()
+    navigate(href)
+  }, [navigate])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -133,6 +176,11 @@ export function SearchDropdown({ onClose }: Props) {
               <input
                 ref={inputRef}
                 type="text"
+                role="combobox"
+                aria-expanded={showDropdown && (hasResults || loading)}
+                aria-controls="search-dropdown-listbox"
+                aria-autocomplete="list"
+                aria-activedescendant={activeIdx >= 0 ? `search-option-${activeIdx}` : undefined}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -159,7 +207,7 @@ export function SearchDropdown({ onClose }: Props) {
 
           {/* Results dropdown */}
           {showDropdown && (hasResults || loading) && (
-            <div ref={dropdownRef} className="mt-2 bg-white border border-gray-100 shadow-md overflow-hidden">
+            <div ref={dropdownRef} id="search-dropdown-listbox" role="listbox" className="mt-2 bg-white border border-gray-100 shadow-md overflow-hidden">
 
               {/* Suggestions */}
               {results.queries.length > 0 && (
@@ -171,11 +219,15 @@ export function SearchDropdown({ onClose }: Props) {
                   {results.queries.map((q) => {
                     const idx = flatIdx++
                     const isActive = activeIdx === idx
+                    const href = `/search?q=${encodeURIComponent(q.text)}`
                     return (
-                      <button
+                      <Link
                         key={q.text}
-                        type="button"
-                        onClick={() => navigate(`/search?q=${encodeURIComponent(q.text)}`)}
+                        href={href}
+                        role="option"
+                        id={`search-option-${idx}`}
+                        aria-selected={isActive}
+                        onClick={(e) => onItemClick(e, href)}
                         className={`w-full flex items-center gap-3 px-4 py-1.5 text-left transition-colors focus:outline-none ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
                       >
                         <Search size={12} className="text-gray-300 shrink-0" />
@@ -183,7 +235,7 @@ export function SearchDropdown({ onClose }: Props) {
                           className="text-[13px] text-navy-900 [&_mark]:bg-transparent [&_mark]:font-semibold [&_mark]:text-teal-500"
                           dangerouslySetInnerHTML={{ __html: sanitizeStyledText(q.styledText) }}
                         />
-                      </button>
+                      </Link>
                     )
                   })}
                 </>
@@ -199,11 +251,15 @@ export function SearchDropdown({ onClose }: Props) {
                   {results.products.map((p) => {
                     const idx = flatIdx++
                     const isActive = activeIdx === idx
+                    const href = `/product/${p.handle}`
                     return (
-                      <button
+                      <Link
                         key={p.id}
-                        type="button"
-                        onClick={() => navigate(`/product/${p.handle}`)}
+                        href={href}
+                        role="option"
+                        id={`search-option-${idx}`}
+                        aria-selected={isActive}
+                        onClick={(e) => onItemClick(e, href)}
                         className={`w-full flex items-center gap-3 px-4 py-1.5 text-left transition-colors focus:outline-none ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
                       >
                         <div className="relative w-8 h-8 shrink-0 border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden">
@@ -222,7 +278,7 @@ export function SearchDropdown({ onClose }: Props) {
                         </div>
                         <span className="text-[13px] text-navy-900 line-clamp-1 flex-1">{p.title}</span>
                         <ArrowRight size={12} className="text-gray-300 shrink-0" />
-                      </button>
+                      </Link>
                     )
                   })}
                 </>
@@ -238,17 +294,21 @@ export function SearchDropdown({ onClose }: Props) {
                   {results.collections.map((c) => {
                     const idx = flatIdx++
                     const isActive = activeIdx === idx
+                    const href = `/category/${c.handle}`
                     return (
-                      <button
+                      <Link
                         key={c.id}
-                        type="button"
-                        onClick={() => navigate(`/category/${c.handle}`)}
+                        href={href}
+                        role="option"
+                        id={`search-option-${idx}`}
+                        aria-selected={isActive}
+                        onClick={(e) => onItemClick(e, href)}
                         className={`w-full flex items-center gap-3 px-4 py-1.5 text-left transition-colors focus:outline-none ${isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50'}`}
                       >
                         <Tag size={12} className="text-gray-300 shrink-0" />
                         <span className="text-[13px] text-navy-900 flex-1">{c.title}</span>
                         <ArrowRight size={12} className="text-gray-300 shrink-0" />
-                      </button>
+                      </Link>
                     )
                   })}
                 </>
