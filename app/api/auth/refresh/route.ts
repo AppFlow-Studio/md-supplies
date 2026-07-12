@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { refreshAccessToken } from '@/lib/shopify/customer'
 import { SESSION_COOKIES, getSession } from '@/lib/shopify/session'
 import { SITE_ORIGIN } from '@/lib/site-config'
+import { safeNextPath } from '@/lib/safe-redirect'
 
 const SESSION_OPTS = {
   httpOnly: true,
@@ -11,7 +12,7 @@ const SESSION_OPTS = {
 }
 
 export async function GET(request: NextRequest) {
-  const next    = request.nextUrl.searchParams.get('next') ?? '/account'
+  const next    = safeNextPath(request.nextUrl.searchParams.get('next'))
   const session = await getSession()
 
   if (!session?.refreshToken) {

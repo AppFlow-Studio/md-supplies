@@ -1,10 +1,8 @@
+import 'server-only';
 import { cache } from 'react';
 import type { ShopifyResponse } from './types';
-import { loadEnvConfig } from '@next/env';
 import { serverEnv } from '@/lib/env.server';
 import { logServerError } from '@/lib/log-error';
-
-loadEnvConfig(process.cwd());
 
 // RequestInit plus Next.js data-cache options (revalidate / tags on fetch).
 export type StorefrontFetchOptions = RequestInit & {

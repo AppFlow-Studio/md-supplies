@@ -20,7 +20,6 @@ secret — can never be bundled into client-side JavaScript.
 |---|---|---|---|---|
 | `SHOPIFY_STORE_DOMAIN` | ✅ required | no | no | `lib/env.server.ts` |
 | `SHOPIFY_STOREFRONT_ACCESS_TOKEN` | ✅ required | **yes** | no | `lib/env.server.ts` |
-| `SHOPIFY_ADMIN_ACCESS_TOKEN` | ✅ required | **yes** | no | `lib/env.server.ts` |
 | `RESEND_API_KEY` | ✅ required | **yes** | no | `lib/env.server.ts` |
 | `RESEND_FROM_EMAIL` | optional (default `noreply@mdsupplies.com`) | no | no | `lib/env.server.ts` |
 | `RESEND_TO_EMAIL` | optional (default `team@mdsupplies.com`) | no | no | `lib/env.server.ts` |

@@ -20,7 +20,9 @@ function optional(name: string, fallback: string): string {
 export const serverEnv = {
   get shopifyStoreDomain()     { return required('SHOPIFY_STORE_DOMAIN') },
   get shopifyStorefrontToken() { return required('SHOPIFY_STOREFRONT_ACCESS_TOKEN') },
-  get shopifyAdminToken()      { return required('SHOPIFY_ADMIN_ACCESS_TOKEN') },
+  // No Admin API credential: the app is Storefront-read-only by design. If a
+  // scoped, read-only Admin need ever becomes real, add a narrowly-scoped
+  // token here — never a full read/write one.
   // HMAC secret for verifying Shopify webhooks (app/api/revalidate). For
   // admin-created webhooks this is the shared secret shown under
   // Settings → Notifications → Webhooks in the Shopify admin.

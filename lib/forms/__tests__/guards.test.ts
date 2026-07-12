@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { z } from 'zod'
 import {
   assertAllowedOrigin,
+  assertNoForeignOrigin,
   readJsonBounded,
   sanitizeHeaderValue,
   fieldErrors,
@@ -46,6 +47,45 @@ describe('assertAllowedOrigin', () => {
   it('rejects when neither Origin nor Referer is present', () => {
     const req = postRequest({ host: 'shop.example.com' })
     expect(assertAllowedOrigin(req).ok).toBe(false)
+  })
+})
+
+describe('assertNoForeignOrigin', () => {
+  function getRequest(headers: Record<string, string>) {
+    return new Request('https://shop.example.com/api/search/predictive?q=ab', { headers })
+  }
+
+  it('allows a same-host Origin or Referer', () => {
+    expect(
+      assertNoForeignOrigin(
+        getRequest({ host: 'shop.example.com', origin: 'https://shop.example.com' }),
+      ).ok,
+    ).toBe(true)
+    expect(
+      assertNoForeignOrigin(
+        getRequest({ host: 'shop.example.com', referer: 'https://shop.example.com/search' }),
+      ).ok,
+    ).toBe(true)
+  })
+
+  it('allows when neither Origin nor Referer is present (same-origin GET)', () => {
+    expect(assertNoForeignOrigin(getRequest({ host: 'shop.example.com' })).ok).toBe(true)
+  })
+
+  it('rejects a foreign Origin', () => {
+    const result = assertNoForeignOrigin(
+      getRequest({ host: 'shop.example.com', origin: 'https://evil.example.net' }),
+    )
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(403)
+  })
+
+  it('rejects a foreign Referer when Origin is absent', () => {
+    expect(
+      assertNoForeignOrigin(
+        getRequest({ host: 'shop.example.com', referer: 'https://evil.example.net/page' }),
+      ).ok,
+    ).toBe(false)
   })
 })
 

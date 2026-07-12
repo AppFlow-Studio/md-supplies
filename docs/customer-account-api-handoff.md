@@ -141,7 +141,6 @@ commit secrets; share real token values via the team vault.
 |---|---|---|
 | `SHOPIFY_STORE_DOMAIN` | no | `daebb2-76.myshopify.com` |
 | `SHOPIFY_STOREFRONT_ACCESS_TOKEN` | **yes** | Storefront API (catalog/cart/search) |
-| `SHOPIFY_ADMIN_ACCESS_TOKEN` | **yes** | Admin API (referenced; not used by app code yet) |
 | `SHOPIFY_CUSTOMER_ACCOUNT_URL` | no | OAuth base `https://shopify.com/authentication/71167377624`; GraphQL base is derived from it |
 | `SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID` | no (public) | UUID `87bb2a4d-…`; sent in the OAuth redirect |
 | `NEXT_PUBLIC_SITE_URL` | **per-dev** | your ngrok origin, **no trailing slash**; builds the OAuth `redirect_uri` |
