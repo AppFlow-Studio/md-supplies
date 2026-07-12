@@ -9,6 +9,7 @@ import { QuickAddModal } from '@/components/product/QuickAddModal'
 import { ProductImage } from '@/components/shared/ProductImage'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import type { ProductCardData } from '@/types/product'
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 interface Props {
   products: CollectionProduct[]
@@ -39,13 +40,13 @@ function toCardData(product: CollectionProduct): ProductCardData {
     title: product.title,
     image: {
       url: image?.url ?? '',
-      altText: image?.altText ?? product.title,
+      altText: cleanShopifyAlt(image?.altText) ?? product.title,
       width: image?.width ?? 800,
       height: image?.height ?? 800,
     },
     images: product.images.nodes.map((img) => ({
       url: img.url,
-      altText: img.altText ?? product.title,
+      altText: cleanShopifyAlt(img.altText) ?? product.title,
       width: img.width ?? 800,
       height: img.height ?? 800,
     })),
@@ -109,7 +110,7 @@ export function PopularProducts({ products }: Props) {
                 >
                   <ProductImage
                     src={image?.url}
-                    alt={image?.altText ?? product.title}
+                    alt={cleanShopifyAlt(image?.altText) ?? product.title}
                     className="object-contain group-hover:scale-105 transition-transform duration-300"
                   />
                 </Link>

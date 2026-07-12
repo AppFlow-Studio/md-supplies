@@ -8,6 +8,8 @@ import { BrandLogoImage } from '@/components/shared/BrandLogoImage'
 interface Manufacturer {
   name: string
   logo: string
+  logoWidth?: number
+  logoHeight?: number
   description: string
   vendorSlug: string
 }
@@ -36,6 +38,8 @@ export function ManufacturersGrid({ manufacturers }: Props) {
               <BrandLogoImage
                 src={m.logo}
                 name={m.name}
+                width={m.logoWidth}
+                height={m.logoHeight}
                 className="max-h-[50px] w-auto max-w-[210px] object-contain"
                 fallbackClassName="font-bold text-[18px] tracking-[0.04em] text-navy-900 select-none"
               />

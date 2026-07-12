@@ -47,6 +47,8 @@ export function PartnerDetail({ partner }: Props) {
             <BrandLogoImage
               src={partner.logo.url || undefined}
               name={partner.name}
+              width={partner.logo.width}
+              height={partner.logo.height}
               className="max-h-16 w-auto object-contain"
               fallbackClassName="text-center font-bold text-[20px] tracking-[0.04em] text-navy-900 select-none"
             />

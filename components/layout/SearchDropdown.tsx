@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { Search, X, ArrowRight, Tag } from 'lucide-react'
 import type { PredictiveResults } from '@/app/api/search/predictive/route'
 import { ProductImage } from '@/components/shared/ProductImage'
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 function sanitizeStyledText(raw: string): string {
   return raw
@@ -210,7 +211,7 @@ export function SearchDropdown({ onClose }: Props) {
                           {p.featuredImage ? (
                             <ProductImage
                               src={p.featuredImage.url}
-                              alt={p.featuredImage.altText ?? p.title}
+                              alt={cleanShopifyAlt(p.featuredImage.altText) ?? p.title}
                               sizes="32px"
                               className="object-contain"
                             />

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
 import type { CollectionProduct } from "@/lib/shopify/types";
 import { Van } from "lucide-react";
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 function OccIcon() {
   return (
@@ -33,7 +34,7 @@ function ProductCard({ product, priority = false }: { product: CollectionProduct
         {image ? (
           <Image
             src={image.url}
-            alt={image.altText ?? product.title}
+            alt={cleanShopifyAlt(image.altText) ?? product.title}
             fill
             sizes="(max-width: 640px) 45vw, 220px"
             priority={priority}

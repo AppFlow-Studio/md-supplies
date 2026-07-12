@@ -17,6 +17,8 @@ export function PartnerCard({ partner }: Props) {
           <BrandLogoImage
             src={partner.logo.url}
             name={partner.name}
+            width={partner.logo.width}
+            height={partner.logo.height}
             className="max-h-10 w-auto object-contain"
             fallbackClassName="font-bold text-[16px] tracking-[0.04em] text-navy-900 select-none"
           />

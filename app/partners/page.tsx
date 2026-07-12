@@ -98,6 +98,8 @@ export default function PartnersPage() {
             .map((p) => ({
               name: p.name,
               logo: p.logo.url,
+              logoWidth: p.logo.width,
+              logoHeight: p.logo.height,
               description: p.description,
               vendorSlug: p.slug,
             }))}

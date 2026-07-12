@@ -25,6 +25,8 @@ function BrandTile({ brand }: { brand: Brand }) {
       <BrandLogoImage
         src={logo}
         name={brand.name}
+        width={brand.logoWidth}
+        height={brand.logoHeight}
         className="max-h-12 w-auto max-w-[160px] object-contain grayscale opacity-70 transition-all duration-300 group-hover:opacity-100 group-hover:grayscale-0"
         fallbackClassName="text-center text-[15px] font-semibold leading-snug tracking-[0.02em] text-navy-900"
       />

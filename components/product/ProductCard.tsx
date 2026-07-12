@@ -4,6 +4,7 @@ import type { ProductCardData } from '@/types/product'
 import { ProductBadges } from './ProductBadges'
 import { ProductCardClient } from './ProductCardClient'
 import { ROUTES } from '@/lib/routes'
+import { cleanShopifyAlt } from '@/lib/alt-text'
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -30,7 +31,7 @@ export function ProductCard({ product }: Props) {
         <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-neutral-50">
           <Image
             src={product.image.url}
-            alt={product.image.altText}
+            alt={cleanShopifyAlt(product.image.altText) ?? product.title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-contain transition-transform duration-200 group-hover:scale-[1.03]"
