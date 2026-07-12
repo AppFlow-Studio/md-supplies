@@ -1,5 +1,6 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
 import { getNonce } from '@/lib/csp-nonce'
+import { buildBreadcrumbListSchema } from '@/lib/schema/breadcrumb'
 
 interface BreadcrumbItem {
   label: string
@@ -14,18 +15,9 @@ interface Props {
   currentUrl?: string
 }
 
-export async function BreadcrumbSchema({ items }: Props) {
+export async function BreadcrumbSchema({ items, currentUrl }: Props) {
   const nonce = await getNonce()
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map((crumb, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: crumb.name,
-      item: crumb.item,
-    })),
-  }
+  const schema = buildBreadcrumbListSchema(items, currentUrl)
   return (
     <script
       type="application/ld+json"
