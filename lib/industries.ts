@@ -7,6 +7,7 @@ export type Industry = {
   name: string
   slug: string
   collectionHandle: string
+  tag?: string
   description: string
   image: string
   buyerType: string
@@ -18,6 +19,7 @@ export const INDUSTRIES: Industry[] = [
     name: 'Urgent Care',
     slug: 'urgent-care',
     collectionHandle: 'urgent-care',
+    tag: 'industry:urgent-care',
     description: 'Exam gloves, wound care, diagnostics, and testing supplies.',
     image: getIndustryImagePath('industry-urgent-care.jpeg'),
     buyerType: 'Urgent care center owners, clinic managers, and medical directors sourcing high-turnover consumables for walk-in patient care.',
@@ -44,6 +46,7 @@ export const INDUSTRIES: Industry[] = [
     name: 'HRT Clinics',
     slug: 'hrt-clinics',
     collectionHandle: 'hrt-clinics',
+    tag: 'industry:hrt-surgery',
     description: 'Trocar kits, syringes, needles, and specialized hormone supplies.',
     image: getIndustryImagePath('industry-HRT-clinics-surgery-&-procedure.jpeg'),
     buyerType: 'Hormone replacement therapy clinic operators and nurse practitioners managing ongoing pellet insertion and injection protocols.',
@@ -78,6 +81,7 @@ export const INDUSTRIES: Industry[] = [
     name: 'Home Health',
     slug: 'home-health',
     collectionHandle: 'home-health',
+    tag: 'industry:home-care',
     description: 'Incontinence, wound care, and daily living aids.',
     image: getIndustryImagePath('industry-home-care.jpeg'),
     buyerType: 'Home health agency owners, visiting nurse supervisors, and care coordinators ordering supplies for patient homes and caregiver kits.',
@@ -152,6 +156,7 @@ export const INDUSTRIES: Industry[] = [
     name: 'Clinics & Doctor\'s Offices',
     slug: 'clinics-doctors-offices',
     collectionHandle: 'clinics-doctors-offices',
+    tag: 'industry:clinic',
     description: 'Exam room essentials, diagnostic supplies, gloves, and office consumables for outpatient practices.',
     image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
     buyerType: 'Clinic owners, office managers, and medical directors sourcing exam room consumables, diagnostic supplies, and day-to-day clinical materials for outpatient practices.',
@@ -178,6 +183,7 @@ export const INDUSTRIES: Industry[] = [
     name: 'Pharmacies',
     slug: 'pharmacies',
     collectionHandle: 'pharmacies',
+    tag: 'industry:pharmacy',
     description: 'Diabetic care, home monitoring, incontinence, and OTC medical supplies for pharmacy retail and patient support.',
     image: getIndustryImagePath('industry-pharmacies.jpeg'),
     buyerType: 'Pharmacy owners, buyers, and retail managers sourcing front-end medical supply inventory, diabetic care products, home monitoring devices, and patient-facing consumables.',

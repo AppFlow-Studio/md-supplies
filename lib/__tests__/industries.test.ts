@@ -40,3 +40,29 @@ describe('isIndustryComplete', () => {
     }
   })
 })
+
+describe('industry -> Shopify tag mapping', () => {
+  const expectedTags: Record<string, string> = {
+    'urgent-care': 'industry:urgent-care',
+    'hrt-clinics': 'industry:hrt-surgery',
+    'home-health': 'industry:home-care',
+    'clinics-doctors-offices': 'industry:clinic',
+    pharmacies: 'industry:pharmacy',
+  }
+
+  it('maps exactly the 5 industries with a confirmed Shopify tag', () => {
+    for (const [slug, tag] of Object.entries(expectedTags)) {
+      const industry = INDUSTRIES.find((i) => i.slug === slug)
+      expect(industry?.tag).toBe(tag)
+    }
+  })
+
+  it('leaves every other industry without a tag', () => {
+    const mapped = new Set(Object.keys(expectedTags))
+    for (const i of INDUSTRIES) {
+      if (!mapped.has(i.slug)) {
+        expect(i.tag).toBeUndefined()
+      }
+    }
+  })
+})
