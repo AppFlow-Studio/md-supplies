@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Industry } from '@/types/industry'
-import { FeaturedProductCard } from './FeaturedProductCard'
+import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
+import { ViewItemListTracker } from '@/components/category/ViewItemListTracker'
 import { FAQSection } from './FAQSection'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
@@ -109,9 +110,21 @@ export function IndustryPage({ industry }: Props) {
         {industry.relevantProducts.length > 0 && (
           <section className="mb-12">
             <h2 className="text-xl font-bold text-navy-900 mb-6">Popular Products</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {industry.relevantProducts.map((p) => (
-                <FeaturedProductCard key={p.handle} product={p} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[23px]">
+              <ViewItemListTracker
+                products={industry.relevantProducts}
+                itemListId={`industry-${industry.slug}-featured`}
+                itemListName={`${industry.name} Featured Products`}
+              />
+              {industry.relevantProducts.map((product, index) => (
+                <ShopifyProductCard
+                  key={product.id}
+                  product={product}
+                  itemListId={`industry-${industry.slug}-featured`}
+                  itemListName={`${industry.name} Featured Products`}
+                  index={index}
+                  imagePriority={index < 3}
+                />
               ))}
             </div>
           </section>
