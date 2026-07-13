@@ -1,13 +1,8 @@
+import type { CollectionProduct } from '@/lib/shopify/types'
+
 export interface FAQ {
   question: string
   answer: string
-}
-
-export interface IndustryProduct {
-  handle: string
-  title: string
-  image: string
-  price: number
 }
 
 export interface IndustryCategory {
@@ -29,7 +24,7 @@ export interface Industry {
   heroImage?: { url: string; altText: string }
   relevantCategories: IndustryCategory[]
   relevantSubcategories: IndustryCategory[]
-  relevantProducts: IndustryProduct[]
+  relevantProducts: CollectionProduct[]
   relatedGuides: IndustryGuide[]
   ctaText: string
   ctaLink: string
