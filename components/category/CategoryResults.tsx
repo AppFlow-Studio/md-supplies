@@ -2,11 +2,9 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { X } from 'lucide-react'
-import { storefrontFetch } from '@/lib/shopify/storefront'
 import { buildCollectionItemListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
-import type { Collection } from '@/lib/shopify/types'
+import { fetchProductConnection, type ProductSource } from '@/lib/category-results-source'
 import { getVisibleFilters } from '@/lib/shopify/filters'
 import { getAllowedFacets } from '@/lib/filter-registry'
 import { withTrackingParams, type TrackingParamSource } from '@/lib/analytics/tracking-params'
@@ -31,7 +29,9 @@ function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
 }
 
 interface Props {
-  slug: string
+  source: ProductSource
+  baseUrl: string
+  facetKey: string
   sortKey: string
   reverse: boolean
   sortParam?: string
@@ -41,7 +41,9 @@ interface Props {
 }
 
 export async function CategoryResults({
-  slug,
+  source,
+  baseUrl,
+  facetKey,
   sortKey,
   reverse,
   sortParam,
@@ -51,59 +53,41 @@ export async function CategoryResults({
 }: Props) {
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sortParam)
 
-  // Built up front so it's available as the page-1 redirect target below,
-  // not just for the links rendered at the bottom of this component.
   const persistParams = new URLSearchParams()
   if (sortParam) persistParams.set('sort', sortParam)
   activeFilterStrings.forEach((f) => persistParams.append('filter', f))
   withTrackingParams(persistParams, trackingParamsSource)
   const page1Qs = persistParams.toString()
-  const page1Url = page1Qs ? `${ROUTES.category(slug)}?${page1Qs}` : ROUTES.category(slug)
+  const page1Url = page1Qs ? `${baseUrl}?${page1Qs}` : baseUrl
 
-  // Deterministic page-N: fetch from the start of the (sorted/filtered)
-  // result set and slice locally, instead of chaining a Storefront `after`
-  // cursor. Every `?page=N` becomes self-contained and immune to
-  // stale/expired cursors — the tradeoff is refetching earlier pages'
-  // products on every request, bounded by MAX_CATEGORY_PAGE upstream.
   const first = currentPage * CATEGORY_PAGE_SIZE + 1
 
-  let data: { collection: Collection | null }
+  let result: Awaited<ReturnType<typeof fetchProductConnection>>
   try {
-    data = await storefrontFetch<{ collection: Collection | null }>(
-      GET_COLLECTION,
-      {
-        handle: slug,
-        first,
-        after: null,
-        sortKey,
-        reverse,
-        filters: parseFilters(activeFilterStrings),
-      },
-      { next: { revalidate: 300, tags: ['shopify', 'products', 'collections', `collection:${slug}`] } },
-    )
+    result = await fetchProductConnection(source, {
+      first,
+      sortKey,
+      reverse,
+      filters: parseFilters(activeFilterStrings),
+    })
   } catch (err) {
-    // A transient Storefront failure shouldn't take down a deep page with a
-    // full error page — bounce back to page 1 (filters/sort intact)
-    // instead. Page 1 has no lower fallback, so let it surface to error.tsx.
     if (currentPage > 1) {
       redirect(page1Url)
     }
     throw err
   }
 
-  if (!data.collection) notFound()
+  if (!result) notFound()
 
-  const { collection } = data
-  const allNodes = collection.products.nodes
+  const { products: connection, title, handle } = result
+  const allNodes = connection.nodes
   const startIndex = (currentPage - 1) * CATEGORY_PAGE_SIZE
   const products = allNodes.slice(startIndex, startIndex + CATEGORY_PAGE_SIZE)
   const hasNext = allNodes.length > currentPage * CATEGORY_PAGE_SIZE
 
   if (!isFiltered && currentPage > 1 && products.length === 0) notFound()
 
-  // Registry gate: only allowlisted facet sources may reach the filter rail —
-  // the Storefront `filters` response is untrusted input.
-  const allowedFacets = getAllowedFacets(slug, collection.products.filters ?? [])
+  const allowedFacets = getAllowedFacets(facetKey, connection.filters ?? [])
   const filters = getVisibleFilters(allowedFacets, activeFilterStrings)
 
   const removeFilterUrl = (filterToRemove: string) => {
@@ -113,7 +97,7 @@ export async function CategoryResults({
     next.forEach((f) => p.append('filter', f))
     withTrackingParams(p, trackingParamsSource)
     const qs = p.toString()
-    return qs ? `/category/${slug}?${qs}` : `/category/${slug}`
+    return qs ? `${baseUrl}?${qs}` : baseUrl
   }
 
   const filterLabelMap = new Map(
@@ -208,17 +192,17 @@ export async function CategoryResults({
           {/* Product grid */}
           <ProductGrid
             products={products}
-            emptyStateHref={ROUTES.category(slug)}
-            categorySlug={collection.handle}
-            itemListId={collection.handle}
-            itemListName={collection.title}
+            emptyStateHref={baseUrl}
+            categorySlug={handle}
+            itemListId={handle}
+            itemListName={title}
           />
 
           {/* Pagination — works for both plain and filtered/sorted views */}
           <CategoryPagination
             currentPage={currentPage}
             hasNext={hasNext}
-            baseUrl={ROUTES.category(slug)}
+            baseUrl={baseUrl}
             persistParams={persistParams}
           />
         </div>

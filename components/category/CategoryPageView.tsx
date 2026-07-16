@@ -36,7 +36,7 @@ function collectionFetchOptions(slug: string) {
   return { next: { revalidate: 300, tags: ['shopify', 'collections', `collection:${slug}`] } }
 }
 
-function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
+export function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
   switch (sort) {
     case 'PRICE_ASC':    return { sortKey: 'PRICE', reverse: false }
     case 'PRICE_DESC':   return { sortKey: 'PRICE', reverse: true }
@@ -46,7 +46,7 @@ function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
   }
 }
 
-function parseFilterParam(filter?: string | string[]): string[] {
+export function parseFilterParam(filter?: string | string[]): string[] {
   if (!filter) return []
   const raw = Array.isArray(filter) ? filter : [filter]
   // Default-deny URL-supplied inputs (rejects tag filters and unknown keys)
@@ -223,7 +223,9 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
       {/* Main layout */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
         <CategoryResults
-          slug={slug}
+          source={{ kind: 'collection', handle: slug }}
+          baseUrl={ROUTES.category(slug)}
+          facetKey={slug}
           sortKey={sortKey}
           reverse={reverse}
           sortParam={sp.sort}
