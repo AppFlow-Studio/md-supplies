@@ -64,3 +64,32 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'face-masks', displayName: 'Face Masks', collectionHandle: 'face-coverings' },
   { tag: 'pharmacy-products', displayName: 'Pharmacy Products', collectionHandle: 'pharmacy-products' },
 ] as const
+
+// Confirmed live on 2026-07-16 (see plan Global Constraints) — 3 of the 5
+// products the spec calls out are dual-tagged today; the 2 Universal
+// Mattress Cover products are not (see comment below).
+export const PRODUCT_CATEGORY_OVERRIDES: Record<string, string> = {
+  'dynaride-transport-wheelchair-17-x-16-w-fixed-full-arm-silver-vein-1pc-cs': 'mobility',
+  'iv-catheter-20g-x-2-box-sr-ox2051ca-3sr-ox2051ca': 'iv-therapy',
+  'surgical-aspirator-tips-1-4-green': 'dental',
+  // Universal Mattress Cover products (universal-defined-perimeter-mattress-
+  // cover-42-1pc-cs, universal-mattress-cover-w-defined-perimeter-36-x-80-x-
+  // 6-1pc-cs): canonical category is home-care vs. housekeeping-janitorial,
+  // pending catalog-team sign-off. They carry only category:room-furniture
+  // live today, so no override is needed until that tag changes.
+}
+
+export function resolveCanonicalCategory(summary: ProductTagSummary): string | null {
+  return PRODUCT_CATEGORY_OVERRIDES[summary.handle] ?? summary.categories[0] ?? null
+}
+
+export type L1Tile = L1CategoryDef & { productCount: number }
+
+export function buildL1Tiles(summaries: ProductTagSummary[]): L1Tile[] {
+  const counts = new Map<string, number>()
+  for (const summary of summaries) {
+    const category = resolveCanonicalCategory(summary)
+    if (category) counts.set(category, (counts.get(category) ?? 0) + 1)
+  }
+  return CATEGORY_TREE_L1.map((l1) => ({ ...l1, productCount: counts.get(l1.tag) ?? 0 }))
+}

@@ -40,3 +40,67 @@ describe('CATEGORY_TREE_L1', () => {
     expect(tags).toContain('dental')
   })
 })
+
+import { resolveCanonicalCategory, buildL1Tiles, PRODUCT_CATEGORY_OVERRIDES } from '../category-tree'
+
+describe('resolveCanonicalCategory', () => {
+  it('returns the single category for a normally-tagged product', () => {
+    expect(resolveCanonicalCategory({ handle: 'foo', categories: ['gloves'], subcategories: [] })).toBe('gloves')
+  })
+
+  it('returns null when a product has no category: tag at all', () => {
+    expect(resolveCanonicalCategory({ handle: 'foo', categories: [], subcategories: [] })).toBeNull()
+  })
+
+  it('applies the hardcoded override for the 5 dual-tag exception products', () => {
+    expect(
+      resolveCanonicalCategory({
+        handle: 'dynaride-transport-wheelchair-17-x-16-w-fixed-full-arm-silver-vein-1pc-cs',
+        categories: ['home-care', 'mobility'],
+        subcategories: ['transport-chairs'],
+      }),
+    ).toBe('mobility')
+  })
+
+  it('falls back to the first category: tag for an un-overridden dual-tag product', () => {
+    expect(
+      resolveCanonicalCategory({ handle: 'some-other-handle', categories: ['home-care', 'mobility'], subcategories: [] }),
+    ).toBe('home-care')
+  })
+})
+
+describe('buildL1Tiles', () => {
+  it('counts products per L1 tag, zero for tags with no matching products', () => {
+    const tiles = buildL1Tiles([
+      { handle: 'a', categories: ['gloves'], subcategories: [] },
+      { handle: 'b', categories: ['gloves'], subcategories: [] },
+      { handle: 'c', categories: ['dental'], subcategories: [] },
+    ])
+    const gloves = tiles.find((t) => t.tag === 'gloves')!
+    const dental = tiles.find((t) => t.tag === 'dental')!
+    const wound = tiles.find((t) => t.tag === 'wound-care')!
+    expect(gloves.productCount).toBe(2)
+    expect(dental.productCount).toBe(1)
+    expect(wound.productCount).toBe(0)
+    expect(tiles).toHaveLength(25)
+  })
+
+  it('ignores products whose category: tag is not in the L1 allowlist (noise tags)', () => {
+    const tiles = buildL1Tiles([
+      { handle: 'a', categories: ['non-medical'], subcategories: [] },
+    ])
+    expect(tiles.every((t) => t.productCount === 0)).toBe(true)
+  })
+
+  it('routes the override products into their canonical L1 count instead of their first raw tag', () => {
+    const tiles = buildL1Tiles([
+      {
+        handle: 'surgical-aspirator-tips-1-4-green',
+        categories: ['dental', 'respiratory'],
+        subcategories: ['suction'],
+      },
+    ])
+    expect(tiles.find((t) => t.tag === 'dental')!.productCount).toBe(1)
+    expect(tiles.find((t) => t.tag === 'respiratory')!.productCount).toBe(0)
+  })
+})
