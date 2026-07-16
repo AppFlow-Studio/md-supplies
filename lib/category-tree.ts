@@ -218,14 +218,12 @@ export function getProductCategoryPath(
   summary: ProductTagSummary,
   l2Nodes: L2Node[],
 ): { category: L1CategoryDef; subcategory: L2Node | null } | null {
-  const categoryTag = resolveCanonicalCategory(summary)
+  const subcategory = l2Nodes.find((n) => summary.subcategories.includes(n.tag)) ?? null
+  const categoryTag = subcategory ? subcategory.parentTag : resolveCanonicalCategory(summary)
   if (!categoryTag) return null
 
   const category = CATEGORY_TREE_L1.find((c) => c.tag === categoryTag)
   if (!category) return null
-
-  const subcategory =
-    l2Nodes.find((n) => n.parentTag === categoryTag && summary.subcategories.includes(n.tag)) ?? null
 
   return { category, subcategory }
 }

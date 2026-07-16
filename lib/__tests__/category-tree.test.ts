@@ -299,4 +299,13 @@ describe('getProductCategoryPath', () => {
     )
     expect(path).toBeNull()
   })
+
+  it('resolves to the canonical parent even when the product carries only the cross-link parent\'s raw category tag', () => {
+    const path = getProductCategoryPath(
+      { handle: 'some-exam-table-2', categories: ['exam-room'], subcategories: ['exam-tables'] },
+      l2Nodes,
+    )
+    expect(path?.category.tag).toBe('room-furniture')
+    expect(path?.subcategory?.tag).toBe('exam-tables')
+  })
 })
