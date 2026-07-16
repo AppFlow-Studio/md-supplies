@@ -199,9 +199,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
   const sp = await searchParams
   const l1 = getL1ByCollectionHandle(slug)
 
+  let l2Nodes: L2Node[] | undefined
+
   if (l1) {
     const summaries = await fetchProductTagSummaries()
-    const l2Nodes = buildL2Tree(summaries)
+    l2Nodes = buildL2Tree(summaries)
     const node = l2Nodes.find((n) => n.tag === handle)
 
     if (node && node.crossLinkParentTag === l1.tag && node.parentTag !== l1.tag) {
@@ -236,12 +238,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     complementary: [] as CollectionProduct[],
   }))
 
-  const summaries = await fetchProductTagSummaries()
-  const l2Nodes = buildL2Tree(summaries)
+  const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
   const { categories, subcategories } = parseProductTags(productData.product.tags)
   const categoryPath = getProductCategoryPath(
     { handle: productData.product.handle, categories, subcategories },
-    l2Nodes,
+    resolvedL2Nodes,
   )
 
   const breadcrumbs = categoryPath
