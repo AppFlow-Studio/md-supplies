@@ -22,6 +22,8 @@ import {
   humanizeTag,
   CATEGORY_TREE_L1,
   buildSubcategoryTagQuery,
+  getProductCategoryPath,
+  parseProductTags,
   type L2Node,
 } from '@/lib/category-tree'
 import { getNonce } from '@/lib/csp-nonce'
@@ -234,9 +236,25 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     complementary: [] as CollectionProduct[],
   }))
 
-  const breadcrumbs = l1
-    ? [{ label: l1.displayName, href: `/category/${slug}` }]
-    : [{ label: 'Categories', href: '/shop' }]
+  const summaries = await fetchProductTagSummaries()
+  const l2Nodes = buildL2Tree(summaries)
+  const { categories, subcategories } = parseProductTags(productData.product.tags)
+  const categoryPath = getProductCategoryPath(
+    { handle: productData.product.handle, categories, subcategories },
+    l2Nodes,
+  )
+
+  const breadcrumbs = categoryPath
+    ? [
+        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        ...(categoryPath.subcategory
+          ? [{
+              label: humanizeTag(categoryPath.subcategory.tag),
+              href: ROUTES.subcategory(categoryPath.category.collectionHandle, categoryPath.subcategory.tag),
+            }]
+          : []),
+      ]
+    : [{ label: 'Categories', href: '/categories' }]
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">

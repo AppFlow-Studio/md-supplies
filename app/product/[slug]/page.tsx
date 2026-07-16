@@ -11,7 +11,7 @@ import { normalizeGtin } from '@/lib/gtin'
 import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { getPrimaryCollection } from '@/lib/category-utils'
+import { getProductCategoryPath, fetchProductTagSummaries, buildL2Tree, parseProductTags, humanizeTag } from '@/lib/category-tree'
 import { ROUTES } from '@/lib/routes'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
@@ -147,13 +147,27 @@ export default async function ProductPage({ params }: Props) {
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }
 
-  // Contextual middle crumb (audit L12): the product's primary approved
-  // collection, matching what the nested /category/<slug>/<product> route
-  // shows. Falls back to the generic Shop crumb when none qualifies.
-  const primaryCollection = getPrimaryCollection(product.collections?.nodes ?? [])
-  const categoryCrumb = primaryCollection
-    ? { label: primaryCollection.title, href: ROUTES.category(primaryCollection.handle) }
-    : { label: 'Shop', href: '/categories' }
+  // Contextual middle crumb(s) (audit L12, superseded by the tag-derived
+  // registry): the product's own resolveCanonicalCategory result, plus the
+  // matching L2 subcategory when its tags carry one — always the canonical
+  // parent, never a boundary subcategory's cross-link parent, regardless of
+  // which URL the visitor arrived from. Falls back to the generic Shop crumb
+  // when the product resolves no category at all.
+  const summaries = await fetchProductTagSummaries()
+  const l2Nodes = buildL2Tree(summaries)
+  const { categories, subcategories } = parseProductTags(product.tags)
+  const categoryPath = getProductCategoryPath({ handle: product.handle, categories, subcategories }, l2Nodes)
+  const categoryCrumbs = categoryPath
+    ? [
+        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        ...(categoryPath.subcategory
+          ? [{
+              label: humanizeTag(categoryPath.subcategory.tag),
+              href: ROUTES.subcategory(categoryPath.category.collectionHandle, categoryPath.subcategory.tag),
+            }]
+          : []),
+      ]
+    : [{ label: 'Shop', href: '/categories' }]
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">
@@ -162,14 +176,14 @@ export default async function ProductPage({ params }: Props) {
       <meta property="og:type" content="product" />
       <ProductSchema {...schemaProps} />
       <BreadcrumbSchema
-        items={[categoryCrumb, { label: product.title }]}
+        items={[...categoryCrumbs, { label: product.title }]}
         currentUrl={productUrl}
       />
       <ProductView
         product={product}
         relatedProducts={relatedProducts}
         complementaryProducts={complementaryProducts}
-        breadcrumbs={[categoryCrumb]}
+        breadcrumbs={categoryCrumbs}
         partnerSlug={partner?.slug ?? null}
       />
     </main>
