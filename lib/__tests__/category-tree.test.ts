@@ -95,12 +95,12 @@ describe('buildL1Tiles', () => {
   it('routes the override products into their canonical L1 count instead of their first raw tag', () => {
     const tiles = buildL1Tiles([
       {
-        handle: 'surgical-aspirator-tips-1-4-green',
-        categories: ['dental', 'respiratory'],
-        subcategories: ['suction'],
+        handle: 'dynaride-transport-wheelchair-17-x-16-w-fixed-full-arm-silver-vein-1pc-cs',
+        categories: ['home-care', 'mobility'],
+        subcategories: ['transport-chairs'],
       },
     ])
-    expect(tiles.find((t) => t.tag === 'dental')!.productCount).toBe(1)
-    expect(tiles.find((t) => t.tag === 'respiratory')!.productCount).toBe(0)
+    expect(tiles.find((t) => t.tag === 'mobility')!.productCount).toBe(1)
+    expect(tiles.find((t) => t.tag === 'home-care')!.productCount).toBe(0)
   })
 })
