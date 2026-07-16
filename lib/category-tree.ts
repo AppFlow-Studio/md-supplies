@@ -194,3 +194,38 @@ export async function fetchProductTagSummaries(): Promise<ProductTagSummary[]> {
 
   return summaries
 }
+
+export function getL1ByCollectionHandle(handle: string): L1CategoryDef | undefined {
+  return CATEGORY_TREE_L1.find((c) => c.collectionHandle === handle)
+}
+
+export function humanizeTag(tag: string): string {
+  return tag
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+export function buildSubcategoryTagQuery(categoryTag: string, subTag: string): string {
+  return `tag:"category:${categoryTag}" AND tag:"subcategory:${subTag}"`
+}
+
+export function getSubcategoriesForParent(parentTag: string, l2Nodes: L2Node[]): L2Node[] {
+  return l2Nodes.filter((n) => n.parentTag === parentTag)
+}
+
+export function getProductCategoryPath(
+  summary: ProductTagSummary,
+  l2Nodes: L2Node[],
+): { category: L1CategoryDef; subcategory: L2Node | null } | null {
+  const categoryTag = resolveCanonicalCategory(summary)
+  if (!categoryTag) return null
+
+  const category = CATEGORY_TREE_L1.find((c) => c.tag === categoryTag)
+  if (!category) return null
+
+  const subcategory =
+    l2Nodes.find((n) => n.parentTag === categoryTag && summary.subcategories.includes(n.tag)) ?? null
+
+  return { category, subcategory }
+}

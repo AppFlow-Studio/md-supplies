@@ -204,3 +204,99 @@ describe('buildL2Tree', () => {
     expect(nodes.find((n) => n.tag === 'pet-pads')).toBeUndefined()
   })
 })
+
+import {
+  getL1ByCollectionHandle,
+  humanizeTag,
+  buildSubcategoryTagQuery,
+  getSubcategoriesForParent,
+  getProductCategoryPath,
+} from '../category-tree'
+
+describe('getL1ByCollectionHandle', () => {
+  it('finds an L1 whose collectionHandle differs from its tag', () => {
+    const l1 = getL1ByCollectionHandle('testing-screening')
+    expect(l1?.tag).toBe('testing')
+  })
+
+  it('finds an L1 whose collectionHandle matches its tag', () => {
+    const l1 = getL1ByCollectionHandle('gloves')
+    expect(l1?.tag).toBe('gloves')
+  })
+
+  it('returns undefined for an unknown handle', () => {
+    expect(getL1ByCollectionHandle('not-a-real-handle')).toBeUndefined()
+  })
+})
+
+describe('humanizeTag', () => {
+  it('title-cases a kebab-case tag', () => {
+    expect(humanizeTag('exam-gloves')).toBe('Exam Gloves')
+  })
+
+  it('handles a single-word tag', () => {
+    expect(humanizeTag('sutures')).toBe('Sutures')
+  })
+})
+
+describe('buildSubcategoryTagQuery', () => {
+  it('combines category and subcategory tags into a Storefront query string', () => {
+    expect(buildSubcategoryTagQuery('needles-syringes', 'iv-catheters')).toBe(
+      'tag:"category:needles-syringes" AND tag:"subcategory:iv-catheters"',
+    )
+  })
+})
+
+describe('getSubcategoriesForParent', () => {
+  it('returns only nodes whose parentTag matches, excluding a given tag', () => {
+    const l2Nodes = [
+      { tag: 'exam-gloves', parentTag: 'gloves', productCount: 10 },
+      { tag: 'surgical-gloves', parentTag: 'gloves', productCount: 5 },
+      { tag: 'wound-dressings', parentTag: 'wound-care', productCount: 8 },
+    ]
+    const result = getSubcategoriesForParent('gloves', l2Nodes)
+    expect(result.map((n) => n.tag).sort()).toEqual(['exam-gloves', 'surgical-gloves'])
+  })
+})
+
+describe('getProductCategoryPath', () => {
+  const l2Nodes = [
+    { tag: 'exam-tables', parentTag: 'room-furniture', crossLinkParentTag: 'exam-room', productCount: 28 },
+    { tag: 'exam-gloves', parentTag: 'gloves', productCount: 10 },
+  ]
+
+  it('resolves category and subcategory from the product\'s own canonical tags', () => {
+    const path = getProductCategoryPath(
+      { handle: 'some-glove', categories: ['gloves'], subcategories: ['exam-gloves'] },
+      l2Nodes,
+    )
+    expect(path?.category.tag).toBe('gloves')
+    expect(path?.subcategory?.tag).toBe('exam-gloves')
+  })
+
+  it('always resolves to the canonical parent for a boundary subcategory, never the cross-link parent', () => {
+    const path = getProductCategoryPath(
+      { handle: 'some-exam-table', categories: ['room-furniture'], subcategories: ['exam-tables'] },
+      l2Nodes,
+    )
+    expect(path?.category.tag).toBe('room-furniture')
+    expect(path?.subcategory?.tag).toBe('exam-tables')
+  })
+
+  it('returns a null subcategory when the product carries no matching subcategory tag', () => {
+    const path = getProductCategoryPath(
+      { handle: 'some-glove', categories: ['gloves'], subcategories: [] },
+      l2Nodes,
+    )
+    expect(path?.category.tag).toBe('gloves')
+    expect(path?.subcategory).toBeNull()
+  })
+
+  it('returns null when the product has no resolvable category at all', () => {
+    const path = getProductCategoryPath(
+      { handle: 'untagged', categories: [], subcategories: [] },
+      l2Nodes,
+    )
+    expect(path).toBeNull()
+  })
+})
