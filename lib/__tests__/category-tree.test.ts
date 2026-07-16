@@ -104,3 +104,53 @@ describe('buildL1Tiles', () => {
     expect(tiles.find((t) => t.tag === 'home-care')!.productCount).toBe(0)
   })
 })
+
+import { buildL2Tree } from '../category-tree'
+
+describe('buildL2Tree', () => {
+  it('nests a subcategory under its single co-occurring L1 category', () => {
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['gloves'], subcategories: ['exam-gloves'] },
+      { handle: 'b', categories: ['gloves'], subcategories: ['exam-gloves'] },
+    ])
+    const examGloves = nodes.find((n) => n.tag === 'exam-gloves')!
+    expect(examGloves.parentTag).toBe('gloves')
+    expect(examGloves.crossLinkParentTag).toBeUndefined()
+    expect(examGloves.productCount).toBe(2)
+  })
+
+  it('applies the 3 hardcoded boundary overrides regardless of raw dominance', () => {
+    // exam-tables: live counts favor exam-room (16) over room-furniture (12) —
+    // the override deliberately picks room-furniture as canonical anyway.
+    const nodes = buildL2Tree([
+      ...Array.from({ length: 16 }, (_, i) => ({
+        handle: `er-${i}`, categories: ['exam-room'], subcategories: ['exam-tables'],
+      })),
+      ...Array.from({ length: 12 }, (_, i) => ({
+        handle: `rf-${i}`, categories: ['room-furniture'], subcategories: ['exam-tables'],
+      })),
+    ])
+    const examTables = nodes.find((n) => n.tag === 'exam-tables')!
+    expect(examTables.parentTag).toBe('room-furniture')
+    expect(examTables.crossLinkParentTag).toBe('exam-room')
+    expect(examTables.productCount).toBe(28)
+  })
+
+  it('defaults un-overridden boundary subcategories to the dominant co-occurring parent', () => {
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['exam-room'], subcategories: ['foot-stools'] },
+      { handle: 'b', categories: ['exam-room'], subcategories: ['foot-stools'] },
+      { handle: 'c', categories: ['home-care'], subcategories: ['foot-stools'] },
+    ])
+    const footStools = nodes.find((n) => n.tag === 'foot-stools')!
+    expect(footStools.parentTag).toBe('exam-room')
+    expect(footStools.crossLinkParentTag).toBeUndefined()
+  })
+
+  it('excludes a subcategory whose only co-occurring category: tags are not approved L1s', () => {
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['non-medical'], subcategories: ['pet-pads'] },
+    ])
+    expect(nodes.find((n) => n.tag === 'pet-pads')).toBeUndefined()
+  })
+})

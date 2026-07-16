@@ -93,3 +93,55 @@ export function buildL1Tiles(summaries: ProductTagSummary[]): L1Tile[] {
   }
   return CATEGORY_TREE_L1.map((l1) => ({ ...l1, productCount: counts.get(l1.tag) ?? 0 }))
 }
+
+export type L2Node = {
+  tag: string
+  parentTag: string
+  crossLinkParentTag?: string
+  productCount: number
+}
+
+// The 3 real boundary splits called out in the spec — deliberate picks, not
+// always the raw-count winner (exam-tables favors room-furniture over the
+// larger exam-room count on purpose).
+export const BOUNDARY_L1_OVERRIDES: Record<string, { canonical: string; crossLink: string }> = {
+  'barrier-sleeves': { canonical: 'exam-room', crossLink: 'dental' },
+  'vital-sign-monitors': { canonical: 'testing', crossLink: 'exam-room' },
+  'exam-tables': { canonical: 'room-furniture', crossLink: 'exam-room' },
+}
+
+export function buildL2Tree(summaries: ProductTagSummary[]): L2Node[] {
+  const l1Tags = new Set(CATEGORY_TREE_L1.map((c) => c.tag))
+  const subProductCounts = new Map<string, number>()
+  const subParentCounts = new Map<string, Map<string, number>>()
+
+  for (const summary of summaries) {
+    const category = resolveCanonicalCategory(summary)
+    for (const sub of summary.subcategories) {
+      subProductCounts.set(sub, (subProductCounts.get(sub) ?? 0) + 1)
+      if (!category || !l1Tags.has(category)) continue
+      let parentCounts = subParentCounts.get(sub)
+      if (!parentCounts) {
+        parentCounts = new Map()
+        subParentCounts.set(sub, parentCounts)
+      }
+      parentCounts.set(category, (parentCounts.get(category) ?? 0) + 1)
+    }
+  }
+
+  const nodes: L2Node[] = []
+  for (const [sub, parentCounts] of subParentCounts.entries()) {
+    const override = BOUNDARY_L1_OVERRIDES[sub]
+    let parentTag: string
+    let crossLinkParentTag: string | undefined
+    if (override) {
+      parentTag = override.canonical
+      crossLinkParentTag = override.crossLink
+    } else {
+      const [dominant] = [...parentCounts.entries()].sort((a, b) => b[1] - a[1])
+      parentTag = dominant[0]
+    }
+    nodes.push({ tag: sub, parentTag, crossLinkParentTag, productCount: subProductCounts.get(sub) ?? 0 })
+  }
+  return nodes
+}
