@@ -129,6 +129,68 @@ export const GET_PRODUCTS_BY_TAG = `#graphql
   }
 `;
 
+// Root-level equivalent of GET_COLLECTION's products connection, for
+// tag-derived listings (L2 subcategory pages) that have no backing Shopify
+// collection to query. Mirrors GET_COLLECTION's product field selection and
+// its pageInfo/filters shape exactly, so callers can treat the two
+// connections identically (see lib/category-results-source.ts).
+export const GET_PRODUCTS_BY_TAG_FILTERED = `#graphql
+  query GetProductsByTagFiltered(
+    $query: String!
+    $first: Int!
+    $after: String
+    $sortKey: ProductSortKeys
+    $reverse: Boolean
+    $filters: [ProductFilter!]
+  ) {
+    products(
+      query: $query
+      first: $first
+      after: $after
+      sortKey: $sortKey
+      reverse: $reverse
+      filters: $filters
+    ) {
+      nodes {
+        id
+        title
+        handle
+        vendor
+        availableForSale
+        tags
+        priceRange {
+          minVariantPrice { amount currencyCode }
+          maxVariantPrice { amount currencyCode }
+        }
+        images(first: 6) {
+          nodes { id url altText width height }
+        }
+        variants(first: 10) {
+          nodes {
+            id
+            title
+            price { amount currencyCode }
+            compareAtPrice { amount currencyCode }
+            availableForSale
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      filters {
+        id
+        label
+        type
+        values { id label count input }
+      }
+    }
+  }
+`;
+
 export const GET_PRODUCT_CARD_BY_HANDLE = `#graphql
   query GetProductCardByHandle($handle: String!) {
     product(handle: $handle) {
