@@ -134,58 +134,76 @@ export const GET_PRODUCTS_BY_TAG = `#graphql
 // collection to query. Mirrors GET_COLLECTION's product field selection and
 // its pageInfo/filters shape exactly, so callers can treat the two
 // connections identically (see lib/category-results-source.ts).
-export const GET_PRODUCTS_BY_TAG_FILTERED = `#graphql
-  query GetProductsByTagFiltered(
+//
+// Goes through Query.search(...), NOT Query.products(...): Shopify's root
+// products() field does not accept a `filters` argument at all (only
+// Collection.products does) — confirmed live against this store's API
+// (2026-04), which returned "Field 'products' doesn't accept argument
+// 'filters'" when the old GET_PRODUCTS_BY_TAG_FILTERED tried it. Query.search
+// is the only root-level field that supports faceted filtering, via its
+// productFilters argument — this is exactly why SEARCH_PRODUCTS (below) was
+// already built on search() rather than products(). This query mirrors that
+// same pattern, just with the richer field selection (images/variants,
+// first: 6/10) that the L2 category grid needs, instead of SEARCH_PRODUCTS's
+// lighter first: 1/1 selection built for the smaller search UI.
+//
+// search's `nodes` field returns a union (SearchResultItem), so the product
+// field selection must be wrapped in `... on Product { ... }`.
+export const SEARCH_PRODUCTS_BY_TAG = `#graphql
+  query SearchProductsByTag(
     $query: String!
     $first: Int!
     $after: String
-    $sortKey: ProductSortKeys
+    $sortKey: SearchSortKeys
     $reverse: Boolean
     $filters: [ProductFilter!]
   ) {
-    products(
+    search(
       query: $query
       first: $first
       after: $after
       sortKey: $sortKey
       reverse: $reverse
-      filters: $filters
+      productFilters: $filters
+      types: PRODUCT
     ) {
-      nodes {
-        id
-        title
-        handle
-        vendor
-        availableForSale
-        tags
-        priceRange {
-          minVariantPrice { amount currencyCode }
-          maxVariantPrice { amount currencyCode }
-        }
-        images(first: 6) {
-          nodes { id url altText width height }
-        }
-        variants(first: 10) {
-          nodes {
-            id
-            title
-            price { amount currencyCode }
-            compareAtPrice { amount currencyCode }
-            availableForSale
-          }
-        }
-      }
       pageInfo {
         hasNextPage
         hasPreviousPage
         startCursor
         endCursor
       }
-      filters {
+      productFilters {
         id
         label
         type
         values { id label count input }
+      }
+      nodes {
+        ... on Product {
+          id
+          title
+          handle
+          vendor
+          availableForSale
+          tags
+          priceRange {
+            minVariantPrice { amount currencyCode }
+            maxVariantPrice { amount currencyCode }
+          }
+          images(first: 6) {
+            nodes { id url altText width height }
+          }
+          variants(first: 10) {
+            nodes {
+              id
+              title
+              price { amount currencyCode }
+              compareAtPrice { amount currencyCode }
+              availableForSale
+            }
+          }
+        }
       }
     }
   }

@@ -47,9 +47,10 @@ describe('fetchProductConnection', () => {
     expect(result).toBeNull()
   })
 
-  it('fetches via GET_PRODUCTS_BY_TAG_FILTERED for a tag source, using the source\'s title/slug', async () => {
+  it('fetches via SEARCH_PRODUCTS_BY_TAG for a tag source, using the source\'s title/slug, and reshapes search.productFilters into products.filters', async () => {
+    const mockFilters = [{ id: 'filter.p.m.custom.type', label: 'Type', type: 'LIST', values: [] }]
     mockFetch.mockResolvedValue({
-      products: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, filters: [] },
+      search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, productFilters: mockFilters },
     })
 
     const { fetchProductConnection } = await import('../category-results-source')
@@ -60,14 +61,15 @@ describe('fetchProductConnection', () => {
 
     expect(result?.title).toBe('Exam Gloves')
     expect(result?.handle).toBe('exam-gloves')
+    expect(result?.products.filters).toEqual(mockFilters)
     const [query, variables] = mockFetch.mock.calls[0]
-    expect(query).toContain('GetProductsByTagFiltered')
+    expect(query).toContain('SearchProductsByTag')
     expect(variables).toMatchObject({ query: 'tag:"category:gloves" AND tag:"subcategory:exam-gloves"' })
   })
 
-  it('maps the COLLECTION_DEFAULT sort key to BEST_SELLING for a tag source, since the root products() query has no such sort key', async () => {
+  it('maps the COLLECTION_DEFAULT sort key to RELEVANCE for a tag source, since SearchSortKeys only accepts RELEVANCE and PRICE', async () => {
     mockFetch.mockResolvedValue({
-      products: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, filters: [] },
+      search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, productFilters: [] },
     })
 
     const { fetchProductConnection } = await import('../category-results-source')
@@ -77,12 +79,12 @@ describe('fetchProductConnection', () => {
     )
 
     const [, variables] = mockFetch.mock.calls[0]
-    expect(variables).toMatchObject({ sortKey: 'BEST_SELLING' })
+    expect(variables).toMatchObject({ sortKey: 'RELEVANCE' })
   })
 
-  it('maps the CREATED sort key to CREATED_AT for a tag source, since the root products() query uses a different enum name for that value', async () => {
+  it('maps the CREATED sort key to RELEVANCE for a tag source, since SearchSortKeys has no created-date sort', async () => {
     mockFetch.mockResolvedValue({
-      products: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, filters: [] },
+      search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, productFilters: [] },
     })
 
     const { fetchProductConnection } = await import('../category-results-source')
@@ -92,12 +94,12 @@ describe('fetchProductConnection', () => {
     )
 
     const [, variables] = mockFetch.mock.calls[0]
-    expect(variables).toMatchObject({ sortKey: 'CREATED_AT' })
+    expect(variables).toMatchObject({ sortKey: 'RELEVANCE' })
   })
 
-  it('passes non-default sort keys through unchanged for a tag source', async () => {
+  it('passes the PRICE sort key through unchanged for a tag source', async () => {
     mockFetch.mockResolvedValue({
-      products: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, filters: [] },
+      search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, productFilters: [] },
     })
 
     const { fetchProductConnection } = await import('../category-results-source')

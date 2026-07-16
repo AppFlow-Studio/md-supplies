@@ -1,6 +1,6 @@
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
-import { GET_PRODUCTS_BY_TAG_FILTERED } from '@/lib/shopify/queries/products'
+import { SEARCH_PRODUCTS_BY_TAG } from '@/lib/shopify/queries/products'
 import type { Collection } from '@/lib/shopify/types'
 
 // Lets CategoryResults pull products from either a Shopify collection (L1
@@ -17,19 +17,20 @@ export type ProductConnectionResult = {
   handle: string
 } | null
 
-// The root products() query has no COLLECTION_DEFAULT sort key (that only
-// exists on a collection's own products connection) — BEST_SELLING is the
-// closest equivalent "sensible default" for a tag-derived listing.
-//
-// It also names its "created date" sort key CREATED_AT (ProductSortKeys),
-// whereas GET_COLLECTION's products connection uses ProductCollectionSortKeys,
-// which names the equivalent value CREATED. Without mapping CREATED ->
-// CREATED_AT here, selecting "Newest" sort on an L2 subcategory page (a tag
-// source) would send an invalid enum value to Shopify's API.
-function mapSortKeyForTagQuery(sortKey: string): string {
-  if (sortKey === 'COLLECTION_DEFAULT') return 'BEST_SELLING'
-  if (sortKey === 'CREATED') return 'CREATED_AT'
-  return sortKey
+// SEARCH_PRODUCTS_BY_TAG queries Query.search(...), whose sort key type is
+// SearchSortKeys — a third, much narrower enum distinct from both
+// ProductSortKeys (root products()) and ProductCollectionSortKeys
+// (Collection.products). Confirmed live against this store's Storefront API
+// (2026-04): SearchSortKeys only accepts RELEVANCE and PRICE — BEST_SELLING,
+// CREATED_AT, CREATED, and TITLE are all rejected with "provided invalid
+// value" / "Expected ... to be one of: PRICE, RELEVANCE". This matches the
+// ALLOWED_SORT_KEYS allowlist app/search/actions.ts already uses for the same
+// field. COLLECTION_DEFAULT and BEST_SELLING (no relevance-ranked equivalent
+// on this endpoint) and CREATED (no created-date sort on this endpoint) all
+// fall back to RELEVANCE; PRICE passes through unchanged.
+function mapSortKeyForSearchQuery(sortKey: string): string {
+  if (sortKey === 'PRICE') return 'PRICE'
+  return 'RELEVANCE'
 }
 
 export async function fetchProductConnection(
@@ -53,17 +54,27 @@ export async function fetchProductConnection(
     return { products: data.collection.products, title: data.collection.title, handle: data.collection.handle }
   }
 
-  const data = await storefrontFetch<{ products: Collection['products'] }>(
-    GET_PRODUCTS_BY_TAG_FILTERED,
+  const data = await storefrontFetch<{
+    search: {
+      nodes: Collection['products']['nodes']
+      pageInfo: Collection['products']['pageInfo']
+      productFilters: Collection['products']['filters']
+    }
+  }>(
+    SEARCH_PRODUCTS_BY_TAG,
     {
       query: source.query,
       first: opts.first,
       after: null,
-      sortKey: mapSortKeyForTagQuery(opts.sortKey),
+      sortKey: mapSortKeyForSearchQuery(opts.sortKey),
       reverse: opts.reverse,
       filters: opts.filters,
     },
     { next: { revalidate: 300, tags: ['shopify', 'products', 'category-tree'] } },
   )
-  return { products: data.products, title: source.title, handle: source.slug }
+  return {
+    products: { nodes: data.search.nodes, pageInfo: data.search.pageInfo, filters: data.search.productFilters },
+    title: source.title,
+    handle: source.slug,
+  }
 }
