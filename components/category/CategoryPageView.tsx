@@ -11,7 +11,15 @@ import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
-import { getSubcategories, getRelatedCategories, MAX_CATEGORY_PAGE } from '@/lib/category-utils'
+import { MAX_CATEGORY_PAGE } from '@/lib/category-utils'
+import {
+  fetchProductTagSummaries,
+  buildL2Tree,
+  getSubcategoriesForParent,
+  getL1ByCollectionHandle,
+  humanizeTag,
+  CATEGORY_TREE_L1,
+} from '@/lib/category-tree'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
@@ -134,17 +142,27 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   if (isNaN(currentPage) || currentPage < 1) notFound()
   if (currentPage > MAX_CATEGORY_PAGE) redirect(page1RedirectUrl(slug, sp, activeFilterStrings))
 
-  const [data, subcategories, relatedCategories] = await Promise.all([
+  const l1 = getL1ByCollectionHandle(slug)
+
+  const [data, summaries] = await Promise.all([
     storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
       { handle: slug },
       collectionFetchOptions(slug),
     ),
-    getSubcategories(slug),
-    getRelatedCategories(slug),
+    fetchProductTagSummaries(),
   ])
 
   if (!data.collection) notFound()
+
+  const l2Nodes = buildL2Tree(summaries)
+  const subcategories = l1
+    ? getSubcategoriesForParent(l1.tag, l2Nodes).map((n) => ({ label: humanizeTag(n.tag), slug: n.tag }))
+    : []
+  const relatedCategories = CATEGORY_TREE_L1
+    .filter((c) => c.tag !== l1?.tag)
+    .slice(0, 6)
+    .map((c) => ({ label: c.displayName, slug: c.collectionHandle }))
 
   const banner = getCategoryBannerConfig(slug)
   const clusterLinks = getClusterLinks(slug)
