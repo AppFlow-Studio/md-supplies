@@ -9,7 +9,7 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
 import { getAllowedHandles, buildCategoryNav } from '@/lib/category-nav'
 import { getNonce } from '@/lib/csp-nonce'
-import { fetchProductTagSummaries, buildL1Tiles, type L1Tile } from '@/lib/category-tree'
+import { fetchProductTagSummaries, buildL1Tiles, type ProductTagSummary } from '@/lib/category-tree'
 
 export const revalidate = 60
 
@@ -29,26 +29,35 @@ type CollectionNode = {
 export default async function CategoriesPage() {
   const nonce = await getNonce()
 
+  // Two independent reads, fetched (and failed) independently: `allCollections`
+  // supplies both the Popular Categories strip (nav-registry-sourced, out of
+  // this ticket's scope) and tile artwork for the grid below; `l1Tiles` is the
+  // tag-derived registry that decides WHICH tiles the grid renders.
+  // buildL1Tiles always returns all 25 static tiles regardless of its input
+  // (an empty summaries array just yields productCount: 0 on each), so the
+  // grid's identity/links never depend on fetchProductTagSummaries()
+  // succeeding — these must not share a try/catch, or a GET_COLLECTIONS
+  // artwork-fetch failure would blank the entire grid unnecessarily.
+  // Verified 2026-07-16: this page has never read from the stale custom
+  // "Categories"/"Home page" collections — the trocar-size top-level
+  // tiles came from getAllowedHandles() flattening synthesized sub-handles
+  // (e.g. the 4 trocar-size collections) into one flat allowlist set.
   let allCollections: CollectionNode[] = []
-  let l1Tiles: L1Tile[] = []
   try {
-    // Two independent reads: `allCollections` supplies both the Popular
-    // Categories strip (nav-registry-sourced, out of this ticket's scope)
-    // and tile artwork for the grid below; `l1Tiles` is the tag-derived
-    // registry that decides WHICH tiles the grid renders. Verified
-    // 2026-07-16: this page has never read from the stale custom
-    // "Categories"/"Home page" collections — the trocar-size top-level
-    // tiles came from getAllowedHandles() flattening synthesized sub-handles
-    // (e.g. the 4 trocar-size collections) into one flat allowlist set.
-    const [summaries, data] = await Promise.all([
-      fetchProductTagSummaries(),
-      storefrontFetch<{ collections: { nodes: CollectionNode[] } }>(GET_COLLECTIONS, { first: 250 }),
-    ])
-    l1Tiles = buildL1Tiles(summaries)
+    const data = await storefrontFetch<{ collections: { nodes: CollectionNode[] } }>(GET_COLLECTIONS, { first: 250 })
     allCollections = data.collections.nodes
   } catch {
-    // degrade gracefully — render empty state
+    // degrade gracefully — Popular strip and tile artwork render without images
   }
+
+  let summaries: ProductTagSummary[] = []
+  try {
+    summaries = await fetchProductTagSummaries()
+  } catch {
+    // degrade gracefully — grid still renders all 25 tiles from the static
+    // allowlist, just with productCount 0
+  }
+  const l1Tiles = buildL1Tiles(summaries)
 
   const allCollectionsByHandle = new Map(allCollections.map((c) => [c.handle, c]))
   const allowed = getAllowedHandles()

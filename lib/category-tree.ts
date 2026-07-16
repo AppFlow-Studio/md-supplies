@@ -32,8 +32,18 @@ export function parseProductTags(tags: string[]): {
 export type L1CategoryDef = {
   tag: string
   displayName: string
-  // Shopify collection handle used only for tile artwork (image/description).
-  // Never used as a membership signal — see Global Constraints.
+  // Shopify collection handle used for tile artwork (image/description) AND
+  // as the Phase 1 navigation target (`/category/<collectionHandle>`). For
+  // most L1s this handle matches the category well, but 5 are narrower
+  // "representative" sub-collections chosen for their image (e.g.
+  // surgery-procedure -> trocars-trocar-kits, room-furniture -> seating,
+  // testing -> testing-screening, apparel -> capes-gowns, face-masks ->
+  // face-coverings) — clicking those tiles currently lands on a narrower
+  // collection than the tile's label promises. Tag-scoped category landing
+  // (making the destination match the tag-derived product set exactly) is
+  // deferred to Phase 2. Regardless of this field's value, it is never a
+  // membership/existence signal for the registry — CATEGORY_TREE_L1
+  // membership (which 25 tiles exist) is tag-derived only.
   collectionHandle: string
 }
 
