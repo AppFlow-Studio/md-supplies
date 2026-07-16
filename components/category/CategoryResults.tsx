@@ -148,7 +148,11 @@ export async function CategoryResults({
             {/* Suspense: CategorySort reads useSearchParams() — see the
                 sidebar boundary note above. */}
             <Suspense fallback={null}>
-              <CategorySort currentSort={sortParam} activeFilters={activeFilterStrings} />
+              <CategorySort
+                currentSort={sortParam}
+                activeFilters={activeFilterStrings}
+                limitedSortOptions={source.kind === 'tag'}
+              />
             </Suspense>
           </div>
 
