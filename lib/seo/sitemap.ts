@@ -51,7 +51,7 @@ async function fetchSubcategoryUrls(): Promise<SitemapEntry[]> {
     const summaries = await fetchProductTagSummaries()
     const l2Nodes = buildL2Tree(summaries)
     return l2Nodes
-      .map((node) => {
+      .map((node): SitemapEntry | null => {
         const l1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)
         if (!l1) return null
         return {
