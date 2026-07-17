@@ -26,9 +26,13 @@ export const RX_METAFIELDS = {
 // appears on Storefront products (matches lib/partners.ts vendorName).
 const EXEMPT_VENDORS = new Set(['dynarex'])
 
+// tags/vendor optional defensively: carts created before this fragment
+// shipped (or test fixtures) may lack them — a missing field must never
+// crash the cart UI. Missing tags ⇒ not RX (the enforcement app, not this
+// UX layer, is the compliance control).
 export type RxProductInput = {
-  tags: string[]
-  vendor: string
+  tags?: string[]
+  vendor?: string
   title?: string
 }
 
@@ -43,13 +47,13 @@ export function isInsulinSyringeExempt(_product: RxProductInput): boolean {
 }
 
 export function isExemptProduct(product: RxProductInput): boolean {
-  if (EXEMPT_VENDORS.has(product.vendor.trim().toLowerCase())) return true
+  if (EXEMPT_VENDORS.has((product.vendor ?? '').trim().toLowerCase())) return true
   return isInsulinSyringeExempt(product)
 }
 
 /** RX-flagged product per the canonical source, before exemptions. */
 export function isRxProduct(product: RxProductInput): boolean {
-  return product.tags.some((t) => t.trim().toLowerCase() === RX_TAG)
+  return (product.tags ?? []).some((t) => t.trim().toLowerCase() === RX_TAG)
 }
 
 /** An RX line that actually gates checkout = RX-flagged and not exempt. */
