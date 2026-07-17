@@ -101,11 +101,13 @@ describe('buildSurfaceReport', () => {
     // needles-syringes is missing (unmapped)
   ]
 
-  it('navPrimary contains the first matched handle for each live primary category', () => {
+  it('navPrimary contains registry L1 handles only (nav is tag-backbone driven)', () => {
     const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
     expect(report.navPrimary).toContain('gloves')
-    expect(report.navPrimary).toContain('capes-gowns')
-    expect(report.navPrimary).not.toContain('footwear') // second handle, nav uses first
+    // Nav no longer synthesizes multi-handle roadmap entries — apparel
+    // sub-collections stay out of nav under the tag-backbone registry.
+    expect(report.navPrimary).not.toContain('capes-gowns')
+    expect(report.navPrimary).not.toContain('footwear')
     expect(report.navPrimary).not.toContain('needles-syringes') // not live
   })
 
@@ -130,11 +132,11 @@ describe('buildSurfaceReport', () => {
     expect(report.orphanHandles).not.toContain('pharmaceuticals')
   })
 
-  it('hubOnlyHandles are synthesized sub-handles absent from nav (expected)', () => {
+  it('hubOnlyHandles are roadmap-matched handles absent from the registry nav (expected)', () => {
     const report = buildSurfaceReport(SURFACE_COLLECTIONS, SURFACE_ROADMAP)
     expect(report.hubOnlyHandles).toContain('footwear')
+    expect(report.hubOnlyHandles).toContain('capes-gowns') // no longer in nav
     expect(report.hubOnlyHandles).not.toContain('gloves')
-    expect(report.hubOnlyHandles).not.toContain('capes-gowns')
   })
 
   it('actionItems lists roadmap categories with no live matching handle', () => {
