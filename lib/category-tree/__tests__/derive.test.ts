@@ -83,7 +83,7 @@ describe('resolveParent', () => {
 
 describe('classifySubcategoryTag', () => {
   it('flags measurement/size-patterned values as attribute', () => {
-    for (const t of ['25g-hypodermic-needles', '5-panel-drug-tests', '10ml-syringes', '3-2mm-trocars', '2-quart-sharps', 'size-small']) {
+    for (const t of ['25g-hypodermic-needles', '5-panel-drug-tests', '10ml-syringes', '3-2mm-trocars', '2-quart-sharps', 'size-small', '4-0-sutures', '0-sutures', 'astm-level-2-face-masks', 'manual-wheelchairs-18']) {
       expect(classifySubcategoryTag(t, { attribute: [], category: [] })).toBe('attribute')
     }
   })

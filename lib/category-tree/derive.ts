@@ -87,6 +87,9 @@ const ATTRIBUTE_PATTERNS: RegExp[] = [
   /^size-/,
   /^\d+(-\d+)?-(x|by)-\d+/,
   /(^|-)(x+s|small|medium|large|x+l)$/,
+  /^\d+(-0)?-sutures$/,
+  /^astm-level-\d+/,
+  /^manual-wheelchairs-\d+$/,
 ]
 
 export function classifySubcategoryTag(

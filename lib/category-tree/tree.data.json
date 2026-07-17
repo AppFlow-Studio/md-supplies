@@ -1,0 +1,4935 @@
+{
+  "generatedAt": "2026-07-17T02:20:27.271Z",
+  "totalProducts": 7386,
+  "outOfTreeCount": 1,
+  "l1": [
+    {
+      "tag": "apparel",
+      "productCount": 152
+    },
+    {
+      "tag": "bariatric",
+      "productCount": 258
+    },
+    {
+      "tag": "daily-living-aids",
+      "productCount": 1
+    },
+    {
+      "tag": "dental",
+      "productCount": 149
+    },
+    {
+      "tag": "disinfectants",
+      "productCount": 31
+    },
+    {
+      "tag": "emergency-supplies",
+      "productCount": 355
+    },
+    {
+      "tag": "exam-room",
+      "productCount": 845
+    },
+    {
+      "tag": "face-masks",
+      "productCount": 35
+    },
+    {
+      "tag": "gloves",
+      "productCount": 445
+    },
+    {
+      "tag": "home-care",
+      "productCount": 422
+    },
+    {
+      "tag": "housekeeping-janitorial",
+      "productCount": 85
+    },
+    {
+      "tag": "hygiene",
+      "productCount": 256
+    },
+    {
+      "tag": "incontinence",
+      "productCount": 114
+    },
+    {
+      "tag": "iv-therapy",
+      "productCount": 78
+    },
+    {
+      "tag": "mobility",
+      "productCount": 638
+    },
+    {
+      "tag": "needles-syringes",
+      "productCount": 592
+    },
+    {
+      "tag": "non-healthcare",
+      "productCount": 5
+    },
+    {
+      "tag": "non-medical",
+      "productCount": 76
+    },
+    {
+      "tag": "office-supplies",
+      "productCount": 18
+    },
+    {
+      "tag": "patient-therapy-rehab",
+      "productCount": 299
+    },
+    {
+      "tag": "pharmacy-products",
+      "productCount": 101
+    },
+    {
+      "tag": "respiratory",
+      "productCount": 407
+    },
+    {
+      "tag": "room-furniture",
+      "productCount": 512
+    },
+    {
+      "tag": "sterilization",
+      "productCount": 51
+    },
+    {
+      "tag": "surgery-procedure",
+      "productCount": 319
+    },
+    {
+      "tag": "surgical-sutures",
+      "productCount": 192
+    },
+    {
+      "tag": "testing",
+      "productCount": 173
+    },
+    {
+      "tag": "urology-ostomy",
+      "productCount": 52
+    },
+    {
+      "tag": "wound-care",
+      "productCount": 724
+    }
+  ],
+  "l2": [
+    {
+      "tag": "0-sutures",
+      "parents": {
+        "surgical-sutures": 10
+      }
+    },
+    {
+      "tag": "1-0-sutures",
+      "parents": {
+        "surgical-sutures": 2
+      }
+    },
+    {
+      "tag": "1-gal-sharps",
+      "parents": {
+        "needles-syringes": 4
+      }
+    },
+    {
+      "tag": "1-qt-sharps",
+      "parents": {
+        "needles-syringes": 1
+      }
+    },
+    {
+      "tag": "10-0-sutures",
+      "parents": {
+        "surgical-sutures": 3
+      }
+    },
+    {
+      "tag": "10-panel",
+      "parents": {
+        "testing": 5
+      }
+    },
+    {
+      "tag": "10cc-syringe",
+      "parents": {
+        "needles-syringes": 11
+      }
+    },
+    {
+      "tag": "11-panel",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "12-panel",
+      "parents": {
+        "testing": 9
+      }
+    },
+    {
+      "tag": "12cc-syringe",
+      "parents": {
+        "needles-syringes": 6
+      }
+    },
+    {
+      "tag": "13-panel",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "14-panel",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "14g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 4
+      }
+    },
+    {
+      "tag": "16-panel",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "16g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 3
+      }
+    },
+    {
+      "tag": "18g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 11
+      }
+    },
+    {
+      "tag": "18g-iv-catheters",
+      "parents": {
+        "needles-syringes": 6
+      }
+    },
+    {
+      "tag": "18g-lancets",
+      "parents": {
+        "needles-syringes": 2
+      }
+    },
+    {
+      "tag": "19g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 4
+      }
+    },
+    {
+      "tag": "1cc-syringe",
+      "parents": {
+        "needles-syringes": 11
+      }
+    },
+    {
+      "tag": "2-0-sutures",
+      "parents": {
+        "surgical-sutures": 30
+      }
+    },
+    {
+      "tag": "2-gal-sharps",
+      "parents": {
+        "needles-syringes": 8
+      }
+    },
+    {
+      "tag": "20cc-syringe",
+      "parents": {
+        "needles-syringes": 6
+      }
+    },
+    {
+      "tag": "20g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 9
+      }
+    },
+    {
+      "tag": "20g-iv-catheters",
+      "parents": {
+        "iv-therapy": 1,
+        "needles-syringes": 10
+      }
+    },
+    {
+      "tag": "21g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 9
+      }
+    },
+    {
+      "tag": "21g-lancets",
+      "parents": {
+        "needles-syringes": 12
+      }
+    },
+    {
+      "tag": "22g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 15
+      }
+    },
+    {
+      "tag": "22g-iv-catheters",
+      "parents": {
+        "needles-syringes": 5
+      }
+    },
+    {
+      "tag": "23g-dental-needles",
+      "parents": {
+        "dental": 12
+      }
+    },
+    {
+      "tag": "23g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 13
+      }
+    },
+    {
+      "tag": "24g-iv-catheters",
+      "parents": {
+        "iv-therapy": 1
+      }
+    },
+    {
+      "tag": "25g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 36
+      }
+    },
+    {
+      "tag": "25g-lancets",
+      "parents": {
+        "needles-syringes": 2
+      }
+    },
+    {
+      "tag": "26g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 5
+      }
+    },
+    {
+      "tag": "26g-lancets",
+      "parents": {
+        "needles-syringes": 2
+      }
+    },
+    {
+      "tag": "27g-dental-needles",
+      "parents": {
+        "dental": 5
+      }
+    },
+    {
+      "tag": "27g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 15
+      }
+    },
+    {
+      "tag": "28g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 1
+      }
+    },
+    {
+      "tag": "28g-lancets",
+      "parents": {
+        "needles-syringes": 9
+      }
+    },
+    {
+      "tag": "3-0-sutures",
+      "parents": {
+        "surgical-sutures": 38
+      }
+    },
+    {
+      "tag": "3-wheeled-rollators",
+      "parents": {
+        "mobility": 6
+      }
+    },
+    {
+      "tag": "30cc-syringe",
+      "parents": {
+        "needles-syringes": 2
+      }
+    },
+    {
+      "tag": "30g-dental-needles",
+      "parents": {
+        "dental": 3
+      }
+    },
+    {
+      "tag": "30g-hypodermic-needles",
+      "parents": {
+        "needles-syringes": 7
+      }
+    },
+    {
+      "tag": "30g-lancets",
+      "parents": {
+        "needles-syringes": 3
+      }
+    },
+    {
+      "tag": "35cc-syringe",
+      "parents": {
+        "needles-syringes": 3
+      }
+    },
+    {
+      "tag": "3cc-syringe",
+      "parents": {
+        "needles-syringes": 19
+      }
+    },
+    {
+      "tag": "4-0-sutures",
+      "parents": {
+        "surgical-sutures": 56
+      }
+    },
+    {
+      "tag": "4-wheeled-rollators",
+      "parents": {
+        "mobility": 33
+      }
+    },
+    {
+      "tag": "5-0-sutures",
+      "parents": {
+        "surgical-sutures": 44
+      }
+    },
+    {
+      "tag": "5-panel",
+      "parents": {
+        "testing": 5
+      }
+    },
+    {
+      "tag": "5-qt-sharps",
+      "parents": {
+        "needles-syringes": 1
+      }
+    },
+    {
+      "tag": "50cc-syringe",
+      "parents": {
+        "needles-syringes": 2
+      }
+    },
+    {
+      "tag": "5cc-syringe",
+      "parents": {
+        "needles-syringes": 9
+      }
+    },
+    {
+      "tag": "6-0-sutures",
+      "parents": {
+        "surgical-sutures": 17
+      }
+    },
+    {
+      "tag": "6-panel",
+      "parents": {
+        "testing": 5
+      }
+    },
+    {
+      "tag": "60cc-syringe",
+      "parents": {
+        "needles-syringes": 5
+      }
+    },
+    {
+      "tag": "6cc-syringe",
+      "parents": {
+        "needles-syringes": 8
+      }
+    },
+    {
+      "tag": "7-0-sutures",
+      "parents": {
+        "surgical-sutures": 3
+      }
+    },
+    {
+      "tag": "7-panel",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "8-0-sutures",
+      "parents": {
+        "surgical-sutures": 2
+      }
+    },
+    {
+      "tag": "8-gal-sharps",
+      "parents": {
+        "needles-syringes": 1
+      }
+    },
+    {
+      "tag": "8-panel",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "9-0-sutures",
+      "parents": {
+        "surgical-sutures": 1
+      }
+    },
+    {
+      "tag": "9-panel",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "abd-pads",
+      "parents": {
+        "wound-care": 19
+      }
+    },
+    {
+      "tag": "abd-rolls",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "abdominal-binders",
+      "parents": {
+        "patient-therapy-rehab": 8
+      }
+    },
+    {
+      "tag": "adaptive-cup",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "adhesive-bandages",
+      "parents": {
+        "wound-care": 111
+      }
+    },
+    {
+      "tag": "adhesive-tape-removers",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "adult-briefs",
+      "parents": {
+        "incontinence": 2
+      }
+    },
+    {
+      "tag": "adult-wet-wipes",
+      "parents": {
+        "incontinence": 1
+      }
+    },
+    {
+      "tag": "adulteration-tests",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "aerosol-therapy",
+      "parents": {
+        "respiratory": 10
+      }
+    },
+    {
+      "tag": "aerosol-therapy-tubing",
+      "parents": {
+        "respiratory": 2
+      }
+    },
+    {
+      "tag": "aftershave",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "air-compressors",
+      "parents": {
+        "respiratory": 3
+      }
+    },
+    {
+      "tag": "air-mattress",
+      "parents": {
+        "home-care": 7
+      }
+    },
+    {
+      "tag": "air-water-syringe-tips",
+      "parents": {
+        "dental": 3
+      }
+    },
+    {
+      "tag": "air-water-tips",
+      "parents": {
+        "dental": 1
+      }
+    },
+    {
+      "tag": "airhorn",
+      "parents": {
+        "emergency-supplies": 1
+      }
+    },
+    {
+      "tag": "airway-accessories",
+      "parents": {
+        "respiratory": 52
+      }
+    },
+    {
+      "tag": "alcohol-dispensers",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "alcohol-prep-pads",
+      "parents": {
+        "exam-room": 17
+      }
+    },
+    {
+      "tag": "alcohol-swabsticks",
+      "parents": {
+        "exam-room": 5
+      }
+    },
+    {
+      "tag": "alcohol-test",
+      "parents": {
+        "testing": 8
+      }
+    },
+    {
+      "tag": "alcohol-wipes",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "alternating-pressure-mattress-pump",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "alternating-pressure-mattress-systems",
+      "parents": {
+        "room-furniture": 2
+      }
+    },
+    {
+      "tag": "alternating-pressure-mattresses",
+      "parents": {
+        "room-furniture": 1
+      }
+    },
+    {
+      "tag": "alternating-pressure-pump",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "alternating-pressure-pumps",
+      "parents": {
+        "room-furniture": 1
+      }
+    },
+    {
+      "tag": "alternating-pressure-system",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "ammonia-inhalants",
+      "parents": {
+        "emergency-supplies": 3
+      }
+    },
+    {
+      "tag": "analyzers",
+      "parents": {
+        "testing": 8
+      }
+    },
+    {
+      "tag": "anesthetics",
+      "parents": {
+        "dental": 4
+      }
+    },
+    {
+      "tag": "ankle-brace",
+      "parents": {
+        "patient-therapy-rehab": 17
+      }
+    },
+    {
+      "tag": "anterior-lower",
+      "parents": {
+        "dental": 3
+      }
+    },
+    {
+      "tag": "anterior-upper",
+      "parents": {
+        "dental": 3
+      }
+    },
+    {
+      "tag": "anti-fog-spray",
+      "parents": {
+        "face-masks": 1
+      }
+    },
+    {
+      "tag": "anti-theft-devices",
+      "parents": {
+        "room-furniture": 1
+      }
+    },
+    {
+      "tag": "antibacterial-soap",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "antibiotic-ointment",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "antifungal-cream",
+      "parents": {
+        "pharmacy-products": 1
+      }
+    },
+    {
+      "tag": "antiperspirants",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "apparel",
+      "parents": {
+        "apparel": 1
+      }
+    },
+    {
+      "tag": "applicator",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "applicator-brushes",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "applicator-jars",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "aprons",
+      "parents": {
+        "apparel": 3
+      }
+    },
+    {
+      "tag": "aquatic-equipment",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "arm-slings",
+      "parents": {
+        "patient-therapy-rehab": 3
+      }
+    },
+    {
+      "tag": "assorted-trays",
+      "parents": {
+        "dental": 3
+      }
+    },
+    {
+      "tag": "astm-level-1-face-masks",
+      "parents": {
+        "face-masks": 4
+      }
+    },
+    {
+      "tag": "astm-level-2-face-masks",
+      "parents": {
+        "face-masks": 2
+      }
+    },
+    {
+      "tag": "astm-level-3-face-masks",
+      "parents": {
+        "face-masks": 5
+      }
+    },
+    {
+      "tag": "athletic-tape",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "autoclave-cleaner",
+      "parents": {
+        "sterilization": 1
+      }
+    },
+    {
+      "tag": "autoclave-machine",
+      "parents": {
+        "sterilization": 2
+      }
+    },
+    {
+      "tag": "baby-bath",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "baby-care",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "baby-lotion",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "baby-oil",
+      "parents": {
+        "hygiene": 5
+      }
+    },
+    {
+      "tag": "baby-powder",
+      "parents": {
+        "hygiene": 9
+      }
+    },
+    {
+      "tag": "baby-wet-wipes",
+      "parents": {
+        "incontinence": 11
+      }
+    },
+    {
+      "tag": "bacitracin-ointments",
+      "parents": {
+        "wound-care": 7
+      }
+    },
+    {
+      "tag": "back-braces",
+      "parents": {
+        "patient-therapy-rehab": 6
+      }
+    },
+    {
+      "tag": "backpacks",
+      "parents": {
+        "non-medical": 1,
+        "office-supplies": 2
+      }
+    },
+    {
+      "tag": "backstroke-flag",
+      "parents": {
+        "non-medical": 2
+      }
+    },
+    {
+      "tag": "ball-pumps",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "barcode-scanner",
+      "parents": {
+        "non-medical": 3
+      }
+    },
+    {
+      "tag": "bariatric-bath-benches",
+      "parents": {
+        "bariatric": 4
+      }
+    },
+    {
+      "tag": "bariatric-battery-powered-lifts",
+      "parents": {
+        "bariatric": 9
+      }
+    },
+    {
+      "tag": "bariatric-bed-rails",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-beds",
+      "parents": {
+        "bariatric": 32
+      }
+    },
+    {
+      "tag": "bariatric-blood-pressure-cuff",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-commode-chairs",
+      "parents": {
+        "bariatric": 8
+      }
+    },
+    {
+      "tag": "bariatric-crutches",
+      "parents": {
+        "bariatric": 5
+      }
+    },
+    {
+      "tag": "bariatric-cushions",
+      "parents": {
+        "bariatric": 2
+      }
+    },
+    {
+      "tag": "bariatric-foot-stools",
+      "parents": {
+        "bariatric": 6
+      }
+    },
+    {
+      "tag": "bariatric-lift-sling",
+      "parents": {
+        "bariatric": 2
+      }
+    },
+    {
+      "tag": "bariatric-lift-slings",
+      "parents": {
+        "bariatric": 2
+      }
+    },
+    {
+      "tag": "bariatric-mattress-covers",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-mattresses",
+      "parents": {
+        "bariatric": 4
+      }
+    },
+    {
+      "tag": "bariatric-offset-canes",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-patient-lift-parts",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-patient-lift-slings",
+      "parents": {
+        "bariatric": 8
+      }
+    },
+    {
+      "tag": "bariatric-quad-canes",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-recliners",
+      "parents": {
+        "bariatric": 15
+      }
+    },
+    {
+      "tag": "bariatric-rollators",
+      "parents": {
+        "bariatric": 7
+      }
+    },
+    {
+      "tag": "bariatric-scales",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-shower-bed",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-shower-chairs",
+      "parents": {
+        "bariatric": 3
+      }
+    },
+    {
+      "tag": "bariatric-shower-commodes",
+      "parents": {
+        "bariatric": 2
+      }
+    },
+    {
+      "tag": "bariatric-standard-canes",
+      "parents": {
+        "bariatric": 2
+      }
+    },
+    {
+      "tag": "bariatric-transfer-benches",
+      "parents": {
+        "bariatric": 3
+      }
+    },
+    {
+      "tag": "bariatric-transfer-boards",
+      "parents": {
+        "bariatric": 2
+      }
+    },
+    {
+      "tag": "bariatric-transport-chairs",
+      "parents": {
+        "bariatric": 4
+      }
+    },
+    {
+      "tag": "bariatric-trapeze-bar",
+      "parents": {
+        "bariatric": 1
+      }
+    },
+    {
+      "tag": "bariatric-trapeze-bars",
+      "parents": {
+        "bariatric": 4
+      }
+    },
+    {
+      "tag": "bariatric-walker-accessories",
+      "parents": {
+        "bariatric": 2
+      }
+    },
+    {
+      "tag": "bariatric-walkers",
+      "parents": {
+        "bariatric": 5
+      }
+    },
+    {
+      "tag": "bariatric-wheelchair-cushions",
+      "parents": {
+        "bariatric": 8
+      }
+    },
+    {
+      "tag": "bariatric-wheelchairs",
+      "parents": {
+        "bariatric": 110
+      }
+    },
+    {
+      "tag": "barrier-film",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "barrier-sleeves",
+      "parents": {
+        "dental": 13,
+        "exam-room": 22
+      }
+    },
+    {
+      "tag": "bath-accessories",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "bath-bench",
+      "parents": {
+        "home-care": 14
+      }
+    },
+    {
+      "tag": "bath-lift",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "bath-lift-accessories",
+      "parents": {
+        "home-care": 4
+      }
+    },
+    {
+      "tag": "bath-mats",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "bath-safety-rails",
+      "parents": {
+        "home-care": 5
+      }
+    },
+    {
+      "tag": "bath-seat-accessories",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "bath-soak",
+      "parents": {
+        "hygiene": 6
+      }
+    },
+    {
+      "tag": "bath-stool",
+      "parents": {
+        "home-care": 5
+      }
+    },
+    {
+      "tag": "bath-thermometer",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "beard-covers",
+      "parents": {
+        "apparel": 1
+      }
+    },
+    {
+      "tag": "bed",
+      "parents": {
+        "room-furniture": 306
+      }
+    },
+    {
+      "tag": "bed-accessories",
+      "parents": {
+        "home-care": 1,
+        "room-furniture": 13
+      }
+    },
+    {
+      "tag": "bed-assist-bars",
+      "parents": {
+        "room-furniture": 2
+      }
+    },
+    {
+      "tag": "bed-extension-kits",
+      "parents": {
+        "room-furniture": 7
+      }
+    },
+    {
+      "tag": "bed-headboards-footboards",
+      "parents": {
+        "room-furniture": 19
+      }
+    },
+    {
+      "tag": "bed-pans",
+      "parents": {
+        "home-care": 9
+      }
+    },
+    {
+      "tag": "bed-parts",
+      "parents": {
+        "room-furniture": 7
+      }
+    },
+    {
+      "tag": "bed-rails",
+      "parents": {
+        "room-furniture": 1
+      }
+    },
+    {
+      "tag": "bed-safety-rails",
+      "parents": {
+        "daily-living-aids": 1,
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "bed-sheets",
+      "parents": {
+        "housekeeping-janitorial": 12
+      }
+    },
+    {
+      "tag": "bed-side-rails",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "bed-wedge",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "bed-wedges",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "bedside-commodes",
+      "parents": {
+        "home-care": 32
+      }
+    },
+    {
+      "tag": "bedside-trays",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "bib-clips",
+      "parents": {
+        "dental": 1
+      }
+    },
+    {
+      "tag": "bib-holders",
+      "parents": {
+        "dental": 2
+      }
+    },
+    {
+      "tag": "binder-accessories",
+      "parents": {
+        "office-supplies": 1
+      }
+    },
+    {
+      "tag": "biohazard-bags",
+      "parents": {
+        "housekeeping-janitorial": 3
+      }
+    },
+    {
+      "tag": "biopsy-punches",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "bite-stick",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "bite-trays",
+      "parents": {
+        "dental": 4
+      }
+    },
+    {
+      "tag": "blankets",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "blood-collection-sets",
+      "parents": {
+        "needles-syringes": 24
+      }
+    },
+    {
+      "tag": "blood-collection-tube-holders",
+      "parents": {
+        "needles-syringes": 2
+      }
+    },
+    {
+      "tag": "blood-collection-tubes",
+      "parents": {
+        "needles-syringes": 1
+      }
+    },
+    {
+      "tag": "blood-pressure-monitors",
+      "parents": {
+        "exam-room": 10,
+        "testing": 5
+      }
+    },
+    {
+      "tag": "blunt-cannulas",
+      "parents": {
+        "needles-syringes": 1
+      }
+    },
+    {
+      "tag": "body-lotion",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "body-wash",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "bottle-covers",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "branded-merchandise",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "breast-pumps",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "buoys",
+      "parents": {
+        "emergency-supplies": 14
+      }
+    },
+    {
+      "tag": "burn-dressings",
+      "parents": {
+        "wound-care": 17
+      }
+    },
+    {
+      "tag": "bvm-resuscitators",
+      "parents": {
+        "emergency-supplies": 22,
+        "respiratory": 1
+      }
+    },
+    {
+      "tag": "bzk-antiseptic-towelettes",
+      "parents": {
+        "exam-room": 5
+      }
+    },
+    {
+      "tag": "calcium-alginate-dressings",
+      "parents": {
+        "wound-care": 4
+      }
+    },
+    {
+      "tag": "calculators",
+      "parents": {
+        "office-supplies": 2
+      }
+    },
+    {
+      "tag": "calculi-strainers",
+      "parents": {
+        "urology-ostomy": 1
+      }
+    },
+    {
+      "tag": "call-bells",
+      "parents": {
+        "exam-room": 1,
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "cane-tips",
+      "parents": {
+        "mobility": 11
+      }
+    },
+    {
+      "tag": "caps",
+      "parents": {
+        "apparel": 9
+      }
+    },
+    {
+      "tag": "carafe",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "carts",
+      "parents": {
+        "room-furniture": 1
+      }
+    },
+    {
+      "tag": "cast-padding",
+      "parents": {
+        "patient-therapy-rehab": 29
+      }
+    },
+    {
+      "tag": "catheter-drainage-trays",
+      "parents": {
+        "urology-ostomy": 1
+      }
+    },
+    {
+      "tag": "cervical-neck-collars",
+      "parents": {
+        "patient-therapy-rehab": 20
+      }
+    },
+    {
+      "tag": "chapstick",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "chemotherapy-gowns",
+      "parents": {
+        "apparel": 1
+      }
+    },
+    {
+      "tag": "cherry-sponges",
+      "parents": {
+        "surgery-procedure": 3
+      }
+    },
+    {
+      "tag": "childrens-toys",
+      "parents": {
+        "non-medical": 3
+      }
+    },
+    {
+      "tag": "chloraprep-applicators",
+      "parents": {
+        "exam-room": 4
+      }
+    },
+    {
+      "tag": "circumcision-devices",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "cleanroom-gloves",
+      "parents": {
+        "gloves": 11
+      }
+    },
+    {
+      "tag": "closure-strips",
+      "parents": {
+        "wound-care": 8
+      }
+    },
+    {
+      "tag": "cohesive-bandages",
+      "parents": {
+        "wound-care": 21
+      }
+    },
+    {
+      "tag": "cold-packs",
+      "parents": {
+        "patient-therapy-rehab": 23
+      }
+    },
+    {
+      "tag": "colored-pencils",
+      "parents": {
+        "office-supplies": 2
+      }
+    },
+    {
+      "tag": "commode-liners",
+      "parents": {
+        "home-care": 3
+      }
+    },
+    {
+      "tag": "composite-dressings",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "compress-bandages",
+      "parents": {
+        "wound-care": 13
+      }
+    },
+    {
+      "tag": "compression-socks",
+      "parents": {
+        "patient-therapy-rehab": 2
+      }
+    },
+    {
+      "tag": "compression-stockings",
+      "parents": {
+        "patient-therapy-rehab": 2
+      }
+    },
+    {
+      "tag": "cotinine-controls",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "cotinine-tests",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "cotton-balls",
+      "parents": {
+        "exam-room": 4
+      }
+    },
+    {
+      "tag": "cotton-rolls",
+      "parents": {
+        "exam-room": 6
+      }
+    },
+    {
+      "tag": "cotton-rounds",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "cotton-tipped-applicators",
+      "parents": {
+        "exam-room": 13
+      }
+    },
+    {
+      "tag": "cotton-wipes",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "coveralls",
+      "parents": {
+        "apparel": 7
+      }
+    },
+    {
+      "tag": "covid-19",
+      "parents": {
+        "testing": 8
+      }
+    },
+    {
+      "tag": "covid-19-flu-combo",
+      "parents": {
+        "testing": 7
+      }
+    },
+    {
+      "tag": "cpap-masks",
+      "parents": {
+        "respiratory": 4
+      }
+    },
+    {
+      "tag": "cpap-tubing",
+      "parents": {
+        "respiratory": 2
+      }
+    },
+    {
+      "tag": "cpr-boards",
+      "parents": {
+        "emergency-supplies": 1
+      }
+    },
+    {
+      "tag": "cpr-face-shields",
+      "parents": {
+        "emergency-supplies": 5
+      }
+    },
+    {
+      "tag": "cpr-manikins",
+      "parents": {
+        "emergency-supplies": 30
+      }
+    },
+    {
+      "tag": "cpr-masks",
+      "parents": {
+        "emergency-supplies": 23
+      }
+    },
+    {
+      "tag": "craft-scissors",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "crutch-accessories",
+      "parents": {
+        "mobility": 6
+      }
+    },
+    {
+      "tag": "crutch-parts",
+      "parents": {
+        "mobility": 2
+      }
+    },
+    {
+      "tag": "cryosurgery",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "csr-wraps",
+      "parents": {
+        "sterilization": 14
+      }
+    },
+    {
+      "tag": "curved-magnums",
+      "parents": {
+        "non-medical": 4
+      }
+    },
+    {
+      "tag": "dental-applicators",
+      "parents": {
+        "dental": 13
+      }
+    },
+    {
+      "tag": "dental-bibs",
+      "parents": {
+        "dental": 5
+      }
+    },
+    {
+      "tag": "dental-dams",
+      "parents": {
+        "dental": 1
+      }
+    },
+    {
+      "tag": "dental-floss",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "dental-needles",
+      "parents": {
+        "dental": 6
+      }
+    },
+    {
+      "tag": "denture-accessories",
+      "parents": {
+        "hygiene": 3
+      }
+    },
+    {
+      "tag": "denture-adhesive",
+      "parents": {
+        "hygiene": 4
+      }
+    },
+    {
+      "tag": "denture-brushes",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "denture-cleaning",
+      "parents": {
+        "hygiene": 3
+      }
+    },
+    {
+      "tag": "deodorants",
+      "parents": {
+        "hygiene": 7
+      }
+    },
+    {
+      "tag": "deodorizers",
+      "parents": {
+        "housekeeping-janitorial": 1
+      }
+    },
+    {
+      "tag": "dermal-curettes",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "diagnostic-equipment-accessories",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "diagnostic-set",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "disinfectants",
+      "parents": {
+        "disinfectants": 7
+      }
+    },
+    {
+      "tag": "disinfecting-wipes",
+      "parents": {
+        "disinfectants": 13
+      }
+    },
+    {
+      "tag": "disposable-3-5mm",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "disposable-4-5mm",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "disposable-face-mask",
+      "parents": {
+        "non-healthcare": 1
+      }
+    },
+    {
+      "tag": "disposable-undergarments",
+      "parents": {
+        "apparel": 2
+      }
+    },
+    {
+      "tag": "dissector-sponges",
+      "parents": {
+        "surgery-procedure": 2
+      }
+    },
+    {
+      "tag": "dissectors",
+      "parents": {
+        "surgery-procedure": 24
+      }
+    },
+    {
+      "tag": "diving-bricks",
+      "parents": {
+        "emergency-supplies": 1
+      }
+    },
+    {
+      "tag": "drainage-bags",
+      "parents": {
+        "urology-ostomy": 13
+      }
+    },
+    {
+      "tag": "drapes",
+      "parents": {
+        "surgery-procedure": 20
+      }
+    },
+    {
+      "tag": "drawstring-bags",
+      "parents": {
+        "non-medical": 2
+      }
+    },
+    {
+      "tag": "dressers",
+      "parents": {
+        "room-furniture": 4
+      }
+    },
+    {
+      "tag": "dressing-aid",
+      "parents": {
+        "home-care": 11
+      }
+    },
+    {
+      "tag": "dressing-jars",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "drinking-cups",
+      "parents": {
+        "home-care": 5
+      }
+    },
+    {
+      "tag": "drug-screen-controls",
+      "parents": {
+        "testing": 3
+      }
+    },
+    {
+      "tag": "drug-test",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "dry-erase-markers",
+      "parents": {
+        "office-supplies": 3
+      }
+    },
+    {
+      "tag": "ear-basin",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "ear-curettes",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "ear-irrigation",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "ear-specula-tips",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "ear-syringe",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "eating-utensils",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "elastic-bandages",
+      "parents": {
+        "wound-care": 20
+      }
+    },
+    {
+      "tag": "elastic-tape",
+      "parents": {
+        "wound-care": 2
+      }
+    },
+    {
+      "tag": "elbow-brace",
+      "parents": {
+        "patient-therapy-rehab": 3
+      }
+    },
+    {
+      "tag": "electrodes",
+      "parents": {
+        "patient-therapy-rehab": 2,
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "emergency-blankets",
+      "parents": {
+        "emergency-supplies": 14
+      }
+    },
+    {
+      "tag": "emergency-gear",
+      "parents": {
+        "emergency-supplies": 19
+      }
+    },
+    {
+      "tag": "emesis-bag-dispenser",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "emesis-bags",
+      "parents": {
+        "home-care": 5
+      }
+    },
+    {
+      "tag": "emesis-basin",
+      "parents": {
+        "home-care": 2,
+        "surgery-procedure": 2
+      }
+    },
+    {
+      "tag": "ems-bags",
+      "parents": {
+        "emergency-supplies": 12
+      }
+    },
+    {
+      "tag": "emt-shirts",
+      "parents": {
+        "apparel": 2
+      }
+    },
+    {
+      "tag": "endotracheal-tubes",
+      "parents": {
+        "respiratory": 5
+      }
+    },
+    {
+      "tag": "enemas",
+      "parents": {
+        "home-care": 3
+      }
+    },
+    {
+      "tag": "enteral-delivery-sets",
+      "parents": {
+        "iv-therapy": 1
+      }
+    },
+    {
+      "tag": "enteral-feeding-set",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "erasers",
+      "parents": {
+        "office-supplies": 1
+      }
+    },
+    {
+      "tag": "euro-style-rollators",
+      "parents": {
+        "mobility": 6
+      }
+    },
+    {
+      "tag": "exam-capes",
+      "parents": {
+        "apparel": 6
+      }
+    },
+    {
+      "tag": "exam-gloves",
+      "parents": {
+        "gloves": 312
+      }
+    },
+    {
+      "tag": "exam-gowns",
+      "parents": {
+        "apparel": 4
+      }
+    },
+    {
+      "tag": "exam-room",
+      "parents": {
+        "exam-room": 32
+      }
+    },
+    {
+      "tag": "exam-room-lighting",
+      "parents": {
+        "exam-room": 12
+      }
+    },
+    {
+      "tag": "exam-table-cover",
+      "parents": {
+        "exam-room": 6
+      }
+    },
+    {
+      "tag": "exam-tables",
+      "parents": {
+        "exam-room": 16,
+        "room-furniture": 12
+      }
+    },
+    {
+      "tag": "examination-mirrors",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "exercise-pulleys",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "eye-charts",
+      "parents": {
+        "exam-room": 9
+      }
+    },
+    {
+      "tag": "eye-cups",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "eye-goggles",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "eye-occluders",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "eye-pads",
+      "parents": {
+        "wound-care": 4
+      }
+    },
+    {
+      "tag": "eye-shield-covers",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "eye-shields",
+      "parents": {
+        "exam-room": 1,
+        "surgery-procedure": 5
+      }
+    },
+    {
+      "tag": "eye-spears",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "fabric-adhesive-bandages",
+      "parents": {
+        "wound-care": 71
+      }
+    },
+    {
+      "tag": "face-masks-with-shields",
+      "parents": {
+        "face-masks": 4
+      }
+    },
+    {
+      "tag": "face-rest-covers",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "facial-tissues",
+      "parents": {
+        "hygiene": 5
+      }
+    },
+    {
+      "tag": "facial-wipes",
+      "parents": {
+        "hygiene": 4
+      }
+    },
+    {
+      "tag": "fall-mats",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "fall-prevention-mat",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "feeding-cup",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "fiberglass-cast-tape",
+      "parents": {
+        "patient-therapy-rehab": 8
+      }
+    },
+    {
+      "tag": "finger-cots",
+      "parents": {
+        "gloves": 4
+      }
+    },
+    {
+      "tag": "finger-splints",
+      "parents": {
+        "patient-therapy-rehab": 22
+      }
+    },
+    {
+      "tag": "first-aid-guide",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "first-aid-kits",
+      "parents": {
+        "emergency-supplies": 29
+      }
+    },
+    {
+      "tag": "first-responder-bags",
+      "parents": {
+        "emergency-supplies": 12
+      }
+    },
+    {
+      "tag": "flu-a",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "flu-a-b",
+      "parents": {
+        "testing": 4
+      }
+    },
+    {
+      "tag": "fluid-solidifier",
+      "parents": {
+        "housekeeping-janitorial": 4
+      }
+    },
+    {
+      "tag": "fluoride-trays",
+      "parents": {
+        "dental": 2
+      }
+    },
+    {
+      "tag": "flushable-wipes",
+      "parents": {
+        "incontinence": 4
+      }
+    },
+    {
+      "tag": "foam-dressings",
+      "parents": {
+        "wound-care": 18
+      }
+    },
+    {
+      "tag": "foam-mattress",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "foil-blankets",
+      "parents": {
+        "emergency-supplies": 2
+      }
+    },
+    {
+      "tag": "folding-canes",
+      "parents": {
+        "mobility": 14
+      }
+    },
+    {
+      "tag": "folding-walkers",
+      "parents": {
+        "mobility": 19
+      }
+    },
+    {
+      "tag": "foley-catheters",
+      "parents": {
+        "urology-ostomy": 31
+      }
+    },
+    {
+      "tag": "foot-powder",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "foot-stools",
+      "parents": {
+        "exam-room": 9,
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "forceps",
+      "parents": {
+        "surgery-procedure": 24
+      }
+    },
+    {
+      "tag": "forearm-crutches",
+      "parents": {
+        "mobility": 8
+      }
+    },
+    {
+      "tag": "forearm-rollators",
+      "parents": {
+        "mobility": 2
+      }
+    },
+    {
+      "tag": "fracture-kit",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "fracture-splint",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "gait-belts",
+      "parents": {
+        "home-care": 6
+      }
+    },
+    {
+      "tag": "gastrointestinal-test",
+      "parents": {
+        "testing": 7
+      }
+    },
+    {
+      "tag": "gastrostomy-tubes",
+      "parents": {
+        "urology-ostomy": 2
+      }
+    },
+    {
+      "tag": "gauze-fluff-sponges",
+      "parents": {
+        "surgery-procedure": 5
+      }
+    },
+    {
+      "tag": "gauze-pad",
+      "parents": {
+        "wound-care": 34
+      }
+    },
+    {
+      "tag": "gauze-roll",
+      "parents": {
+        "wound-care": 65
+      }
+    },
+    {
+      "tag": "gauze-sponge",
+      "parents": {
+        "wound-care": 104
+      }
+    },
+    {
+      "tag": "general-face-masks",
+      "parents": {
+        "face-masks": 5
+      }
+    },
+    {
+      "tag": "general-purpose-gloves",
+      "parents": {
+        "gloves": 25
+      }
+    },
+    {
+      "tag": "glove-dispensers",
+      "parents": {
+        "gloves": 6
+      }
+    },
+    {
+      "tag": "goniometers",
+      "parents": {
+        "exam-room": 5
+      }
+    },
+    {
+      "tag": "grab-bar",
+      "parents": {
+        "home-care": 4
+      }
+    },
+    {
+      "tag": "grab-bars",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "graduated-tumblers",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "group-a-strep-test",
+      "parents": {
+        "testing": 6
+      }
+    },
+    {
+      "tag": "gym-towel",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "h-pylori-controls",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "h-pylori-test",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "hair-accessories",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "hair-brush",
+      "parents": {
+        "hygiene": 4
+      }
+    },
+    {
+      "tag": "hair-care",
+      "parents": {
+        "hygiene": 12
+      }
+    },
+    {
+      "tag": "hair-combs",
+      "parents": {
+        "hygiene": 14
+      }
+    },
+    {
+      "tag": "hamper-bags",
+      "parents": {
+        "housekeeping-janitorial": 2
+      }
+    },
+    {
+      "tag": "hampers",
+      "parents": {
+        "housekeeping-janitorial": 8
+      }
+    },
+    {
+      "tag": "hand-sanitizers",
+      "parents": {
+        "disinfectants": 10
+      }
+    },
+    {
+      "tag": "hcg-controls",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "head-immobilizers",
+      "parents": {
+        "emergency-supplies": 15
+      }
+    },
+    {
+      "tag": "heating-pads",
+      "parents": {
+        "patient-therapy-rehab": 3
+      }
+    },
+    {
+      "tag": "heel-protector",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "hemostat-gauze-dressings",
+      "parents": {
+        "wound-care": 2
+      }
+    },
+    {
+      "tag": "hernia-belt",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "high-top-walking-boot",
+      "parents": {
+        "patient-therapy-rehab": 8
+      }
+    },
+    {
+      "tag": "hiv-test",
+      "parents": {
+        "testing": 10
+      }
+    },
+    {
+      "tag": "home-care",
+      "parents": {
+        "home-care": 31
+      }
+    },
+    {
+      "tag": "hot-packs",
+      "parents": {
+        "patient-therapy-rehab": 8
+      }
+    },
+    {
+      "tag": "hydrocolloid-dressings",
+      "parents": {
+        "wound-care": 9
+      }
+    },
+    {
+      "tag": "hydrogel-dressings",
+      "parents": {
+        "wound-care": 7
+      }
+    },
+    {
+      "tag": "hydrogen-peroxide",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "hygiene",
+      "parents": {
+        "hygiene": 5
+      }
+    },
+    {
+      "tag": "hygiene-kits",
+      "parents": {
+        "hygiene": 9
+      }
+    },
+    {
+      "tag": "impression-materials",
+      "parents": {
+        "dental": 3
+      }
+    },
+    {
+      "tag": "industrial-gloves",
+      "parents": {
+        "gloves": 6
+      }
+    },
+    {
+      "tag": "inflatable-cushion",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "inhalation-solutions",
+      "parents": {
+        "respiratory": 6
+      }
+    },
+    {
+      "tag": "ink-cups",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "instrument-trays",
+      "parents": {
+        "exam-room": 54
+      }
+    },
+    {
+      "tag": "insulin-pen-needles",
+      "parents": {
+        "needles-syringes": 14
+      }
+    },
+    {
+      "tag": "intermittent-catheters",
+      "parents": {
+        "urology-ostomy": 4
+      }
+    },
+    {
+      "tag": "invalid-ring",
+      "parents": {
+        "home-care": 3
+      }
+    },
+    {
+      "tag": "irrigation",
+      "parents": {
+        "dental": 2,
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "island-dressings",
+      "parents": {
+        "wound-care": 18
+      }
+    },
+    {
+      "tag": "isolation-gowns",
+      "parents": {
+        "apparel": 23
+      }
+    },
+    {
+      "tag": "isopropyl-rubbing-alcohol",
+      "parents": {
+        "exam-room": 4
+      }
+    },
+    {
+      "tag": "iv-administration-sets",
+      "parents": {
+        "iv-therapy": 41
+      }
+    },
+    {
+      "tag": "iv-catheters",
+      "parents": {
+        "iv-therapy": 10
+      }
+    },
+    {
+      "tag": "iv-poles",
+      "parents": {
+        "iv-therapy": 20
+      }
+    },
+    {
+      "tag": "iv-securement-dressings",
+      "parents": {
+        "iv-therapy": 1
+      }
+    },
+    {
+      "tag": "iv-solutions",
+      "parents": {
+        "iv-therapy": 3
+      }
+    },
+    {
+      "tag": "jar-lids",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "kinesiology-tape",
+      "parents": {
+        "wound-care": 2
+      }
+    },
+    {
+      "tag": "kit-without-trocar",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "knee-brace",
+      "parents": {
+        "patient-therapy-rehab": 16
+      }
+    },
+    {
+      "tag": "knee-walkers",
+      "parents": {
+        "mobility": 6
+      }
+    },
+    {
+      "tag": "lab-coats",
+      "parents": {
+        "apparel": 20
+      }
+    },
+    {
+      "tag": "lab-jackets",
+      "parents": {
+        "apparel": 13
+      }
+    },
+    {
+      "tag": "lancets",
+      "parents": {
+        "needles-syringes": 1
+      }
+    },
+    {
+      "tag": "lanyards",
+      "parents": {
+        "emergency-supplies": 5
+      }
+    },
+    {
+      "tag": "laryngeal-mask-airways",
+      "parents": {
+        "respiratory": 14
+      }
+    },
+    {
+      "tag": "laryngoscopes",
+      "parents": {
+        "exam-room": 16
+      }
+    },
+    {
+      "tag": "latex-tubing",
+      "parents": {
+        "exam-room": 5
+      }
+    },
+    {
+      "tag": "leg-immobilizers",
+      "parents": {
+        "emergency-supplies": 1,
+        "patient-therapy-rehab": 5
+      }
+    },
+    {
+      "tag": "lemon-glycerin-swabsticks",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "lens-cleaning-wipes",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "life-jackets",
+      "parents": {
+        "emergency-supplies": 13
+      }
+    },
+    {
+      "tag": "lifeguard-shirts",
+      "parents": {
+        "apparel": 4
+      }
+    },
+    {
+      "tag": "lifeguard-shorts",
+      "parents": {
+        "apparel": 2
+      }
+    },
+    {
+      "tag": "lifeguard-umbrella",
+      "parents": {
+        "emergency-supplies": 14
+      }
+    },
+    {
+      "tag": "lift-slings",
+      "parents": {
+        "home-care": 17
+      }
+    },
+    {
+      "tag": "lifts",
+      "parents": {
+        "home-care": 77
+      }
+    },
+    {
+      "tag": "linen-bags",
+      "parents": {
+        "housekeeping-janitorial": 1
+      }
+    },
+    {
+      "tag": "linen-carts",
+      "parents": {
+        "housekeeping-janitorial": 3
+      }
+    },
+    {
+      "tag": "lotion",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "lotions",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "low-top-walking-boot",
+      "parents": {
+        "patient-therapy-rehab": 7
+      }
+    },
+    {
+      "tag": "lower",
+      "parents": {
+        "dental": 7
+      }
+    },
+    {
+      "tag": "lubricating-jelly",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "lung-bags",
+      "parents": {
+        "emergency-supplies": 2
+      }
+    },
+    {
+      "tag": "magnums",
+      "parents": {
+        "non-medical": 2
+      }
+    },
+    {
+      "tag": "manicure-scissors",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "manual-wheelchairs",
+      "parents": {
+        "mobility": 7
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-12",
+      "parents": {
+        "mobility": 2
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-14",
+      "parents": {
+        "mobility": 2
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-16",
+      "parents": {
+        "mobility": 27
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-18",
+      "parents": {
+        "mobility": 47
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-20",
+      "parents": {
+        "mobility": 50
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-22",
+      "parents": {
+        "mobility": 12
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-24",
+      "parents": {
+        "mobility": 21
+      }
+    },
+    {
+      "tag": "manual-wheelchairs-26",
+      "parents": {
+        "mobility": 4
+      }
+    },
+    {
+      "tag": "markers",
+      "parents": {
+        "office-supplies": 1
+      }
+    },
+    {
+      "tag": "maternity-pads",
+      "parents": {
+        "incontinence": 1
+      }
+    },
+    {
+      "tag": "mattress-cover",
+      "parents": {
+        "housekeeping-janitorial": 1
+      }
+    },
+    {
+      "tag": "mattress-overlay",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "mattress-overlay-pads",
+      "parents": {
+        "home-care": 6
+      }
+    },
+    {
+      "tag": "maxi-pads",
+      "parents": {
+        "incontinence": 6
+      }
+    },
+    {
+      "tag": "mayo-stands",
+      "parents": {
+        "exam-room": 10
+      }
+    },
+    {
+      "tag": "measurement-devices",
+      "parents": {
+        "exam-room": 4,
+        "surgery-procedure": 3
+      }
+    },
+    {
+      "tag": "measuring-beakers",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "medical-scissors",
+      "parents": {
+        "surgery-procedure": 27
+      }
+    },
+    {
+      "tag": "medical-scrubs",
+      "parents": {
+        "apparel": 5
+      }
+    },
+    {
+      "tag": "medical-supply-packs",
+      "parents": {
+        "emergency-supplies": 33
+      }
+    },
+    {
+      "tag": "medicated-patches",
+      "parents": {
+        "patient-therapy-rehab": 2
+      }
+    },
+    {
+      "tag": "medication-management",
+      "parents": {
+        "pharmacy-products": 10
+      }
+    },
+    {
+      "tag": "medication-organizers",
+      "parents": {
+        "home-care": 8
+      }
+    },
+    {
+      "tag": "megaphone",
+      "parents": {
+        "emergency-supplies": 1
+      }
+    },
+    {
+      "tag": "microscope-cover-glass",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "mixing",
+      "parents": {
+        "dental": 5
+      }
+    },
+    {
+      "tag": "mold-test",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "mononucleosis",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "mortuary-equipment",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "mouth-wash",
+      "parents": {
+        "hygiene": 4
+      }
+    },
+    {
+      "tag": "n95",
+      "parents": {
+        "face-masks": 3
+      }
+    },
+    {
+      "tag": "nail-brushes",
+      "parents": {
+        "hygiene": 7
+      }
+    },
+    {
+      "tag": "nail-clippers",
+      "parents": {
+        "hygiene": 15
+      }
+    },
+    {
+      "tag": "nail-files",
+      "parents": {
+        "hygiene": 4
+      }
+    },
+    {
+      "tag": "nail-polish-remover-pads",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "nail-scissors",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "narcotic-safe",
+      "parents": {
+        "pharmacy-products": 1
+      }
+    },
+    {
+      "tag": "nasal-cannulas",
+      "parents": {
+        "respiratory": 78
+      }
+    },
+    {
+      "tag": "nasal-speculum",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "nasopharyngeal-airways",
+      "parents": {
+        "respiratory": 2
+      }
+    },
+    {
+      "tag": "nebulizers",
+      "parents": {
+        "respiratory": 38
+      }
+    },
+    {
+      "tag": "needle-accessories",
+      "parents": {
+        "needles-syringes": 5
+      }
+    },
+    {
+      "tag": "needle-holders",
+      "parents": {
+        "surgery-procedure": 4
+      }
+    },
+    {
+      "tag": "needles",
+      "parents": {
+        "needles-syringes": 7
+      }
+    },
+    {
+      "tag": "neurological-hammers",
+      "parents": {
+        "exam-room": 6
+      }
+    },
+    {
+      "tag": "night-splints",
+      "parents": {
+        "patient-therapy-rehab": 7
+      }
+    },
+    {
+      "tag": "nightstands",
+      "parents": {
+        "room-furniture": 6
+      }
+    },
+    {
+      "tag": "non-adherent-pad",
+      "parents": {
+        "wound-care": 2
+      }
+    },
+    {
+      "tag": "non-medical",
+      "parents": {
+        "non-medical": 2
+      }
+    },
+    {
+      "tag": "non-skid-slippers",
+      "parents": {
+        "apparel": 2
+      }
+    },
+    {
+      "tag": "obstetrical-kits",
+      "parents": {
+        "emergency-supplies": 4
+      }
+    },
+    {
+      "tag": "obstetrical-towelettes",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "offset-handle-canes",
+      "parents": {
+        "mobility": 18
+      }
+    },
+    {
+      "tag": "oil-emulsion-dressings",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "ophthalmic-sets",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "ophthalmoscopes",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "oral-airways",
+      "parents": {
+        "respiratory": 7
+      }
+    },
+    {
+      "tag": "oral-care",
+      "parents": {
+        "dental": 2
+      }
+    },
+    {
+      "tag": "oral-pain-relief",
+      "parents": {
+        "dental": 1
+      }
+    },
+    {
+      "tag": "oral-swabsticks",
+      "parents": {
+        "exam-room": 4
+      }
+    },
+    {
+      "tag": "other-airways",
+      "parents": {
+        "respiratory": 25
+      }
+    },
+    {
+      "tag": "otoscopes",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "overbed-tables",
+      "parents": {
+        "room-furniture": 35
+      }
+    },
+    {
+      "tag": "oxygen-concentrators",
+      "parents": {
+        "respiratory": 7
+      }
+    },
+    {
+      "tag": "oxygen-cylinder-bags",
+      "parents": {
+        "respiratory": 2
+      }
+    },
+    {
+      "tag": "oxygen-cylinder-carts",
+      "parents": {
+        "respiratory": 21
+      }
+    },
+    {
+      "tag": "oxygen-masks",
+      "parents": {
+        "respiratory": 8
+      }
+    },
+    {
+      "tag": "panty-liners",
+      "parents": {
+        "incontinence": 4
+      }
+    },
+    {
+      "tag": "paper-tape",
+      "parents": {
+        "wound-care": 8
+      }
+    },
+    {
+      "tag": "patient-belonging-bags",
+      "parents": {
+        "housekeeping-janitorial": 15
+      }
+    },
+    {
+      "tag": "patient-bibs",
+      "parents": {
+        "apparel": 5,
+        "exam-room": 7,
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "patient-exam-shorts",
+      "parents": {
+        "apparel": 5
+      }
+    },
+    {
+      "tag": "patient-gowns",
+      "parents": {
+        "apparel": 3
+      }
+    },
+    {
+      "tag": "peanut-sponges",
+      "parents": {
+        "surgery-procedure": 3
+      }
+    },
+    {
+      "tag": "pedal-exercisers",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "pediatric-bath-chair",
+      "parents": {
+        "home-care": 5
+      }
+    },
+    {
+      "tag": "pediatric-crutches",
+      "parents": {
+        "mobility": 5
+      }
+    },
+    {
+      "tag": "pediatric-face-masks",
+      "parents": {
+        "face-masks": 4
+      }
+    },
+    {
+      "tag": "pediatric-walking-boot",
+      "parents": {
+        "patient-therapy-rehab": 2
+      }
+    },
+    {
+      "tag": "pediatric-wheelchairs",
+      "parents": {
+        "mobility": 4
+      }
+    },
+    {
+      "tag": "penlights",
+      "parents": {
+        "exam-room": 8
+      }
+    },
+    {
+      "tag": "pens",
+      "parents": {
+        "office-supplies": 2
+      }
+    },
+    {
+      "tag": "percussion-hammers",
+      "parents": {
+        "exam-room": 7
+      }
+    },
+    {
+      "tag": "perineal-wash",
+      "parents": {
+        "hygiene": 7,
+        "incontinence": 4
+      }
+    },
+    {
+      "tag": "pet-pads",
+      "parents": {
+        "non-healthcare": 2,
+        "non-medical": 2
+      }
+    },
+    {
+      "tag": "pet-wipes",
+      "parents": {
+        "non-healthcare": 2
+      }
+    },
+    {
+      "tag": "petrolatum-dressings",
+      "parents": {
+        "wound-care": 4
+      }
+    },
+    {
+      "tag": "petroleum-gauze-dressing",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "petroleum-jelly",
+      "parents": {
+        "hygiene": 14
+      }
+    },
+    {
+      "tag": "pharmaceuticals",
+      "parents": {
+        "pharmacy-products": 2
+      }
+    },
+    {
+      "tag": "pharmacy-bags",
+      "parents": {
+        "pharmacy-products": 7
+      }
+    },
+    {
+      "tag": "pharmacy-labels",
+      "parents": {
+        "pharmacy-products": 4
+      }
+    },
+    {
+      "tag": "pharmacy-products",
+      "parents": {
+        "pharmacy-products": 67
+      }
+    },
+    {
+      "tag": "phlebotomy-chairs",
+      "parents": {
+        "exam-room": 46
+      }
+    },
+    {
+      "tag": "physical-therapy",
+      "parents": {
+        "patient-therapy-rehab": 45
+      }
+    },
+    {
+      "tag": "pill-counter",
+      "parents": {
+        "pharmacy-products": 1
+      }
+    },
+    {
+      "tag": "pillow-cases",
+      "parents": {
+        "housekeeping-janitorial": 1
+      }
+    },
+    {
+      "tag": "pillows",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "playing-cards",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "plush-toys",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "pocket-folders",
+      "parents": {
+        "office-supplies": 1
+      }
+    },
+    {
+      "tag": "podiatry-blades",
+      "parents": {
+        "surgery-procedure": 2
+      }
+    },
+    {
+      "tag": "point-of-care-urinalysis",
+      "parents": {
+        "testing": 9
+      }
+    },
+    {
+      "tag": "point-of-care-urinalysis-kits",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "pool-equipment",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "porous-tape",
+      "parents": {
+        "wound-care": 7
+      }
+    },
+    {
+      "tag": "positioning-cushion",
+      "parents": {
+        "patient-therapy-rehab": 2
+      }
+    },
+    {
+      "tag": "positioning-cushions",
+      "parents": {
+        "home-care": 5
+      }
+    },
+    {
+      "tag": "post-mortem-bags",
+      "parents": {
+        "emergency-supplies": 3
+      }
+    },
+    {
+      "tag": "post-op-shoes",
+      "parents": {
+        "patient-therapy-rehab": 7
+      }
+    },
+    {
+      "tag": "posterior-walkers",
+      "parents": {
+        "mobility": 16
+      }
+    },
+    {
+      "tag": "povidone-iodine-prep-solutions",
+      "parents": {
+        "exam-room": 12
+      }
+    },
+    {
+      "tag": "povidone-iodine-swabsticks",
+      "parents": {
+        "exam-room": 5
+      }
+    },
+    {
+      "tag": "power-scooters",
+      "parents": {
+        "mobility": 8
+      }
+    },
+    {
+      "tag": "pregnancy-tests",
+      "parents": {
+        "testing": 5
+      }
+    },
+    {
+      "tag": "prep-razors",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "prep-sponges",
+      "parents": {
+        "surgery-procedure": 5
+      }
+    },
+    {
+      "tag": "prescription-pads",
+      "parents": {
+        "pharmacy-products": 1
+      }
+    },
+    {
+      "tag": "pressure-relief-cushion",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "pressure-relief-cushions",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "privacy-screens",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "procedure-face-masks",
+      "parents": {
+        "face-masks": 3
+      }
+    },
+    {
+      "tag": "procedure-tray",
+      "parents": {
+        "surgery-procedure": 9
+      }
+    },
+    {
+      "tag": "protective-eyewear",
+      "parents": {
+        "apparel": 4
+      }
+    },
+    {
+      "tag": "protective-skin-sleeve",
+      "parents": {
+        "wound-care": 3
+      }
+    },
+    {
+      "tag": "pulse-oximeters",
+      "parents": {
+        "testing": 9
+      }
+    },
+    {
+      "tag": "quad-canes",
+      "parents": {
+        "mobility": 11
+      }
+    },
+    {
+      "tag": "quadrant",
+      "parents": {
+        "dental": 7
+      }
+    },
+    {
+      "tag": "raised-toilet-seat",
+      "parents": {
+        "home-care": 23
+      }
+    },
+    {
+      "tag": "razors",
+      "parents": {
+        "hygiene": 10
+      }
+    },
+    {
+      "tag": "reclining-wheelchairs",
+      "parents": {
+        "mobility": 28
+      }
+    },
+    {
+      "tag": "reclosable-bags",
+      "parents": {
+        "housekeeping-janitorial": 29
+      }
+    },
+    {
+      "tag": "regulators",
+      "parents": {
+        "respiratory": 18
+      }
+    },
+    {
+      "tag": "rescue-tubes",
+      "parents": {
+        "emergency-supplies": 9
+      }
+    },
+    {
+      "tag": "resident-room-chairs",
+      "parents": {
+        "room-furniture": 59
+      }
+    },
+    {
+      "tag": "retention-sheets",
+      "parents": {
+        "wound-care": 3
+      }
+    },
+    {
+      "tag": "ring-cushion",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "rollator-accessories",
+      "parents": {
+        "mobility": 3
+      }
+    },
+    {
+      "tag": "rollators",
+      "parents": {
+        "mobility": 5
+      }
+    },
+    {
+      "tag": "room-thermometer",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "round-liners",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "round-shaders",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "rsv",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "rubber-bands",
+      "parents": {
+        "office-supplies": 1
+      }
+    },
+    {
+      "tag": "rulers",
+      "parents": {
+        "office-supplies": 1
+      }
+    },
+    {
+      "tag": "safety-glasses",
+      "parents": {
+        "apparel": 5
+      }
+    },
+    {
+      "tag": "safety-pins",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "scalpel-blade-removers",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "scalpel-blades",
+      "parents": {
+        "surgery-procedure": 20
+      }
+    },
+    {
+      "tag": "scalpels",
+      "parents": {
+        "surgery-procedure": 47
+      }
+    },
+    {
+      "tag": "school-supply-kits",
+      "parents": {
+        "office-supplies": 1
+      }
+    },
+    {
+      "tag": "scooter",
+      "parents": {
+        "mobility": 2
+      }
+    },
+    {
+      "tag": "scooter-accessories",
+      "parents": {
+        "mobility": 1
+      }
+    },
+    {
+      "tag": "self-adherent-wraps",
+      "parents": {
+        "wound-care": 33
+      }
+    },
+    {
+      "tag": "shampoo",
+      "parents": {
+        "hygiene": 13
+      }
+    },
+    {
+      "tag": "sharps-containers",
+      "parents": {
+        "needles-syringes": 18
+      }
+    },
+    {
+      "tag": "shave-gel",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "shaving-cream",
+      "parents": {
+        "hygiene": 6
+      }
+    },
+    {
+      "tag": "shaving-creams",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "shears",
+      "parents": {
+        "surgery-procedure": 7
+      }
+    },
+    {
+      "tag": "shoe-covers",
+      "parents": {
+        "apparel": 7
+      }
+    },
+    {
+      "tag": "shoulder-braces",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "shoulder-immobilizers",
+      "parents": {
+        "patient-therapy-rehab": 3
+      }
+    },
+    {
+      "tag": "shower-accessories",
+      "parents": {
+        "home-care": 3
+      }
+    },
+    {
+      "tag": "shower-bed",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "shower-chairs",
+      "parents": {
+        "home-care": 20
+      }
+    },
+    {
+      "tag": "shower-commodes",
+      "parents": {
+        "home-care": 9
+      }
+    },
+    {
+      "tag": "silver-calcium-alginate-dressings",
+      "parents": {
+        "wound-care": 2
+      }
+    },
+    {
+      "tag": "silver-nitrate-applicators",
+      "parents": {
+        "exam-room": 4
+      }
+    },
+    {
+      "tag": "single-panel",
+      "parents": {
+        "testing": 3
+      }
+    },
+    {
+      "tag": "sitz-bath",
+      "parents": {
+        "home-care": 2
+      }
+    },
+    {
+      "tag": "skin-adhesives",
+      "parents": {
+        "wound-care": 4
+      }
+    },
+    {
+      "tag": "skin-closures",
+      "parents": {
+        "wound-care": 6
+      }
+    },
+    {
+      "tag": "skin-markers",
+      "parents": {
+        "surgical-sutures": 4
+      }
+    },
+    {
+      "tag": "skin-protectants",
+      "parents": {
+        "incontinence": 23
+      }
+    },
+    {
+      "tag": "small-equipment",
+      "parents": {
+        "dental": 7
+      }
+    },
+    {
+      "tag": "soaker-pads",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "soap-bar-holders",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "soap-bars",
+      "parents": {
+        "hygiene": 6
+      }
+    },
+    {
+      "tag": "soap-dispensers",
+      "parents": {
+        "hygiene": 4
+      }
+    },
+    {
+      "tag": "soap-refills",
+      "parents": {
+        "hygiene": 16
+      }
+    },
+    {
+      "tag": "socks",
+      "parents": {
+        "apparel": 9
+      }
+    },
+    {
+      "tag": "solution-bowls",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "spa-wraps",
+      "parents": {
+        "apparel": 1
+      }
+    },
+    {
+      "tag": "specialty-adhesive-bandages",
+      "parents": {
+        "wound-care": 4
+      }
+    },
+    {
+      "tag": "specialty-gloves",
+      "parents": {
+        "gloves": 6
+      }
+    },
+    {
+      "tag": "specimen-collection",
+      "parents": {
+        "testing": 18
+      }
+    },
+    {
+      "tag": "sphygmomanometers",
+      "parents": {
+        "exam-room": 65
+      }
+    },
+    {
+      "tag": "spinal-needle",
+      "parents": {
+        "needles-syringes": 37
+      }
+    },
+    {
+      "tag": "spineboard-straps",
+      "parents": {
+        "emergency-supplies": 7
+      }
+    },
+    {
+      "tag": "spineboards",
+      "parents": {
+        "emergency-supplies": 17
+      }
+    },
+    {
+      "tag": "spirometers",
+      "parents": {
+        "respiratory": 8
+      }
+    },
+    {
+      "tag": "splint-rolls",
+      "parents": {
+        "patient-therapy-rehab": 3
+      }
+    },
+    {
+      "tag": "sponge-bowls",
+      "parents": {
+        "exam-room": 13
+      }
+    },
+    {
+      "tag": "sporting-goods",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "standard-canes",
+      "parents": {
+        "mobility": 21
+      }
+    },
+    {
+      "tag": "standard-crutches",
+      "parents": {
+        "mobility": 13
+      }
+    },
+    {
+      "tag": "sterilization-pouches",
+      "parents": {
+        "sterilization": 30
+      }
+    },
+    {
+      "tag": "sterilization-tape",
+      "parents": {
+        "sterilization": 2
+      }
+    },
+    {
+      "tag": "sterilization-tubing",
+      "parents": {
+        "sterilization": 2
+      }
+    },
+    {
+      "tag": "stethoscopes",
+      "parents": {
+        "exam-room": 49
+      }
+    },
+    {
+      "tag": "stick-sponges",
+      "parents": {
+        "surgery-procedure": 4
+      }
+    },
+    {
+      "tag": "sting-relief-wipes",
+      "parents": {
+        "wound-care": 3
+      }
+    },
+    {
+      "tag": "stools",
+      "parents": {
+        "exam-room": 1,
+        "room-furniture": 5
+      }
+    },
+    {
+      "tag": "storage-cart",
+      "parents": {
+        "room-furniture": 2
+      }
+    },
+    {
+      "tag": "storage-jars",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "stretcher-pads",
+      "parents": {
+        "emergency-supplies": 3
+      }
+    },
+    {
+      "tag": "stretchers",
+      "parents": {
+        "emergency-supplies": 15
+      }
+    },
+    {
+      "tag": "stuffed-animals",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "suction",
+      "parents": {
+        "dental": 13
+      }
+    },
+    {
+      "tag": "suction-aspirators",
+      "parents": {
+        "respiratory": 7
+      }
+    },
+    {
+      "tag": "suction-canisters",
+      "parents": {
+        "respiratory": 12
+      }
+    },
+    {
+      "tag": "suction-catheter-kits",
+      "parents": {
+        "respiratory": 5
+      }
+    },
+    {
+      "tag": "suction-catheters",
+      "parents": {
+        "dental": 1,
+        "respiratory": 15
+      }
+    },
+    {
+      "tag": "suction-tubing",
+      "parents": {
+        "respiratory": 12
+      }
+    },
+    {
+      "tag": "sundry-jar-racks",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "surface-wipes",
+      "parents": {
+        "disinfectants": 1
+      }
+    },
+    {
+      "tag": "surgery-procedure",
+      "parents": {
+        "surgery-procedure": 3
+      }
+    },
+    {
+      "tag": "surgical-blades",
+      "parents": {
+        "surgery-procedure": 15
+      }
+    },
+    {
+      "tag": "surgical-clamp",
+      "parents": {
+        "surgery-procedure": 1
+      }
+    },
+    {
+      "tag": "surgical-face-mask",
+      "parents": {
+        "face-masks": 4
+      }
+    },
+    {
+      "tag": "surgical-gauze-packing-rolls",
+      "parents": {
+        "surgery-procedure": 9
+      }
+    },
+    {
+      "tag": "surgical-gauze-sponges",
+      "parents": {
+        "surgery-procedure": 22
+      }
+    },
+    {
+      "tag": "surgical-gloves",
+      "parents": {
+        "gloves": 74
+      }
+    },
+    {
+      "tag": "surgical-gowns",
+      "parents": {
+        "apparel": 5
+      }
+    },
+    {
+      "tag": "surgical-prep-razors",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "surgical-tape",
+      "parents": {
+        "wound-care": 26
+      }
+    },
+    {
+      "tag": "survival-wraps",
+      "parents": {
+        "emergency-supplies": 4
+      }
+    },
+    {
+      "tag": "suture-removal",
+      "parents": {
+        "surgical-sutures": 3
+      }
+    },
+    {
+      "tag": "sweatshirts",
+      "parents": {
+        "apparel": 2
+      }
+    },
+    {
+      "tag": "swim-aid",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "swim-pool-equipment",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "swim-training",
+      "parents": {
+        "non-medical": 5
+      }
+    },
+    {
+      "tag": "swivel-stools",
+      "parents": {
+        "exam-room": 175
+      }
+    },
+    {
+      "tag": "syphilis-test",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "syringe-with-needle",
+      "parents": {
+        "needles-syringes": 214
+      }
+    },
+    {
+      "tag": "table-paper",
+      "parents": {
+        "exam-room": 15
+      }
+    },
+    {
+      "tag": "tactical-bags",
+      "parents": {
+        "emergency-supplies": 11
+      }
+    },
+    {
+      "tag": "tampons",
+      "parents": {
+        "incontinence": 10
+      }
+    },
+    {
+      "tag": "tattoo-cartridge-tubes",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "tattoo-cartridges",
+      "parents": {
+        "non-medical": 4
+      }
+    },
+    {
+      "tag": "tattoo-equipment-accessories",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "tens-units",
+      "parents": {
+        "patient-therapy-rehab": 3
+      }
+    },
+    {
+      "tag": "therapy-putty",
+      "parents": {
+        "patient-therapy-rehab": 5
+      }
+    },
+    {
+      "tag": "thermometer-sheaths",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "thermometers",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "thumb-brace",
+      "parents": {
+        "patient-therapy-rehab": 6
+      }
+    },
+    {
+      "tag": "tight-round-liners",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "tilt-in-space-wheelchair",
+      "parents": {
+        "mobility": 1
+      }
+    },
+    {
+      "tag": "timers",
+      "parents": {
+        "exam-room": 1
+      }
+    },
+    {
+      "tag": "toilet-safety-rail",
+      "parents": {
+        "home-care": 15
+      }
+    },
+    {
+      "tag": "tonsil-sponges",
+      "parents": {
+        "surgery-procedure": 5
+      }
+    },
+    {
+      "tag": "toothbrush-holder",
+      "parents": {
+        "hygiene": 4
+      }
+    },
+    {
+      "tag": "toothbrush-holders",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "toothbrushes",
+      "parents": {
+        "hygiene": 14
+      }
+    },
+    {
+      "tag": "toothpaste",
+      "parents": {
+        "hygiene": 6
+      }
+    },
+    {
+      "tag": "topical-analgesics",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "tourniquets",
+      "parents": {
+        "exam-room": 8
+      }
+    },
+    {
+      "tag": "towel",
+      "parents": {
+        "non-medical": 2
+      }
+    },
+    {
+      "tag": "towels",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "toys",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "trachea-tube-holders",
+      "parents": {
+        "respiratory": 14
+      }
+    },
+    {
+      "tag": "trachea-tubes",
+      "parents": {
+        "respiratory": 21
+      }
+    },
+    {
+      "tag": "tracheostomy-care-kit",
+      "parents": {
+        "respiratory": 1
+      }
+    },
+    {
+      "tag": "tracheostomy-drain-sponges",
+      "parents": {
+        "respiratory": 7
+      }
+    },
+    {
+      "tag": "traction-sets",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "transfer-aids",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "transfer-bench",
+      "parents": {
+        "home-care": 12
+      }
+    },
+    {
+      "tag": "transfer-board",
+      "parents": {
+        "home-care": 9
+      }
+    },
+    {
+      "tag": "transfer-disc",
+      "parents": {
+        "home-care": 1
+      }
+    },
+    {
+      "tag": "transparent-film-dressings",
+      "parents": {
+        "wound-care": 7
+      }
+    },
+    {
+      "tag": "transparent-tape",
+      "parents": {
+        "wound-care": 6
+      }
+    },
+    {
+      "tag": "transport-chairs",
+      "parents": {
+        "mobility": 53
+      }
+    },
+    {
+      "tag": "trapeze-accessories",
+      "parents": {
+        "home-care": 7
+      }
+    },
+    {
+      "tag": "trauma-dressing",
+      "parents": {
+        "emergency-supplies": 6
+      }
+    },
+    {
+      "tag": "tray-covers",
+      "parents": {
+        "dental": 3
+      }
+    },
+    {
+      "tag": "tray-sleeves",
+      "parents": {
+        "dental": 8
+      }
+    },
+    {
+      "tag": "triangular-bandages",
+      "parents": {
+        "wound-care": 2
+      }
+    },
+    {
+      "tag": "trocars",
+      "parents": {
+        "surgery-procedure": 38
+      }
+    },
+    {
+      "tag": "tsh-controls",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "tsh-test",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "tuberculin-syringes",
+      "parents": {
+        "needles-syringes": 2
+      }
+    },
+    {
+      "tag": "tuning-forks",
+      "parents": {
+        "exam-room": 11
+      }
+    },
+    {
+      "tag": "tweezers",
+      "parents": {
+        "exam-room": 3
+      }
+    },
+    {
+      "tag": "ultrasound-gel",
+      "parents": {
+        "exam-room": 8
+      }
+    },
+    {
+      "tag": "ultrasound-warmers",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "underpads",
+      "parents": {
+        "incontinence": 30
+      }
+    },
+    {
+      "tag": "upper",
+      "parents": {
+        "dental": 7
+      }
+    },
+    {
+      "tag": "urinals",
+      "parents": {
+        "home-care": 8
+      }
+    },
+    {
+      "tag": "urinary-tract-infection-test",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "urs-controls",
+      "parents": {
+        "testing": 2
+      }
+    },
+    {
+      "tag": "urs-reader",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "urs-reader-accessories",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "uti-controls",
+      "parents": {
+        "testing": 1
+      }
+    },
+    {
+      "tag": "utility-carts",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "utility-gloves",
+      "parents": {
+        "gloves": 1
+      }
+    },
+    {
+      "tag": "utility-pails",
+      "parents": {
+        "housekeeping-janitorial": 1
+      }
+    },
+    {
+      "tag": "uv-lighting",
+      "parents": {
+        "exam-room": 8
+      }
+    },
+    {
+      "tag": "vaginal-packing",
+      "parents": {
+        "surgery-procedure": 3
+      }
+    },
+    {
+      "tag": "vaginal-speculums",
+      "parents": {
+        "exam-room": 17
+      }
+    },
+    {
+      "tag": "vehicle-escape-tool",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "vials",
+      "parents": {
+        "pharmacy-products": 22
+      }
+    },
+    {
+      "tag": "visors",
+      "parents": {
+        "apparel": 1
+      }
+    },
+    {
+      "tag": "vital-sign-monitors",
+      "parents": {
+        "exam-room": 6,
+        "testing": 12
+      }
+    },
+    {
+      "tag": "waiting-room-chairs",
+      "parents": {
+        "room-furniture": 22
+      }
+    },
+    {
+      "tag": "walker-accessories",
+      "parents": {
+        "mobility": 23
+      }
+    },
+    {
+      "tag": "walkers",
+      "parents": {
+        "mobility": 20
+      }
+    },
+    {
+      "tag": "walking-boot",
+      "parents": {
+        "patient-therapy-rehab": 1
+      }
+    },
+    {
+      "tag": "walking-boot-accessories",
+      "parents": {
+        "patient-therapy-rehab": 2
+      }
+    },
+    {
+      "tag": "wardrobes",
+      "parents": {
+        "room-furniture": 6
+      }
+    },
+    {
+      "tag": "wash-basin",
+      "parents": {
+        "home-care": 3
+      }
+    },
+    {
+      "tag": "washcloths",
+      "parents": {
+        "incontinence": 18
+      }
+    },
+    {
+      "tag": "waste-receptacle",
+      "parents": {
+        "housekeeping-janitorial": 4
+      }
+    },
+    {
+      "tag": "waterproof-adhesive-bandages",
+      "parents": {
+        "wound-care": 1
+      }
+    },
+    {
+      "tag": "waterproof-tape",
+      "parents": {
+        "wound-care": 15
+      }
+    },
+    {
+      "tag": "waxing-rolls",
+      "parents": {
+        "hygiene": 2
+      }
+    },
+    {
+      "tag": "waxing-strips",
+      "parents": {
+        "hygiene": 1
+      }
+    },
+    {
+      "tag": "wheelchair-accessories",
+      "parents": {
+        "mobility": 63
+      }
+    },
+    {
+      "tag": "wheelchair-back-cushions",
+      "parents": {
+        "mobility": 1
+      }
+    },
+    {
+      "tag": "wheelchair-cushions",
+      "parents": {
+        "mobility": 118
+      }
+    },
+    {
+      "tag": "wheelchair-parts",
+      "parents": {
+        "mobility": 22
+      }
+    },
+    {
+      "tag": "wheelchair-ramps",
+      "parents": {
+        "mobility": 1
+      }
+    },
+    {
+      "tag": "wheeled-walkers",
+      "parents": {
+        "mobility": 2
+      }
+    },
+    {
+      "tag": "whistles",
+      "parents": {
+        "emergency-supplies": 6
+      }
+    },
+    {
+      "tag": "winged-infusion-sets",
+      "parents": {
+        "needles-syringes": 11
+      }
+    },
+    {
+      "tag": "wood-applicators",
+      "parents": {
+        "exam-room": 2
+      }
+    },
+    {
+      "tag": "wood-tipped-applicators",
+      "parents": {
+        "exam-room": 17
+      }
+    },
+    {
+      "tag": "wound-care",
+      "parents": {
+        "wound-care": 11
+      }
+    },
+    {
+      "tag": "wound-cleanser-sprays",
+      "parents": {
+        "wound-care": 5
+      }
+    },
+    {
+      "tag": "wound-closure",
+      "parents": {
+        "wound-care": 8
+      }
+    },
+    {
+      "tag": "wrist-brace",
+      "parents": {
+        "patient-therapy-rehab": 6
+      }
+    },
+    {
+      "tag": "writing-pads",
+      "parents": {
+        "non-medical": 1
+      }
+    },
+    {
+      "tag": "xeroform-dressings",
+      "parents": {
+        "wound-care": 4
+      }
+    },
+    {
+      "tag": "yoga-mat",
+      "parents": {
+        "non-medical": 1
+      }
+    }
+  ],
+  "multiCategoryProducts": [
+    {
+      "handle": "dynaride-transport-wheelchair-17-x-16-w-fixed-full-arm-silver-vein-1pc-cs",
+      "categoryTags": [
+        "home-care",
+        "mobility"
+      ]
+    },
+    {
+      "handle": "iv-catheter-20g-x-2-box-sr-ox2051ca-3sr-ox2051ca",
+      "categoryTags": [
+        "iv-therapy",
+        "needles-syringes"
+      ]
+    },
+    {
+      "handle": "surgical-aspirator-tips-1-4-green",
+      "categoryTags": [
+        "dental",
+        "respiratory"
+      ]
+    }
+  ]
+}

@@ -6,12 +6,16 @@ import {
   EXCLUDED_CATEGORY_TAGS,
   HIDDEN_TROCAR_HANDLES,
 } from '../config'
+import treeData from '../tree.data.json'
 
 describe('L1_CATEGORIES', () => {
-  it('has exactly 26 entries with unique tags and unique handles', () => {
-    expect(L1_CATEGORIES).toHaveLength(26)
-    expect(new Set(L1_CATEGORIES.map((c) => c.tag)).size).toBe(26)
-    expect(new Set(L1_CATEGORIES.map((c) => c.handle)).size).toBe(26)
+  // 25, not the ticket's 26: live reconciliation showed blood-collection is
+  // a needles-syringes subcategory, and no 26th category: tag exists in the
+  // backbone (see the note in config.ts and docs/category-tree-report.md).
+  it('has exactly 25 entries with unique tags and unique handles', () => {
+    expect(L1_CATEGORIES).toHaveLength(25)
+    expect(new Set(L1_CATEGORIES.map((c) => c.tag)).size).toBe(25)
+    expect(new Set(L1_CATEGORIES.map((c) => c.handle)).size).toBe(25)
   })
   it('never includes excluded tags (occ, pharmaceuticals)', () => {
     for (const c of L1_CATEGORIES) expect(EXCLUDED_CATEGORY_TAGS.has(c.tag)).toBe(false)
@@ -35,6 +39,20 @@ describe('BOUNDARY_OVERRIDES', () => {
       expect(tags.has(b.parentTag)).toBe(true)
       expect(tags.has(b.crossLinkTag)).toBe(true)
     }
+  })
+})
+
+describe('config ↔ snapshot reconciliation', () => {
+  it('every configured L1 tag exists in the generated snapshot', () => {
+    const discovered = new Set(treeData.l1.map((c: { tag: string }) => c.tag))
+    for (const c of L1_CATEGORIES) expect(discovered.has(c.tag)).toBe(true)
+  })
+  it('snapshot has no unconfigured, unexcluded L1 tags', () => {
+    const configured = new Set(L1_CATEGORIES.map((c) => c.tag))
+    const strays = treeData.l1.filter(
+      (c: { tag: string }) => !configured.has(c.tag) && !EXCLUDED_CATEGORY_TAGS.has(c.tag),
+    )
+    expect(strays).toEqual([])
   })
 })
 

@@ -13,8 +13,8 @@ export const L1_CATEGORIES: L1Config[] = [
   { tag: 'respiratory',             handle: 'respiratory',             displayName: 'Respiratory',             navGroup: 'primary', placeholderSlug: 'respiratory' },
   { tag: 'mobility',                handle: 'mobility',                displayName: 'Mobility',                navGroup: 'primary', placeholderSlug: 'mobility' },
   { tag: 'patient-therapy-rehab',   handle: 'patient-therapy-rehab',   displayName: 'Patient Therapy & Rehab', navGroup: 'primary', placeholderSlug: 'patient-therapy-rehab' },
-  { tag: 'surgery-procedure',       handle: 'trocars-trocar-kits',     displayName: 'Surgery & Procedure',     navGroup: 'primary', placeholderSlug: 'surgery-procedure' },
-  { tag: 'apparel',                 handle: 'medical-scrubs',          displayName: 'Apparel',                 navGroup: 'primary', placeholderSlug: 'apparel' },
+  { tag: 'surgery-procedure',       handle: 'surgery-procedure',       displayName: 'Surgery & Procedure',     navGroup: 'primary', placeholderSlug: 'surgery-procedure' },
+  { tag: 'apparel',                 handle: 'apparel',                 displayName: 'Apparel',                 navGroup: 'primary', placeholderSlug: 'apparel' },
   { tag: 'hygiene',                 handle: 'hygiene',                 displayName: 'Hygiene',                 navGroup: 'primary', placeholderSlug: 'hygiene' },
   { tag: 'disinfectants',           handle: 'disinfectants',           displayName: 'Disinfectants',           navGroup: 'primary', placeholderSlug: 'disinfectants' },
   { tag: 'home-care',               handle: 'home-care',               displayName: 'Home Care',               navGroup: 'more',    placeholderSlug: 'home-care' },
@@ -26,11 +26,17 @@ export const L1_CATEGORIES: L1Config[] = [
   { tag: 'dental',                  handle: 'dental',                  displayName: 'Dental',                  navGroup: 'more',    placeholderSlug: 'dental' },
   { tag: 'housekeeping-janitorial', handle: 'housekeeping-janitorial', displayName: 'Housekeeping & Janitorial', navGroup: 'more',  placeholderSlug: 'housekeeping-janitorial' },
   { tag: 'bariatric',               handle: 'bariatric',               displayName: 'Bariatric',               navGroup: 'more',    placeholderSlug: 'bariatric' },
-  { tag: 'room-furniture',          handle: 'seating',                 displayName: 'Room Furniture',          navGroup: 'more',    placeholderSlug: 'room-furniture' },
-  { tag: 'face-masks',              handle: 'face-coverings',          displayName: 'Face Masks',              navGroup: 'more',    placeholderSlug: 'face-masks' },
+  { tag: 'room-furniture',          handle: 'room-furniture',          displayName: 'Room Furniture',          navGroup: 'more',    placeholderSlug: 'room-furniture' },
+  { tag: 'face-masks',              handle: 'face-masks',              displayName: 'Face Masks',              navGroup: 'more',    placeholderSlug: 'face-masks' },
   { tag: 'pharmacy-products',       handle: 'pharmacy-products',       displayName: 'Pharmacy Products',       navGroup: 'more',    placeholderSlug: 'pharmacy-products' },
-  { tag: 'blood-collection',        handle: 'blood-collection',        displayName: 'Blood Collection',        navGroup: 'more',    placeholderSlug: 'blood-collection' },
 ]
+// Reconciled against the 2026-07-17 live pull (docs/category-tree-report.md):
+// the tag backbone carries 25 category: values, not the ticket's 26 —
+// blood-collection turned out to be subcategories under needles-syringes,
+// and no other candidate exists live (strays non-medical/non-healthcare/
+// office-supplies/daily-living-aids ≈ the OCC set, excluded by ticket).
+// If Izzy confirms a 26th L1, add one row here and re-run
+// scripts/build-category-tree.ts.
 
 export const BOUNDARY_OVERRIDES: BoundaryOverride[] = [
   { subcategoryTag: 'barrier-sleeves',     parentTag: 'exam-room',      crossLinkTag: 'dental' },
@@ -44,14 +50,27 @@ export const BOUNDARY_OVERRIDES: BoundaryOverride[] = [
 // housekeeping-janitorial pending) — deliberately absent: canonicalCategoryTag
 // falls back to the deterministic alphabetical pick and the report flags them.
 export const DUAL_CATEGORY_OVERRIDES: Record<string, string> = {
-  'dynaride-transport-wheelchair': 'mobility',        // reconcile handle in Task 3
-  'iv-catheter-20g-x-2-sr-ox2051ca': 'iv-therapy',    // reconcile handle in Task 3
-  'surgical-aspirator-tips-green': 'dental',          // reconcile handle in Task 3
+  // Handles reconciled against the live multi-category report 2026-07-17.
+  'dynaride-transport-wheelchair-17-x-16-w-fixed-full-arm-silver-vein-1pc-cs': 'mobility',
+  'iv-catheter-20g-x-2-box-sr-ox2051ca-3sr-ox2051ca': 'iv-therapy',
+  'surgical-aspirator-tips-1-4-green': 'dental',
+  // The two Universal Mattress Covers (BLOCKED home-care vs
+  // housekeeping-janitorial) no longer appear dual-tagged in the live pull —
+  // nothing to pin; the report's multi-category section is the watchpoint.
 }
 
 // Never in the L1 tree: OCC routes to /solutions/occ; Pharmaceuticals under
-// review; out-of-tree products have no category: tag at all.
-export const EXCLUDED_CATEGORY_TAGS = new Set(['occ', 'pharmaceuticals'])
+// review; out-of-tree products have no category: tag at all. The last four
+// are the live stray tags carrying the OCC/non-medical set (~100 products,
+// 2026-07-17 pull) — excluded per the ticket's OCC/out-of-tree rule.
+export const EXCLUDED_CATEGORY_TAGS = new Set([
+  'occ',
+  'pharmaceuticals',
+  'non-medical',
+  'non-healthcare',
+  'office-supplies',
+  'daily-living-aids',
+])
 
 // Not-yet-approved collections — no routes/tiles until approved.
 export const UNAPPROVED_ROUTE_HANDLES = new Set([
