@@ -10,7 +10,7 @@ import {
 import { canonicalCategoryTag, resolveParent, classifySubcategoryTag } from './derive'
 import type { CategoryTreeData, SubcategoryNode, L1Config } from './types'
 
-const data = treeData as CategoryTreeData
+const data = treeData as unknown as CategoryTreeData
 
 type L1Node = L1Config & { productCount: number }
 
