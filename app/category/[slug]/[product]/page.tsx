@@ -9,7 +9,7 @@ import { ProductView } from '@/components/product/ProductView'
 import { ProductGrid } from '@/components/category/ProductGrid'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { getSiblingSubcategories, getRelatedCategories } from '@/lib/category-utils'
-import { getBreadcrumbFromTags } from '@/lib/category-tree'
+import { getBreadcrumbFromTags, getL1ByHandle, getSubcategoriesOf } from '@/lib/category-tree'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
@@ -38,15 +38,41 @@ interface Props {
   params: Promise<{ slug: string; product: string }>
 }
 
+// Registry gate for the bare-handle fallback: most subcategory collections
+// predate the `<parent>-<sub>` handle convention (e.g. `biopsy-punches`, not
+// `exam-room-biopsy-punches`). The bare handle is only consulted when the
+// tag backbone says this sub canonically nests under THIS parent — which
+// also keeps each boundary subcategory on exactly one URL.
+function isRegistrySubcategory(parentSlug: string, subSlug: string): boolean {
+  const l1 = getL1ByHandle(parentSlug)
+  return l1 != null && getSubcategoriesOf(l1.tag).some((s) => s.tag === subSlug)
+}
+
+async function fetchSubcollection(
+  slug: string,
+  handle: string,
+  variables: Record<string, unknown>,
+): Promise<{ collection: Collection | null }> {
+  const prefixed = `${slug}-${handle}`
+  const byConvention = await storefrontFetch<{ collection: Collection | null }>(
+    GET_COLLECTION,
+    { ...variables, handle: prefixed },
+    collectionFetchOptions(prefixed),
+  ).catch(() => ({ collection: null }))
+  if (byConvention.collection || !isRegistrySubcategory(slug, handle)) return byConvention
+  return storefrontFetch<{ collection: Collection | null }>(
+    GET_COLLECTION,
+    { ...variables, handle },
+    collectionFetchOptions(handle),
+  ).catch(() => ({ collection: null }))
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
-  const subHandle = `${slug}-${handle}`
 
-  const subData = await storefrontFetch<{ collection: Collection | null }>(
-    GET_COLLECTION,
-    { handle: subHandle, first: 1, after: null, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [] },
-    collectionFetchOptions(subHandle),
-  ).catch(() => ({ collection: null }))
+  const subData = await fetchSubcollection(slug, handle, {
+    first: 1, after: null, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [],
+  })
 
   if (subData.collection) {
     const { title, description, seo } = subData.collection
@@ -80,18 +106,13 @@ export default async function CategoryProductPage({ params }: Props) {
   const subHandle = `${slug}-${handle}`
 
   const [subData, parentMeta] = await Promise.all([
-    storefrontFetch<{ collection: Collection | null }>(
-      GET_COLLECTION,
-      {
-        handle: subHandle,
-        first: 12,
-        after: null,
-        sortKey: 'COLLECTION_DEFAULT',
-        reverse: false,
-        filters: [],
-      },
-      collectionFetchOptions(subHandle),
-    ).catch(() => ({ collection: null })),
+    fetchSubcollection(slug, handle, {
+      first: 12,
+      after: null,
+      sortKey: 'COLLECTION_DEFAULT',
+      reverse: false,
+      filters: [],
+    }),
     storefrontFetch<{ collection: { title: string; handle: string } | null }>(
       GET_COLLECTION_META,
       { handle: slug },
