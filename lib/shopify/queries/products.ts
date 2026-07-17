@@ -179,3 +179,18 @@ export const GET_ALL_PRODUCT_HANDLES = `#graphql
     }
   }
 `;
+
+export const GET_ALL_PRODUCT_TAGS = `#graphql
+  query GetAllProductTags($first: Int!, $after: String) {
+    products(first: $first, after: $after) {
+      nodes {
+        handle
+        tags
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;

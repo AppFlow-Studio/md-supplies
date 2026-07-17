@@ -11,10 +11,12 @@ import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/eve
 import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { useRxGate, RxGatePanel } from './RxCheckoutGate'
 
 export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
+  const rxGate = useRxGate(cart)
 
   useEffect(() => {
     if (cart && cart.lines.nodes.length > 0) {
@@ -54,7 +56,8 @@ export function CartPageClient() {
     } catch (err) {
       console.error('[CartPageClient] failed to stamp ga_client_id:', err)
     }
-    window.location.href = cart.checkoutUrl
+    // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
+    await rxGate.proceedToCheckout()
   }
 
   if (lines.length === 0 || !cart) {
@@ -171,13 +174,17 @@ export function CartPageClient() {
           <p className="text-gray-500 text-[12px] tracking-[0.24px]">
             Shipping calculated at checkout
           </p>
-          <a
-            href={cart.checkoutUrl}
-            onClick={handleCheckoutClick}
-            className="bg-navy-900 text-white h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase hover:bg-navy-950 transition-colors"
-          >
-            Proceed to Checkout
-          </a>
+          {rxGate.blocked ? (
+            <RxGatePanel signedIn={rxGate.signedIn} />
+          ) : (
+            <a
+              href={cart.checkoutUrl}
+              onClick={handleCheckoutClick}
+              className="bg-navy-900 text-white h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase hover:bg-navy-950 transition-colors"
+            >
+              Proceed to Checkout
+            </a>
+          )}
         </div>
       </div>
       <CartToast />

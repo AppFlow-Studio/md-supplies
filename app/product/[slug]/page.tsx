@@ -12,6 +12,7 @@ import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-p
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { getPrimaryCollection } from '@/lib/category-utils'
+import { getBreadcrumbFromTags } from '@/lib/category-tree'
 import { ROUTES } from '@/lib/routes'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
@@ -147,13 +148,17 @@ export default async function ProductPage({ params }: Props) {
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }
 
-  // Contextual middle crumb (audit L12): the product's primary approved
-  // collection, matching what the nested /category/<slug>/<product> route
-  // shows. Falls back to the generic Shop crumb when none qualifies.
-  const primaryCollection = getPrimaryCollection(product.collections?.nodes ?? [])
-  const categoryCrumb = primaryCollection
-    ? { label: primaryCollection.title, href: ROUTES.category(primaryCollection.handle) }
-    : { label: 'Shop', href: '/categories' }
+  // Breadcrumb from the product's OWN category:/subcategory: tags — ticket:
+  // BreadcrumbList follows the canonical tag path, never the cross-linked
+  // branch. Collection-derived crumb only as fallback for out-of-tree
+  // products (no category: tag), else the generic Shop crumb.
+  const tagCrumb = getBreadcrumbFromTags(product.tags, product.handle)
+  const primaryCollection = tagCrumb.l1 ? null : getPrimaryCollection(product.collections?.nodes ?? [])
+  const crumbItems = tagCrumb.l1
+    ? [tagCrumb.l1, ...(tagCrumb.l2 ? [tagCrumb.l2] : [])]
+    : [primaryCollection
+        ? { label: primaryCollection.title, href: ROUTES.category(primaryCollection.handle) }
+        : { label: 'Shop', href: '/categories' }]
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">
@@ -162,14 +167,14 @@ export default async function ProductPage({ params }: Props) {
       <meta property="og:type" content="product" />
       <ProductSchema {...schemaProps} />
       <BreadcrumbSchema
-        items={[categoryCrumb, { label: product.title }]}
+        items={[...crumbItems, { label: product.title }]}
         currentUrl={productUrl}
       />
       <ProductView
         product={product}
         relatedProducts={relatedProducts}
         complementaryProducts={complementaryProducts}
-        breadcrumbs={[categoryCrumb]}
+        breadcrumbs={crumbItems}
         partnerSlug={partner?.slug ?? null}
       />
     </main>

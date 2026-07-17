@@ -11,7 +11,7 @@ import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
-import { getSubcategories, getRelatedCategories, MAX_CATEGORY_PAGE } from '@/lib/category-utils'
+import { getSubcategories, getRelatedCategories, getCrossLinkedSubcategories, MAX_CATEGORY_PAGE } from '@/lib/category-utils'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
@@ -146,6 +146,10 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
 
   if (!data.collection) notFound()
 
+  // Boundary subcategories owned by another L1, linked here to their one
+  // canonical URL (ticket: cross-linked, never duplicated).
+  const crossLinked = getCrossLinkedSubcategories(slug)
+
   const banner = getCategoryBannerConfig(slug)
   const clusterLinks = getClusterLinks(slug)
 
@@ -198,7 +202,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
       </div>
 
       {/* ── Subcategory tabs ── */}
-      {subcategories.length > 0 && (
+      {(subcategories.length > 0 || crossLinked.length > 0) && (
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
           <div className="flex flex-wrap gap-2 items-center">
             {subcategories.map((sub) => (
@@ -208,6 +212,15 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
                 className="border border-[rgba(102,102,100,0.2)] bg-white text-navy-900 text-[13px] font-semibold px-4 h-[52px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
               >
                 {sub.label}
+              </Link>
+            ))}
+            {crossLinked.map((sub) => (
+              <Link
+                key={`x-${sub.subSlug}`}
+                href={ROUTES.subcategory(sub.catSlug, sub.subSlug)}
+                className="border border-dashed border-[rgba(102,102,100,0.35)] bg-white text-gray-500 text-[13px] font-semibold px-4 h-[52px] flex items-center hover:border-navy-900 hover:text-navy-900 transition-colors whitespace-nowrap"
+              >
+                {sub.label} ↗
               </Link>
             ))}
             <Link

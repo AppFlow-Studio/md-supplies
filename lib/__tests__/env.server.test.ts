@@ -60,6 +60,7 @@ describe('serverEnv — missing required vars', () => {
     SHOPIFY_STOREFRONT_ACCESS_TOKEN: (e) => e.shopifyStorefrontToken,
     RESEND_API_KEY: (e) => e.resendApiKey,
     BUNNYCDN_STORAGE_ACCESS_KEY: (e) => e.bunnyCdnAccessKey,
+    SHOPIFY_ADMIN_ACCESS_TOKEN: (e) => e.shopifyAdminToken,
   }
 
   it('import does not throw even when required vars are missing', async () => {
