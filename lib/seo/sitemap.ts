@@ -6,7 +6,7 @@ import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { getAllowedHandles } from '@/lib/category-nav'
+import { CATEGORY_TREE_L1 } from '@/lib/category-tree'
 import { INDUSTRIES } from '@/lib/industries'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
@@ -32,9 +32,9 @@ async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
     const data = await storefrontFetch<{
       collections: { nodes: { handle: string; updatedAt: string }[] }
     }>(GET_COLLECTIONS_FOR_SITEMAP, { first: 250 })
-    const allowed = getAllowedHandles()
+    const allowedHandles = new Set(CATEGORY_TREE_L1.map((c) => c.collectionHandle))
     return data.collections.nodes
-      .filter((c) => allowed.has(c.handle))
+      .filter((c) => allowedHandles.has(c.handle))
       .map((c) => ({
         url: `${SITE_URL}/category/${c.handle}`,
         changeFrequency: 'weekly' as const,

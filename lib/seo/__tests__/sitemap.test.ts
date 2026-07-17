@@ -83,6 +83,13 @@ describe('getSitemapUrls', () => {
     expect(urls).not.toContain('https://mdsupplies.com/category/office-supplies')
   })
 
+  it('does not emit /category/<handle> for a sub-collection handle that is not an approved L1 (leaked sub-collection bugfix)', async () => {
+    setupDefaultMocks({ collections: ['gloves', 'disposable-3-2mm-3-5mm-trocars'] })
+    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    expect(urls).toContain('https://mdsupplies.com/category/gloves')
+    expect(urls).not.toContain('https://mdsupplies.com/category/disposable-3-2mm-3-5mm-trocars')
+  })
+
   it('includes lastmod on category entries from updatedAt', async () => {
     setupDefaultMocks({ collections: ['gloves'] })
     const entries = await getSitemapUrls(false)
