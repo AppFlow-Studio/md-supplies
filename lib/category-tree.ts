@@ -123,6 +123,30 @@ export const BOUNDARY_L1_OVERRIDES: Record<string, { canonical: string; crossLin
   'exam-tables': { canonical: 'room-furniture', crossLink: 'exam-room' },
 }
 
+// Attribute-patterned subcategory: values — a numeric size/gauge/volume
+// modifier on a base concept (e.g. "25G Hypodermic Needles"). Per the ticket,
+// these render as facets on their parent L1 page, never their own tile/route.
+// Confirmed against a live tag pull (2026-07-16, 794 distinct subcategory:
+// values) — see docs/superpowers/specs/2026-07-17-attribute-subcategory-
+// exclusion-sitemap-design.md, and re-checked on every audit-category-tree.ts
+// run (Task 2 below) since that pull only sampled the top ~250 by frequency.
+// Deliberately narrow: false negatives (an attribute tag that still gets a
+// route) are acceptable and correctable later; false positives (a real
+// subcategory silently losing its page) are not, so ambiguous tags (e.g.
+// "12-panel") are left unmatched.
+export const ATTRIBUTE_SUBCATEGORY_PATTERNS: readonly RegExp[] = [
+  /^\d+g-/,                      // gauge prefix: 25g-hypodermic-needles, 21g-lancets, 20g-iv-catheters
+  /^\d+-0-sutures$/,             // suture gauge: 4-0-sutures, 3-0-sutures
+  /^0-sutures$/,                 // suture gauge: 0-sutures
+  /^\d+cc-/,                     // syringe volume: 3cc-syringe, 10cc-syringe
+  /^manual-wheelchairs-\d+$/,    // wheelchair width: manual-wheelchairs-20
+  /^\d+-gal-/,                   // sharps volume: 2-gal-sharps
+]
+
+export function isAttributeSubcategoryTag(tag: string): boolean {
+  return ATTRIBUTE_SUBCATEGORY_PATTERNS.some((p) => p.test(tag))
+}
+
 export function buildL2Tree(summaries: ProductTagSummary[]): L2Node[] {
   const l1Tags = new Set(CATEGORY_TREE_L1.map((c) => c.tag))
   const subProductCounts = new Map<string, number>()
@@ -131,6 +155,7 @@ export function buildL2Tree(summaries: ProductTagSummary[]): L2Node[] {
   for (const summary of summaries) {
     const category = resolveCanonicalCategory(summary)
     for (const sub of summary.subcategories) {
+      if (isAttributeSubcategoryTag(sub)) continue
       subProductCounts.set(sub, (subProductCounts.get(sub) ?? 0) + 1)
       if (!category || !l1Tags.has(category)) continue
       let parentCounts = subParentCounts.get(sub)

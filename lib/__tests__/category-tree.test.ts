@@ -155,7 +155,42 @@ describe('buildL1Tiles', () => {
   })
 })
 
-import { buildL2Tree } from '../category-tree'
+import { buildL2Tree, isAttributeSubcategoryTag } from '../category-tree'
+
+describe('isAttributeSubcategoryTag', () => {
+  it('matches gauge-prefixed needle/lancet/catheter tags', () => {
+    expect(isAttributeSubcategoryTag('25g-hypodermic-needles')).toBe(true)
+    expect(isAttributeSubcategoryTag('21g-lancets')).toBe(true)
+    expect(isAttributeSubcategoryTag('20g-iv-catheters')).toBe(true)
+    expect(isAttributeSubcategoryTag('23g-dental-needles')).toBe(true)
+  })
+
+  it('matches suture-gauge tags, including the bare "0-sutures" case', () => {
+    expect(isAttributeSubcategoryTag('4-0-sutures')).toBe(true)
+    expect(isAttributeSubcategoryTag('3-0-sutures')).toBe(true)
+    expect(isAttributeSubcategoryTag('0-sutures')).toBe(true)
+  })
+
+  it('matches cc-volume syringe tags', () => {
+    expect(isAttributeSubcategoryTag('3cc-syringe')).toBe(true)
+    expect(isAttributeSubcategoryTag('10cc-syringe')).toBe(true)
+  })
+
+  it('matches manual-wheelchairs width-suffixed tags', () => {
+    expect(isAttributeSubcategoryTag('manual-wheelchairs-20')).toBe(true)
+    expect(isAttributeSubcategoryTag('manual-wheelchairs-18')).toBe(true)
+  })
+
+  it('matches gal-volume sharps tags', () => {
+    expect(isAttributeSubcategoryTag('2-gal-sharps')).toBe(true)
+  })
+
+  it('does not match real subcategory tags that happen to contain a digit', () => {
+    expect(isAttributeSubcategoryTag('12-panel')).toBe(false)
+    expect(isAttributeSubcategoryTag('exam-gloves')).toBe(false)
+    expect(isAttributeSubcategoryTag('bariatric-wheelchairs')).toBe(false)
+  })
+})
 
 describe('buildL2Tree', () => {
   it('nests a subcategory under its single co-occurring L1 category', () => {
@@ -202,6 +237,21 @@ describe('buildL2Tree', () => {
       { handle: 'a', categories: ['non-medical'], subcategories: ['pet-pads'] },
     ])
     expect(nodes.find((n) => n.tag === 'pet-pads')).toBeUndefined()
+  })
+
+  it('excludes attribute-patterned subcategory tags from ever producing a node', () => {
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['needles-syringes'], subcategories: ['25g-hypodermic-needles'] },
+    ])
+    expect(nodes.find((n) => n.tag === '25g-hypodermic-needles')).toBeUndefined()
+  })
+
+  it('builds a node only for the real tag when a product carries both a real and an attribute-patterned subcategory tag', () => {
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['surgical-sutures'], subcategories: ['sutures', '4-0-sutures'] },
+    ])
+    expect(nodes.find((n) => n.tag === 'sutures')).toBeDefined()
+    expect(nodes.find((n) => n.tag === '4-0-sutures')).toBeUndefined()
   })
 })
 
