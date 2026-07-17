@@ -9,6 +9,7 @@ import { ProductView } from '@/components/product/ProductView'
 import { ProductGrid } from '@/components/category/ProductGrid'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { getSiblingSubcategories, getRelatedCategories } from '@/lib/category-utils'
+import { getBreadcrumbFromTags } from '@/lib/category-tree'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
@@ -263,9 +264,15 @@ export default async function CategoryProductPage({ params }: Props) {
     complementary: [] as CollectionProduct[],
   }))
 
-  const breadcrumbs = parentMeta.collection
-    ? [{ label: parentMeta.collection.title, href: `/category/${slug}` }]
-    : [{ label: 'Categories', href: '/shop' }]
+  // Breadcrumb from the product's OWN tag path (canonical, never the
+  // cross-linked branch); URL-parent collection crumb only as fallback for
+  // out-of-tree products.
+  const tagCrumb = getBreadcrumbFromTags(productData.product.tags, productData.product.handle)
+  const breadcrumbs = tagCrumb.l1
+    ? [tagCrumb.l1, ...(tagCrumb.l2 ? [tagCrumb.l2] : [])]
+    : parentMeta.collection
+      ? [{ label: parentMeta.collection.title, href: `/category/${slug}` }]
+      : [{ label: 'Categories', href: '/categories' }]
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">
