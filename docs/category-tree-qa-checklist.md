@@ -2,14 +2,19 @@
 
 How to check the "Category Tree — Tag-Derived Registry" ticket yourself, item by
 item. Each row names the exact file/command/URL to check and what a pass looks
-like. Status reflects what's shipped as of Phase 1 (branch `sardor-dev`,
-`docs/superpowers/plans/2026-07-16-category-tree-registry-phase1.md`, HEAD
-`de6add2`) vs. what Phase 2 (`docs/superpowers/plans/2026-07-16-category-tree-registry-phase2.md`)
-is expected to close — you're implementing Phase 2 yourself, so re-run the
-"Phase 2" rows after you land it.
+like. Phase 1 (`docs/superpowers/plans/2026-07-16-category-tree-registry-phase1.md`,
+final HEAD `de6add2`) and Phase 2 (`docs/superpowers/plans/2026-07-16-category-tree-registry-phase2.md`,
+final HEAD `5cb6c0a`, per `.superpowers/sdd/progress.md`) are both shipped —
+every row formerly marked ⏳ is now ✅, re-verified against the current
+codebase. Phase 3 (attribute facets) is partially shipped — see the Task 4
+findings doc referenced below. Nav wiring (E1,
+`docs/superpowers/plans/2026-07-17-nav-wiring-e1.md`) and the sitemap rebuild
+(`docs/superpowers/plans/2026-07-17-attribute-subcategory-exclusion-sitemap-rebuild.md`)
+are also shipped and close two gaps this checklist's Phase 1 version flagged
+(nav/sitemap not yet consuming the registry).
 
-Legend: ✅ shipped & verifiable now · ⏳ requires Phase 2 · ⏸ Phase 3 / out of
-this ticket's front-end scope.
+Legend: ✅ shipped & verifiable now · ⏸ Phase 3 / out of this ticket's
+front-end scope (partially shipped — see the relevant row).
 
 ---
 
@@ -29,12 +34,21 @@ Run the registry's own tests:
 ```bash
 npx vitest run lib/__tests__/category-tree.test.ts
 ```
-Expect: all passing (18 as of Phase 1; more once Phase 2's Task 1 helpers land).
+Expect: all passing (18 as of Phase 1; 39 now that Phase 2's registry helpers have landed).
 
-**⏳ Not yet single-source-of-truth for nav/breadcrumbs/sitemap** — only the
-All-Categories grid consumes it today. Nav (`lib/category-nav.ts`) and
-sitemap (`lib/seo/sitemap.ts`) are unchanged (Phase 3 per the plan).
-Breadcrumbs are Phase 2 Task 7.
+**✅ Now single-source-of-truth for nav/breadcrumbs/sitemap.** Verify:
+```bash
+grep -rn "buildCategoryNav(\|buildCategoryTreeNav(" app/ components/ --include=*.tsx
+```
+Expect: all 3 live call sites (`app/categories/page.tsx`, `components/layout/Footer.tsx`,
+`components/layout/Header.tsx`) use `buildCategoryTreeNav` (tag-registry-sourced,
+added by `docs/superpowers/plans/2026-07-17-nav-wiring-e1.md`) — none use the
+old `ROADMAP_CATEGORIES`-based `buildCategoryNav` from `lib/category-nav.ts`
+(that function still exists, still tested, but its only remaining caller is
+`lib/category-nav-audit.ts`, an offline audit script, not a live page).
+`lib/seo/sitemap.ts` imports `CATEGORY_TREE_L1`/`buildL2Tree` from
+`@/lib/category-tree` directly (see `grep -n "from '@/lib/category-tree'" lib/seo/sitemap.ts`).
+Breadcrumbs are Phase 2 Task 7 — see the "Emit BreadcrumbList" row below.
 
 ### ✅ "Rebuild app/categories from that registry — 26 L1 tiles, zero trocar-size/attribute tiles at top level."
 
@@ -60,9 +74,9 @@ grep -n "collection.title" lib/category-tree.ts
 ```
 Expect: no matches (title is only ever used for *display*, e.g.
 `col?.description`/tile labels — never compared against to decide identity).
-Re-run this grep across whatever new files Phase 2 adds
-(`app/category/[slug]/[product]/page.tsx`, `lib/category-results-source.ts`)
-once you've implemented it.
+Re-checked across Phase 2's new files
+(`app/category/[slug]/[product]/page.tsx`, `lib/category-results-source.ts`) —
+no matches there either.
 
 ### ✅ "Verify + document whether the stale page renders from the custom 'Categories' collection."
 
@@ -107,7 +121,7 @@ guard is still intact:
 grep -n "BLOCKED_TAG_PATTERNS" -A 12 lib/filter-registry.ts
 ```
 
-### ⏳ "Boundary values: one shared page per subcategory under one parent, cross-linked from the other. Hardcode the 3 real splits."
+### ✅ "Boundary values: one shared page per subcategory under one parent, cross-linked from the other. Hardcode the 3 real splits."
 
 **Data/logic layer — ✅ done in Phase 1.** Check:
 ```bash
@@ -120,8 +134,7 @@ vital-sign-monitors   -> canonical: testing,         crossLink: exam-room
 exam-tables           -> canonical: room-furniture,  crossLink: exam-room
 ```
 
-**Page/route layer — ⏳ Phase 2, not yet implemented.** Once you've built
-Phase 2 Task 6, verify:
+**Page/route layer — ✅ shipped in Phase 2 Task 6** (`e4b91da`). Verify:
 ```bash
 npm run dev
 ```
@@ -137,6 +150,8 @@ npm run dev
   cross-link redirect from `/category/dental/barrier-sleeves`) and
   `vital-sign-monitors` (canonical `/category/testing-screening/vital-sign-monitors`,
   redirect from `/category/exam-room/vital-sign-monitors`).
+Confirmed live via `.superpowers/sdd/task8-boundary-page.png` and
+`task8-redirect-result.png` (Phase 2 Task 8 QA screenshots).
 
 ### ✅ "Dual-category override table."
 
@@ -191,7 +206,7 @@ git diff --stat 46f76df..de6add2
 Confirm no new `app/` routes were added in Phase 1 beyond the modified
 `app/categories/page.tsx` (Phase 1 only touches that one page).
 
-### ⏳ "Emit BreadcrumbList from each product's own category:→subcategory: path; not from the cross-linked branch. Emit CollectionPage/ProductCollection on L1 + L2."
+### ✅ "Emit BreadcrumbList from each product's own category:→subcategory: path; not from the cross-linked branch. Emit CollectionPage/ProductCollection on L1 + L2."
 
 **L1 CollectionPage — ✅ already present** (pre-existing, unrelated to this
 ticket):
@@ -199,8 +214,8 @@ ticket):
 grep -n "buildCollectionPageSchema" components/category/CategoryPageView.tsx
 ```
 
-**L2 CollectionPage + breadcrumb re-sourcing — ⏳ Phase 2, not yet
-implemented.** Once built, verify:
+**L2 CollectionPage + breadcrumb re-sourcing — ✅ shipped in Phase 2 Task 7**
+(`9937b1f`, dedup fix `d8e296d`). Verify:
 1. Find a product tagged both `category:room-furniture` and
    `subcategory:exam-tables` — reuse the live-pull technique:
    ```bash
@@ -221,12 +236,12 @@ implemented.** Once built, verify:
 | Criterion | Status | How to check |
 |---|---|---|
 | All-Categories renders 26 L1 from tag backbone, no trocar/attribute tiles | ✅ (25, documented) | See task 2 above |
-| No title-based matching anywhere in the derivation | ✅ | `grep` checks above; re-run after Phase 2 |
+| No title-based matching anywhere in the derivation | ✅ | `grep` checks above, re-run against Phase 2's new files |
 | Attribute collections + 80 attribute subcats render as facets only | ⏸/✅ Phase 3 partial (Dental+IV Therapy wired, rest flagged) | See findings doc |
-| Each boundary subcategory = exactly one URL; cross-links resolve; no duplicate-content twins | ⏳ Phase 2 | curl/redirect checks above |
-| The 5 dual-category products each resolve to one canonical breadcrumb | ⏳ Phase 2 (category resolution ✅, breadcrumb rendering pending) | `resolveCanonicalCategory` tests pass now; breadcrumb visual check needs Phase 2 |
+| Each boundary subcategory = exactly one URL; cross-links resolve; no duplicate-content twins | ✅ Phase 2 shipped | curl/redirect checks above |
+| The 5 dual-category products each resolve to one canonical breadcrumb | ✅ Phase 2 shipped | `resolveCanonicalCategory` tests pass; breadcrumb visual check confirmed live (`task8-breadcrumb.png`) |
 | Beds under Room Furniture; 4 trocar collections + section-9 items don't render | ✅ Beds / ⏸ trocar unpublish | See tasks above |
-| BreadcrumbList follows product's own category: path, verified via cross-linked branch | ⏳ Phase 2 | Product breadcrumb check above |
+| BreadcrumbList follows product's own category: path, verified via cross-linked branch | ✅ Phase 2 shipped | Product breadcrumb check above |
 | Counts sanity-checked vs. post-backbone sizes (Exam Room 845, Dental 149) | ✅ verified exactly | `audit/category-tree-audit-report.md`, or re-run the audit script |
 
 ---
@@ -249,5 +264,8 @@ npm run build          # expect success, all routes present
 - `app/categories/page.tsx` — All-Categories grid consumer.
 - `scripts/audit-category-tree.ts` / `audit/category-tree-audit-report.md` — live-data sanity check, re-runnable anytime.
 - `docs/superpowers/plans/2026-07-16-category-tree-registry-phase1.md` — Global Constraints section has every hardcoded value with its rationale.
-- `docs/superpowers/plans/2026-07-16-category-tree-registry-phase2.md` — the plan for everything still marked ⏳ above; each task's own "Step 5/6" manual-verification instructions double as a check for that piece once implemented.
+- `docs/superpowers/plans/2026-07-16-category-tree-registry-phase2.md` — the plan for the boundary-page-route and breadcrumb rows above (now shipped); each task's own "Step 5/6" manual-verification instructions double as a re-check for that piece.
+- `docs/superpowers/plans/2026-07-17-nav-wiring-e1.md` — nav wiring (Header/Footer/`/categories` Popular strip onto the tag registry).
+- `docs/superpowers/plans/2026-07-17-attribute-subcategory-exclusion-sitemap-rebuild.md` — sitemap rebuild onto the tag registry.
+- `docs/superpowers/plans/2026-07-17-attribute-facet-audit.md` — Phase 3 attribute-facet work (partial; see `docs/superpowers/specs/2026-07-17-attribute-facets-audit-findings.md`).
 - `.superpowers/sdd/progress.md` — full task-by-task review history (what was checked, by whom, and any Minor findings left on record) for Phase 1.
