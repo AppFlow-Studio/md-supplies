@@ -7,7 +7,7 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
-import { getAllowedHandles, buildCategoryNav } from '@/lib/category-nav'
+import { buildCategoryTreeNav } from '@/lib/category-tree'
 import { getNonce } from '@/lib/csp-nonce'
 import { fetchProductTagSummaries, buildL1Tiles, type ProductTagSummary } from '@/lib/category-tree'
 
@@ -60,9 +60,7 @@ export default async function CategoriesPage() {
   const l1Tiles = buildL1Tiles(summaries)
 
   const allCollectionsByHandle = new Map(allCollections.map((c) => [c.handle, c]))
-  const allowed = getAllowedHandles()
-  const navCollections = allCollections.filter((c) => allowed.has(c.handle))
-  const popularCollections = buildCategoryNav(navCollections)
+  const popularCollections = buildCategoryTreeNav(allCollections)
     .primary
     .map((entry) => {
       const handle = entry.href.split('/').pop() ?? ''
