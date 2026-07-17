@@ -1,23 +1,31 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
-import { GET_COLLECTION, GET_COLLECTION_META } from '@/lib/shopify/queries/collections'
-import type { Product, CollectionProduct, Collection } from '@/lib/shopify/types'
+import type { Product, CollectionProduct } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
-import { ProductGrid } from '@/components/category/ProductGrid'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
-import { getSiblingSubcategories, getRelatedCategories } from '@/lib/category-utils'
-import { getBreadcrumbFromTags, getL1ByHandle, getSubcategoriesOf } from '@/lib/category-tree'
+import { CategoryResults } from '@/components/category/CategoryResults'
+import { parseSortKey, parseFilterParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
-import { CategoryImage } from '@/components/shared/CategoryImage'
-import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
+import {
+  getL1ByCollectionHandle,
+  buildL2Tree,
+  getSubcategoriesForParent,
+  humanizeTag,
+  CATEGORY_TREE_L1,
+  buildSubcategoryTagQuery,
+  getProductCategoryPath,
+  parseProductTags,
+  type L2Node,
+} from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { getNonce } from '@/lib/csp-nonce'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
@@ -30,58 +38,31 @@ import { getNonce } from '@/lib/csp-nonce'
 function productFetchOptions(handle: string) {
   return { next: { revalidate: 300, tags: ['shopify', 'products', `product:${handle}`] } }
 }
-function collectionFetchOptions(handle: string) {
-  return { next: { revalidate: 300, tags: ['shopify', 'collections', `collection:${handle}`] } }
-}
 
 interface Props {
   params: Promise<{ slug: string; product: string }>
-}
-
-// Registry gate for the bare-handle fallback: most subcategory collections
-// predate the `<parent>-<sub>` handle convention (e.g. `biopsy-punches`, not
-// `exam-room-biopsy-punches`). The bare handle is only consulted when the
-// tag backbone says this sub canonically nests under THIS parent — which
-// also keeps each boundary subcategory on exactly one URL.
-function isRegistrySubcategory(parentSlug: string, subSlug: string): boolean {
-  const l1 = getL1ByHandle(parentSlug)
-  return l1 != null && getSubcategoriesOf(l1.tag).some((s) => s.tag === subSlug)
-}
-
-async function fetchSubcollection(
-  slug: string,
-  handle: string,
-  variables: Record<string, unknown>,
-): Promise<{ collection: Collection | null }> {
-  const prefixed = `${slug}-${handle}`
-  const byConvention = await storefrontFetch<{ collection: Collection | null }>(
-    GET_COLLECTION,
-    { ...variables, handle: prefixed },
-    collectionFetchOptions(prefixed),
-  ).catch(() => ({ collection: null }))
-  if (byConvention.collection || !isRegistrySubcategory(slug, handle)) return byConvention
-  return storefrontFetch<{ collection: Collection | null }>(
-    GET_COLLECTION,
-    { ...variables, handle },
-    collectionFetchOptions(handle),
-  ).catch(() => ({ collection: null }))
+  searchParams: Promise<CategorySearchParams>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
+  const l1 = getL1ByCollectionHandle(slug)
 
-  const subData = await fetchSubcollection(slug, handle, {
-    first: 1, after: null, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [],
-  })
+  if (l1) {
+    const summaries = await fetchProductTagSummaries()
+    const l2Nodes = buildL2Tree(summaries)
+    const node = l2Nodes.find((n) => n.tag === handle)
 
-  if (subData.collection) {
-    const { title, description, seo } = subData.collection
-    return buildMetadata({
-      pageType: 'subcategory',
-      title: seo?.title || title,
-      description: seo?.description || (description ? trimDescription(description, 155) : undefined),
-      canonical: `${SITE_URL}/category/${slug}/${handle}`,
-    })
+    if (node && (node.parentTag === l1.tag || node.crossLinkParentTag === l1.tag)) {
+      const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
+      const title = humanizeTag(node.tag)
+      return buildMetadata({
+        pageType: 'subcategory',
+        title,
+        description: `Shop ${title} within ${canonicalL1.displayName} at MDSupplies — fast shipping, bulk pricing available.`,
+        canonical: `${SITE_URL}${ROUTES.subcategory(canonicalL1.collectionHandle, node.tag)}`,
+      })
+    }
   }
 
   try {
@@ -100,167 +81,139 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function CategoryProductPage({ params }: Props) {
-  const nonce = await getNonce()
-  const { slug, product: handle } = await params
-  const subHandle = `${slug}-${handle}`
+async function renderSubcategoryPage(
+  nonce: string | undefined,
+  l1: { tag: string; displayName: string; collectionHandle: string },
+  node: L2Node,
+  l2Nodes: L2Node[],
+  sp: CategorySearchParams,
+  slug: string,
+  handle: string,
+) {
+  const title = humanizeTag(node.tag)
+  const activeFilterStrings = parseFilterParam(sp.filter)
+  const { sortKey, reverse } = parseSortKey(sp.sort)
+  const currentPage = parseInt(sp.page ?? '1', 10)
+  if (isNaN(currentPage) || currentPage < 1) notFound()
 
-  const [subData, parentMeta] = await Promise.all([
-    fetchSubcollection(slug, handle, {
-      first: 12,
-      after: null,
-      sortKey: 'COLLECTION_DEFAULT',
-      reverse: false,
-      filters: [],
-    }),
-    storefrontFetch<{ collection: { title: string; handle: string } | null }>(
-      GET_COLLECTION_META,
-      { handle: slug },
-      collectionFetchOptions(slug),
-    ).catch(() => ({ collection: null })),
-  ])
+  const siblings = getSubcategoriesForParent(l1.tag, l2Nodes).filter((n) => n.tag !== node.tag)
+  const crossLinkL1 = node.crossLinkParentTag
+    ? CATEGORY_TREE_L1.find((c) => c.tag === node.crossLinkParentTag)
+    : undefined
 
-  if (subData.collection) {
-    const collection = subData.collection
-    const [siblings, relatedCategories] = await Promise.all([
-      getSiblingSubcategories(slug, handle),
-      getRelatedCategories(subHandle),
-    ])
+  const canonicalUrl = `${SITE_URL}${ROUTES.subcategory(slug, handle)}`
 
-    return (
-      <main id="main-content" className="bg-[#f9fafc] min-h-screen">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
-          <Breadcrumb
-            items={[
-              { label: parentMeta.collection?.title ?? 'Category', href: ROUTES.category(slug) },
-              { label: collection.title },
-            ]}
-          />
-        </div>
+  return (
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
+        <Breadcrumb
+          items={[
+            { label: l1.displayName, href: ROUTES.category(slug) },
+            { label: title },
+          ]}
+        />
+      </div>
 
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-8">
-          <div className="relative bg-white overflow-hidden flex min-h-[260px] sm:min-h-[300px]">
-            <div className="relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 max-w-[560px]">
-              <h1 className="text-navy-900 text-[36px] sm:text-[44px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
-                {collection.title}
-              </h1>
-              {collection.description && (
-                <p className="text-gray-500 text-[15px] leading-[1.75] max-w-[500px]">
-                  {collection.description}
-                </p>
-              )}
-            </div>
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
+        <h1 className="text-navy-900 text-[36px] sm:text-[44px] font-semibold leading-[1.2] tracking-[-0.01em] mb-2">
+          {title}
+        </h1>
+        <p className="text-gray-500 text-[15px]">Part of {l1.displayName}</p>
+        {crossLinkL1 && (
+          <p className="text-gray-500 text-[14px] mt-2">
+            Also relevant to{' '}
+            <Link href={ROUTES.category(crossLinkL1.collectionHandle)} className="text-[#0086b1] hover:underline">
+              {crossLinkL1.displayName}
+            </Link>
+          </p>
+        )}
+      </div>
 
-            <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
-              <CategoryImage
-                bannerPath={getSubcategoryBannerPath(subHandle)}
-                fallbackUrl={collection.image?.url}
-                alt={collection.image?.altText ?? collection.title}
-              />
-            </div>
-          </div>
-        </div>
-
-        {siblings.length > 0 && (
-          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
-            <div className="flex flex-wrap gap-2 items-center">
+      {siblings.length > 0 && (
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Link
+              href={ROUTES.category(slug)}
+              className="border border-gray-200 bg-white text-navy-900 text-[13px] font-semibold px-4 h-[44px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
+            >
+              All {l1.displayName}
+            </Link>
+            {siblings.map((sib) => (
               <Link
-                href={ROUTES.category(slug)}
+                key={sib.tag}
+                href={ROUTES.subcategory(slug, sib.tag)}
                 className="border border-gray-200 bg-white text-navy-900 text-[13px] font-semibold px-4 h-[44px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
               >
-                All {parentMeta.collection?.title ?? 'Products'}
+                {humanizeTag(sib.tag)}
               </Link>
-              {siblings.map((sib) => (
-                <Link
-                  key={sib.subSlug}
-                  href={ROUTES.subcategory(sib.catSlug, sib.subSlug)}
-                  className="border border-gray-200 bg-white text-navy-900 text-[13px] font-semibold px-4 h-[44px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
-                >
-                  {sib.label}
-                </Link>
-              ))}
-              <span className="bg-navy-900 text-white text-[13px] font-semibold px-4 h-[44px] flex items-center whitespace-nowrap">
-                {collection.title}
-              </span>
-            </div>
+            ))}
+            <span className="bg-navy-900 text-white text-[13px] font-semibold px-4 h-[44px] flex items-center whitespace-nowrap">
+              {title}
+            </span>
           </div>
-        )}
-
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6">
-          <ProductGrid
-            products={collection.products.nodes}
-            emptyStateHref={ROUTES.category(slug)}
-            categorySlug={subHandle}
-            itemListId={subHandle}
-            itemListName={collection.title}
-          />
         </div>
+      )}
 
-        {relatedCategories.length > 0 && (
-          <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
-            <h2 className="text-navy-900 text-[18px] font-semibold mb-4">Related Categories</h2>
-            <div className="flex flex-wrap gap-3">
-              {relatedCategories.map((cat) => (
-                <Link
-                  key={cat.slug}
-                  href={ROUTES.category(cat.slug)}
-                  className="border border-gray-200 bg-white text-navy-900 text-[14px] px-4 py-2 hover:border-navy-900 transition-colors"
-                >
-                  {cat.label}
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {collection.descriptionHtml && (
-          <section className="bg-navy-900 py-16 sm:py-20">
-            <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 text-center">
-              <h2 className="text-white text-[36px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-8">
-                About {collection.title}
-              </h2>
-              <div
-                className="prose prose-invert max-w-[880px] mx-auto text-[15px] leading-[1.85] text-white/75
-                  prose-headings:text-white prose-a:text-[#0086b1] prose-strong:text-white"
-                dangerouslySetInnerHTML={{ __html: collection.descriptionHtml }}
-              />
-            </div>
-          </section>
-        )}
-
-        <script
-          type="application/ld+json"
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: jsonLdSafe(
-              buildCollectionPageSchema({
-                name: collection.title,
-                url: `${SITE_URL}/category/${slug}/${handle}`,
-                ...(collection.description ? { description: collection.description } : {}),
-                ...(collection.image?.url ? { image: collection.image.url } : {}),
-              }),
-            ),
-          }}
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
+        <CategoryResults
+          source={{ kind: 'tag', query: buildSubcategoryTagQuery(l1.tag, node.tag), title, slug: node.tag }}
+          baseUrl={ROUTES.subcategory(slug, handle)}
+          facetKey={l1.tag}
+          sortKey={sortKey}
+          reverse={reverse}
+          sortParam={sp.sort}
+          activeFilterStrings={activeFilterStrings}
+          currentPage={currentPage}
+          trackingParamsSource={sp}
         />
-        <script
-          type="application/ld+json"
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: jsonLdSafe(
-              buildBreadcrumbListSchema(
-                [
-                  { label: parentMeta.collection?.title ?? 'Category', href: ROUTES.category(slug) },
-                  { label: collection.title },
-                ],
-                `${SITE_URL}/category/${slug}/${handle}`,
-              ),
+      </div>
+
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: jsonLdSafe(buildCollectionPageSchema({ name: title, url: canonicalUrl })),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: jsonLdSafe(
+            buildBreadcrumbListSchema(
+              [{ label: l1.displayName, href: ROUTES.category(slug) }, { label: title }],
+              canonicalUrl,
             ),
-          }}
-        />
-      </main>
-    )
+          ),
+        }}
+      />
+    </main>
+  )
+}
+
+export default async function CategoryProductPage({ params, searchParams }: Props) {
+  const nonce = await getNonce()
+  const { slug, product: handle } = await params
+  const sp = await searchParams
+  const l1 = getL1ByCollectionHandle(slug)
+
+  let l2Nodes: L2Node[] | undefined
+
+  if (l1) {
+    const summaries = await fetchProductTagSummaries()
+    l2Nodes = buildL2Tree(summaries)
+    const node = l2Nodes.find((n) => n.tag === handle)
+
+    if (node && node.crossLinkParentTag === l1.tag && node.parentTag !== l1.tag) {
+      const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
+      redirect(ROUTES.subcategory(canonicalL1.collectionHandle, node.tag))
+    }
+
+    if (node && node.parentTag === l1.tag) {
+      return renderSubcategoryPage(nonce, l1, node, l2Nodes, sp, slug, handle)
+    }
   }
 
   // Fall back to product
@@ -285,15 +238,24 @@ export default async function CategoryProductPage({ params }: Props) {
     complementary: [] as CollectionProduct[],
   }))
 
-  // Breadcrumb from the product's OWN tag path (canonical, never the
-  // cross-linked branch); URL-parent collection crumb only as fallback for
-  // out-of-tree products.
-  const tagCrumb = getBreadcrumbFromTags(productData.product.tags, productData.product.handle)
-  const breadcrumbs = tagCrumb.l1
-    ? [tagCrumb.l1, ...(tagCrumb.l2 ? [tagCrumb.l2] : [])]
-    : parentMeta.collection
-      ? [{ label: parentMeta.collection.title, href: `/category/${slug}` }]
-      : [{ label: 'Categories', href: '/categories' }]
+  const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
+  const { categories, subcategories } = parseProductTags(productData.product.tags)
+  const categoryPath = getProductCategoryPath(
+    { handle: productData.product.handle, categories, subcategories },
+    resolvedL2Nodes,
+  )
+
+  const breadcrumbs = categoryPath
+    ? [
+        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        ...(categoryPath.subcategory
+          ? [{
+              label: humanizeTag(categoryPath.subcategory.tag),
+              href: ROUTES.subcategory(categoryPath.category.collectionHandle, categoryPath.subcategory.tag),
+            }]
+          : []),
+      ]
+    : [{ label: 'Categories', href: '/categories' }]
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">

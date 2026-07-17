@@ -1,5 +1,4 @@
 import { ROUTES } from '@/lib/routes'
-import { getAllowedL1Handles, getL1Categories } from '@/lib/category-tree'
 
 export type RoadmapCategory = {
   displayName: string
@@ -8,12 +7,6 @@ export type RoadmapCategory = {
   placeholderSlug: string
 }
 
-// LEGACY — derivation source superseded by the category:/subcategory: tag
-// backbone in lib/category-tree (launch-gate category-tree ticket, 2026-07-17).
-// Kept ONLY for banner/placeholder-image consumers (lib/bunnycdn.ts,
-// lib/category-images.ts) and the legacy audit script; nav, allowlists, and
-// the All-Categories page no longer read it.
-//
 // §3.1 approved category structure, checked against the live Shopify
 // catalog on 2026-06-18 via scripts/audit-collections.ts. Categories with
 // an empty matchedHandles array have no live Shopify collection yet and
@@ -74,9 +67,6 @@ export const ROADMAP_CATEGORIES: RoadmapCategory[] = [
 
 export type NavEntry = { displayName: string; href: string }
 
-// Nav derives from the tag-backbone registry (one handle per L1, matched on
-// handle only); the live collection list just gates out entries whose
-// collection isn't published yet.
 export function buildCategoryNav(
   collections: { handle: string }[],
 ): { primary: NavEntry[]; more: NavEntry[] } {
@@ -84,10 +74,11 @@ export function buildCategoryNav(
   const primary: NavEntry[] = []
   const more: NavEntry[] = []
 
-  for (const category of getL1Categories()) {
-    if (!liveHandles.has(category.handle)) continue
+  for (const category of ROADMAP_CATEGORIES) {
+    const matchedHandle = category.matchedHandles.find((h) => liveHandles.has(h))
+    if (!matchedHandle) continue
 
-    const entry: NavEntry = { displayName: category.displayName, href: ROUTES.category(category.handle) }
+    const entry: NavEntry = { displayName: category.displayName, href: ROUTES.category(matchedHandle) }
     if (category.navGroup === 'primary') primary.push(entry)
     else more.push(entry)
   }
@@ -105,5 +96,5 @@ export function getUnmappedRoadmapCategories(
 }
 
 export function getAllowedHandles(): Set<string> {
-  return getAllowedL1Handles()
+  return new Set(ROADMAP_CATEGORIES.flatMap((c) => c.matchedHandles))
 }

@@ -131,6 +131,35 @@ export const filterRegistry: Record<string, FacetRule[]> = {
     PRICE,
     AVAILABILITY,
   ],
+
+  // Confirmed live 2026-07-17 (docs/superpowers/plans/2026-07-17-attribute-
+  // facet-audit.md, Task 1): needle_gauge/needle_length/size_length_/
+  // order_size are all live, populated Storefront metafields on this
+  // collection today -- same gauge/length/order-size metafield family as
+  // needles-syringes above, but with size in place of volume, since dental
+  // needle products carry gauge/length/size attributes, not a fill volume.
+  dental: [
+    APPROVED_METAFIELDS.needleGauge,
+    APPROVED_METAFIELDS.length,
+    APPROVED_METAFIELDS.size,
+    APPROVED_METAFIELDS.orderSize,
+    VENDOR,
+    PRICE,
+    AVAILABILITY,
+  ],
+
+  // Confirmed live 2026-07-17 (same audit as dental above) -- IV catheter
+  // gauge is the attribute in question (24g-iv-catheters etc.), same
+  // metafield family.
+  'iv-therapy': [
+    APPROVED_METAFIELDS.needleGauge,
+    APPROVED_METAFIELDS.length,
+    APPROVED_METAFIELDS.size,
+    APPROVED_METAFIELDS.orderSize,
+    VENDOR,
+    PRICE,
+    AVAILABILITY,
+  ],
 }
 
 // Safe default for any collection without an explicit registry entry.

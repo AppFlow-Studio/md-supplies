@@ -1,77 +1,125 @@
 import { describe, it, expect } from 'vitest'
 import { buildCategoryNav, getUnmappedRoadmapCategories, getAllowedHandles } from '../category-nav'
-import { getAllowedL1Handles, getNavGroups } from '../category-tree'
 
-// buildCategoryNav / getAllowedHandles now derive from the tag-backbone
-// registry (lib/category-tree); the live collection list only gates out
-// unpublished collections.
-
-const ALL_LIVE = [...getAllowedL1Handles()].map((handle) => ({ handle }))
+const LIVE_HANDLES = [
+  'gloves', 'wound-care', 'testing-screening', 'exam-room', 'mobility',
+  'patient-therapy-rehab', 'hygiene', 'home-care', 'emergency-supplies',
+  'incontinence', 'dental', 'housekeeping-janitorial', 'bariatric',
+  'face-coverings', 'seating', 'capes-gowns', 'caps-headwear',
+  'coats-jackets', 'footwear', 'medical-scrubs', 'pants-shirts',
+  'undergarments-wraps', 'trocars-trocar-kits', 'disposable-3-2mm-3-5mm-trocars',
+].map((handle) => ({ handle }))
 
 describe('buildCategoryNav', () => {
-  it('renders every registry L1 when all collections are live, in registry order', () => {
-    const nav = buildCategoryNav(ALL_LIVE)
-    expect(nav.primary).toEqual(getNavGroups().primary)
-    expect(nav.more).toEqual(getNavGroups().more)
-  })
-
-  it('uses registry display names with /category/<handle> hrefs (handle-only matching)', () => {
-    const { primary } = buildCategoryNav(ALL_LIVE)
+  it('renders mapped categories with normalized display names', () => {
+    const { primary } = buildCategoryNav(LIVE_HANDLES)
     const testing = primary.find((c) => c.displayName === 'Testing')
     expect(testing).toEqual({ displayName: 'Testing', href: '/category/testing-screening' })
   })
 
+  it('renders Face Masks normalized from the face-coverings handle', () => {
+    const { more } = buildCategoryNav(LIVE_HANDLES)
+    expect(more.find((c) => c.displayName === 'Face Masks')).toEqual({
+      displayName: 'Face Masks',
+      href: '/category/face-coverings',
+    })
+  })
+
   it('splits entries into primary and more groups', () => {
-    const { primary, more } = buildCategoryNav(ALL_LIVE)
+    const { primary, more } = buildCategoryNav(LIVE_HANDLES)
     expect(primary.map((c) => c.displayName)).toContain('Gloves')
     expect(more.map((c) => c.displayName)).toContain('Home Care')
     expect(primary.map((c) => c.displayName)).not.toContain('Home Care')
   })
 
-  it('omits registry categories whose collection is not live', () => {
-    const withoutGloves = ALL_LIVE.filter((c) => c.handle !== 'gloves')
-    const { primary } = buildCategoryNav(withoutGloves)
-    expect(primary.map((c) => c.displayName)).not.toContain('Gloves')
+  it('synthesizes a parent entry linking to the first present matched handle', () => {
+    const { primary } = buildCategoryNav(LIVE_HANDLES)
+    expect(primary.find((c) => c.displayName === 'Apparel')).toEqual({
+      displayName: 'Apparel',
+      href: '/category/capes-gowns',
+    })
   })
 
-  it('never emits trocar-size or attribute collection entries', () => {
-    const nav = buildCategoryNav([
-      ...ALL_LIVE,
-      { handle: 'disposable-3-2mm-3-5mm-trocars' },
-      { handle: 'capes-gowns' },
-    ])
-    const names = [...nav.primary, ...nav.more].map((c) => c.href)
-    expect(names).not.toContain('/category/disposable-3-2mm-3-5mm-trocars')
-    expect(names).not.toContain('/category/capes-gowns')
+  it('falls back to the next present handle when the first matched handle is missing', () => {
+    const withoutCapesGowns = LIVE_HANDLES.filter((c) => c.handle !== 'capes-gowns')
+    const { primary } = buildCategoryNav(withoutCapesGowns)
+    expect(primary.find((c) => c.displayName === 'Apparel')).toEqual({
+      displayName: 'Apparel',
+      href: '/category/caps-headwear',
+    })
+  })
+
+  it('omits roadmap categories with no live matching handle', () => {
+    const { primary, more } = buildCategoryNav(LIVE_HANDLES)
+    const allNames = [...primary, ...more].map((c) => c.displayName)
+    expect(allNames).not.toContain('Needles & Syringes')
+    expect(allNames).not.toContain('Pharmacy Products')
+  })
+})
+
+describe('getUnmappedRoadmapCategories', () => {
+  it('lists roadmap categories with zero live matches', () => {
+    const unmapped = getUnmappedRoadmapCategories(LIVE_HANDLES)
+    const names = unmapped.map((c) => c.displayName)
+    expect(names).toContain('Needles & Syringes')
+    expect(names).toContain('Surgical Sutures')
+    expect(names).toContain('Respiratory')
+    expect(names).toContain('Disinfectants')
+    expect(names).toContain('IV Therapy')
+    expect(names).toContain('Urology & Ostomy')
+    expect(names).toContain('Sterilization')
+    expect(names).toContain('Pharmacy Products')
+  })
+
+  it('does not list a fully mapped category', () => {
+    const unmapped = getUnmappedRoadmapCategories(LIVE_HANDLES)
+    expect(unmapped.map((c) => c.displayName)).not.toContain('Gloves')
   })
 })
 
 describe('getAllowedHandles', () => {
-  it('equals the registry L1 handle set', () => {
-    expect(getAllowedHandles()).toEqual(getAllowedL1Handles())
-  })
-
-  it('contains the tag-backbone 1:1 handles and drops superseded ones', () => {
+  it('returns a Set containing known mapped handles', () => {
     const allowed = getAllowedHandles()
     expect(allowed.has('gloves')).toBe(true)
-    expect(allowed.has('surgery-procedure')).toBe(true)
-    expect(allowed.has('room-furniture')).toBe(true)
-    expect(allowed.has('face-masks')).toBe(true)
-    expect(allowed.has('apparel')).toBe(true)
-    // superseded collection-era handles no longer allowlisted as L1 routes
-    expect(allowed.has('face-coverings')).toBe(false)
-    expect(allowed.has('trocars-trocar-kits')).toBe(false)
-    expect(allowed.has('exam-tables')).toBe(false)
+    expect(allowed.has('face-coverings')).toBe(true)
+    expect(allowed.has('exam-tables')).toBe(true)
+  })
+
+  it('returns a Set containing the 8 newly filled handles', () => {
+    const allowed = getAllowedHandles()
+    expect(allowed.has('needles-syringes')).toBe(true)
+    expect(allowed.has('surgical-sutures')).toBe(true)
+    expect(allowed.has('respiratory')).toBe(true)
+    expect(allowed.has('disinfectants')).toBe(true)
+    expect(allowed.has('iv-therapy')).toBe(true)
+    expect(allowed.has('urology-ostomy')).toBe(true)
+    expect(allowed.has('sterilization')).toBe(true)
+    expect(allowed.has('pharmacy-products')).toBe(true)
+  })
+
+  it('does not contain handles absent from all roadmap categories', () => {
+    const allowed = getAllowedHandles()
     expect(allowed.has('pharmaceuticals')).toBe(false)
+    expect(allowed.has('random-nonexistent')).toBe(false)
+    expect(allowed.has('')).toBe(false)
   })
 })
 
-// Legacy roadmap coverage helper — still used by scripts/audit-collections.ts.
-describe('getUnmappedRoadmapCategories (legacy)', () => {
-  it('lists roadmap categories with zero live matches', () => {
-    const unmapped = getUnmappedRoadmapCategories([{ handle: 'gloves' }])
+describe('getUnmappedRoadmapCategories — after filling 8 handles', () => {
+  it('no longer reports any of the 8 previously-empty categories as unmapped', () => {
+    const nowLive = [
+      'needles-syringes', 'surgical-sutures', 'respiratory', 'disinfectants',
+      'iv-therapy', 'urology-ostomy', 'sterilization', 'pharmacy-products',
+    ].map((h) => ({ handle: h }))
+    const unmapped = getUnmappedRoadmapCategories(nowLive)
     const names = unmapped.map((c) => c.displayName)
-    expect(names).toContain('Needles & Syringes')
-    expect(names).not.toContain('Gloves')
+    expect(names).not.toContain('Needles & Syringes')
+    expect(names).not.toContain('Surgical Sutures')
+    expect(names).not.toContain('Respiratory')
+    expect(names).not.toContain('Disinfectants')
+    expect(names).not.toContain('IV Therapy')
+    expect(names).not.toContain('Urology & Ostomy')
+    expect(names).not.toContain('Sterilization')
+    expect(names).not.toContain('Pharmacy Products')
   })
 })

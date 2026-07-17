@@ -149,6 +149,38 @@ export const GET_COLLECTIONS_AUDIT = `#graphql
   }
 `;
 
+export const GET_COLLECTION_FILTERS_ONLY = `#graphql
+  query GetCollectionFiltersOnly($handle: String!) {
+    collection(handle: $handle) {
+      handle
+      products(first: 1) {
+        filters {
+          id
+          label
+          type
+          values { id label count input }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_COLLECTIONS_WITH_PRODUCT_SAMPLE = `#graphql
+  query GetCollectionsWithProductSample($first: Int!, $after: String) {
+    collections(first: $first, after: $after) {
+      nodes {
+        handle
+        title
+        products(first: 50) {
+          nodes { handle }
+          pageInfo { hasNextPage }
+        }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+`;
+
 export const GET_COLLECTION_PRODUCT_CARDS = `#graphql
   query GetCollectionProductCards($handle: String!, $first: Int!) {
     collection(handle: $handle) {

@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { CurrencySwitcher } from './CurrencySwitcher'
 import type { AvailableCountry, SlimCollection } from '@/lib/shopify/types'
 import { ROUTES } from '@/lib/routes'
-import { buildCategoryNav } from '@/lib/category-nav'
+import { buildCategoryTreeNav } from '@/lib/category-tree'
 import { LOGO_PATH } from '@/lib/bunnycdn'
 import { SITE_CONTACT, formatAddress } from '@/lib/site-contact'
 
@@ -33,7 +33,7 @@ interface FooterProps {
 }
 
 export function Footer({ collections, availableCountries = [] }: FooterProps) {
-  const categoryNav = buildCategoryNav(collections)
+  const categoryNav = buildCategoryTreeNav(collections)
 
   return (
     <footer className="bg-neutral-50 border-t border-blue-50 pt-14 pb-0">

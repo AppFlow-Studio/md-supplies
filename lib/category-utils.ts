@@ -3,13 +3,6 @@ import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
 import { getAllowedHandles } from '@/lib/category-nav'
-import {
-  getL1ByHandle,
-  getL1ByTag,
-  getSubcategoriesOf,
-  getCrossLinkedInto,
-  subcategoryTitle,
-} from '@/lib/category-tree'
 
 // Page size and the Storefront API `first` argument ceiling (250) that bounds
 // how deep deterministic category pagination can go before falling back to
@@ -33,48 +26,33 @@ const fetchAllCollections = cache(async (): Promise<SlimCollection[]> => {
   }
 })
 
-// Subcategories of an L1 come from the tag-backbone registry (category
-// kind only — attribute values render as facets, never tiles/routes). The
-// live collection list just gates which subs have a browsable collection
-// page today, matched on handle (convention `<parent>-<sub>`, bare `<sub>`
-// fallback) — never on title.
+// Returns subcollections of a parent slug using the handle convention:
+// /category/gloves → finds collections like gloves-nitrile, gloves-latex, etc.
 export async function getSubcategories(
   parentSlug: string,
 ): Promise<{ label: string; slug: string }[]> {
-  const l1 = getL1ByHandle(parentSlug)
-  if (!l1) return []
   const all = await fetchAllCollections()
-  const liveHandles = new Set(all.map((c) => c.handle))
-  return getSubcategoriesOf(l1.tag)
-    .filter((s) => liveHandles.has(`${parentSlug}-${s.tag}`) || liveHandles.has(s.tag))
-    .map((s) => ({ label: subcategoryTitle(s.tag), slug: s.tag }))
+  const prefix = `${parentSlug}-`
+  return all
+    .filter((c) => c.handle.startsWith(prefix))
+    .map((c) => ({ label: c.title, slug: c.handle.slice(prefix.length) }))
 }
 
-// Returns sibling subcategories of the current subcategory (same parent, different sub).
+// Returns sibling subcollections of the current subcategory (same parent, different sub).
 export async function getSiblingSubcategories(
   parentSlug: string,
   currentSubSlug: string,
 ): Promise<{ label: string; catSlug: string; subSlug: string }[]> {
-  const subs = await getSubcategories(parentSlug)
-  return subs
-    .filter((s) => s.slug !== currentSubSlug)
-    .map((s) => ({ label: s.label, catSlug: parentSlug, subSlug: s.slug }))
-}
-
-/**
- * Boundary subcategories canonically owned by ANOTHER L1 but cross-linked
- * into this one (3 hardcoded splits) — links point at the ONE canonical URL
- * under the owning parent, so no duplicate-content twins.
- */
-export function getCrossLinkedSubcategories(
-  parentSlug: string,
-): { label: string; catSlug: string; subSlug: string }[] {
-  const l1 = getL1ByHandle(parentSlug)
-  if (!l1) return []
-  return getCrossLinkedInto(l1.tag).flatMap((s) => {
-    const owner = getL1ByTag(s.parentTag)
-    return owner ? [{ label: subcategoryTitle(s.tag), catSlug: owner.handle, subSlug: s.tag }] : []
-  })
+  const all = await fetchAllCollections()
+  const prefix = `${parentSlug}-`
+  const self = `${parentSlug}-${currentSubSlug}`
+  return all
+    .filter((c) => c.handle.startsWith(prefix) && c.handle !== self)
+    .map((c) => ({
+      label: c.title,
+      catSlug: parentSlug,
+      subSlug: c.handle.slice(prefix.length),
+    }))
 }
 
 // Returns up to 6 other collections that are not the current page or its subcategories.

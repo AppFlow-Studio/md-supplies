@@ -11,8 +11,8 @@ import { normalizeGtin } from '@/lib/gtin'
 import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { getPrimaryCollection } from '@/lib/category-utils'
-import { getBreadcrumbFromTags } from '@/lib/category-tree'
+import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { ROUTES } from '@/lib/routes'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
@@ -148,17 +148,27 @@ export default async function ProductPage({ params }: Props) {
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }
 
-  // Breadcrumb from the product's OWN category:/subcategory: tags — ticket:
-  // BreadcrumbList follows the canonical tag path, never the cross-linked
-  // branch. Collection-derived crumb only as fallback for out-of-tree
-  // products (no category: tag), else the generic Shop crumb.
-  const tagCrumb = getBreadcrumbFromTags(product.tags, product.handle)
-  const primaryCollection = tagCrumb.l1 ? null : getPrimaryCollection(product.collections?.nodes ?? [])
-  const crumbItems = tagCrumb.l1
-    ? [tagCrumb.l1, ...(tagCrumb.l2 ? [tagCrumb.l2] : [])]
-    : [primaryCollection
-        ? { label: primaryCollection.title, href: ROUTES.category(primaryCollection.handle) }
-        : { label: 'Shop', href: '/categories' }]
+  // Contextual middle crumb(s) (audit L12, superseded by the tag-derived
+  // registry): the product's own resolveCanonicalCategory result, plus the
+  // matching L2 subcategory when its tags carry one — always the canonical
+  // parent, never a boundary subcategory's cross-link parent, regardless of
+  // which URL the visitor arrived from. Falls back to the generic Shop crumb
+  // when the product resolves no category at all.
+  const summaries = await fetchProductTagSummaries()
+  const l2Nodes = buildL2Tree(summaries)
+  const { categories, subcategories } = parseProductTags(product.tags)
+  const categoryPath = getProductCategoryPath({ handle: product.handle, categories, subcategories }, l2Nodes)
+  const categoryCrumbs = categoryPath
+    ? [
+        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        ...(categoryPath.subcategory
+          ? [{
+              label: humanizeTag(categoryPath.subcategory.tag),
+              href: ROUTES.subcategory(categoryPath.category.collectionHandle, categoryPath.subcategory.tag),
+            }]
+          : []),
+      ]
+    : [{ label: 'Shop', href: '/categories' }]
 
   return (
     <main id="main-content" className="bg-[#f9fafc]">
@@ -167,14 +177,14 @@ export default async function ProductPage({ params }: Props) {
       <meta property="og:type" content="product" />
       <ProductSchema {...schemaProps} />
       <BreadcrumbSchema
-        items={[...crumbItems, { label: product.title }]}
+        items={[...categoryCrumbs, { label: product.title }]}
         currentUrl={productUrl}
       />
       <ProductView
         product={product}
         relatedProducts={relatedProducts}
         complementaryProducts={complementaryProducts}
-        breadcrumbs={crumbItems}
+        breadcrumbs={categoryCrumbs}
         partnerSlug={partner?.slug ?? null}
       />
     </main>

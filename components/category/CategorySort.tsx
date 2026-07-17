@@ -16,15 +16,26 @@ const SORT_OPTIONS = [
 interface Props {
   currentSort?: string
   activeFilters: string[]
+  // Tag-sourced (L2) pages run on Shopify's search() field, whose
+  // SearchSortKeys only supports RELEVANCE/PRICE — BEST_SELLING and CREATED
+  // silently degrade to Featured-identical results (see
+  // mapSortKeyForSearchQuery in lib/category-results-source.ts). When true,
+  // hide those two options so the dropdown never offers a sort that can't
+  // actually take effect.
+  limitedSortOptions?: boolean
 }
 
-export function CategorySort({ currentSort, activeFilters }: Props) {
+export function CategorySort({ currentSort, activeFilters, limitedSortOptions }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
 
-  const selected = SORT_OPTIONS.find((o) => o.value === currentSort) ?? SORT_OPTIONS[0]
+  const options = limitedSortOptions
+    ? SORT_OPTIONS.filter((o) => o.value !== 'BEST_SELLING' && o.value !== 'CREATED')
+    : SORT_OPTIONS
+
+  const selected = options.find((o) => o.value === currentSort) ?? options[0]
 
   const handleSelect = (value: string) => {
     const params = new URLSearchParams()
@@ -57,7 +68,7 @@ export function CategorySort({ currentSort, activeFilters }: Props) {
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 z-20 bg-white border border-gray-200 shadow-md w-[220px]">
-            {SORT_OPTIONS.map((opt) => (
+            {options.map((opt) => (
               <button
                 key={opt.value}
                 type="button"

@@ -13,7 +13,7 @@ import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
 import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
-import { buildCategoryNav } from '@/lib/category-nav'
+import { buildCategoryTreeNav } from '@/lib/category-tree'
 
 interface HeaderProps {
   menuItems: MenuItem[]
@@ -139,7 +139,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
 
   const categoriesItem = menuItems.find((item) => item.type === 'CATALOG')
   const otherItems = menuItems.filter((item) => item.type !== 'CATALOG')
-  const categoryNav = buildCategoryNav(collections)
+  const categoryNav = buildCategoryTreeNav(collections)
 
   // NF11: menu hrefs are slugified from Shopify menu TITLES with no guarantee
   // the slug is a real collection handle. Reconcile against the live handle

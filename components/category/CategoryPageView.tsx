@@ -11,7 +11,15 @@ import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
-import { getSubcategories, getRelatedCategories, getCrossLinkedSubcategories, MAX_CATEGORY_PAGE } from '@/lib/category-utils'
+import { MAX_CATEGORY_PAGE } from '@/lib/category-utils'
+import {
+  buildL2Tree,
+  getSubcategoriesForParent,
+  getL1ByCollectionHandle,
+  humanizeTag,
+  CATEGORY_TREE_L1,
+} from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
@@ -36,7 +44,7 @@ function collectionFetchOptions(slug: string) {
   return { next: { revalidate: 300, tags: ['shopify', 'collections', `collection:${slug}`] } }
 }
 
-function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
+export function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
   switch (sort) {
     case 'PRICE_ASC':    return { sortKey: 'PRICE', reverse: false }
     case 'PRICE_DESC':   return { sortKey: 'PRICE', reverse: true }
@@ -46,7 +54,7 @@ function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
   }
 }
 
-function parseFilterParam(filter?: string | string[]): string[] {
+export function parseFilterParam(filter?: string | string[]): string[] {
   if (!filter) return []
   const raw = Array.isArray(filter) ? filter : [filter]
   // Default-deny URL-supplied inputs (rejects tag filters and unknown keys)
@@ -134,21 +142,27 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   if (isNaN(currentPage) || currentPage < 1) notFound()
   if (currentPage > MAX_CATEGORY_PAGE) redirect(page1RedirectUrl(slug, sp, activeFilterStrings))
 
-  const [data, subcategories, relatedCategories] = await Promise.all([
+  const l1 = getL1ByCollectionHandle(slug)
+
+  const [data, summaries] = await Promise.all([
     storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
       { handle: slug },
       collectionFetchOptions(slug),
     ),
-    getSubcategories(slug),
-    getRelatedCategories(slug),
+    fetchProductTagSummaries(),
   ])
 
   if (!data.collection) notFound()
 
-  // Boundary subcategories owned by another L1, linked here to their one
-  // canonical URL (ticket: cross-linked, never duplicated).
-  const crossLinked = getCrossLinkedSubcategories(slug)
+  const l2Nodes = buildL2Tree(summaries)
+  const subcategories = l1
+    ? getSubcategoriesForParent(l1.tag, l2Nodes).map((n) => ({ label: humanizeTag(n.tag), slug: n.tag }))
+    : []
+  const relatedCategories = CATEGORY_TREE_L1
+    .filter((c) => c.tag !== l1?.tag)
+    .slice(0, 6)
+    .map((c) => ({ label: c.displayName, slug: c.collectionHandle }))
 
   const banner = getCategoryBannerConfig(slug)
   const clusterLinks = getClusterLinks(slug)
@@ -202,7 +216,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
       </div>
 
       {/* ── Subcategory tabs ── */}
-      {(subcategories.length > 0 || crossLinked.length > 0) && (
+      {subcategories.length > 0 && (
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
           <div className="flex flex-wrap gap-2 items-center">
             {subcategories.map((sub) => (
@@ -212,15 +226,6 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
                 className="border border-[rgba(102,102,100,0.2)] bg-white text-navy-900 text-[13px] font-semibold px-4 h-[52px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
               >
                 {sub.label}
-              </Link>
-            ))}
-            {crossLinked.map((sub) => (
-              <Link
-                key={`x-${sub.subSlug}`}
-                href={ROUTES.subcategory(sub.catSlug, sub.subSlug)}
-                className="border border-dashed border-[rgba(102,102,100,0.35)] bg-white text-gray-500 text-[13px] font-semibold px-4 h-[52px] flex items-center hover:border-navy-900 hover:text-navy-900 transition-colors whitespace-nowrap"
-              >
-                {sub.label} ↗
               </Link>
             ))}
             <Link
@@ -236,7 +241,9 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
       {/* Main layout */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
         <CategoryResults
-          slug={slug}
+          source={{ kind: 'collection', handle: slug }}
+          baseUrl={ROUTES.category(slug)}
+          facetKey={slug}
           sortKey={sortKey}
           reverse={reverse}
           sortParam={sp.sort}
