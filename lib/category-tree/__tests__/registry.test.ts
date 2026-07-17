@@ -59,6 +59,16 @@ describe('registry', () => {
   it('breadcrumb is null for out-of-tree products', () => {
     expect(getBreadcrumbFromTags(['brand:foo'], 'any')).toEqual({ l1: null, l2: null })
   })
+  it('beds nests under room-furniture, never home-care (ticket supersedes roadmap)', () => {
+    const roomFurniture = getL1ByTag('room-furniture')
+    if (!roomFurniture) throw new Error('room-furniture L1 missing')
+    expect(getSubcategoriesOf('home-care').some((s) => s.tag === 'beds')).toBe(false)
+    // 304 beds products are all category:room-furniture, so if a
+    // subcategory:beds tag ever lands it must resolve there by dominance:
+    const beds = getSubcategoriesOf(roomFurniture.tag).find((s) => s.tag === 'beds')
+    if (beds) expect(beds.parentTag).toBe(roomFurniture.tag)
+  })
+
   it('humanizes slugs for display only', () => {
     expect(subcategoryTitle('barrier-sleeves')).toBe('Barrier Sleeves')
   })
