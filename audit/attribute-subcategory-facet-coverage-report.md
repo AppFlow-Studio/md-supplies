@@ -1,6 +1,6 @@
 # Attribute-Subcategory Tag -> Metafield Facet Coverage Audit
 
-Generated: 2026-07-17T15:48:00.302Z
+Generated: 2026-07-17T16:03:33.195Z
 
 For each L1 category that has attribute-patterned subcategory: tags today, this lists the tags, their live Storefront collection filters, and whether any filter matches an already-approved metafield (lib/filter-registry.ts) that could represent the attribute -- i.e. "wire now" vs. "needs a new Shopify metafield definition first."
 

@@ -25,10 +25,11 @@ type CollectionFiltersResponse = {
 async function main() {
   const summaries = await fetchProductTagSummaries()
 
+  const l1Tags = new Set(CATEGORY_TREE_L1.map((c) => c.tag))
   const subParentCounts = new Map<string, Map<string, number>>()
   for (const summary of summaries) {
     const category = resolveCanonicalCategory(summary)
-    if (!category) continue
+    if (!category || !l1Tags.has(category)) continue
     for (const sub of summary.subcategories) {
       if (!isAttributeSubcategoryTag(sub)) continue
       let counts = subParentCounts.get(sub)
