@@ -7,18 +7,14 @@ import {
 
 export type { CategorySearchParams }
 
-export const revalidate = 30
-
-// Static/ISR canonical category page. This route deliberately does NOT read
-// searchParams — a statically-generated route cannot access request state at
-// runtime (it throws DYNAMIC_SERVER_USAGE). Requests carrying ?sort/filter/page
-// are rewritten by proxy.ts onto the dynamic twin at /category-browse/[slug],
-// which renders the same CategoryPageView with the query applied.
-export function generateStaticParams(): { slug: string }[] {
-  // Nothing prerendered at build (large catalog): each category renders on
-  // first hit, caches per `revalidate`, and is invalidated by webhook tags.
-  return []
-}
+// Canonical category page — fully dynamic (root layout reads headers() for
+// the CSP nonce, M10, so this route can't be static/ISR'd; see the trade-off
+// note in app/layout.tsx). Freshness comes from the fetch-level data cache
+// (CategoryPageView's storefrontFetch calls), not route-level revalidate.
+// This route deliberately does NOT read searchParams — requests carrying
+// ?sort/filter/page are rewritten by proxy.ts onto the twin at
+// /category-browse/[slug], which renders the same CategoryPageView with the
+// query applied.
 
 interface Props {
   params: Promise<{ slug: string }>

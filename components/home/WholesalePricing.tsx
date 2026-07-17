@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Check } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { buildFormSubmitEvent } from '@/lib/analytics/events'
 import { submitForm } from '@/lib/forms/submit'
 import { FACILITY_TYPES } from '@/lib/forms/schema'
+import { useRef, useState } from "react";
 
 const BENEFITS = [
   "Product availability support",
@@ -27,6 +27,7 @@ export function WholesalePricing() {
   const [status, setStatus] = useState<Status>('idle')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
+  const mountedAt = useRef(Date.now())
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -38,10 +39,10 @@ export function WholesalePricing() {
     setFieldErrors({})
     setServerError(null)
 
-    // Only enum/non-PII detail is sent to analytics — never name/email/phone.
+// Only enum/non-PII detail is sent to analytics — never name/email/phone.
     const result = await submitForm({
       url: '/api/sourcing',
-      payload: form,
+      payload: { ...form, elapsedMs: Date.now() - mountedAt.current },
       analyticsEvent: buildFormSubmitEvent({
         formName: 'sourcing_request',
         details: { faculty_type: form.facultyType },
@@ -57,7 +58,7 @@ export function WholesalePricing() {
     setStatus('error')
     setFieldErrors(result.fields ?? {})
     if (!result.fields) {
-      setServerError('Something went wrong. Please try again or email us directly.')
+      setServerError(result.error ?? 'Something went wrong. Please try again or email us directly.')
     }
   }
 
@@ -151,15 +152,17 @@ export function WholesalePricing() {
                 Phone Number
               </label>
               <input
-                id="sourcing-phone"
-                type="tel"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                aria-invalid={!!fieldErrors.phone}
-                aria-describedby={fieldErrors.phone ? 'sourcing-phone-error' : undefined}
-                className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
-                placeholder="+1 (555) 000-0000"
+                  id="sourcing-phone"
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  pattern="^(\+?1[\s.-]?)?(\([2-9]\d{2}\)|[2-9]\d{2})[\s.-]?[2-9]\d{2}[\s.-]?\d{4}$"
+                  title="Please enter a valid US or Canadian phone number."
+                  aria-invalid={!!fieldErrors.phone}
+                  aria-describedby={fieldErrors.phone ? 'sourcing-phone-error' : undefined}
+                  className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-200"
+                  placeholder="+1 (212) 555-0100"
               />
               {fieldErrors.phone && (
                 <p id="sourcing-phone-error" className="text-red-600 text-[13px]">{fieldErrors.phone}</p>

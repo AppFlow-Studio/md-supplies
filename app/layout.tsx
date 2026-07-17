@@ -81,6 +81,7 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildOrganizationSchema()) }}
         />
         {/* Reduced-motion is honored in CSS (globals.css .fade-in) — the old

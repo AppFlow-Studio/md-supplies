@@ -16,23 +16,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 })
   }
 
+  // const country = assertAllowedCountry(req)
+  // if (!country.ok) {
+  //   return NextResponse.json(
+  //       { error: 'This form is only available to customers in the United States and Canada.' },
+  //       { status: 403 },
+  //   )
+  // }
+
   const read = await readJsonBounded(req)
   if (!read.ok) {
     const error = read.status === 413 ? 'Payload too large' : 'Invalid JSON'
     return NextResponse.json({ error }, { status: read.status })
   }
 
-  // Silently accept (but never send) bot submissions that trip the honeypot,
-  // so scrapers can't distinguish a drop from a success.
-  if (isHoneypotFilled(read.data)) {
-    return NextResponse.json({ ok: true })
-  }
+  // // Silently accept (but never send) bot submissions that trip the honeypot or
+  // // submit too fast to be human, so scripted clients can't tell a drop from a
+  // // real send.
+  // if (isHoneypotFilled(read.data) || isSubmittedTooFast(read.data)) {
+  //   return NextResponse.json({ ok: true })
+  // }
 
-  const parsed = sourcingSchema.safeParse(read.data)
+  const parsed = await sourcingSchema.safeParseAsync(read.data)
   if (!parsed.success) {
     return NextResponse.json(
-      { error: 'Validation failed', fields: fieldErrors(parsed.error) },
-      { status: 400 },
+        { error: 'Validation failed', fields: fieldErrors(parsed.error) },
+        { status: 400 },
     )
   }
 

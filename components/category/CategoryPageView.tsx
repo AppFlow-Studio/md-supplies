@@ -332,6 +332,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           <script
             type="application/ld+json"
             nonce={nonce}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
                 buildCollectionPageSchema({
@@ -346,6 +347,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           <script
             type="application/ld+json"
             nonce={nonce}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
                 buildBreadcrumbListSchema(

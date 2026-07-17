@@ -107,7 +107,7 @@ function LoggedOutView() {
     <>
       {/* Hero */}
       <section className="relative bg-white overflow-hidden">
-        <div className="relative w-full h-[280px] sm:h-[420px] lg:absolute lg:inset-0 lg:left-[33%] lg:h-auto">
+        <div className="relative w-full h-[280px] sm:h-[420px] lg:absolute lg:inset-0 lg:left-[33%] lg:h-auto max-xl:hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/doc_with_ipad.jpg"

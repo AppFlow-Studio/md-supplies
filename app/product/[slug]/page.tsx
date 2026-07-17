@@ -14,15 +14,11 @@ import { SITE_URL } from '@/lib/seo/constants'
 import { getPrimaryCollection } from '@/lib/category-utils'
 import { ROUTES } from '@/lib/routes'
 
-export const revalidate = 30
-
-// On-demand ISR: no product paths are prerendered at build (large catalog),
-// but declaring generateStaticParams opts the route into static generation —
-// each product renders on first hit, is cached per `revalidate`, and is
-// invalidated by the Shopify webhook via cache tags (app/api/revalidate).
-export function generateStaticParams(): { slug: string }[] {
-  return []
-}
+// Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
+// route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
+// Freshness comes from the fetch-level data cache (productFetchOptions
+// below), invalidated by the Shopify webhook via cache tags
+// (app/api/revalidate), not route-level revalidate/generateStaticParams.
 
 interface Props {
   params: Promise<{ slug: string }>

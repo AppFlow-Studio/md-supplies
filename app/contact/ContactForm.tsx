@@ -1,10 +1,9 @@
 'use client'
 
-import { useState } from 'react'
 import { buildFormSubmitEvent } from '@/lib/analytics/events'
 import { submitForm } from '@/lib/forms/submit'
 import { SUBJECTS } from '@/lib/forms/schema'
-
+import { useRef, useState } from 'react'
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
 export function ContactForm() {
@@ -12,6 +11,7 @@ export function ContactForm() {
   const [status, setStatus] = useState<Status>('idle')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
+  const mountedAt = useRef(Date.now())
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -26,9 +26,10 @@ export function ContactForm() {
     setServerError(null)
 
     // Only the non-PII subject is sent to analytics — never name/email/message.
+    // Only the non-PII subject is sent to analytics — never name/email/message.
     const result = await submitForm({
       url: '/api/contact',
-      payload: form,
+      payload: { ...form, elapsedMs: Date.now() - mountedAt.current },
       analyticsEvent: buildFormSubmitEvent({
         formName: 'contact',
         details: { subject: form.subject || 'none' },
@@ -44,7 +45,7 @@ export function ContactForm() {
     setStatus('error')
     setFieldErrors(result.fields ?? {})
     if (!result.fields) {
-      setServerError('Something went wrong. Please try again or email us directly.')
+      setServerError(result.error ?? 'Something went wrong. Please try again or email us directly.')
     }
   }
 

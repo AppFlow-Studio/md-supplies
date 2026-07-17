@@ -151,6 +151,7 @@ export default async function CategoriesPage() {
       <script
         type="application/ld+json"
         nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: jsonLdSafe(
             buildBreadcrumbListSchema(

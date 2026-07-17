@@ -28,6 +28,7 @@ export async function FAQSchema({ faq }: Props) {
     <script
       type="application/ld+json"
       nonce={nonce}
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   )

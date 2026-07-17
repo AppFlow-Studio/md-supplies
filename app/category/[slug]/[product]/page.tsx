@@ -19,13 +19,10 @@ import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
 import { getNonce } from '@/lib/csp-nonce'
 
-export const revalidate = 30
-
-// On-demand ISR: nothing prerendered at build; pages render on first hit,
-// cache per `revalidate`, and are invalidated by webhook cache tags.
-export function generateStaticParams(): { slug: string; product: string }[] {
-  return []
-}
+// Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
+// route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
+// Freshness comes from the fetch-level data cache below, not route-level
+// revalidate/generateStaticParams.
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
 // the Shopify webhooks via per-handle tags (app/api/revalidate).
@@ -212,6 +209,7 @@ export default async function CategoryProductPage({ params }: Props) {
         <script
           type="application/ld+json"
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: jsonLdSafe(
               buildBreadcrumbListSchema(

@@ -88,6 +88,7 @@ export default async function Home() {
       <script
         type="application/ld+json"
         nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildWebSiteSchema()) }}
       />
       <HeroSection products={heroProducts} />

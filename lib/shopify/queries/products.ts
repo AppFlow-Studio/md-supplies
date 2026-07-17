@@ -115,6 +115,20 @@ export const GET_PRODUCTS_BY_VENDOR = `#graphql
   }
 `;
 
+export const GET_PRODUCTS_BY_TAG = `#graphql
+  ${PRODUCT_CARD_FRAGMENT}
+  query GetProductsByTag(
+    $query: String!
+    $first: Int!
+    $sortKey: ProductSortKeys
+    $reverse: Boolean
+  ) {
+    products(first: $first, sortKey: $sortKey, reverse: $reverse, query: $query) {
+      nodes { ...ProductCard }
+    }
+  }
+`;
+
 export const GET_PRODUCT_CARD_BY_HANDLE = `#graphql
   query GetProductCardByHandle($handle: String!) {
     product(handle: $handle) {

@@ -51,6 +51,7 @@ export async function BlogPostingSchema({
     <script
       type="application/ld+json"
       nonce={nonce}
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   )
