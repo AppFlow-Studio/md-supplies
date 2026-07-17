@@ -1,7 +1,9 @@
 export const EXCLUDED_COLLECTION_HANDLES = new Set([
   // §2.4 — permanently removed from public scope
+  // ('beds' removed from this set 2026-07-17: the category-tree ticket places
+  // Beds — 304 products, all category:room-furniture — under Room Furniture,
+  // superseding the older §2.4 removal. bariatric-beds stays excluded.)
   'pharmaceuticals',
-  'beds',
   'bariatric-beds',
   'maternity-and-infant-care',
   'maternity-infant-care',

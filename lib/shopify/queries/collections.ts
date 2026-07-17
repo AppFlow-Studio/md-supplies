@@ -207,3 +207,18 @@ export const GET_COLLECTIONS_FOR_SITEMAP = `#graphql
     }
   }
 `;
+
+export const GET_ALL_COLLECTION_HANDLES = `#graphql
+  query GetAllCollectionHandles($first: Int!, $after: String) {
+    collections(first: $first, after: $after) {
+      nodes {
+        handle
+        title
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
