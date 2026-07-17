@@ -12,10 +12,12 @@ function setupDefaultMocks(overrides: {
   collections?: string[]
   products?: string[]
   articles?: string[]
+  productTags?: { handle: string; tags: string[] }[]
 } = {}) {
   const collections = overrides.collections ?? []
   const products = overrides.products ?? []
   const articles = overrides.articles ?? []
+  const productTags = overrides.productTags ?? []
 
   mockFetch.mockImplementation((query: string, variables?: Record<string, unknown>) => {
     if (query.includes('GetCollectionsForSitemap')) {
@@ -30,6 +32,14 @@ function setupDefaultMocks(overrides: {
         products: {
           nodes: products.map((h) => ({ handle: h, updatedAt: '2026-06-01T00:00:00Z' })),
           pageInfo: { hasNextPage: false, endCursor: '' },
+        },
+      })
+    }
+    if (query.includes('GetAllProductTags')) {
+      return Promise.resolve({
+        products: {
+          nodes: productTags,
+          pageInfo: { hasNextPage: false, endCursor: null },
         },
       })
     }
@@ -209,5 +219,52 @@ describe('getSitemapUrls', () => {
     for (const url of urls) {
       expect(url.startsWith('https://mdsupplies.com')).toBe(true)
     }
+  })
+
+  it('emits /category/<l1>/<sub> for a real subcategory tag', async () => {
+    setupDefaultMocks({
+      productTags: [
+        { handle: 'p1', tags: ['category:gloves', 'subcategory:exam-gloves'] },
+        { handle: 'p2', tags: ['category:gloves', 'subcategory:exam-gloves'] },
+      ],
+    })
+    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    expect(urls).toContain('https://mdsupplies.com/category/gloves/exam-gloves')
+  })
+
+  it('emits only the canonical URL for a boundary subcategory, never the cross-link URL', async () => {
+    setupDefaultMocks({
+      productTags: [
+        { handle: 'p1', tags: ['category:room-furniture', 'subcategory:exam-tables'] },
+      ],
+    })
+    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    expect(urls).toContain('https://mdsupplies.com/category/seating/exam-tables')
+    expect(urls).not.toContain('https://mdsupplies.com/category/exam-room/exam-tables')
+  })
+
+  it('omits a sitemap URL for an attribute-patterned subcategory tag', async () => {
+    setupDefaultMocks({
+      productTags: [
+        { handle: 'p1', tags: ['category:needles-syringes', 'subcategory:25g-hypodermic-needles'] },
+      ],
+    })
+    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    expect(urls).not.toContain('https://mdsupplies.com/category/needles-syringes/25g-hypodermic-needles')
+  })
+
+  it('degrades gracefully when the product-tag fetch fails, keeping the rest of the sitemap intact', async () => {
+    mockFetch.mockImplementation((query: string) => {
+      if (query.includes('GetAllProductTags')) return Promise.reject(new Error('tag scan failed'))
+      if (query.includes('GetCollectionsForSitemap')) return Promise.resolve({ collections: { nodes: [] } })
+      if (query.includes('GetAllProductHandles')) {
+        return Promise.resolve({ products: { nodes: [], pageInfo: { hasNextPage: false, endCursor: '' } } })
+      }
+      if (query.includes('GetAllArticleHandles')) return Promise.resolve({ blogs: { nodes: [] } })
+      return Promise.reject(new Error('Unexpected query'))
+    })
+    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    expect(urls).toContain('https://mdsupplies.com/')
+    expect(urls.some((u) => u.includes('/category/'))).toBe(false)
   })
 })

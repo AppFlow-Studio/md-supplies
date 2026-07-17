@@ -6,7 +6,7 @@ import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { CATEGORY_TREE_L1 } from '@/lib/category-tree'
+import { CATEGORY_TREE_L1, fetchProductTagSummaries, buildL2Tree } from '@/lib/category-tree'
 import { INDUSTRIES } from '@/lib/industries'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
@@ -41,6 +41,26 @@ async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
         priority: 0.8,
         lastModified: new Date(c.updatedAt),
       }))
+  } catch {
+    return []
+  }
+}
+
+async function fetchSubcategoryUrls(): Promise<SitemapEntry[]> {
+  try {
+    const summaries = await fetchProductTagSummaries()
+    const l2Nodes = buildL2Tree(summaries)
+    return l2Nodes
+      .map((node) => {
+        const l1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)
+        if (!l1) return null
+        return {
+          url: `${SITE_URL}/category/${l1.collectionHandle}/${node.tag}`,
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }
+      })
+      .filter((e): e is SitemapEntry => e !== null)
   } catch {
     return []
   }
@@ -121,8 +141,9 @@ export async function getSitemapUrls(
     priority: 0.6,
   }))
 
-  const [categoryUrls, productUrls, articleUrls] = await Promise.all([
+  const [categoryUrls, subcategoryUrls, productUrls, articleUrls] = await Promise.all([
     fetchCategoryUrls(),
+    fetchSubcategoryUrls(),
     fetchProductUrls(),
     fetchArticleUrls(),
   ])
@@ -130,6 +151,7 @@ export async function getSitemapUrls(
   return [
     ...STATIC_URLS,
     ...categoryUrls,
+    ...subcategoryUrls,
     ...productUrls,
     ...partnerUrls,
     ...industryUrls,
