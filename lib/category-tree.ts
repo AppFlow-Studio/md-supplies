@@ -3,8 +3,6 @@
 // only reached 51% of the catalog; see docs/superpowers/plans/
 // 2026-07-16-category-tree-registry-phase1.md for the audit).
 
-import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_ALL_PRODUCT_TAGS } from '@/lib/shopify/queries/products'
 import { ROUTES } from '@/lib/routes'
 
 const CATEGORY_TAG_PREFIX = 'category:'
@@ -188,42 +186,6 @@ export function buildL2Tree(summaries: ProductTagSummary[]): L2Node[] {
     nodes.push({ tag: sub, parentTag, crossLinkParentTag, productCount: subProductCounts.get(sub) ?? 0 })
   }
   return nodes
-}
-
-type ProductTagsResponse = {
-  products: {
-    nodes: { handle: string; tags: string[] }[]
-    pageInfo: { hasNextPage: boolean; endCursor: string | null }
-  }
-}
-
-// Full-catalog tag scan (~30 requests at 7,400 products / 250 per page).
-// Cached for 1 hour under the 'category-tree' tag — the catalog moves daily
-// per the spec, so this is far less aggressive than the 5-minute default in
-// storefront.ts, and can be bumped via revalidateTag('category-tree') if a
-// faster refresh is ever needed.
-export async function fetchProductTagSummaries(): Promise<ProductTagSummary[]> {
-  const summaries: ProductTagSummary[] = []
-  let cursor: string | null = null
-
-  while (true) {
-    const data: ProductTagsResponse = await storefrontFetch<ProductTagsResponse>(
-      GET_ALL_PRODUCT_TAGS,
-      { first: 250, after: cursor },
-      { next: { revalidate: 3600, tags: ['shopify', 'category-tree'] } },
-    )
-
-    for (const node of data.products.nodes) {
-      const { categories, subcategories } = parseProductTags(node.tags)
-      summaries.push({ handle: node.handle, categories, subcategories })
-    }
-
-    const nextCursor = data.products.pageInfo.endCursor
-    if (!data.products.pageInfo.hasNextPage || !nextCursor || nextCursor === cursor) break
-    cursor = nextCursor
-  }
-
-  return summaries
 }
 
 export function getL1ByCollectionHandle(handle: string): L1CategoryDef | undefined {

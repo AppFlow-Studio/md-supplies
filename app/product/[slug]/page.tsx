@@ -11,7 +11,8 @@ import { normalizeGtin } from '@/lib/gtin'
 import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { getProductCategoryPath, fetchProductTagSummaries, buildL2Tree, parseProductTags, humanizeTag } from '@/lib/category-tree'
+import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { ROUTES } from '@/lib/routes'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this

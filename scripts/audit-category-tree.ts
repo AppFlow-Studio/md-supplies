@@ -3,12 +3,12 @@
 import { loadEnvConfig } from '@next/env'
 import { writeFileSync } from 'fs'
 import {
-  fetchProductTagSummaries,
   buildL1Tiles,
   buildL2Tree,
   CATEGORY_TREE_L1,
   isAttributeSubcategoryTag,
 } from '../lib/category-tree'
+import { fetchProductTagSummaries } from '../lib/category-tree-data.server'
 
 loadEnvConfig(process.cwd())
 

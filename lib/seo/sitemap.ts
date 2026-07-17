@@ -6,7 +6,8 @@ import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { CATEGORY_TREE_L1, fetchProductTagSummaries, buildL2Tree } from '@/lib/category-tree'
+import { CATEGORY_TREE_L1, buildL2Tree } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { INDUSTRIES } from '@/lib/industries'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]

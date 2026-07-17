@@ -13,13 +13,13 @@ import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
 import { MAX_CATEGORY_PAGE } from '@/lib/category-utils'
 import {
-  fetchProductTagSummaries,
   buildL2Tree,
   getSubcategoriesForParent,
   getL1ByCollectionHandle,
   humanizeTag,
   CATEGORY_TREE_L1,
 } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'

@@ -7,9 +7,9 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
-import { buildCategoryTreeNav } from '@/lib/category-tree'
+import { buildCategoryTreeNav, buildL1Tiles, type ProductTagSummary } from '@/lib/category-tree'
 import { getNonce } from '@/lib/csp-nonce'
-import { fetchProductTagSummaries, buildL1Tiles, type ProductTagSummary } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 
 export const revalidate = 60
 

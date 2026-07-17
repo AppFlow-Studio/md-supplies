@@ -16,7 +16,6 @@ import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
 import {
   getL1ByCollectionHandle,
-  fetchProductTagSummaries,
   buildL2Tree,
   getSubcategoriesForParent,
   humanizeTag,
@@ -26,6 +25,7 @@ import {
   parseProductTags,
   type L2Node,
 } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { getNonce } from '@/lib/csp-nonce'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
