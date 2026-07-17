@@ -60,7 +60,10 @@ async function main() {
     if (KNOWN_NON_ATTRIBUTE_HANDLES.has(collection.handle)) continue
 
     const sampleHandles = collection.products.nodes.map((n) => n.handle)
-    if (sampleHandles.length === 0) continue
+    if (sampleHandles.length === 0) {
+      unclassified.push({ handle: collection.handle, title: collection.title, sampleSize: '0' })
+      continue
+    }
 
     const categoryCounts = new Map<string, number>()
     for (const handle of sampleHandles) {

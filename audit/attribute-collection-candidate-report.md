@@ -1,6 +1,6 @@
 # Attribute-Collection Candidate Audit
 
-Generated: 2026-07-17T15:49:40.474Z
+Generated: 2026-07-17T16:03:55.377Z
 Live collections scanned: 695
 Already-approved L1 collections excluded: 25
 
@@ -471,65 +471,217 @@ A candidate is a collection whose exact size is known (<=50 products, no next pa
 | self-adherent-wraps | Self-Adherent Wraps | wound-care | 100% | 33 |
 | gauze-bandage-rolls | Gauze Bandage Rolls | wound-care | 85% | 39 |
 
-## Unclassified -- needs manual review (56)
+## Unclassified -- needs manual review (208)
 
 Not an approved L1, not in the known-non-attribute list, and either has no clear majority category: tag, an uncertain (50+) size, or is too large relative to its majority parent to be confidently called an attribute slice -- could be a real subcategory, a not-yet-approved umbrella, a duplicate-title collection, or catalog noise.
 
 | Handle | Title | Sample Size |
 |---|---|---|
+| 1-5-gal-sharps-containers-6-qt | 1.5 Gal Sharps Containers | 6 Qt | 0 |
+| 10-gal-sharps-containers | 10 Gal Sharps Containers | 40 Qt | 0 |
+| 12-gal-sharps-containers-48-qt | 12 Gal Sharps Containers | 48 Qt | 0 |
+| 15g-iv-catheters | 15G IV Catheters | 0 |
+| 17-gal-sharps-containers-68-qt | 17 Gal Sharps Containers | 68 Qt | 0 |
+| 17-panel-drug-tests | 17 Panel Drug Tests | 0 |
+| 18-gal-sharps-containers-72-qt | 18 Gal Sharps Containers | 72 Qt | 0 |
+| 2-5-gal-sharps-containers-10-quarts | 2.5 Gal Sharps Containers | 10 Qt | 0 |
+| 23g-safety-lancets | 23G Lancets | 0 |
+| 29g-hypodermic-needles | 29G Hypodermic Needles | 0 |
+| 29g-safety-lancets | 29G Lancets | 0 |
+| 3-4-gal-sharps-containers-3-qt | 3/4 Gal Sharps Containers | 3 Qt | 0 |
 | 4-0-sutures | 4-0 Sutures | 50+ |
+| 4-gal-sharps-containers-16-qt | 4 Gal Sharps Containers | 16 Qt | 0 |
+| 5-gal-sharps-containers-20-qt | 5 Gal Sharps Containers | 20 Qt | 0 |
+| 7-gal-sharps-containers-28-qt | 7 Gal Sharps Containers | 28 Qt | 0 |
+| 9-gal-sharps-containers-36-qt | 9 Gal Sharps Containers | 36 Qt | 0 |
 | ad-surgical | AD Surgical | 50+ |
+| admission-kits | Admission Kits | 0 |
+| adult-pull-ups-diapers | Adult Pull Ups & Diapers | 0 |
+| adult-underwear | Adult Underwear | 0 |
+| alcohol-pads | Alcohol Pads | 0 |
+| alcohol-swabs | Alcohol Swabs | 0 |
+| antifungal-creams | AntiFungal Creams | 0 |
 | antiseptics-cleaners | Antiseptics & Cleaners | 5 |
 | apparel | Apparel | 50+ |
+| armboards | Armboards | 0 |
 | art-supplies | Art Supplies | 11 |
+| astm-level-2-face-masks | ASTM Level 2 Face Masks | 0 |
+| autoclave-sterilizer-cleaners | Autoclave & Sterilizer Cleaners | 0 |
+| autoclave-tape | Autoclave Tape | 0 |
 | backpacks | Backpacks | 10 |
 | bags | Bags | 47 |
 | bandages | Adhesive Bandages | 50+ |
+| bariatric-adult-briefs | Bariatric Adult Briefs | 0 |
+| bariatric-quad-canes | Bariatric Quad Canes | 0 |
+| bariatric-scales | Bariatric Scales | 0 |
+| bariatric-standard-canes | Bariatric Standard Canes | 0 |
+| bariatric-wheelchairs | Bariatric Wheelchairs | 0 |
+| bariatric-wheelchairs-20-seat | Bariatric Wheelchairs, 20" Seat | 0 |
 | bariatric-wheelchairs-26-seat | Bariatric Wheelchairs, 26" Seat | 10 |
+| bariatric-wheelchairs-34-seat | Bariatric Wheelchairs, 34" Seat | 0 |
+| bath-benches | Bath Benches | 0 |
+| bathing-aids | Bathing Aids | 0 |
+| batteries | Batteries | 0 |
+| battery-powered-lifts | Battery Powered Lifts | 0 |
 | bed-safety-rails | Bed Safety Rails | 2 |
 | beds | Beds | 50+ |
+| biopsy-needles | Biopsy Needles | 0 |
+| biopsy-trays | Biopsy Trays | 0 |
+| bite-trays | Bite Trays | 0 |
+| body-wash | Body Wash | 0 |
+| burn-sheets | Burn Sheets | 0 |
+| cane-accessories | Cane Accessories | 0 |
+| cane-tips | Cane Tips | 0 |
+| carbide-podiatry-burs | Carbide Podiatry Burs | 0 |
 | carts-workstations | Carts & Workstations | 14 |
+| cast-protectors | Arm Cast Protectors | 0 |
+| cautery | Cautery | 0 |
+| cervical | Cervical | 0 |
+| chloraprep-applicators | ChloraPrep Applicators | 0 |
+| chloraprep-swabsticks | ChloraPrep Swabsticks | 0 |
+| citrate-collection-tubes | Citrate Collection Tubes | 0 |
+| clean-up-kits | Clean Up Kits | 0 |
+| cloths-towels | Cloths & Towels | 0 |
+| commode-parts | Commode Parts | 0 |
 | correction-supplies | Correction Supplies | 1 |
+| crutch-parts-accessories | Crutch Parts & Accessories | 0 |
+| dental-applicators | Dental Applicators | 0 |
+| dental-dams | Dental Dams | 0 |
+| diamond-podiatry-burs | Diamond Podiatry Burs | 0 |
 | disposable-undergarments | Disposable Undergarments | 3 |
+| disposable-underwear | Disposable Underwear | 0 |
+| dressing-aids | Dressing Aids | 0 |
+| drug-card-controls | Drug Card Controls | 0 |
+| drug-disposal-accessories | Drug Disposal Accessories | 0 |
+| drug-disposal-containers | Drug Disposal Containers | 0 |
+| drug-disposal-hardeners | Drug Disposal Hardeners | 0 |
+| drug-disposal-kits | Drug Disposal Kits | 0 |
 | ear-care | Ear Care | 4 |
+| ear-irrigation | Ear Irrigation | 0 |
 | ear-syringes-bulbs | Ear Syringes & Bulbs | 3 |
+| elastic-bandage-wraps | Elastic Bandage Wraps | 0 |
 | elastic-bandages | Elastic & Cohesive Bandages | 50+ |
+| emergency-kits | Emergency Kits | 0 |
+| euro-style-rollators | Euro Style Rollators | 0 |
 | exam-gloves | Exam Gloves | 50+ |
 | exam-room-furnishings | Exam Room Furnishings | 50+ |
 | face-masks | Face Masks | 35 |
+| face-masks-with-shields | Face Masks with Shields | 0 |
 | first-responder-bags-category | First Responder Bags | 50+ |
+| fluoride-varnish | Fluoride Varnish | 0 |
+| folding-walkers | Folding Walkers | 0 |
+| foot-creams | Foot Creams | 0 |
+| fully-electric-beds-no-rails | Fully Electric Beds, No Rails | 0 |
+| fully-electric-beds-with-full-rails | Fully Electric Beds, with Full Rails | 0 |
+| fully-electric-beds-with-half-rails | Fully Electric Beds, with Half Rails | 0 |
+| fully-electric-beds-with-quarter-rails | Fully Electric Beds, with Quarter Rails | 0 |
 | gauze-bandages | Gauze & Bandages | 50+ |
 | gauze-sponges-pads | Gauze Pads & Sponges | 50+ |
+| general-purpose-lancets | General Purpose Lancets | 0 |
 | hair-accessories | Hair Accessories | 3 |
+| hand-body-lotions | Hand & Body Lotions | 0 |
+| hand-sanitizer-dispensers | Hand Sanitizer Dispensers | 0 |
+| headbands-hair-nets | Headbands & Hair Nets | 0 |
+| healing-balms | Healing Balms | 0 |
+| heating-pads | Heating Pads | 0 |
+| hemoglobin-tests | Hemoglobin Tests | 0 |
+| heparin-blood-collection-tubes | Heparin Blood Collection Tubes | 0 |
+| highlighters | Highlighters | 0 |
+| hot-cold-bags-bottles | Hot & Cold Bags & Bottles | 0 |
+| hot-cold-equipment | Hot & Cold Equipment | 0 |
+| hot-cold-packs | Hot & Cold Packs | 0 |
+| huber-needles | Huber Needles | 0 |
+| immobilizers | Immobilizers | 0 |
+| instrument-care | Instrument Care | 0 |
+| isopropyl-rubbing-alcohol | Isopropyl Rubbing Alcohol | 0 |
 | iv-catheters | IV Catheters | 31 |
+| iv-delivery-sets | IV Delivery Sets | 0 |
+| iv-starter-kits | IV Starter Kits | 0 |
+| kn95-face-masks-and-respirators | KN95 Face Masks and Respirators | 0 |
+| laryngoscopes | Laryngoscopes | 0 |
+| leg-knee-cast-protectors | Leg & Knee Cast Protectors | 0 |
+| lifeguard-caps | Lifeguard Caps | 0 |
+| lifeguard-t-shirts | Lifeguard T-Shirts | 0 |
+| lifeguard-visors | Lifeguard Visors | 0 |
+| lumbar-support-cushions | Lumbar Support Cushions | 0 |
+| mail-back-drug-disposal | Mail-Back Drug Disposal | 0 |
+| manual-wheelchairs-22-seat | Manual Wheelchairs, 22" Seat | 0 |
+| measurement-devices | Measurement Devices | 0 |
 | medical-tapes | Medical Tapes | 50+ |
+| mixing | Mixing | 0 |
+| nail-files | Nail Files | 0 |
 | nasal-oxygen-cannulas | Nasal Cannulas | 50+ |
+| neck-back-abdominal-support | Support Wraps & Cushions | 0 |
 | needles | Needles | 50+ |
+| neurological-hammers | Neurological Hammers | 0 |
+| non-powered-stand-assist | Non-Powered Stand Assist | 0 |
+| obstetrical-towelettes | Obstetrical Towelettes | 0 |
 | occ | OCC | 50+ |
+| odor-eliminators | Odor Eliminators | 0 |
 | office-supplies | Office Supplies | 34 |
 | ointments-protectants | Ointments & Protectants | 23 |
+| ostomy | Ostomy | 0 |
 | patient-bibs | Patient Bibs | 17 |
+| patient-monitoring-alarms | Patient Monitoring Alarms | 0 |
+| pediatric-bath-chairs | Pediatric Bath Chairs | 0 |
+| pediatric-print-table-paper | Pediatric Print Table Paper | 0 |
+| pediatric-rehab | Pediatric Rehab | 0 |
+| pencils | Pencils | 0 |
 | pens | Pens | 2 |
 | pillows-pillow-cases | Pillows & Pillow Cases | 5 |
+| podiatry | Podiatry | 0 |
+| porous-tape | Porous Tape | 0 |
+| potassium-edta-blood-collection-tubes | Potassium EDTA Blood Collection Tubes | 0 |
+| power-mobility | Power Wheelchairs | 0 |
 | procedure-tray | Procedure Trays | 4 |
+| prophy-angles | Prophy Angles | 0 |
+| prophy-paste | Prophy Paste | 0 |
+| reachers-grabbers | Reachers & Grabbers | 0 |
 | rescue-equipment | Rescue Equipment | 50+ |
+| respirator-cone-masks | Respirator Cone Masks | 0 |
+| rollator-parts | Rollator Parts | 0 |
 | room-furniture | Room Furniture | 50+ |
 | school-supplies | School Supplies & Kits | 27 |
 | school-supply-kits | School Supply Kits | 4 |
+| scooters | Scooters | 0 |
 | shower-commodes | Shower Commodes | 8 |
+| skin-repair-creams | Skin Repair Creams | 0 |
+| skin-staplers | Skin Staplers | 0 |
+| small-equipment | Small Equipment | 0 |
+| small-sized-face-masks | Small Sized Face Masks | 0 |
+| spa-wraps | Spa Wraps | 0 |
 | specialty-sponges | Specialty Sponges | 50+ |
+| spinal-lumbar-puncture-trays | Spinal Lumbar Puncture Trays | 0 |
 | sponges-pads | Sponges & Pads | 50+ |
+| stainless-steel-podiatry-burs | Stainless Steel Podiatry Burs | 0 |
+| stand-up-wheelchairs | Stand Up Wheelchairs | 0 |
 | sterilization-pouches | Sterilization Pouches | 28 |
+| sting-pain-relief-pads | Sting & Pain Relief Pads | 0 |
+| suction | Suction | 0 |
 | surface-wipes | Surface Wipes | 9 |
 | surgery-procedure | Surgery & Procedure | 50+ |
 | surgical-gloves | Surgical Gloves | 50+ |
+| surgical-pens | Surgical Pens | 0 |
+| syringe-caps | Syringe Caps | 0 |
 | syringe-with-needle | Syringe with Needle | 50+ |
 | syringes | Syringes | 50+ |
+| table-paper-cutters-dispensers | Table Paper Cutters & Dispensers | 0 |
 | tattoo-cartridges-needles | Tattoo Cartridges & Needles | 12 |
 | thermometers | Thermometers | 12 |
+| tinc-of-benzoin-swabsticks | Tinc of Benzoin Swabsticks | 0 |
+| toilet-paper | Toilet Paper | 0 |
+| trash-bags | Trash Bags | 0 |
+| trash-bins | Trash Bins | 0 |
+| trauma-shears | Trauma Shears | 0 |
 | tray-covers | Tray Covers | 14 |
+| tubing-clamps | Tubing & Clamps | 0 |
+| tubular-bandages-nettings | Tubular Bandages & Nettings | 0 |
+| ultrasound-warmers | Ultrasound Warmers | 0 |
 | undergarments-wraps | Undergarments & Wraps | 3 |
+| urostomy-pouches | Urostomy Pouches | 0 |
+| waiting-room-chairs | Waiting Room Chairs | 0 |
 | walker-accessories | Walker Accessories | 4 |
+| walker-parts | Walker Parts | 0 |
 | wheelchairs | Wheelchairs | 50+ |
 | wound-care-dressings | Wound Care Dressings | 50+ |
 | writing-instruments | Writing Instruments | 7 |
