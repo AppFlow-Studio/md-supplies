@@ -51,6 +51,8 @@ export type CustomerRxState = {
   /** Storage path of the uploaded document, or null when none on file. */
   documentPath: string | null
   verified: boolean
+  /** True when the rx_verified metafield exists at all (any value). */
+  verifiedFlagSet: boolean
 }
 
 const GET_CUSTOMER_RX_STATE = `#graphql
@@ -74,6 +76,7 @@ export async function getCustomerRxState(customerId: string): Promise<CustomerRx
   return {
     documentPath: data.customer?.document?.value ?? null,
     verified: data.customer?.verified?.value === 'true',
+    verifiedFlagSet: data.customer?.verified != null,
   }
 }
 
@@ -87,9 +90,13 @@ const SET_CUSTOMER_RX_DOCUMENT = `#graphql
 `
 
 /**
- * Records the uploaded document path on the customer. rx_verified is written
- * `false` only on first upload — a merchant-set true is never downgraded by
- * a re-upload (the enforcement companion reads that flag).
+ * Records the uploaded document path on the customer. rx_verified is
+ * INITIALIZED to `false` only when the metafield has never been set —
+ * once the flag exists (either value) an upload never writes it again, so
+ * a merchant-set `true` cannot be clobbered even if verification lands
+ * between our read and write (TOCTOU: the racy write is skipped entirely
+ * for any customer whose flag already exists; the only racy window left is
+ * the very first upload, when there is no `true` to lose).
  */
 export async function setCustomerRxDocument(customerId: string, documentPath: string): Promise<void> {
   const current = await getCustomerRxState(customerId)
@@ -102,7 +109,7 @@ export async function setCustomerRxDocument(customerId: string, documentPath: st
       value: documentPath,
     },
   ]
-  if (!current.verified) {
+  if (!current.verifiedFlagSet) {
     metafields.push({
       ownerId: customerId,
       namespace: RX_METAFIELDS.namespace,

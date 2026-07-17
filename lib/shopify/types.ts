@@ -154,6 +154,8 @@ export type CartLine = {
       id: string;
       title: string;
       handle: string;
+      vendor: string;
+      tags: string[];
       images: { nodes: ProductImage[] };
     };
   };
@@ -171,6 +173,7 @@ export type Cart = {
   checkoutUrl: string;
   totalQuantity: number;
   attributes: { key: string; value: string }[];
+  buyerIdentity: { customer: { id: string } | null } | null;
   lines: { nodes: CartLine[] };
   cost: CartCost;
 };
