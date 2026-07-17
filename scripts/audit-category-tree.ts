@@ -7,6 +7,7 @@ import {
   buildL1Tiles,
   buildL2Tree,
   CATEGORY_TREE_L1,
+  isAttributeSubcategoryTag,
 } from '../lib/category-tree'
 
 loadEnvConfig(process.cwd())
@@ -19,6 +20,8 @@ async function main() {
   const approvedTags = new Set(CATEGORY_TREE_L1.map((c) => c.tag))
   const liveCategoryTags = new Set(summaries.flatMap((s) => s.categories))
   const noiseTags = [...liveCategoryTags].filter((t) => !approvedTags.has(t)).sort()
+  const allSubcategoryTags = new Set(summaries.flatMap((s) => s.subcategories))
+  const attributeTags = [...allSubcategoryTags].filter(isAttributeSubcategoryTag).sort()
 
   const lines: string[] = []
   lines.push('# Category Tree Audit Report')
@@ -55,7 +58,18 @@ async function main() {
   }
 
   lines.push('')
-  lines.push(`Total distinct subcategory: values: ${l2Nodes.length}`)
+  lines.push('## Subcategory: values excluded as attribute-patterned (never routed)')
+  lines.push('')
+  lines.push(`${attributeTags.length} of ${allSubcategoryTags.size} distinct subcategory: values excluded.`)
+  lines.push('')
+  if (attributeTags.length === 0) {
+    lines.push('_None found._')
+  } else {
+    for (const tag of attributeTags) lines.push(`- \`${tag}\``)
+  }
+
+  lines.push('')
+  lines.push(`Total routable subcategory: values (post attribute-exclusion): ${l2Nodes.length}`)
 
   const report = lines.join('\n') + '\n'
   writeFileSync('audit/category-tree-audit-report.md', report)
