@@ -32,7 +32,7 @@ async function fetchAllCollections(): Promise<CollectionsResponse['collections']
   const all: CollectionsResponse['collections']['nodes'] = []
   let cursor: string | null = null
   while (true) {
-    const data = await storefrontFetch<CollectionsResponse>(GET_COLLECTIONS_WITH_PRODUCT_SAMPLE, {
+    const data: CollectionsResponse = await storefrontFetch<CollectionsResponse>(GET_COLLECTIONS_WITH_PRODUCT_SAMPLE, {
       first: 50,
       after: cursor,
     })
