@@ -165,6 +165,22 @@ export const GET_COLLECTION_FILTERS_ONLY = `#graphql
   }
 `;
 
+export const GET_COLLECTIONS_WITH_PRODUCT_SAMPLE = `#graphql
+  query GetCollectionsWithProductSample($first: Int!, $after: String) {
+    collections(first: $first, after: $after) {
+      nodes {
+        handle
+        title
+        products(first: 50) {
+          nodes { handle }
+          pageInfo { hasNextPage }
+        }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+`;
+
 export const GET_COLLECTION_PRODUCT_CARDS = `#graphql
   query GetCollectionProductCards($handle: String!, $first: Int!) {
     collection(handle: $handle) {
