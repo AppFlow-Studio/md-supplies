@@ -240,10 +240,12 @@ function LoggedInDashboard({
   customer,
   orders,
   addresses,
+  rxCard,
 }: {
   customer:  Customer;
   orders:    CustomerOrder[];
   addresses: CustomerAddress[];
+  rxCard?:   React.ReactNode;
 }) {
   const displayName  = [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "there";
   const email        = customer.emailAddress?.emailAddress ?? "";
@@ -301,6 +303,13 @@ function LoggedInDashboard({
           ))}
         </div>
       </section>
+
+      {/* RX prescription document (P0 gate — account-level, upload once) */}
+      {rxCard && (
+        <section className="w-full bg-neutral-100">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-10">{rxCard}</div>
+        </section>
+      )}
 
       {/* Recent Orders */}
       <section className="w-full bg-neutral-100">
@@ -432,13 +441,15 @@ interface AccountViewProps {
   customer:  Customer | null
   orders:    CustomerOrder[]
   addresses: CustomerAddress[]
+  /** RX prescription-document card (server-fetched state), logged-in only. */
+  rxCard?:   React.ReactNode
 }
 
-export function AccountView({ customer, orders, addresses }: AccountViewProps) {
+export function AccountView({ customer, orders, addresses, rxCard }: AccountViewProps) {
   return (
     <main id="main-content">
       {customer ? (
-        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} />
+        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} rxCard={rxCard} />
       ) : (
         <LoggedOutView />
       )}
