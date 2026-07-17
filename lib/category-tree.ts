@@ -5,6 +5,7 @@
 
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_ALL_PRODUCT_TAGS } from '@/lib/shopify/queries/products'
+import { ROUTES } from '@/lib/routes'
 
 const CATEGORY_TAG_PREFIX = 'category:'
 const SUBCATEGORY_TAG_PREFIX = 'subcategory:'
@@ -45,37 +46,42 @@ export type L1CategoryDef = {
   // membership/existence signal for the registry — CATEGORY_TREE_L1
   // membership (which 25 tiles exist) is tag-derived only.
   collectionHandle: string
+  // Nav placement (E1) — a straight positional copy from the legacy
+  // ROADMAP_CATEGORIES split (lib/category-nav.ts), not a live-data
+  // signal. Preserves the existing nav grouping across the registry swap;
+  // see docs/superpowers/specs/2026-07-17-nav-wiring-design.md.
+  navGroup: 'primary' | 'more'
 }
 
 // The 25 approved category: tag values, confirmed against the live catalog
 // on 2026-07-16 (7,386 active products). See the plan's Global Constraints
 // for the reconciliation against the ticket's stated count of 26.
 export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
-  { tag: 'gloves', displayName: 'Gloves', collectionHandle: 'gloves' },
-  { tag: 'wound-care', displayName: 'Wound Care', collectionHandle: 'wound-care' },
-  { tag: 'needles-syringes', displayName: 'Needles & Syringes', collectionHandle: 'needles-syringes' },
-  { tag: 'surgical-sutures', displayName: 'Surgical Sutures', collectionHandle: 'surgical-sutures' },
-  { tag: 'testing', displayName: 'Testing', collectionHandle: 'testing-screening' },
-  { tag: 'exam-room', displayName: 'Exam Room', collectionHandle: 'exam-room' },
-  { tag: 'respiratory', displayName: 'Respiratory', collectionHandle: 'respiratory' },
-  { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility' },
-  { tag: 'patient-therapy-rehab', displayName: 'Patient Therapy & Rehab', collectionHandle: 'patient-therapy-rehab' },
-  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits' },
-  { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns' },
-  { tag: 'hygiene', displayName: 'Hygiene', collectionHandle: 'hygiene' },
-  { tag: 'disinfectants', displayName: 'Disinfectants', collectionHandle: 'disinfectants' },
-  { tag: 'home-care', displayName: 'Home Care', collectionHandle: 'home-care' },
-  { tag: 'emergency-supplies', displayName: 'Emergency Supplies', collectionHandle: 'emergency-supplies' },
-  { tag: 'incontinence', displayName: 'Incontinence', collectionHandle: 'incontinence' },
-  { tag: 'iv-therapy', displayName: 'IV Therapy', collectionHandle: 'iv-therapy' },
-  { tag: 'urology-ostomy', displayName: 'Urology & Ostomy', collectionHandle: 'urology-ostomy' },
-  { tag: 'sterilization', displayName: 'Sterilization', collectionHandle: 'sterilization' },
-  { tag: 'dental', displayName: 'Dental', collectionHandle: 'dental' },
-  { tag: 'housekeeping-janitorial', displayName: 'Housekeeping & Janitorial', collectionHandle: 'housekeeping-janitorial' },
-  { tag: 'bariatric', displayName: 'Bariatric', collectionHandle: 'bariatric' },
-  { tag: 'room-furniture', displayName: 'Room Furniture', collectionHandle: 'seating' },
-  { tag: 'face-masks', displayName: 'Face Masks', collectionHandle: 'face-coverings' },
-  { tag: 'pharmacy-products', displayName: 'Pharmacy Products', collectionHandle: 'pharmacy-products' },
+  { tag: 'gloves', displayName: 'Gloves', collectionHandle: 'gloves', navGroup: 'primary' },
+  { tag: 'wound-care', displayName: 'Wound Care', collectionHandle: 'wound-care', navGroup: 'primary' },
+  { tag: 'needles-syringes', displayName: 'Needles & Syringes', collectionHandle: 'needles-syringes', navGroup: 'primary' },
+  { tag: 'surgical-sutures', displayName: 'Surgical Sutures', collectionHandle: 'surgical-sutures', navGroup: 'primary' },
+  { tag: 'testing', displayName: 'Testing', collectionHandle: 'testing-screening', navGroup: 'primary' },
+  { tag: 'exam-room', displayName: 'Exam Room', collectionHandle: 'exam-room', navGroup: 'primary' },
+  { tag: 'respiratory', displayName: 'Respiratory', collectionHandle: 'respiratory', navGroup: 'primary' },
+  { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility', navGroup: 'primary' },
+  { tag: 'patient-therapy-rehab', displayName: 'Patient Therapy & Rehab', collectionHandle: 'patient-therapy-rehab', navGroup: 'primary' },
+  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', navGroup: 'primary' },
+  { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', navGroup: 'primary' },
+  { tag: 'hygiene', displayName: 'Hygiene', collectionHandle: 'hygiene', navGroup: 'primary' },
+  { tag: 'disinfectants', displayName: 'Disinfectants', collectionHandle: 'disinfectants', navGroup: 'primary' },
+  { tag: 'home-care', displayName: 'Home Care', collectionHandle: 'home-care', navGroup: 'more' },
+  { tag: 'emergency-supplies', displayName: 'Emergency Supplies', collectionHandle: 'emergency-supplies', navGroup: 'more' },
+  { tag: 'incontinence', displayName: 'Incontinence', collectionHandle: 'incontinence', navGroup: 'more' },
+  { tag: 'iv-therapy', displayName: 'IV Therapy', collectionHandle: 'iv-therapy', navGroup: 'more' },
+  { tag: 'urology-ostomy', displayName: 'Urology & Ostomy', collectionHandle: 'urology-ostomy', navGroup: 'more' },
+  { tag: 'sterilization', displayName: 'Sterilization', collectionHandle: 'sterilization', navGroup: 'more' },
+  { tag: 'dental', displayName: 'Dental', collectionHandle: 'dental', navGroup: 'more' },
+  { tag: 'housekeeping-janitorial', displayName: 'Housekeeping & Janitorial', collectionHandle: 'housekeeping-janitorial', navGroup: 'more' },
+  { tag: 'bariatric', displayName: 'Bariatric', collectionHandle: 'bariatric', navGroup: 'more' },
+  { tag: 'room-furniture', displayName: 'Room Furniture', collectionHandle: 'seating', navGroup: 'more' },
+  { tag: 'face-masks', displayName: 'Face Masks', collectionHandle: 'face-coverings', navGroup: 'more' },
+  { tag: 'pharmacy-products', displayName: 'Pharmacy Products', collectionHandle: 'pharmacy-products', navGroup: 'more' },
 ] as const
 
 // Confirmed live on 2026-07-16 (see plan Global Constraints) — 3 of the 5
@@ -237,6 +243,25 @@ export function buildSubcategoryTagQuery(categoryTag: string, subTag: string): s
 
 export function getSubcategoriesForParent(parentTag: string, l2Nodes: L2Node[]): L2Node[] {
   return l2Nodes.filter((n) => n.parentTag === parentTag)
+}
+
+export type CategoryNavEntry = { displayName: string; href: string }
+
+export function buildCategoryTreeNav(
+  collections: { handle: string }[],
+): { primary: CategoryNavEntry[]; more: CategoryNavEntry[] } {
+  const liveHandles = new Set(collections.map((c) => c.handle))
+  const primary: CategoryNavEntry[] = []
+  const more: CategoryNavEntry[] = []
+
+  for (const l1 of CATEGORY_TREE_L1) {
+    if (!liveHandles.has(l1.collectionHandle)) continue
+    const entry: CategoryNavEntry = { displayName: l1.displayName, href: ROUTES.category(l1.collectionHandle) }
+    if (l1.navGroup === 'primary') primary.push(entry)
+    else more.push(entry)
+  }
+
+  return { primary, more }
 }
 
 export function getProductCategoryPath(

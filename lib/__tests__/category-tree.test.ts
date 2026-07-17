@@ -359,3 +359,27 @@ describe('getProductCategoryPath', () => {
     expect(path?.subcategory?.tag).toBe('exam-tables')
   })
 })
+
+import { buildCategoryTreeNav } from '../category-tree'
+
+describe('buildCategoryTreeNav', () => {
+  it('splits entries into primary/more per navGroup', () => {
+    const nav = buildCategoryTreeNav(CATEGORY_TREE_L1.map((l1) => ({ handle: l1.collectionHandle })))
+    expect(nav.primary.some((e) => e.displayName === 'Gloves')).toBe(true)
+    expect(nav.more.some((e) => e.displayName === 'Dental')).toBe(true)
+    expect(nav.primary.some((e) => e.displayName === 'Dental')).toBe(false)
+    expect(nav.more.some((e) => e.displayName === 'Gloves')).toBe(false)
+  })
+
+  it('skips an L1 whose collectionHandle has no matching live collection', () => {
+    const nav = buildCategoryTreeNav([{ handle: 'not-a-real-handle' }])
+    expect(nav.primary).toHaveLength(0)
+    expect(nav.more).toHaveLength(0)
+  })
+
+  it('builds href via ROUTES.category(collectionHandle)', () => {
+    const nav = buildCategoryTreeNav([{ handle: 'testing-screening' }])
+    const testing = nav.primary.find((e) => e.displayName === 'Testing')
+    expect(testing?.href).toBe('/category/testing-screening')
+  })
+})
