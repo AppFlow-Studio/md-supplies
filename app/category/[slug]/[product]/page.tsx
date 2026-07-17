@@ -10,7 +10,7 @@ import { ProductGrid } from '@/components/category/ProductGrid'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { getSiblingSubcategories, getRelatedCategories } from '@/lib/category-utils'
 import { buildMetadata, trimDescription } from '@/lib/seo'
-import { buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
+import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
@@ -206,6 +206,21 @@ export default async function CategoryProductPage({ params }: Props) {
           </section>
         )}
 
+        <script
+          type="application/ld+json"
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: jsonLdSafe(
+              buildCollectionPageSchema({
+                name: collection.title,
+                url: `${SITE_URL}/category/${slug}/${handle}`,
+                ...(collection.description ? { description: collection.description } : {}),
+                ...(collection.image?.url ? { image: collection.image.url } : {}),
+              }),
+            ),
+          }}
+        />
         <script
           type="application/ld+json"
           nonce={nonce}
