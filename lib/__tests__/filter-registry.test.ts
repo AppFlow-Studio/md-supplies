@@ -141,6 +141,32 @@ describe('page-specific facet sets', () => {
     expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
   })
 
+  it('Dental shows needle gauge + length + size + order size', () => {
+    const ids = getAllowedFacets('dental', HOSTILE_FACETS).map((f) => f.id)
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'filter.p.m.custom.needle_gauge',
+        'filter.p.m.custom.needle_length',
+        'filter.p.m.custom.size_length_',
+        'filter.p.m.custom.order_size',
+      ]),
+    )
+    expect(ids).not.toContain('filter.p.m.custom.glove_size')
+  })
+
+  it('IV Therapy shows needle gauge + length + size + order size', () => {
+    const ids = getAllowedFacets('iv-therapy', HOSTILE_FACETS).map((f) => f.id)
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'filter.p.m.custom.needle_gauge',
+        'filter.p.m.custom.needle_length',
+        'filter.p.m.custom.size_length_',
+        'filter.p.m.custom.order_size',
+      ]),
+    )
+    expect(ids).not.toContain('filter.p.m.custom.glove_size')
+  })
+
   it('unlisted collections fall back to availability/price/vendor only', () => {
     const ids = getAllowedFacets('some-unlisted-collection', HOSTILE_FACETS).map((f) => f.id)
     expect(ids.sort()).toEqual(['filter.p.vendor', 'filter.v.availability', 'filter.v.price'])
