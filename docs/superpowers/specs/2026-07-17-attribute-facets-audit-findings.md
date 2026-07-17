@@ -8,7 +8,9 @@ run 2026-07-17 against the live Storefront API.
 - **Dental** (`dental`) and **IV Therapy** (`iv-therapy`) — both had a fully live,
   populated needle-gauge metafield family (`needle_gauge`, `needle_length`,
   `size_length_`, `order_size`) with no existing `filterRegistry` entry. Wired to
-  the same shape as the existing `needles-syringes` entry.
+  the same gauge/length/order-size metafield family as the existing
+  `needles-syringes` entry, with `size` in place of `volume` — dental/IV needle
+  products carry gauge/length/size attributes, not a fill volume.
 
 ## Already correctly wired, no action needed
 

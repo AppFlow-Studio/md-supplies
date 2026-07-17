@@ -135,8 +135,9 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   // Confirmed live 2026-07-17 (docs/superpowers/plans/2026-07-17-attribute-
   // facet-audit.md, Task 1): needle_gauge/needle_length/size_length_/
   // order_size are all live, populated Storefront metafields on this
-  // collection today -- same shape as needles-syringes below, since dental
-  // needle products carry the same gauge/length/size attributes.
+  // collection today -- same gauge/length/order-size metafield family as
+  // needles-syringes above, but with size in place of volume, since dental
+  // needle products carry gauge/length/size attributes, not a fill volume.
   dental: [
     APPROVED_METAFIELDS.needleGauge,
     APPROVED_METAFIELDS.length,
