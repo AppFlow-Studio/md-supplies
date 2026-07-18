@@ -62,14 +62,9 @@ beforeEach(() => {
 })
 
 describe('getSitemapUrls', () => {
-  it('returns empty array on staging without calling Shopify', async () => {
-    expect(await getSitemapUrls(true)).toHaveLength(0)
-    expect(mockFetch).not.toHaveBeenCalled()
-  })
-
-  it('includes all static URLs on production', async () => {
+  it('includes all static URLs', async () => {
     setupDefaultMocks()
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     expect(urls.some(u => u === 'https://mdsupplies.com/')).toBe(true)
     expect(urls.some(u => u.endsWith('/categories'))).toBe(true)
     expect(urls.some(u => u.endsWith('/industries'))).toBe(true)
@@ -79,7 +74,7 @@ describe('getSitemapUrls', () => {
 
   it('emits /category/<handle> only for roadmap-allowed handles', async () => {
     setupDefaultMocks({ collections: ['gloves', 'needles-syringes', 'non-roadmap-handle'] })
-    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    const urls = (await getSitemapUrls()).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/category/gloves')
     expect(urls).toContain('https://mdsupplies.com/category/needles-syringes')
     expect(urls).not.toContain('https://mdsupplies.com/category/non-roadmap-handle')
@@ -87,7 +82,7 @@ describe('getSitemapUrls', () => {
 
   it('excludes §2.4 removed and hidden-at-launch handles (not in allowlist)', async () => {
     setupDefaultMocks({ collections: ['gloves', 'pharmaceuticals', 'office-supplies'] })
-    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    const urls = (await getSitemapUrls()).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/category/gloves')
     expect(urls).not.toContain('https://mdsupplies.com/category/pharmaceuticals')
     expect(urls).not.toContain('https://mdsupplies.com/category/office-supplies')
@@ -95,35 +90,35 @@ describe('getSitemapUrls', () => {
 
   it('does not emit /category/<handle> for a sub-collection handle that is not an approved L1 (leaked sub-collection bugfix)', async () => {
     setupDefaultMocks({ collections: ['gloves', 'disposable-3-2mm-3-5mm-trocars'] })
-    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    const urls = (await getSitemapUrls()).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/category/gloves')
     expect(urls).not.toContain('https://mdsupplies.com/category/disposable-3-2mm-3-5mm-trocars')
   })
 
   it('includes lastmod on category entries from updatedAt', async () => {
     setupDefaultMocks({ collections: ['gloves'] })
-    const entries = await getSitemapUrls(false)
+    const entries = await getSitemapUrls()
     const entry = entries.find((e) => e.url === 'https://mdsupplies.com/category/gloves')
     expect(entry?.lastModified).toEqual(new Date('2026-06-01T00:00:00Z'))
   })
 
   it('emits /product/<handle> for each Shopify product', async () => {
     setupDefaultMocks({ products: ['exam-gloves-3xl', 'surgical-mask-50pk'] })
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     expect(urls).toContain('https://mdsupplies.com/product/exam-gloves-3xl')
     expect(urls).toContain('https://mdsupplies.com/product/surgical-mask-50pk')
   })
 
   it('includes lastmod on product entries from updatedAt', async () => {
     setupDefaultMocks({ products: ['exam-gloves-3xl'] })
-    const entries = await getSitemapUrls(false)
+    const entries = await getSitemapUrls()
     const entry = entries.find((e) => e.url === 'https://mdsupplies.com/product/exam-gloves-3xl')
     expect(entry?.lastModified).toEqual(new Date('2026-06-01T00:00:00Z'))
   })
 
   it('includes lastmod on article entries from publishedAt', async () => {
     setupDefaultMocks({ articles: ['hrt-supply-guide'] })
-    const entries = await getSitemapUrls(false)
+    const entries = await getSitemapUrls()
     const entry = entries.find((e) => e.url === 'https://mdsupplies.com/blog/hrt-supply-guide')
     expect(entry?.lastModified).toEqual(new Date('2026-06-01T00:00:00Z'))
   })
@@ -158,7 +153,7 @@ describe('getSitemapUrls', () => {
       return Promise.reject(new Error('Unexpected query'))
     })
 
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     expect(urls).toContain('https://mdsupplies.com/product/p1')
     expect(urls).toContain('https://mdsupplies.com/product/p2')
     expect(urls).toContain('https://mdsupplies.com/product/p3')
@@ -166,13 +161,13 @@ describe('getSitemapUrls', () => {
 
   it('emits /partners/<slug> for every partner in static config', async () => {
     setupDefaultMocks()
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     expect(urls.filter(u => u.includes('/partners/')).length).toBeGreaterThan(0)
   })
 
   it('emits /industries/<slug> detail pages and the /industries hub', async () => {
     setupDefaultMocks()
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     // Industry detail pages are index,follow content pages (closeout §12.2) →
     // they must appear in the sitemap.
     expect(urls).toContain('https://mdsupplies.com/industries/hrt-clinics')
@@ -183,14 +178,14 @@ describe('getSitemapUrls', () => {
 
   it('emits /blog/<handle> for each article', async () => {
     setupDefaultMocks({ articles: ['best-exam-gloves-2025', 'hrt-supply-guide'] })
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     expect(urls).toContain('https://mdsupplies.com/blog/best-exam-gloves-2025')
     expect(urls).toContain('https://mdsupplies.com/blog/hrt-supply-guide')
   })
 
   it('degrades gracefully when Shopify is unreachable — returns static list only', async () => {
     mockFetch.mockRejectedValue(new Error('Network timeout'))
-    const urls = await getSitemapUrls(false)
+    const urls = await getSitemapUrls()
     expect(urls.length).toBeGreaterThan(0)
     const paths = urls.map(e => new URL(e.url).pathname)
     expect(paths).toContain('/')
@@ -200,7 +195,7 @@ describe('getSitemapUrls', () => {
   it('never emits /b2b, /account, /cart, /search, /api URLs', async () => {
     setupDefaultMocks()
     const NEVER = ['/b2b', '/account', '/cart', '/search', '/api']
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     for (const excluded of NEVER) {
       const match = urls.find(u => new URL(u).pathname.startsWith(excluded))
       expect(match, `Sitemap must not contain ${excluded}`).toBeUndefined()
@@ -209,13 +204,13 @@ describe('getSitemapUrls', () => {
 
   it('homepage has priority 1', async () => {
     setupDefaultMocks()
-    const entry = (await getSitemapUrls(false)).find(e => e.url === 'https://mdsupplies.com/')
+    const entry = (await getSitemapUrls()).find(e => e.url === 'https://mdsupplies.com/')
     expect(entry?.priority).toBe(1)
   })
 
   it('all URLs use production SITE_URL', async () => {
     setupDefaultMocks({ collections: ['gloves'], products: ['exam-gloves'], articles: ['guide'] })
-    const urls = (await getSitemapUrls(false)).map(e => e.url)
+    const urls = (await getSitemapUrls()).map(e => e.url)
     for (const url of urls) {
       expect(url.startsWith('https://mdsupplies.com')).toBe(true)
     }
@@ -228,7 +223,7 @@ describe('getSitemapUrls', () => {
         { handle: 'p2', tags: ['category:gloves', 'subcategory:exam-gloves'] },
       ],
     })
-    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    const urls = (await getSitemapUrls()).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/category/gloves/exam-gloves')
   })
 
@@ -238,7 +233,7 @@ describe('getSitemapUrls', () => {
         { handle: 'p1', tags: ['category:room-furniture', 'subcategory:exam-tables'] },
       ],
     })
-    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    const urls = (await getSitemapUrls()).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/category/seating/exam-tables')
     expect(urls).not.toContain('https://mdsupplies.com/category/exam-room/exam-tables')
   })
@@ -249,7 +244,7 @@ describe('getSitemapUrls', () => {
         { handle: 'p1', tags: ['category:needles-syringes', 'subcategory:25g-hypodermic-needles'] },
       ],
     })
-    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    const urls = (await getSitemapUrls()).map((e) => e.url)
     expect(urls).not.toContain('https://mdsupplies.com/category/needles-syringes/25g-hypodermic-needles')
   })
 
@@ -263,7 +258,7 @@ describe('getSitemapUrls', () => {
       if (query.includes('GetAllArticleHandles')) return Promise.resolve({ blogs: { nodes: [] } })
       return Promise.reject(new Error('Unexpected query'))
     })
-    const urls = (await getSitemapUrls(false)).map((e) => e.url)
+    const urls = (await getSitemapUrls()).map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/')
     expect(urls.some((u) => u.includes('/category/'))).toBe(false)
   })
