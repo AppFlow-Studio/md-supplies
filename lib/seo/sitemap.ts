@@ -1,6 +1,5 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL } from './constants'
-import { STAGING_GUARD } from './robots'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
@@ -123,11 +122,7 @@ async function fetchArticleUrls(): Promise<SitemapEntry[]> {
   }
 }
 
-export async function getSitemapUrls(
-  isStaging: boolean = STAGING_GUARD,
-): Promise<MetadataRoute.Sitemap> {
-  if (isStaging) return []
-
+export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
   const partnerUrls: SitemapEntry[] = PARTNERS.map(p => ({
     url: `${SITE_URL}/partners/${p.slug}`,
     changeFrequency: 'monthly' as const,
