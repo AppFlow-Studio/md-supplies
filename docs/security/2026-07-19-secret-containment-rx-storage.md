@@ -88,7 +88,7 @@ Controls mapped to the ticket's requirements:
 | Private storage, off the public image path | Reserved prefix + hard 404 in the public proxy; zone has no Pull Zone; API requires AccessKey |
 | Short-lived signed access | Equivalent-or-stronger: documents are **never URL-addressable at all** — each read is authenticated per-request by the customer session; nothing to leak or replay |
 | Type/size checks | 10 MB cap; MIME allowlist **plus magic-byte sniffing** (declared type is ignored for storage) |
-| Malware scanning | **Not implemented — no scanning service in the stack.** Residual risk accepted for launch or needs an owner decision (e.g. Bunny Edge Script + ClamAV, or a queue-based scan). Mitigations: 4 formats only, nosniff, never executed server-side |
+| Malware scanning | **Option B chosen by Munis 2026-07-19 — implemented** (`lib/rx-scan.ts`): every upload is scanned via a **self-hosted ClamAV REST service** (VirusTotal-style multiscanners are prohibited — they share submissions, and these files are PII). Infected files always rejected + audited. `RX_SCAN_REQUIRED=true` makes scanner downtime fail closed. **Owner: stand up the ClamAV container and set `RX_SCAN_CLAMAV_URL` (+`RX_SCAN_REQUIRED=true`) before launch** — until then uploads proceed unscanned with an audit log |
 | Encryption in transit | HTTPS on every hop (browser→Vercel, Vercel→Bunny API) |
 | Encryption at rest | Bunny storage-zone provider-side encryption — **owner to confirm zone setting/region in dashboard** |
 | Audit logging | `[rx-audit]` structured server logs (Vercel log drain): `document_uploaded` (with `replaced=` flag), `document_served`, `stale_document_delete_failed` — customer id only, never file contents/names |
@@ -112,10 +112,16 @@ Controls mapped to the ticket's requirements:
 
 ## 5. Sign-off checklist (acceptance criteria)
 
-- [ ] Old Bunny AccessKey rotated and verified dead (§2.1) — **owner**
+- [x] Old Bunny AccessKey rotated and verified dead (§2.1) — rotated by Munis
+      2026-07-19; verified same day: old key → HTTP 401, new key → HTTP 200
+      against `ny.storage.bunnycdn.com/md-supplies/`. Vercel env updated +
+      redeployed. (Note: mdsupplies.com still points at the legacy Shopify
+      storefront pre-cutover, so post-rotation image serving was verified
+      against the storage API + local env, not the public domain.)
 - [x] New secrets not tracked in repo, not in client bundle (CI-enforced)
 - [x] Cross-account document read blocked — verified by test, not assumption
 - [x] RX storage confirmed off the public BunnyCDN image path (proxy denial + no Pull Zone)
+- [x] Storage decision (private Bunny zone + authenticated proxy, §3) confirmed by Munis 2026-07-19
 - [ ] Security/privacy owner sign-off on upload/access/retention/incident procedure — **owner**
-- [ ] Malware-scanning decision recorded (accept residual risk or pick a scanner) — **owner**
-- [ ] Encryption-at-rest zone setting confirmed in Bunny dashboard — **owner**
+- [x] Malware-scanning decision recorded: **Option B (scan)**, chosen by Munis 2026-07-19; code integration complete, ClamAV service deployment pending (owner)
+- [x] Bunny dashboard checks done by Munis 2026-07-19: no Pull Zone attached to the storage zone; region/encryption noted
