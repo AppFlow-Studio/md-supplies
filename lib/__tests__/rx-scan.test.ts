@@ -61,6 +61,17 @@ describe('scanRxDocument', () => {
     expect(fetchMock.mock.calls[0][1].headers).toEqual({ Authorization: 'Bearer scan-secret' })
   })
 
+  it('treats unrecognized JSON as an error even when its text contains "OK" (no parser fail-open)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      textResponse(200, JSON.stringify({ status: 'OK, scan queued' })),
+    ))
+    expect((await scanRxDocument(BODY, 'f.pdf')).status).toBe('error')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      textResponse(200, JSON.stringify({ data: { result: [] } })),
+    ))
+    expect((await scanRxDocument(BODY, 'f.pdf')).status).toBe('error')
+  })
+
   it('treats network failures, HTTP errors, and garbage responses as errors — never clean', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')))
     expect((await scanRxDocument(BODY, 'f.pdf')).status).toBe('error')

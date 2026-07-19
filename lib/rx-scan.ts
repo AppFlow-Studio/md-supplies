@@ -66,19 +66,27 @@ export async function scanRxDocument(body: ArrayBuffer, filename: string): Promi
     return { status: 'error', reason: 'unreadable response' }
   }
 
-  // benzino77/clamav-rest-api JSON shape.
+  // benzino77/clamav-rest-api JSON shape. A body that parses as JSON must be
+  // judged as JSON ONLY: falling through to the plain-text regexes would let
+  // an unrecognized JSON payload that merely contains "OK" (an error message,
+  // a queue acknowledgement) read as clean — a fail-open parser differential.
+  let json: unknown
+  let isJson = true
   try {
-    const json = JSON.parse(raw) as {
+    json = JSON.parse(raw)
+  } catch {
+    isJson = false
+  }
+  if (isJson) {
+    const result = (json as {
       data?: { result?: Array<{ is_infected?: boolean; viruses?: string[] }> }
-    }
-    const result = json.data?.result?.[0]
+    }).data?.result?.[0]
     if (result && typeof result.is_infected === 'boolean') {
       return result.is_infected
         ? { status: 'infected', signature: result.viruses?.join(', ') || 'unknown' }
         : { status: 'clean' }
     }
-  } catch {
-    // Not JSON — fall through to the plain-text contract.
+    return { status: 'error', reason: 'unrecognized scanner response' }
   }
 
   // Plain-text clamav-rest contract: "Everything ok : true/false", "OK"/"FOUND".
