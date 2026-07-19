@@ -21,7 +21,7 @@ export function AnimatedOCCHeroSection({
 
         {/* Left: text column */}
         <div className="lg:w-[50%] shrink-0 flex flex-col gap-5 lg:gap-6 pb-8 lg:pb-10">
-          <FadeIn as="p" delay={0.05} className="text-[#0086b1] text-[15px] font-semibold tracking-[0.3px] uppercase">
+          <FadeIn as="p" delay={0.05} className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
             Operation Christmas Child
           </FadeIn>
 

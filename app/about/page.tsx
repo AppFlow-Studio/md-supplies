@@ -59,8 +59,8 @@ export default function AboutPage() {
           </div>
 
           {/* Right image */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <FadeIn delay={0.2} className="w-full h-[280px] sm:h-[420px] lg:w-[720px] lg:h-auto shrink-0 relative overflow-hidden ">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={IMG_HERO}
               alt="Medical supplies laid out on a surface"

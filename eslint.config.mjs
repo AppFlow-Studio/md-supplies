@@ -15,6 +15,21 @@ const eslintConfig = defineConfig([
     // Ignore git worktrees and their build artifacts
     ".worktrees/**",
   ]),
+  {
+    rules: {
+      // A leading underscore is the deliberate "intentionally unused" marker
+      // (stripped props in next/image test mocks, scaffold params awaiting a
+      // confirmed signal). Anything unprefixed still warns.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

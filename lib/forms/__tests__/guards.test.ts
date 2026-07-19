@@ -3,10 +3,12 @@ import { z } from 'zod'
 import {
   assertAllowedOrigin,
   assertNoForeignOrigin,
+  assertAllowedCountry,
   readJsonBounded,
   sanitizeHeaderValue,
   fieldErrors,
   isHoneypotFilled,
+  isSubmittedTooFast,
 } from '@/lib/forms/guards'
 
 function postRequest(headers: Record<string, string>, body = '{}') {
@@ -164,6 +166,54 @@ describe('isHoneypotFilled', () => {
   it('is false for non-object input', () => {
     expect(isHoneypotFilled(null)).toBe(false)
     expect(isHoneypotFilled('nope')).toBe(false)
+  })
+})
+
+describe('isSubmittedTooFast', () => {
+  it('is true when elapsedMs is missing', () => {
+    expect(isSubmittedTooFast({ name: 'x' })).toBe(true)
+  })
+
+  it('is true when elapsedMs is below the threshold', () => {
+    expect(isSubmittedTooFast({ elapsedMs: 400 })).toBe(true)
+  })
+
+  it('is false when elapsedMs meets the threshold', () => {
+    expect(isSubmittedTooFast({ elapsedMs: 1200 })).toBe(false)
+  })
+
+  it('is false when elapsedMs comfortably exceeds the threshold', () => {
+    expect(isSubmittedTooFast({ elapsedMs: 5000 })).toBe(false)
+  })
+
+  it('is true for non-object input', () => {
+    expect(isSubmittedTooFast(null)).toBe(true)
+  })
+})
+
+describe('assertAllowedCountry', () => {
+  function reqWithCountry(country: string | null) {
+    const headers: Record<string, string> = { host: 'shop.example.com' }
+    if (country) headers['x-vercel-ip-country'] = country
+    return postRequest(headers)
+  }
+
+  it('allows a US request', () => {
+    expect(assertAllowedCountry(reqWithCountry('US')).ok).toBe(true)
+  })
+
+  it('allows a CA request', () => {
+    expect(assertAllowedCountry(reqWithCountry('CA')).ok).toBe(true)
+  })
+
+  it('rejects a request from outside the US/CA', () => {
+    const result = assertAllowedCountry(reqWithCountry('RU'))
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.status).toBe(403)
+  })
+
+  it('allows when the country header is absent (non-Vercel environment)', () => {
+    expect(assertAllowedCountry(reqWithCountry(null)).ok).toBe(true)
   })
 })
 

@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, sardor-dev]
+    branches: [main, munis, sardor-dev]
 
 # Cancel superseded runs on the same ref to save CI minutes.
 concurrency:
@@ -27,15 +27,42 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint (0 errors)
-        # eslint exits non-zero only on errors; the 14 existing warnings are allowed.
-        run: npx eslint
+      - name: Lint (0 errors, 0 warnings)
+        # --max-warnings 0: any new warning must be fixed or carry an
+        # individually-reviewed eslint-disable, never silently accumulate.
+        run: npx eslint --max-warnings 0
 
       - name: Typecheck
         run: npx tsc --noEmit
 
       - name: Test
+        # vitest.config.ts sets allowOnly:false and playwright.config.ts sets
+        # forbidOnly:true, so a stray .only fails here and locally alike.
         run: npx vitest run
+
+      - name: No skipped or focused tests
+        run: |
+          echo "Scanning for skipped/focused tests…"
+          if git grep -nE '\.(only|skip)\s*\(|(describe|it|test)\.todo' -- \
+            '*.test.ts' '*.test.tsx' 'e2e/*.spec.ts'; then
+            echo "::error::Found a focused (.only) or skipped (.skip/.todo) test above. Remove it or get it individually approved."
+            exit 1
+          fi
+          echo "None found."
+
+      - name: No production mock-data fallback
+        run: |
+          echo "Scanning production source for mock-data fallbacks…"
+          if git grep -niE 'mock[_-]?(data|products|fallback)|use[_-]?mocks?\b' -- \
+            'app' 'components' 'lib' 'shopify' \
+            ':!*__tests__*' ':!*.test.*' ':!*.spec.*'; then
+            echo "::error::Possible mock-data fallback in production source above. Real data only outside tests."
+            exit 1
+          fi
+          echo "None found."
+
+      - name: Dependency audit (no high/critical)
+        run: npm audit --audit-level=high
 
       - name: Build
         # Since the ISR restore (H1), static pages (home, categories, blog…)
@@ -63,7 +90,73 @@ jobs:
             echo "::error::Possible committed secret (Resend/Shopify key) found above."
             exit 1
           fi
+          # BunnyCDN storage AccessKeys are dash-separated hex GUIDs; one was
+          # committed in a docs file once (rotated since) — never again.
+          if git grep -nIE \
+            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[0-9a-f]{4}-[0-9a-f]{4}' \
+            -- ':!.github/workflows/*'; then
+            echo "::error::Possible committed BunnyCDN AccessKey found above."
+            exit 1
+          fi
+          # Sensitive env vars must never be assigned a real-looking value in a
+          # tracked file (short test fixtures like 'test-key' are fine).
+          if git grep -nIE \
+            '(BUNNYCDN_STORAGE_ACCESS_KEY|RESEND_API_KEY|SHOPIFY_STOREFRONT_ACCESS_TOKEN|SHOPIFY_ADMIN_ACCESS_TOKEN|SHOPIFY_WEBHOOK_SECRET|SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID)\s*=\s*["'"'"']?[A-Za-z0-9][A-Za-z0-9-]{15,}' \
+            -- ':!.github/workflows/*'; then
+            echo "::error::A sensitive env var is assigned a real-looking value in a tracked file."
+            exit 1
+          fi
+          # No .env variants may ever be tracked (only the .example template).
+          if git ls-files | grep -E '^\.env' | grep -v '^\.env\.example$'; then
+            echo "::error::A .env file is tracked in git. Remove it and rotate anything it contained."
+            exit 1
+          fi
           echo "No committed secrets found."
+
+  launch-guardrails:
+    # Launch-blocking invariants re-run as named, individually-required
+    # steps so a red area is visible at a glance (they also run inside the
+    # full `verify` vitest pass — this job exists for required-check
+    # granularity, per the CI quality-gate ticket).
+    name: launch guardrails (redirects · registry · seo · rx · graphql · forms)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Redirect & proxy tests
+        run: npx vitest run lib/__tests__/safe-redirect.test.ts __tests__/proxy.test.ts
+
+      - name: Category-registry integrity
+        run: |
+          npx vitest run \
+            lib/__tests__/category-tree.test.ts \
+            lib/__tests__/category-tree-data.test.ts \
+            lib/__tests__/category-nav.test.ts \
+            lib/__tests__/category-nav-audit.test.ts \
+            lib/__tests__/category-utils.test.ts \
+            lib/__tests__/excluded-categories.test.ts
+
+      - name: Sitemap, canonical & route guardrails
+        run: npx vitest run lib/seo/__tests__ __tests__/route-revalidate.test.ts
+
+      - name: RX gate & bypass cases
+        run: npx vitest run lib/__tests__/rx-gate.test.ts lib/__tests__/rx-storage.test.ts
+
+      - name: GraphQL contract fixtures (Storefront API)
+        run: npx vitest run lib/shopify/__tests__
+
+      - name: Form abuse-protection contract
+        run: npx vitest run lib/forms app/api/contact app/api/sourcing
 
   e2e:
     name: e2e (Playwright)
@@ -85,30 +178,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Skip E2E if Shopify secrets are not configured
-        id: gate
+      - name: Require Shopify secrets
+        # E2E is a required launch gate — a missing secret must fail loudly,
+        # not silently skip the whole suite (CI quality-gate ticket).
         run: |
-          if [ -z "$SHOPIFY_STORE_DOMAIN" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+          if [ -z "$SHOPIFY_STORE_DOMAIN" ] || [ -z "$SHOPIFY_STOREFRONT_ACCESS_TOKEN" ]; then
+            echo "::error::SHOPIFY_STORE_DOMAIN / SHOPIFY_STOREFRONT_ACCESS_TOKEN are not set in repo Actions secrets — E2E cannot run and is a required check (Settings → Secrets and variables → Actions)."
+            exit 1
           fi
 
       - name: Install Playwright browsers
-        if: steps.gate.outputs.skip == 'false'
         run: npx playwright install --with-deps chromium
 
       - name: Build
-        if: steps.gate.outputs.skip == 'false'
         run: npm run build
 
       - name: Run E2E tests
-        if: steps.gate.outputs.skip == 'false'
-        run: npm run test:e2e
+        # --ignore-snapshots: visual baselines are darwin-only so far (they
+        # are platform-suffixed); every functional/axe assertion still runs.
+        # TODO: generate linux baselines (run once with --update-snapshots on
+        # this runner, commit e2e/visual.spec.ts-snapshots/*-linux.png), then
+        # drop the flag so the visual gate enforces in CI too.
+        run: npx playwright test --ignore-snapshots
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: failure() && steps.gate.outputs.skip == 'false'
+        if: failure()
         with:
           name: playwright-report
           path: playwright-report/

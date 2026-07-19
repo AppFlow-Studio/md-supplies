@@ -5,8 +5,9 @@ import type { ZodError } from 'zod'
  *
  * The durable, per-IP rate limit lives at the Vercel WAF layer (see the DEV-21
  * design doc). These guards are cheap, in-process defense-in-depth: origin
- * pinning, a body-size cap, header-injection sanitization, and validation-error
- * flattening for the client.
+ * pinning, a country allowlist, a body-size cap, a submission-timing check,
+ * header-injection sanitization, and validation-error flattening for the
+ * client.
  */
 
 const DEFAULT_MAX_BYTES = 16_384 // 16 KB — generous for a contact form, hostile to abuse.
@@ -60,6 +61,21 @@ export function assertNoForeignOrigin(req: Request): Allowed {
   return { ok: true }
 }
 
+const ALLOWED_COUNTRIES = new Set(['US', 'CA'])
+
+/**
+ * Restricts form submissions to the US and Canada using Vercel's
+ * `x-vercel-ip-country` edge header — the correct mechanism post-Next-15,
+ * which removed `NextRequest.geo`/`.ip`. Absent outside Vercel (local dev,
+ * other hosts) — skipped rather than blocking, since there's no signal to
+ * act on.
+ */
+export function assertAllowedCountry(req: Request): Allowed {
+  const country = req.headers.get('x-vercel-ip-country')
+  if (country && !ALLOWED_COUNTRIES.has(country)) return { ok: false, status: 403 }
+  return { ok: true }
+}
+
 type BoundedResult =
   | { ok: true; data: unknown }
   | { ok: false; status: 413 | 400 }
@@ -100,6 +116,19 @@ export function isHoneypotFilled(data: unknown): boolean {
   if (typeof data !== 'object' || data === null) return false
   const website = (data as Record<string, unknown>).website
   return typeof website === 'string' && website.length > 0
+}
+
+const MIN_FILL_MS = 1200
+
+/**
+ * True when the client-reported time since the form rendered is missing or
+ * too short for a human to have filled a multi-field form — a bot signal
+ * layered on top of the honeypot. Entirely stateless: no per-IP store.
+ */
+export function isSubmittedTooFast(data: unknown): boolean {
+  if (typeof data !== 'object' || data === null) return true
+  const elapsedMs = (data as Record<string, unknown>).elapsedMs
+  return typeof elapsedMs !== 'number' || elapsedMs < MIN_FILL_MS
 }
 
 /**

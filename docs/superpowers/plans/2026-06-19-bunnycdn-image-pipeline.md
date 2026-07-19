@@ -251,7 +251,7 @@ Edit `.env.local`, add at the end:
 
 ```
 # BunnyCDN storage proxy
-BUNNYCDN_STORAGE_ACCESS_KEY=54cf94cd-cc0d-4eed-9edf6132c59c-e3f9-47cd
+BUNNYCDN_STORAGE_ACCESS_KEY=<your-storage-zone-access-key>  # REDACTED — the real key was committed here historically and has been rotated; never commit it
 BUNNYCDN_STORAGE_HOSTNAME=ny.storage.bunnycdn.com
 BUNNYCDN_STORAGE_ZONE=md-supplies
 ```
