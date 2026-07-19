@@ -164,7 +164,7 @@ GitHub Actions secrets: `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_STOREFRONT_ACCESS_TOKEN
 |---|---|---|
 | Test matrix on RC SHA | ✅ all rows green on `f1e31d7` (see §7.1) | 2026-07-19 |
 | Local code rollback drill | ✅ 2026-07-19: RC → `d1fea36` (pre-release merge) with `npm ci` + full build + serve, all 5 critical routes 200; then back to RC, all 200. Repo verified back on `munis`@`f1e31d7` | roll back **5m16s**, restore **1m34s**, round-trip **6m50s** |
-| Vercel promote/rollback drill | pending — needs dashboard access (expected 1–3 min/direction, no build: deployments are pre-built) | |
+| Vercel promote/rollback drill | ✅ executed by Munis 2026-07-19 in the Vercel dashboard: promoted a prior deployment to Production, verified, promoted the RC back, verified (stopwatch screenshots in ticket) | roll back **1m02s**, restore **42s** |
 | Shopify sample restore (Izzy) | pending — needs Izzy | |
 | Missing dependencies discovered | none code-side. Notes: (1) local drill pays a full `npm ci`+build (~5 min) — the Vercel path avoids this entirely by promoting pre-built deployments, which is why Level 1 rollback is the Vercel dashboard, never a local rebuild; (2) robots/sitemap snapshot captured from a dev-env build (staging-mode robots) — production values must be re-verified at cutover per §2 | |
 
