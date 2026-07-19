@@ -97,8 +97,19 @@ const SET_CUSTOMER_RX_DOCUMENT = `#graphql
  * between our read and write (TOCTOU: the racy write is skipped entirely
  * for any customer whose flag already exists; the only racy window left is
  * the very first upload, when there is no `true` to lose).
+ *
+ * EXCEPTION — `resetVerified: true` (document REPLACEMENT): when a document
+ * was already on file, the merchant's verification applied to THAT file, so
+ * the flag is force-written back to `false`. Without this, a customer could
+ * get a real prescription verified and then swap in any other file while
+ * keeping verified status (security-hardening ticket, replaced-document
+ * threat).
  */
-export async function setCustomerRxDocument(customerId: string, documentPath: string): Promise<void> {
+export async function setCustomerRxDocument(
+  customerId: string,
+  documentPath: string,
+  { resetVerified = false }: { resetVerified?: boolean } = {},
+): Promise<void> {
   const current = await getCustomerRxState(customerId)
   const metafields: Record<string, unknown>[] = [
     {
@@ -109,7 +120,7 @@ export async function setCustomerRxDocument(customerId: string, documentPath: st
       value: documentPath,
     },
   ]
-  if (!current.verifiedFlagSet) {
+  if (resetVerified || !current.verifiedFlagSet) {
     metafields.push({
       ownerId: customerId,
       namespace: RX_METAFIELDS.namespace,

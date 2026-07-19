@@ -90,6 +90,27 @@ jobs:
             echo "::error::Possible committed secret (Resend/Shopify key) found above."
             exit 1
           fi
+          # BunnyCDN storage AccessKeys are dash-separated hex GUIDs; one was
+          # committed in a docs file once (rotated since) — never again.
+          if git grep -nIE \
+            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-[0-9a-f]{4}-[0-9a-f]{4}' \
+            -- ':!.github/workflows/*'; then
+            echo "::error::Possible committed BunnyCDN AccessKey found above."
+            exit 1
+          fi
+          # Sensitive env vars must never be assigned a real-looking value in a
+          # tracked file (short test fixtures like 'test-key' are fine).
+          if git grep -nIE \
+            '(BUNNYCDN_STORAGE_ACCESS_KEY|RESEND_API_KEY|SHOPIFY_STOREFRONT_ACCESS_TOKEN|SHOPIFY_ADMIN_ACCESS_TOKEN|SHOPIFY_WEBHOOK_SECRET|SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID)\s*=\s*["'"'"']?[A-Za-z0-9][A-Za-z0-9-]{15,}' \
+            -- ':!.github/workflows/*'; then
+            echo "::error::A sensitive env var is assigned a real-looking value in a tracked file."
+            exit 1
+          fi
+          # No .env variants may ever be tracked (only the .example template).
+          if git ls-files | grep -E '^\.env' | grep -v '^\.env\.example$'; then
+            echo "::error::A .env file is tracked in git. Remove it and rotate anything it contained."
+            exit 1
+          fi
           echo "No committed secrets found."
 
   launch-guardrails:

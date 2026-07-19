@@ -55,6 +55,12 @@ describe('GET /api/bunny/[...path]', () => {
     expect(res.status).toBe(404)
   })
 
+  it('denies the RX prescription-document prefix with 404 without touching storage', async () => {
+    const res = await GET(makeRequest('rx-documents/7412345/doc.pdf'), makeParams('rx-documents/7412345/doc.pdf'))
+    expect(res.status).toBe(404)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('rejects path traversal segments with 400', async () => {
     const res = await GET(makeRequest('mdsupplies/..%2F..%2Fsecrets'), makeParams('mdsupplies/../../secrets'))
 

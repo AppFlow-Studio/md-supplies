@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { getCustomerRxState } from '@/lib/shopify/admin'
-import { fetchRxDocument, isOwnRxDocumentPath } from '@/lib/rx-storage'
+import {
+  contentTypeForRxPath,
+  customerFolderId,
+  fetchRxDocument,
+  isOwnRxDocumentPath,
+} from '@/lib/rx-storage'
 
 // Serves the signed-in customer their OWN RX document — the only read path
 // for rx-documents/* (the public bunny proxy denies the prefix). No path
@@ -40,10 +45,15 @@ export async function GET() {
   const doc = await fetchRxDocument(state.documentPath)
   if (!doc) return new NextResponse(null, { status: 404 })
 
+  console.info(`[rx-audit] document_served customer=${customerFolderId(customerId)}`)
+
   return new NextResponse(doc.body, {
     status: 200,
     headers: {
-      'Content-Type': doc.contentType,
+      // Derived from the allowlisted path extension — never from the upstream
+      // header — so storage can't relabel the bytes as something executable.
+      'Content-Type': contentTypeForRxPath(state.documentPath) ?? 'application/octet-stream',
+      'X-Content-Type-Options': 'nosniff',
       // PII: never cache in shared caches; keep browser caching off too.
       'Cache-Control': 'private, no-store',
       'Content-Disposition': 'inline; filename="rx-document"',
