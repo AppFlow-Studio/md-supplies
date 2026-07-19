@@ -2,8 +2,8 @@
 
 import { buildFormSubmitEvent } from '@/lib/analytics/events'
 import { submitForm } from '@/lib/forms/submit'
-import { SUBJECTS } from '@/lib/forms/schema'
-import { useRef, useState } from 'react'
+import { SUBJECTS } from '@/lib/forms/constants'
+import { useEffect, useRef, useState } from 'react'
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
 export function ContactForm() {
@@ -11,7 +11,11 @@ export function ContactForm() {
   const [status, setStatus] = useState<Status>('idle')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
-  const mountedAt = useRef(Date.now())
+  // Time-trap start: stamped in an effect (render must stay pure).
+  const mountedAt = useRef(0)
+  useEffect(() => {
+    if (mountedAt.current === 0) mountedAt.current = Date.now()
+  }, [])
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,

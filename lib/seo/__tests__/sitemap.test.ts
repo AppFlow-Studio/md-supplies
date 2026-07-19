@@ -19,7 +19,7 @@ function setupDefaultMocks(overrides: {
   const articles = overrides.articles ?? []
   const productTags = overrides.productTags ?? []
 
-  mockFetch.mockImplementation((query: string, variables?: Record<string, unknown>) => {
+  mockFetch.mockImplementation((query: string, _variables?: Record<string, unknown>) => {
     if (query.includes('GetCollectionsForSitemap')) {
       return Promise.resolve({
         collections: {

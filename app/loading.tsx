@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 // headings, no images.
 export default function RootLoading() {
   return (
-    <div aria-busy="true" aria-label="Loading page">
+    <div role="status" aria-busy="true" aria-label="Loading page">
       {/* Hero skeleton */}
       <section className="w-full bg-neutral-100">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-16 lg:py-24 flex flex-col lg:flex-row gap-10 items-center min-h-[480px] lg:min-h-[600px]">

@@ -197,7 +197,7 @@ export default async function ArticlePage({ params }: Props) {
               <p className="text-teal-500 text-[13px] tracking-[0.75px] uppercase mb-3 font-semibold">
                 {publishedDate}
                 <span className="text-gray-300 mx-2">•</span>
-                <span className="text-gray-400 font-normal">{readMins} min read</span>
+                <span className="text-gray-500 font-normal">{readMins} min read</span>
               </p>
 
               {/* Title */}
@@ -217,7 +217,7 @@ export default async function ArticlePage({ params }: Props) {
                 <div>
                   <p className="text-navy-900 text-[15px] font-semibold leading-tight">{article.author.name}</p>
                   {article.tags.length > 0 && (
-                    <p className="text-gray-400 text-[12px] uppercase tracking-[0.5px]">{article.tags[0]}</p>
+                    <p className="text-gray-500 text-[12px] uppercase tracking-[0.5px]">{article.tags[0]}</p>
                   )}
                 </div>
               </div>

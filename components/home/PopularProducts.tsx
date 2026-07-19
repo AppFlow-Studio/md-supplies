@@ -103,7 +103,7 @@ export function PopularProducts({ products }: Props) {
                     <span className="text-[13px] font-semibold text-teal-500 tracking-[0.26px]">
                       {product.vendor}
                     </span>
-                    <span className="text-[13px] font-semibold text-gray-500/60 tracking-[0.26px]">
+                    <span className="text-[13px] font-semibold text-gray-500 tracking-[0.26px]">
                       {product.availableForSale ? 'in stock' : 'out of stock'}
                     </span>
                   </div>

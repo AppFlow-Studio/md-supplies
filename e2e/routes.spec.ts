@@ -30,5 +30,11 @@ test('cart panel opens from the header and traps focus', async ({ page }) => {
   const dialog = page.getByRole('dialog', { name: /shopping cart/i })
   await expect(dialog).toHaveAttribute('aria-modal', 'true')
   await page.keyboard.press('Escape')
-  await expect(dialog).toHaveAttribute('aria-modal', 'false')
+  // Closed, the panel is aria-hidden + inert, so it drops out of the
+  // accessibility tree and a role-based query can no longer see it — assert
+  // the closed state through a CSS locator instead.
+  await expect(page.locator('[role="dialog"][aria-label="Shopping cart"]')).toHaveAttribute(
+    'aria-modal',
+    'false',
+  )
 })

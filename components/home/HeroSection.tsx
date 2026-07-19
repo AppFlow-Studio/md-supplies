@@ -5,16 +5,6 @@ import type { CollectionProduct } from "@/lib/shopify/types";
 import { Van } from "lucide-react";
 import { cleanShopifyAlt } from '@/lib/alt-text'
 
-function OccIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <rect x="1" y="4" width="12" height="9" rx="1" stroke="#0086b1" strokeWidth="1.4" fill="none"/>
-      <path d="M4.5 4V3C4.5 1.895 5.395 1 6.5 1h1C8.605 1 9.5 1.895 9.5 3v1" stroke="#0086b1" strokeWidth="1.4" strokeLinecap="round"/>
-      <line x1="1" y1="7.5" x2="13" y2="7.5" stroke="#0086b1" strokeWidth="1.4"/>
-    </svg>
-  );
-}
-
 interface Props {
   products: CollectionProduct[];
 }

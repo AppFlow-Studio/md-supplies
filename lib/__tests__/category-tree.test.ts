@@ -41,7 +41,7 @@ describe('CATEGORY_TREE_L1', () => {
   })
 })
 
-import { resolveCanonicalCategory, buildL1Tiles, PRODUCT_CATEGORY_OVERRIDES } from '../category-tree'
+import { resolveCanonicalCategory, buildL1Tiles } from '../category-tree'
 
 describe('resolveCanonicalCategory', () => {
   it('returns the single category for a normally-tagged product', () => {
