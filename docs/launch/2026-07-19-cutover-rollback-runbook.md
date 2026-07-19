@@ -4,7 +4,7 @@
 or rollback from this page only, with the dashboard credentials in the team
 vault — no chat history required.
 
-- **Release candidate:** tag `rc-2026-07-19` = commit `54d7e54` on `munis`
+- **Release candidate:** tag `rc-2026-07-19.1` = commit `f1e31d7` on `munis` (supersedes `rc-2026-07-19`/`54d7e54` — rx-scan parser fix)
   (repo `github.com/AppFlow-Studio/md-supplies`)
 - **Current state before cutover:** `mdsupplies.com` serves the LEGACY Shopify
   storefront (DNS at Cloudflare → Shopify). The new Next.js site runs on
@@ -65,7 +65,7 @@ Work top to bottom; check every box; **log every intervention with a
 timestamp; no opportunistic edits of any kind.**
 
 Pre-flight:
-- [ ] Vercel production deployment SHA == `54d7e54` (Deployments → current →
+- [ ] Vercel production deployment SHA == `f1e31d7` (Deployments → current →
       commit). If not: stop.
 - [ ] Production smoke on the vercel.app URL: home, category, PDP, cart panel,
       /account login, contact + sourcing form send, /api/bunny image loads.
@@ -162,22 +162,25 @@ GitHub Actions secrets: `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_STOREFRONT_ACCESS_TOKEN
 
 | Item | Result | Time |
 |---|---|---|
-| Test matrix on RC SHA | *(see §7.1)* | |
-| Local code rollback drill | | |
-| Vercel promote/rollback drill | pending — needs dashboard access | |
+| Test matrix on RC SHA | ✅ all rows green on `f1e31d7` (see §7.1) | 2026-07-19 |
+| Local code rollback drill | ✅ 2026-07-19: RC → `d1fea36` (pre-release merge) with `npm ci` + full build + serve, all 5 critical routes 200; then back to RC, all 200. Repo verified back on `munis`@`f1e31d7` | roll back **5m16s**, restore **1m34s**, round-trip **6m50s** |
+| Vercel promote/rollback drill | pending — needs dashboard access (expected 1–3 min/direction, no build: deployments are pre-built) | |
 | Shopify sample restore (Izzy) | pending — needs Izzy | |
-| Missing dependencies discovered | | |
+| Missing dependencies discovered | none code-side. Notes: (1) local drill pays a full `npm ci`+build (~5 min) — the Vercel path avoids this entirely by promoting pre-built deployments, which is why Level 1 rollback is the Vercel dashboard, never a local rebuild; (2) robots/sitemap snapshot captured from a dev-env build (staging-mode robots) — production values must be re-verified at cutover per §2 | |
 
 ### 7.1 Test matrix on `54d7e54`
 
-| Row | Command | Result |
+| Row | Command | Result (2026-07-19, `f1e31d7` = `rc-2026-07-19.1`) |
 |---|---|---|
-| Lint (0 warnings) | `npx eslint --max-warnings 0` | |
-| Types | `npx tsc --noEmit` | |
-| Unit/component (incl. RX bypass, redirects, forms) | `npx vitest run` | |
-| Production build | `npm run build` | |
-| Dependency audit | `npm audit --audit-level=high` | |
-| E2E incl. a11y/axe + visual (chromium + mobile) | `npx playwright test` | |
+| Lint (0 warnings) | `npx eslint --max-warnings 0` | ✅ PASS |
+| Types | `npx tsc --noEmit` | ✅ PASS |
+| Unit/component (incl. RX bypass, redirects, forms) | `npx vitest run` | ✅ 818/818 (94 files) |
+| Production build | `npm run build` | ✅ PASS |
+| Dependency audit | `npm audit --audit-level=high` | ✅ PASS (0 high/critical) |
+| E2E incl. a11y/axe + visual (chromium + mobile) | `npx playwright test` | ✅ 48/48 |
+
+Snapshot artifacts (same run): `rc-robots.txt`, `rc-sitemap-counts.txt`
+(8,142 sitemap URLs) in this directory.
 
 ## 8. GO matrix (sign before DNS flip)
 
