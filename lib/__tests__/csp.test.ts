@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { buildCsp, generateNonce, CSP_REPORT_URI } from '@/lib/csp'
 
 describe('generateNonce', () => {
@@ -29,9 +29,27 @@ describe('buildCsp', () => {
   it('preserves the pre-existing allowlist (img/connect/frame/etc.)', () => {
     const csp = buildCsp('n', false)
     expect(csp).toContain('https://cdn.shopify.com')
-    expect(csp).toContain('https://daebb2-76.myshopify.com')
     expect(csp).toContain("object-src 'none'")
     expect(csp).toContain("frame-ancestors 'self'")
     expect(csp).toContain("base-uri 'self'")
+  })
+
+  it('allows exactly the configured Shopify store origin (env-driven, no hardcode)', () => {
+    vi.stubEnv('SHOPIFY_STORE_DOMAIN', 'test.myshopify.com')
+    const csp = buildCsp('n', false)
+    const connectSrc = csp.split('; ').find((d) => d.startsWith('connect-src'))!
+    const frameSrc = csp.split('; ').find((d) => d.startsWith('frame-src'))!
+    expect(connectSrc).toContain('https://test.myshopify.com')
+    expect(frameSrc).toContain('https://test.myshopify.com')
+    // The production store must never ride along via a hardcoded fallback.
+    expect(csp).not.toContain('daebb2-76.myshopify.com')
+    vi.unstubAllEnvs()
+  })
+
+  it('omits any Shopify origin when SHOPIFY_STORE_DOMAIN is unset (no fallback)', () => {
+    vi.stubEnv('SHOPIFY_STORE_DOMAIN', '')
+    const csp = buildCsp('n', false)
+    expect(csp).not.toContain('myshopify.com')
+    vi.unstubAllEnvs()
   })
 })
