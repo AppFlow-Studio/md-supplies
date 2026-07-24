@@ -9,6 +9,7 @@ import { getVisibleFilters } from '@/lib/shopify/filters'
 import { getAllowedFacets } from '@/lib/filter-registry'
 import { withTrackingParams, type TrackingParamSource } from '@/lib/analytics/tracking-params'
 import { CATEGORY_PAGE_SIZE } from '@/lib/category-utils'
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { CategoryFilters } from '@/components/category/CategoryFilters'
 import { CategorySort } from '@/components/category/CategorySort'
 import { ProductGrid } from '@/components/category/ProductGrid'
@@ -82,7 +83,7 @@ export async function CategoryResults({
   const { products: connection, title, handle } = result
   const allNodes = connection.nodes
   const startIndex = (currentPage - 1) * CATEGORY_PAGE_SIZE
-  const products = allNodes.slice(startIndex, startIndex + CATEGORY_PAGE_SIZE)
+  const products = attachCardShippingDisplay(allNodes.slice(startIndex, startIndex + CATEGORY_PAGE_SIZE))
   const hasNext = allNodes.length > currentPage * CATEGORY_PAGE_SIZE
 
   if (!isFiltered && currentPage > 1 && products.length === 0) notFound()
