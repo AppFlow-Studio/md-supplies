@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
 import { ShippingBadge } from '../ShippingBadge'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 
 function display(overrides: Partial<ShippingDisplay> = {}): ShippingDisplay {
   return { class: 'standard-free', message: 'Free shipping', displayCopy: null, ...overrides }
 }
+
+afterEach(cleanup)
 
 describe('ShippingBadge', () => {
   it('renders nothing when shippingDisplay is null', () => {
