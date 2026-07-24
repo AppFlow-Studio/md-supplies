@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { writeFileSync, unlinkSync } from 'node:fs'
+import { writeFileSync, unlinkSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { getShippingFactsData, __resetShippingFactsCacheForTests } from '../data'
@@ -51,8 +52,6 @@ describe('getShippingFactsData', () => {
       vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', undefined as unknown as string)
       // Compute and set the correct checksum for this malformed file so we
       // reach (and fail) JSON parsing rather than the checksum check.
-      const { createHash } = require('node:crypto') as typeof import('node:crypto')
-      const { readFileSync } = require('node:fs') as typeof import('node:fs')
       vi.stubEnv(
         'SHIPPING_FACTS_CHECKSUM_SHA256',
         createHash('sha256').update(readFileSync(path)).digest('hex'),
@@ -85,8 +84,6 @@ describe('getShippingFactsData', () => {
     })
     writeFileSync(path, badPayload)
     try {
-      const { createHash } = require('node:crypto') as typeof import('node:crypto')
-      const { readFileSync } = require('node:fs') as typeof import('node:fs')
       vi.stubEnv('SHIPPING_FACTS_PATH', path)
       vi.stubEnv(
         'SHIPPING_FACTS_CHECKSUM_SHA256',
