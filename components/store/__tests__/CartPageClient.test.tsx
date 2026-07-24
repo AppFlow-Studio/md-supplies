@@ -168,7 +168,37 @@ describe('CartPageClient', () => {
     setupUseCart()
     render(<CartPageClient />)
     expect(screen.getByText('Subtotal')).toBeInTheDocument()
-    expect(screen.getByText('Shipping calculated at checkout')).toBeInTheDocument()
+    // Exact required copy for unresolved shipping (with trailing period).
+    expect(screen.getByText('Shipping calculated at checkout.')).toBeInTheDocument()
+  })
+
+  it('shows "Free shipping" only when every cart line carries a free signal', () => {
+    const freeLine = {
+      ...mockLine,
+      merchandise: {
+        ...mockLine.merchandise,
+        product: { ...mockLine.merchandise.product, tags: ['free-shipping'] },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [freeLine] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('Free shipping')).toBeInTheDocument()
+  })
+
+  it('mixed cart (free + unresolved lines) falls back to the neutral copy', () => {
+    const freeLine = {
+      ...mockLine,
+      id: 'line-2',
+      merchandise: {
+        ...mockLine.merchandise,
+        id: 'variant-2',
+        product: { ...mockLine.merchandise.product, tags: ['free-shipping'] },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [mockLine, freeLine] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('Shipping calculated at checkout.')).toBeInTheDocument()
+    expect(screen.queryByText('Free shipping')).not.toBeInTheDocument()
   })
 
   it('checkout link href is checkoutUrl', () => {

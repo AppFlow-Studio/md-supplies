@@ -84,6 +84,10 @@ const product: Product = {
   customBadge1: null,
   customBadge2: null,
   customBadge3: null,
+  shippingDisplayClass: null,
+  shippingThreshold: null,
+  shippingFlatRate: null,
+  freeShippingFlag: null,
   collections: { nodes: [] },
 }
 

@@ -13,6 +13,14 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { resolveShippingDisplay } from '@/lib/shipping-display'
+
+// Metafields arrive as plain strings on /product/[slug] (normalizeProduct) but
+// as raw `{ value } | null` objects on /category/[slug]/[product], which passes
+// the Storefront response through un-normalized. Unwrap both shapes.
+type MaybeMetafield = string | { value: string } | null | undefined
+const metafieldValue = (m: MaybeMetafield): string | null =>
+  typeof m === 'string' ? m : m?.value ?? null
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
@@ -99,6 +107,18 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
         month: 'long', day: 'numeric', year: 'numeric',
       })
     : null
+
+  // Shipping display (QA shipping/checkout campaign): explicit class metafield
+  // first, legacy free-shipping tag/metafield second, neutral fallback copy
+  // otherwise. The message is ALWAYS rendered — unresolved products must show
+  // "Shipping calculated at checkout.", never a blank.
+  const shipping = resolveShippingDisplay({
+    tags: product.tags,
+    displayClass: metafieldValue(product.shippingDisplayClass as MaybeMetafield),
+    freeShipping: metafieldValue(product.freeShippingFlag as MaybeMetafield),
+    threshold: metafieldValue(product.shippingThreshold as MaybeMetafield),
+    flatRate: metafieldValue(product.shippingFlatRate as MaybeMetafield),
+  })
 
   const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
@@ -234,12 +254,13 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               )}
             </div>
 
-            {/* Product badges — metafield/tag gated */}
-            {(product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
+            {/* Product badges — shipping badge is resolver-driven (explicit
+                class metafield outranks the legacy free-shipping tag) */}
+            {(shipping.badge || product.tags.includes('rx-required')) && (
               <div className="flex flex-wrap gap-2">
-                {product.tags.includes('free-shipping') && (
+                {shipping.badge && (
                   <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-teal-500 text-white">
-                    Free Shipping
+                    {shipping.badge}
                   </span>
                 )}
                 {product.tags.includes('rx-required') && (
@@ -249,6 +270,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 )}
               </div>
             )}
+
+            {/* Shipping message — always rendered; unresolved products show
+                the neutral "Shipping calculated at checkout." fallback */}
+            <p data-testid="shipping-message" className="text-gray-600 text-[13px] tracking-[0.26px]">
+              {shipping.message}
+            </p>
 
             <div className="h-px bg-gray-200" />
 
