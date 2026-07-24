@@ -11,6 +11,7 @@ import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
+import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
@@ -170,9 +171,14 @@ export function CartPopup() {
                         {line.merchandise.product.title}
                       </Link>
                       {variantTitle !== 'Default Title' && (
-                        <p className="text-gray-500 text-[12px] tracking-[0.24px] mb-3">
+                        <p className="text-gray-500 text-[12px] tracking-[0.24px] mb-1">
                           {variantTitle}
                         </p>
+                      )}
+                      {line.shippingDisplay && (
+                        <div className="mb-2">
+                          <ShippingBadge shippingDisplay={line.shippingDisplay} />
+                        </div>
                       )}
                       <div className="flex items-center justify-between">
                         {/* Qty stepper */}

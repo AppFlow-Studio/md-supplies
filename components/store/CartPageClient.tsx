@@ -12,6 +12,7 @@ import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
+import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
@@ -111,6 +112,11 @@ export function CartPageClient() {
                   </Link>
                   {variantTitle !== 'Default Title' && (
                     <p className="text-gray-500 text-[12px] tracking-[0.24px]">{variantTitle}</p>
+                  )}
+                  {line.shippingDisplay && (
+                    <div className="mt-1">
+                      <ShippingBadge shippingDisplay={line.shippingDisplay} />
+                    </div>
                   )}
                   {line.merchandise.sku && (
                     <p className="text-gray-400 text-[11px] tracking-[0.22px] mb-1">
