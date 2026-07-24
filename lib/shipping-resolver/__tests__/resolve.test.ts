@@ -10,6 +10,8 @@ import { SHIPPING_FALLBACK_MESSAGE } from '../copy'
 
 const VALID_FIXTURE = join(__dirname, 'fixtures/valid-payload.json')
 const VALID_CHECKSUM = '802f0070e6c122f26afd465d2058f4de6b29dcdd4ec6e0e29e418e2474c47d53'
+const DUPLICATE_FIXTURE = join(__dirname, 'fixtures/duplicate-variant-payload.json')
+const DUPLICATE_CHECKSUM = '900b5bd2691e4491f3fd58b9ce92e353b7f43628b86157e4de1657c7d4a51865'
 
 const FALLBACK = { class: 'unknown', message: SHIPPING_FALLBACK_MESSAGE, displayCopy: null }
 
@@ -136,5 +138,36 @@ describe('resolveVariantsForProduct', () => {
 
   it('returns an empty object for a missing product GID', () => {
     expect(resolveVariantsForProduct('gid://shopify/Product/does-not-exist')).toEqual({})
+  })
+})
+
+describe('duplicate-variant-GID handling', () => {
+  beforeEach(() => {
+    vi.stubEnv('SHIPPING_FACTS_PATH', DUPLICATE_FIXTURE)
+    vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', DUPLICATE_CHECKSUM)
+    __resetShippingFactsCacheForTests()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    __resetShippingFactsCacheForTests()
+  })
+
+  it('resolveVariantShippingDisplay returns the fallback for a variant GID duplicated across two products', () => {
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/TEST-dup-a',
+      'gid://shopify/ProductVariant/TEST-dup-variant',
+    )
+    expect(result).toEqual(FALLBACK)
+  })
+
+  it('resolveVariantsForProduct returns the fallback for a duplicated variant when called with either product GID', () => {
+    // Test with first product
+    const resultA = resolveVariantsForProduct('gid://shopify/Product/TEST-dup-a')
+    expect(resultA['gid://shopify/ProductVariant/TEST-dup-variant']).toEqual(FALLBACK)
+
+    // Test with second product
+    const resultB = resolveVariantsForProduct('gid://shopify/Product/TEST-dup-b')
+    expect(resultB['gid://shopify/ProductVariant/TEST-dup-variant']).toEqual(FALLBACK)
   })
 })
