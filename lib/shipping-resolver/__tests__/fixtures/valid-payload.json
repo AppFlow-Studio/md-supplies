@@ -1,0 +1,506 @@
+{
+  "_meta": {
+    "artifact": "shipping-facts",
+    "schema_version": "v3.0",
+    "generated_utc": "2026-07-20T20:40:28Z",
+    "note": "Trimmed test fixture — a real subset of shipping-facts-v3.json (19 real products), not a full payload. checksum_sha256_of_payload below is not meaningful; the resolver validates against SHIPPING_FACTS_CHECKSUM_SHA256 env var in tests, not this field.",
+    "checksum_sha256_of_payload": "TEST-FIXTURE-NOT-VALIDATED"
+  },
+  "delivery_profiles": [],
+  "products": {
+    "gid://shopify/Product/8651919917272": {
+      "handle": "3-2mm-3-piece-resin-disposable-trocar-only-b6819",
+      "title": "3.2mm, 3-Piece Resin Disposable Trocar Only (B6819)",
+      "diagnostic_status": "clean_free",
+      "public_display_class": "standard-free",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/46997871591640": {
+          "sku": "B6819",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8670729830616": {
+      "handle": "adult-comb-with-handle-6-5-long-black-2655",
+      "title": "Adult Comb, with Handle, 6.5\" Long, Black (2655)",
+      "diagnostic_status": "clean_threshold",
+      "public_display_class": "threshold",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "restricted_pending_policy",
+      "variants": {
+        "gid://shopify/ProductVariant/48197143396568": {
+          "sku": "2655",
+          "effective_rate_class": "THRESHOLD",
+          "diagnostic_status": "clean_threshold",
+          "public_display_class": "threshold",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8688404955352": {
+      "handle": "quickvue-at-home-otc-covid-19-test-rapid-results-25-test-kit-qui-20398",
+      "title": "QuickVue At-Home OTC COVID-19 Test, Rapid Results, 25 test/kit (QUI 20398)",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/48846784921816": {
+          "sku": "QUI 20398",
+          "effective_rate_class": "PAID",
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8693220999384": {
+      "handle": "dry-sterile-cleanroom-wipers-9-x-9-tcbwip09sp-20",
+      "title": "Dry Sterile Cleanroom Wipers, 9\" x 9\", 3,600/Case (TCBWIP09SP-20)",
+      "diagnostic_status": "conditional_min_order",
+      "public_display_class": "standard-paid",
+      "display_copy": "Vendor shipping is $45.95 on orders under $700 and $20.95 on orders of $700 or more. Final shipping is calculated at checkout.",
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/48989065150680": {
+          "sku": "TCBWIP09SP-20",
+          "effective_rate_class": "COND_PAID",
+          "diagnostic_status": "conditional_min_order",
+          "public_display_class": "standard-paid",
+          "display_copy": "Vendor shipping is $45.95 on orders under $700 and $20.95 on orders of $700 or more. Final shipping is calculated at checkout."
+        }
+      }
+    },
+    "gid://shopify/Product/8692868743384": {
+      "handle": "fabric-adhesive-bandage-1-x-3-case",
+      "title": "Fabric Adhesive Bandage, 1\" x 3\", Case (DUK 7609)",
+      "diagnostic_status": "no_rate",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": true,
+      "hold_reason": "held_medplus_fulfillment_rate_pending",
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/48984926650584": {
+          "sku": "DUK 7609",
+          "effective_rate_class": null,
+          "diagnostic_status": "no_rate",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8695976394968": {
+      "handle": "sterile-super-flex-foam-adhesive-bandages-1-x-3",
+      "title": "Sterile Super Flex Foam Adhesive Bandages",
+      "diagnostic_status": "partial_coverage",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "restricted_pending_policy",
+      "variants": {
+        "gid://shopify/ProductVariant/51931906408664": {
+          "sku": "1770033",
+          "effective_rate_class": "THRESHOLD",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51931896873176": {
+          "sku": "1760033",
+          "effective_rate_class": "THRESHOLD",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8852470595800": {
+      "handle": "xylocaine-1-w-epinephrine-20ml-mdv-63323-0482-27-order-for-pricing",
+      "title": "Xylocaine 1% w/ Epinephrine, 20mL, MDV (63323-0482-27)",
+      "diagnostic_status": "no_rate",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": true,
+      "hold_reason": "held_rx_pending",
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/50340842209496": {
+          "sku": "2354",
+          "effective_rate_class": null,
+          "diagnostic_status": "no_rate",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8651920310488": {
+      "handle": "3-2mm-stainless-steel-trocar-sharp-wrapped-kit-with-chlorascrub-tegaderm-large-glove-b8110",
+      "title": "Stainless Steel Trocar, Sharp, Wrapped Kit, with Chlorascrub & Tegaderm, Large Glove",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/46997944238296": {
+          "sku": "B8110",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "multi_mixed",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930534117592": {
+          "sku": "B8128",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8651920376024": {
+      "handle": "3-5mm-stainless-steel-bevel-tip-autoclave-trocar-b786-04",
+      "title": "Stainless Steel, Bevel Tip, Autoclave Trocar",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/46997954691288": {
+          "sku": "B786-04",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "multi_mixed",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930534183128": {
+          "sku": "B786-03",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8759327883480": {
+      "handle": "cordx-tyfast-flu-a-b-covid-19-at-home-rapid-multiplex-test-display-boxes-act21002-110",
+      "title": "CorDx Tyfast, Flu A/B & COVID-19 At Home Rapid Multiplex Test, Display Boxes",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/49817416859864": {
+          "sku": "ACT21002-110",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "multi_mixed",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930210599128": {
+          "sku": "ACT21002-206",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9037741687000": {
+      "handle": "ventura-power-mobility-scooter-3-wheel-20-captains-seat",
+      "title": "Ventura Power Mobility Scooter, Wheel, 20\" Captains Seat",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/50947374317784": {
+          "sku": "VENTURA320CS",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930211057880": {
+          "sku": "VENTURA420CS",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9037747519704": {
+      "handle": "economy-removable-top-i-v-pole-2-hook-top-chrome",
+      "title": "Economy Removable Top I. V. Pole, Hook Top, Chrome",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/50947387490520": {
+          "sku": "13029",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930211254488": {
+          "sku": "13033",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9038020673752": {
+      "handle": "steel-oxygen-cylinder-rack-d-or-e-cylinders-only-12-cylinders",
+      "title": "Steel Oxygen Cylinder Rack, D or E Cylinders Only, Cylinders",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/50949028282584": {
+          "sku": "18112",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930211614936": {
+          "sku": "18111",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9038023262424": {
+      "handle": "lightweight-transport-wheelchair-17-seat-black",
+      "title": "Lightweight Transport Wheelchair",
+      "diagnostic_status": "partial_coverage",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51934079484120": {
+          "sku": "ATC17-BK",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51934079516888": {
+          "sku": "ATC17-BL",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51934079549656": {
+          "sku": "ATC17-RD",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51934079582424": {
+          "sku": "ATC19-BK",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51934079615192": {
+          "sku": "ATC19-RD",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51934079647960": {
+          "sku": "ATC19-BL",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9038029422808": {
+      "handle": "single-fold-portable-wheelchair-scooter-ramp-with-carry-handle-and-travel-bag-2-feet-long",
+      "title": "Single Fold Portable Wheelchair Scooter Ramp with Carry Handle and Travel Bag, Feet Long",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/50949039292632": {
+          "sku": "STDS1093",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930210762968": {
+          "sku": "STDS1094",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930210795736": {
+          "sku": "STDS1095",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930210828504": {
+          "sku": "STDS1096",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930210861272": {
+          "sku": "STDS1097",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9038033191128": {
+      "handle": "trekker-gait-trainer-trunk-support-small",
+      "title": "Trekker Gait Trainer Trunk Support",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/50949044043992": {
+          "sku": "TK 1080 S",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51788683641048": {
+          "sku": "TK 1080 M",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51788683739352": {
+          "sku": "TK 1080 L",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9055394005208": {
+      "handle": "3-5mm-disposable-blunt-tip-trocar-combo-kit-b2080c",
+      "title": "Disposable Blunt Tip, Trocar Combo Kit",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51022196736216": {
+          "sku": "B2080C",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930534281432": {
+          "sku": "B2083C",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9322750345432": {
+      "handle": "preservetech-med-aire-edge-alternating-pressure-low-air-loss-mattress-replacement-system-analog-14360-b",
+      "title": "PreserveTech, Med-Aire Edge, Alternating Pressure & Low Air Loss Mattress Replacement System, Analog (14360-B)",
+      "diagnostic_status": "partial_coverage",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51974006931672": {
+          "sku": "14360-B",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9322750607576": {
+      "handle": "preservetech-med-aire-edge-alternating-pressure-low-air-loss-mattress-replacement-system-digital-14360-p",
+      "title": "PreserveTech, Med-Aire Edge, Alternating Pressure & Low Air Loss Mattress Replacement System, Digital (14360-P)",
+      "diagnostic_status": "partial_coverage",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51974007259352": {
+          "sku": "14360-P",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    }
+  }
+}

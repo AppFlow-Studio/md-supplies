@@ -1,0 +1,49 @@
+{
+  "_meta": {
+    "artifact": "shipping-facts",
+    "schema_version": "v3.0",
+    "note": "Synthetic fixture for the duplicate-variant-GID test case only — not real store data. checksum_sha256_of_payload below is not meaningful; tests validate against SHIPPING_FACTS_CHECKSUM_SHA256.",
+    "checksum_sha256_of_payload": "TEST-FIXTURE-NOT-VALIDATED"
+  },
+  "delivery_profiles": [],
+  "products": {
+    "gid://shopify/Product/TEST-dup-a": {
+      "handle": "test-dup-a",
+      "title": "Test Dup A",
+      "diagnostic_status": "clean_free",
+      "public_display_class": "standard-free",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/TEST-dup-variant": {
+          "sku": "DUPV",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/TEST-dup-b": {
+      "handle": "test-dup-b",
+      "title": "Test Dup B",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/TEST-dup-variant": {
+          "sku": "DUPV2",
+          "effective_rate_class": "PAID",
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    }
+  }
+}
