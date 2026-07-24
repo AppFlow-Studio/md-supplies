@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import { ShippingBlock } from '../ShippingBlock'
-import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 
 afterEach(cleanup)
 
