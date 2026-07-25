@@ -1,0 +1,33 @@
+User-Agent: *
+Allow: /
+Disallow: /api/
+Disallow: /account/
+Disallow: /cart
+Disallow: /internal/
+Disallow: /b2b
+Disallow: /category-browse/
+
+User-Agent: GPTBot
+User-Agent: ChatGPT-User
+User-Agent: OAI-SearchBot
+User-Agent: ClaudeBot
+User-Agent: Claude-User
+User-Agent: Claude-SearchBot
+User-Agent: PerplexityBot
+User-Agent: Perplexity-User
+User-Agent: Google-Extended
+User-Agent: Applebot-Extended
+User-Agent: CCBot
+User-Agent: meta-externalagent
+Allow: /
+Disallow: /api/
+Disallow: /account/
+Disallow: /cart
+Disallow: /internal/
+Disallow: /b2b
+Disallow: /category-browse/
+
+User-Agent: Bytespider
+Disallow: /
+
+Sitemap: https://ovary-panoramic-stack.ngrok-free.dev/sitemap.xml

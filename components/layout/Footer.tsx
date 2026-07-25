@@ -77,7 +77,7 @@ export function Footer({ collections, availableCountries = [] }: FooterProps) {
                 aria-label="LinkedIn"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-teal-500 text-white flex items-center justify-center hover:bg-[#006d92] transition-colors"
+                className="w-9 h-9 rounded-full bg-teal-500 text-white flex items-center justify-center hover:bg-[#00566f] transition-colors"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" />

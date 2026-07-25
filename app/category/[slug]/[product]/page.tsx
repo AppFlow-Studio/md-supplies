@@ -122,7 +122,7 @@ async function renderSubcategoryPage(
         {crossLinkL1 && (
           <p className="text-gray-500 text-[14px] mt-2">
             Also relevant to{' '}
-            <Link href={ROUTES.category(crossLinkL1.collectionHandle)} className="text-[#0086b1] hover:underline">
+            <Link href={ROUTES.category(crossLinkL1.collectionHandle)} className="text-teal-500 hover:underline">
               {crossLinkL1.displayName}
             </Link>
           </p>

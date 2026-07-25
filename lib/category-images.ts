@@ -1,4 +1,3 @@
-import { ROADMAP_CATEGORIES } from '@/lib/category-nav'
 
 // Curated per-category imagery lives in one flat `categories/` folder on the
 // md-supplies BunnyCDN storage zone (verified directly against the storage API):

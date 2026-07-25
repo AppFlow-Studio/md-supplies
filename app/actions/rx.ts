@@ -9,10 +9,14 @@ import { customerFetch } from '@/lib/shopify/customer'
 import { getCustomerRxState, setCustomerRxDocument } from '@/lib/shopify/admin'
 import {
   buildRxDocumentPath,
+  customerFolderId,
+  deleteRxDocument,
   putRxDocument,
+  sniffRxContentType,
   RX_ALLOWED_TYPES,
   RX_MAX_FILE_BYTES,
 } from '@/lib/rx-storage'
+import { isScanRequired, scanRxDocument } from '@/lib/rx-scan'
 import { cartRequiresRxGate, resolveGateStatus, type RxGateStatus } from '@/lib/rx-gate'
 import type { Cart } from '@/lib/shopify/types'
 
@@ -148,10 +152,54 @@ export async function uploadRxDocument(formData: FormData): Promise<UploadRxDocu
     return { ok: false, error: 'File is too large. The maximum size is 10 MB.' }
   }
 
+  const body = await file.arrayBuffer()
+  // The declared MIME type is attacker-controlled; the stored type comes from
+  // the file's own magic bytes or the upload is refused (forged-MIME threat).
+  const sniffedType = sniffRxContentType(body)
+  if (!sniffedType) {
+    return { ok: false, error: 'Unsupported file type. Please upload a PDF, JPG, PNG, or WebP file.' }
+  }
+
+  // Malware scan via the self-hosted ClamAV service. Infected files are
+  // always rejected; scanner-down/unconfigured behavior is governed by
+  // RX_SCAN_REQUIRED (fail closed at launch, fail open while the scanner
+  // infra is being stood up — see lib/rx-scan.ts).
+  const scan = await scanRxDocument(body, 'rx-document')
+  if (scan.status === 'infected') {
+    console.error(
+      `[rx-audit] document_rejected_infected customer=${customerFolderId(customerId)} signature=${scan.signature}`,
+    )
+    return { ok: false, error: 'This file failed our security scan and cannot be accepted.' }
+  }
+  if (scan.status !== 'clean' && isScanRequired()) {
+    console.error(
+      `[rx-audit] document_rejected_unscanned customer=${customerFolderId(customerId)} status=${scan.status}`,
+    )
+    return { ok: false, error: 'Our document scanner is temporarily unavailable. Please try again in a few minutes.' }
+  }
+  if (scan.status === 'error' || scan.status === 'skipped') {
+    console.warn(`[rx-audit] document_unscanned status=${scan.status}`)
+  }
+
   try {
-    const path = buildRxDocumentPath(customerId, file.type)
-    await putRxDocument(path, await file.arrayBuffer(), file.type)
-    await setCustomerRxDocument(customerId, path)
+    // Replacement invalidates any prior verification: the merchant verified
+    // the OLD file. Read the previous state before writing the new one.
+    const previous = await getCustomerRxState(customerId).catch(() => null)
+    const previousPath = previous?.documentPath ?? null
+
+    const path = buildRxDocumentPath(customerId, sniffedType)
+    await putRxDocument(path, body, sniffedType)
+    await setCustomerRxDocument(customerId, path, { resetVerified: previousPath != null })
+    console.info(
+      `[rx-audit] document_uploaded customer=${customerFolderId(customerId)} replaced=${previousPath != null}`,
+    )
+
+    // Retention: exactly one live document per customer. Best-effort delete
+    // of the superseded blob; a failure is logged for manual cleanup, never
+    // surfaced to the customer (their upload already succeeded).
+    if (previousPath && !(await deleteRxDocument(previousPath))) {
+      console.error(`[rx-audit] stale_document_delete_failed customer=${customerFolderId(customerId)}`)
+    }
     return { ok: true }
   } catch (err) {
     console.error('[rx] uploadRxDocument failed:', err)

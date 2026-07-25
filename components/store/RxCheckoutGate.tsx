@@ -20,11 +20,10 @@ export function useRxGate(cart: Cart | null) {
   const cartId = cart?.id ?? null
   const totalQuantity = cart?.totalQuantity ?? 0
 
+  // Only async work here — a non-RX cart never fetches, and `blocked` below
+  // derives from cartHasRx instead of a synchronous setState(null) reset.
   const refresh = useCallback(() => {
-    if (!cartHasRx) {
-      setStatus(null)
-      return
-    }
+    if (!cartHasRx) return
     let cancelled = false
     getRxGateStatus()
       .then((s) => { if (!cancelled) setStatus(s) })
@@ -59,7 +58,7 @@ export function useRxGate(cart: Cart | null) {
   }, [cart, cartHasRx])
 
   return {
-    blocked: status?.blocked ?? false,
+    blocked: cartHasRx && (status?.blocked ?? false),
     signedIn: status?.signedIn ?? false,
     proceedToCheckout,
   }

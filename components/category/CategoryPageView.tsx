@@ -182,7 +182,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           {/* Text content */}
           <div className="relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 max-w-[560px]">
             <div className="inline-flex self-start items-center bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-1.5 mb-5">
-              <span className="text-[#0086b1] text-[13px] font-semibold tracking-[0.3px]">
+              <span className="text-teal-500 text-[13px] font-semibold tracking-[0.3px]">
                 CERTIFIED MEDICAL SUPPLIER
               </span>
             </div>
@@ -340,7 +340,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
             </h2>
             <div
               className="prose prose-invert max-w-[880px] mx-auto text-[15px] leading-[1.85] text-white/75
-                prose-headings:text-white prose-a:text-[#0086b1] prose-strong:text-white"
+                prose-headings:text-white prose-a:text-teal-300 prose-strong:text-white"
               dangerouslySetInnerHTML={{ __html: collection.descriptionHtml }}
             />
           </div>

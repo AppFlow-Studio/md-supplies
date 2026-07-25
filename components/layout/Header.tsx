@@ -384,7 +384,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
           <div className="flex items-center justify-end gap-3 shrink-0 ml-auto">
             <Link
               href={ROUTES.contact}
-              className="hidden sm:flex bg-teal-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-[#006d92] transition-colors"
+              className="hidden sm:flex bg-teal-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-[#00566f] transition-colors"
             >
               Contact Us
             </Link>
@@ -564,7 +564,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
             <Link
               href={ROUTES.contact}
               onClick={() => setMobileOpen(false)}
-              className="mt-3 bg-teal-500 text-white text-sm font-semibold px-5 py-3 rounded-full text-center hover:bg-[#006d92] transition-colors"
+              className="mt-3 bg-teal-500 text-white text-sm font-semibold px-5 py-3 rounded-full text-center hover:bg-[#00566f] transition-colors"
             >
               Contact Us
             </Link>

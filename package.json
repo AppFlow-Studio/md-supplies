@@ -2,6 +2,11 @@
   "name": "md-supplies",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x",
+    "npm": ">=10"
+  },
+  "packageManager": "npm@10.9.3",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,6 +19,7 @@
   },
   "dependencies": {
     "@next/third-parties": "^16.2.9",
+    "libphonenumber-js": "^1.13.9",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "react": "19.2.4",

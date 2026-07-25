@@ -6,7 +6,7 @@
   /* Brand colors */
   --color-navy-950: #060d19;
   --color-navy-900: #0b172b;
-  --color-teal-500: #0086b1;
+  --color-teal-500: #006d92; /* AA: 5.8:1 on white, 4.8:1 on the light-blue chips (axe color-contrast gate) */
   --color-teal-300: #00c1ff;
 
   /* Neutrals */
@@ -134,7 +134,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .article-prose a {
-  color: #0086b1;
+  color: var(--color-teal-500);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -161,11 +161,11 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .article-prose li::marker {
-  color: #0086b1;
+  color: var(--color-teal-500);
 }
 
 .article-prose blockquote {
-  border-left: 3px solid #0086b1;
+  border-left: 3px solid var(--color-teal-500);
   padding-left: 1.25rem;
   margin: 1.5rem 0;
   color: #0b172b;

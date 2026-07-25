@@ -3,7 +3,9 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
+  // Focused tests are forbidden everywhere, not just in CI, so a stray
+  // `.only` can never make a local run look green while skipping the suite.
+  forbidOnly: true,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {

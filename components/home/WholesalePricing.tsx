@@ -4,8 +4,8 @@ import { Check } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { buildFormSubmitEvent } from '@/lib/analytics/events'
 import { submitForm } from '@/lib/forms/submit'
-import { FACILITY_TYPES } from '@/lib/forms/schema'
-import { useRef, useState } from "react";
+import { FACILITY_TYPES } from '@/lib/forms/constants'
+import { useEffect, useRef, useState } from "react";
 
 const BENEFITS = [
   "Product availability support",
@@ -27,7 +27,11 @@ export function WholesalePricing() {
   const [status, setStatus] = useState<Status>('idle')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
-  const mountedAt = useRef(Date.now())
+  // Time-trap start: stamped in an effect (render must stay pure).
+  const mountedAt = useRef(0)
+  useEffect(() => {
+    if (mountedAt.current === 0) mountedAt.current = Date.now()
+  }, [])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

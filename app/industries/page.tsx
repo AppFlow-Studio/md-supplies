@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { INDUSTRIES } from '@/lib/industries'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
-import {BadgeCheck, FileText, Headset, MapPin, Truck} from "lucide-react";
+import {BadgeCheck, Headset, Truck} from "lucide-react";
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { getIndustryImagePath } from '@/lib/bunnycdn'
 
@@ -23,21 +23,6 @@ const STATS = [
   { value: '8,000+', label: 'PRODUCTS' },
   { value: 'Fast', label: 'FULFILLMENT' },
   { value: '24-48 hr', label: 'FAST SUPPORT' },
-]
-
-const WHY_ITEMS = [
-  {
-    title: 'Fast Shipping',
-    description: 'Fast, reliable fulfillment on every order — so your facility never runs short.',
-  },
-  {
-    title: 'Trusted Brands',
-    description: 'We stock only industry-leading clinical brands with full ISO certifications.',
-  },
-  {
-    title: 'Dedicated Support',
-    description: 'Expert account managers for every facility to handle complex procurement needs.',
-  },
 ]
 
 export default function IndustriesPage() {

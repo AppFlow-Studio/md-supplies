@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'

@@ -110,7 +110,7 @@ export function QuickAddContent({ product, titleId }: Props) {
       {/* Right panel — details */}
       <div className="flex-1 overflow-y-auto py-10 px-8 flex flex-col gap-4 min-w-0">
         {/* Vendor */}
-        <p className="text-[#0086b1] text-[15px] font-semibold tracking-[0.3px]">
+        <p className="text-teal-500 text-[15px] font-semibold tracking-[0.3px]">
           {product.vendor || product.brand}
         </p>
 
