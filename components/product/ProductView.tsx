@@ -15,12 +15,17 @@ import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { resolveShippingDisplay } from '@/lib/shipping-display'
 
-// Metafields arrive as plain strings on /product/[slug] (normalizeProduct) but
-// as raw `{ value } | null` objects on /category/[slug]/[product], which passes
-// the Storefront response through un-normalized. Unwrap both shapes.
-type MaybeMetafield = string | { value: string } | null | undefined
-const metafieldValue = (m: MaybeMetafield): string | null =>
-  typeof m === 'string' ? m : m?.value ?? null
+// Metafields reach this component in two shapes: /product/[slug] normalizes
+// them to plain strings, while /category/[slug]/[product] passes the raw
+// Storefront `{ value }` objects straight through. Accept either.
+function metafieldValue(field: unknown): string | null {
+  if (typeof field === 'string') return field
+  if (field && typeof field === 'object' && 'value' in field) {
+    const { value } = field as { value?: unknown }
+    return typeof value === 'string' ? value : null
+  }
+  return null
+}
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
@@ -108,16 +113,14 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
       })
     : null
 
-  // Shipping display (QA shipping/checkout campaign): explicit class metafield
-  // first, legacy free-shipping tag/metafield second, neutral fallback copy
-  // otherwise. The message is ALWAYS rendered — unresolved products must show
-  // "Shipping calculated at checkout.", never a blank.
+  // Explicit class metafield first, legacy free-shipping tag second, neutral
+  // fallback copy otherwise. The message is always rendered, never blank.
   const shipping = resolveShippingDisplay({
     tags: product.tags,
-    displayClass: metafieldValue(product.shippingDisplayClass as MaybeMetafield),
-    freeShipping: metafieldValue(product.freeShippingFlag as MaybeMetafield),
-    threshold: metafieldValue(product.shippingThreshold as MaybeMetafield),
-    flatRate: metafieldValue(product.shippingFlatRate as MaybeMetafield),
+    displayClass: metafieldValue(product.shippingDisplayClass),
+    freeShipping: metafieldValue(product.freeShippingFlag),
+    threshold: metafieldValue(product.shippingThreshold),
+    flatRate: metafieldValue(product.shippingFlatRate),
   })
 
   const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
@@ -254,8 +257,8 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               )}
             </div>
 
-            {/* Product badges — shipping badge is resolver-driven (explicit
-                class metafield outranks the legacy free-shipping tag) */}
+            {/* The shipping badge is resolver-driven, so an explicit class
+                metafield outranks the legacy free-shipping tag. */}
             {(shipping.badge || product.tags.includes('rx-required')) && (
               <div className="flex flex-wrap gap-2">
                 {shipping.badge && (
@@ -271,8 +274,8 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               </div>
             )}
 
-            {/* Shipping message — always rendered; unresolved products show
-                the neutral "Shipping calculated at checkout." fallback */}
+            {/* Always rendered. Unresolved products fall back to the neutral
+                "Shipping calculated at checkout." copy. */}
             <p data-testid="shipping-message" className="text-gray-600 text-[13px] tracking-[0.26px]">
               {shipping.message}
             </p>

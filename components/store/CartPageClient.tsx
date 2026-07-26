@@ -19,10 +19,10 @@ export function CartPageClient() {
   const lines = cart?.lines.nodes ?? []
   const rxGate = useRxGate(cart)
 
-  // Cart-level shipping line: only assert "Free shipping" when EVERY line
-  // carries a free signal (cart lines expose tags, not metafields); any mixed
-  // or unresolved cart shows the neutral fallback — rates are destination-
-  // dependent and are computed authoritatively by Shopify checkout.
+  // Only claim "Free shipping" when every line carries a free signal. Cart
+  // lines expose product tags but not metafields, so a product that is free
+  // by metafield alone cannot be confirmed here and shows the neutral copy.
+  // Real rates are destination-dependent and come from Shopify at checkout.
   const allLinesFree = lines.length > 0 &&
     lines.every((line) => hasLegacyFreeSignal(line.merchandise.product.tags, null))
   const cartShippingMessage = allLinesFree ? 'Free shipping' : SHIPPING_FALLBACK_MESSAGE

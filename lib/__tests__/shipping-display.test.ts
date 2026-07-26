@@ -6,7 +6,7 @@ import {
   SHIPPING_FALLBACK_MESSAGE,
 } from '@/lib/shipping-display'
 
-describe('resolveShippingDisplay — explicit class', () => {
+describe('resolveShippingDisplay, explicit class', () => {
   it('free class → "Free shipping" + badge', () => {
     const d = resolveShippingDisplay({ displayClass: 'free' })
     expect(d).toEqual({ displayClass: 'free', message: 'Free shipping', badge: 'Free Shipping' })
@@ -58,7 +58,7 @@ describe('resolveShippingDisplay — explicit class', () => {
   })
 })
 
-describe('resolveShippingDisplay — missing/invalid data (fallback discipline)', () => {
+describe('resolveShippingDisplay, missing/invalid data (fallback discipline)', () => {
   it('no signals at all → unknown + exact fallback copy', () => {
     const d = resolveShippingDisplay({})
     expect(d).toEqual({ displayClass: 'unknown', message: SHIPPING_FALLBACK_MESSAGE, badge: null })
@@ -111,7 +111,7 @@ describe('resolveShippingDisplay — missing/invalid data (fallback discipline)'
   })
 })
 
-describe('resolveShippingDisplay — legacy free signals', () => {
+describe('resolveShippingDisplay, legacy free signals', () => {
   it('free-shipping tag alone → free', () => {
     const d = resolveShippingDisplay({ tags: ['gloves', 'free-shipping'] })
     expect(d.displayClass).toBe('free')
