@@ -36,7 +36,7 @@ describe('serverEnv — happy path', () => {
     stubRequired()
     const { serverEnv } = await import('@/lib/env.server')
     expect(serverEnv.resendFromEmail).toBe('noreply@mdsupplies.com')
-    expect(serverEnv.resendToEmail).toBe('team@mdsupplies.com')
+    expect(serverEnv.resendToEmail).toBe('support@mdsupplies.com')
     expect(serverEnv.bunnyCdnHostname).toBe('ny.storage.bunnycdn.com')
     expect(serverEnv.bunnyCdnZone).toBe('md-supplies')
   })

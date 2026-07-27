@@ -32,7 +32,7 @@ export const serverEnv = {
   get shopifyWebhookSecret()   { return required('SHOPIFY_WEBHOOK_SECRET') },
   get resendApiKey()           { return required('RESEND_API_KEY') },
   get resendFromEmail()        { return optional('RESEND_FROM_EMAIL', 'noreply@mdsupplies.com') },
-  get resendToEmail()          { return optional('RESEND_TO_EMAIL', 'team@mdsupplies.com') },
+  get resendToEmail()          { return optional('RESEND_TO_EMAIL', 'support@mdsupplies.com') },
   get bunnyCdnAccessKey()      { return required('BUNNYCDN_STORAGE_ACCESS_KEY') },
   get bunnyCdnHostname()       { return optional('BUNNYCDN_STORAGE_HOSTNAME', 'ny.storage.bunnycdn.com') },
   get bunnyCdnZone()           { return optional('BUNNYCDN_STORAGE_ZONE', 'md-supplies') },

@@ -24,7 +24,7 @@ export type SitePostalAddress = {
 
 export const SITE_CONTACT = {
   /** Public support inbox (also the contact-form recipient default). */
-  email: 'team@mdsupplies.com',
+  email: 'support@mdsupplies.com',
 
   /** E.164 for tel: links and schema. TODO(Bilal): e.g. '+18005550100'. */
   phone: null as string | null,
