@@ -14,6 +14,12 @@ import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { resolveShippingDisplay } from '@/lib/shipping-display'
+import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
+import { ShippingBadge } from './ShippingBadge'
+import { ShippingBlock } from './ShippingBlock'
+
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
 
 // Metafields reach this component in two shapes: /product/[slug] normalizes
 // them to plain strings, while /category/[slug]/[product] passes the raw
@@ -26,9 +32,6 @@ function metafieldValue(field: unknown): string | null {
   }
   return null
 }
-
-type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
-const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
 
 function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
   return variants.find((v) => v.availableForSale) ?? variants[0]
@@ -67,12 +70,14 @@ interface Props {
   complementaryProducts: CollectionProduct[]
   breadcrumbs?: BreadcrumbItem[]
   partnerSlug?: string | null
+  variantShippingDisplays?: Record<string, ShippingDisplay>
 }
 
-export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug }: Props) {
+export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     () => getDefaultVariant(product.variants.nodes),
   )
+  const shippingDisplay = variantShippingDisplays[selectedVariant.id] ?? null
   const [orderQty, setOrderQty] = useState(1)
   const [activeImg, setActiveImg] = useState(0)
   const [activeTab, setActiveTab] = useState<Tab>('SPECIFICATIONS')
@@ -257,14 +262,17 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               )}
             </div>
 
-            {/* The shipping badge is resolver-driven, so an explicit class
-                metafield outranks the legacy free-shipping tag. */}
-            {(shipping.badge || product.tags.includes('rx-required')) && (
+            {/* Product badges — resolver-driven when the flag is on, tag-gated otherwise */}
+            {(shippingDisplay || shipping.badge || product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
               <div className="flex flex-wrap gap-2">
-                {shipping.badge && (
-                  <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-teal-500 text-white">
-                    {shipping.badge}
-                  </span>
+                {shippingDisplay ? (
+                  <ShippingBadge shippingDisplay={shippingDisplay} className="px-3 py-1 text-[13px]" />
+                ) : (
+                  product.tags.includes('free-shipping') && (
+                    <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-teal-500 text-white">
+                      Free Shipping
+                    </span>
+                  )
                 )}
                 {product.tags.includes('rx-required') && (
                   <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white">
@@ -386,6 +394,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
           </div>
         </div>
       </section>
+
+      {shippingDisplay && (
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
+          <ShippingBlock shippingDisplay={shippingDisplay} />
+        </div>
+      )}
 
       {/* Tabs */}
       <section className="bg-white border-t border-gray-200">

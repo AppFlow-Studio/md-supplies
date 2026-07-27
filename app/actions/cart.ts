@@ -3,6 +3,7 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import { storefrontFetch } from '@/lib/shopify/storefront'
+import { attachCartShippingDisplay } from '@/lib/shipping-resolver/cart'
 import {
   CREATE_CART,
   ADD_CART_LINES,
@@ -32,7 +33,7 @@ export async function getCart(): Promise<Cart | null> {
   if (!cartId) return null
   try {
     const data = await storefrontFetch<{ cart: Cart | null }>(GET_CART, { cartId }, NO_STORE)
-    return data.cart
+    return data.cart ? attachCartShippingDisplay(data.cart) : null
   } catch (err) {
     console.error('[getCart] failed:', err)
     return null
@@ -55,7 +56,7 @@ async function createCart(variantId: string, quantity: number): Promise<Cart> {
     path: '/',
     maxAge: 60 * 60 * 24 * 30,
   })
-  return cart
+  return attachCartShippingDisplay(cart)
 }
 
 export async function addToCart(variantId: string, quantity: number): Promise<Cart> {
@@ -71,7 +72,7 @@ export async function addToCart(variantId: string, quantity: number): Promise<Ca
       NO_STORE,
     )
     assertNoUserErrors(data.cartLinesAdd.userErrors, 'cartLinesAdd')
-    return data.cartLinesAdd.cart
+    return attachCartShippingDisplay(data.cartLinesAdd.cart)
   } catch {
     // Cart may be expired — create a fresh one and clear the stale cookie
     jar.delete(CART_COOKIE)
@@ -88,7 +89,7 @@ export async function updateCartLine(lineId: string, quantity: number): Promise<
     NO_STORE,
   )
   assertNoUserErrors(data.cartLinesUpdate.userErrors, 'cartLinesUpdate')
-  return data.cartLinesUpdate.cart
+  return attachCartShippingDisplay(data.cartLinesUpdate.cart)
 }
 
 export async function removeFromCart(lineId: string): Promise<Cart> {
@@ -100,7 +101,7 @@ export async function removeFromCart(lineId: string): Promise<Cart> {
     NO_STORE,
   )
   assertNoUserErrors(data.cartLinesRemove.userErrors, 'cartLinesRemove')
-  return data.cartLinesRemove.cart
+  return attachCartShippingDisplay(data.cartLinesRemove.cart)
 }
 
 export async function setCartAttribute(key: string, value: string): Promise<Cart> {
@@ -112,5 +113,5 @@ export async function setCartAttribute(key: string, value: string): Promise<Cart
     NO_STORE,
   )
   assertNoUserErrors(data.cartAttributesUpdate.userErrors, 'cartAttributesUpdate')
-  return data.cartAttributesUpdate.cart
+  return attachCartShippingDisplay(data.cartAttributesUpdate.cart)
 }

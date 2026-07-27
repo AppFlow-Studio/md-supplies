@@ -35,6 +35,9 @@ yarn-error.log*
 # …but DO commit the template (no secrets in it)
 !.env.example
 
+# shipping-facts data (17MB, testing-only per DEV-SHIP-01 — not committed)
+/data/shipping-facts-v3.json
+
 # vercel
 .vercel
 

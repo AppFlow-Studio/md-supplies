@@ -1,3 +1,5 @@
+import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
+
 export interface ProductImage {
   url: string
   altText: string
@@ -51,6 +53,7 @@ export interface ProductCardData {
   leadTime?: string
   isOCC?: boolean
   hasFreeShipping?: boolean
+  shippingDisplay?: ShippingDisplay | null
   isRx?: boolean
   variants: { id: string; title: string; price: number; compareAtPrice?: number; available: boolean }[]
 }

@@ -11,6 +11,8 @@ import { parseSortKey, parseFilterParam, type CategorySearchParams } from '@/com
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
+import { CategoryImage } from '@/components/shared/CategoryImage'
+import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
@@ -102,6 +104,8 @@ async function renderSubcategoryPage(
     : undefined
 
   const canonicalUrl = `${SITE_URL}${ROUTES.subcategory(slug, handle)}`
+  const bannerPath = getSubcategoryBannerPath(node.tag)
+  const bannerAlt = `${title} — MDSupplies medical supplies`
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -112,6 +116,14 @@ async function renderSubcategoryPage(
             { label: title },
           ]}
         />
+      </div>
+
+      {/* Simpler thumbnail-style banner for L2 subcategory pages (§3.3),
+          vs. the split hero on L1 category pages. */}
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
+        <div className="relative w-full h-[180px] sm:h-[220px] overflow-hidden">
+          <CategoryImage bannerPath={bannerPath} alt={bannerAlt} />
+        </div>
       </div>
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">

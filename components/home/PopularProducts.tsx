@@ -46,6 +46,7 @@ function toCardData(product: CollectionProduct): ProductCardData {
     sku: '',
     available: product.availableForSale,
     hasFreeShipping: product.tags.includes('free-shipping'),
+    shippingDisplay: product.shippingDisplay ?? null,
     isRx: product.tags.includes('rx-required'),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,

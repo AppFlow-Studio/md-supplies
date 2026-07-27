@@ -14,6 +14,8 @@ import { SITE_URL } from '@/lib/seo/constants'
 import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { ROUTES } from '@/lib/routes'
+import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
+import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -126,6 +128,10 @@ export default async function ProductPage({ params }: Props) {
     productFetchOptions(slug),
   ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
+  const variantShippingDisplays = isShippingResolverEnabled()
+    ? resolveVariantsForProduct(product.id)
+    : {}
+
   const relatedProducts = recsData.related
   const complementaryProducts = recsData.complementary
 
@@ -190,6 +196,7 @@ export default async function ProductPage({ params }: Props) {
         complementaryProducts={complementaryProducts}
         breadcrumbs={categoryCrumbs}
         partnerSlug={partner?.slug ?? null}
+        variantShippingDisplays={variantShippingDisplays}
       />
     </main>
   )
