@@ -13,14 +13,21 @@ export function generateNonce(): string {
  *  rollout: it reports violations independent of what enforcing already
  *  blocked, catching future policy drift before it'd need tightening. */
 export function buildCsp(nonce: string, isDev: boolean): string {
+  // The allowed Shopify origin comes from the environment (QA vs production
+  // store), never a hardcoded domain: a deployment pointed at the QA store
+  // must not silently keep the production store reachable, and vice versa.
+  // No env ⇒ no Shopify origin in the policy (deliberately no fallback).
+  const shopifyOrigin = process.env.SHOPIFY_STORE_DOMAIN
+    ? ` https://${process.env.SHOPIFY_STORE_DOMAIN}`
+    : ''
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://cdn.shopify.com https://www.googletagmanager.com https://www.google-analytics.com",
     "font-src 'self'",
-    "connect-src 'self' https://daebb2-76.myshopify.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net",
-    "frame-src https://shopify.com https://checkout.shopify.com https://daebb2-76.myshopify.com",
+    `connect-src 'self'${shopifyOrigin} https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net`,
+    `frame-src https://shopify.com https://checkout.shopify.com${shopifyOrigin}`,
     "frame-ancestors 'self'",
     "object-src 'none'",
     "base-uri 'self'",

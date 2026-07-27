@@ -13,12 +13,25 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { resolveShippingDisplay } from '@/lib/shipping-display'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { ShippingBadge } from './ShippingBadge'
 import { ShippingBlock } from './ShippingBlock'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
+
+// Metafields reach this component in two shapes: /product/[slug] normalizes
+// them to plain strings, while /category/[slug]/[product] passes the raw
+// Storefront `{ value }` objects straight through. Accept either.
+function metafieldValue(field: unknown): string | null {
+  if (typeof field === 'string') return field
+  if (field && typeof field === 'object' && 'value' in field) {
+    const { value } = field as { value?: unknown }
+    return typeof value === 'string' ? value : null
+  }
+  return null
+}
 
 function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
   return variants.find((v) => v.availableForSale) ?? variants[0]
@@ -104,6 +117,16 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
         month: 'long', day: 'numeric', year: 'numeric',
       })
     : null
+
+  // Explicit class metafield first, legacy free-shipping tag second, neutral
+  // fallback copy otherwise. The message is always rendered, never blank.
+  const shipping = resolveShippingDisplay({
+    tags: product.tags,
+    displayClass: metafieldValue(product.shippingDisplayClass),
+    freeShipping: metafieldValue(product.freeShippingFlag),
+    threshold: metafieldValue(product.shippingThreshold),
+    flatRate: metafieldValue(product.shippingFlatRate),
+  })
 
   const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
@@ -240,7 +263,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             </div>
 
             {/* Product badges — resolver-driven when the flag is on, tag-gated otherwise */}
-            {(shippingDisplay || product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
+            {(shippingDisplay || shipping.badge || product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
               <div className="flex flex-wrap gap-2">
                 {shippingDisplay ? (
                   <ShippingBadge shippingDisplay={shippingDisplay} className="px-3 py-1 text-[13px]" />
@@ -258,6 +281,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 )}
               </div>
             )}
+
+            {/* Always rendered. Unresolved products fall back to the neutral
+                "Shipping calculated at checkout." copy. */}
+            <p data-testid="shipping-message" className="text-gray-600 text-[13px] tracking-[0.26px]">
+              {shipping.message}
+            </p>
 
             <div className="h-px bg-gray-200" />
 

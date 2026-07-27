@@ -12,12 +12,21 @@ import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
+import { hasLegacyFreeSignal, SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-display'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
   const rxGate = useRxGate(cart)
+
+  // Only claim "Free shipping" when every line carries a free signal. Cart
+  // lines expose product tags but not metafields, so a product that is free
+  // by metafield alone cannot be confirmed here and shows the neutral copy.
+  // Real rates are destination-dependent and come from Shopify at checkout.
+  const allLinesFree = lines.length > 0 &&
+    lines.every((line) => hasLegacyFreeSignal(line.merchandise.product.tags, null))
+  const cartShippingMessage = allLinesFree ? 'Free shipping' : SHIPPING_FALLBACK_MESSAGE
 
   useEffect(() => {
     if (cart && cart.lines.nodes.length > 0) {
@@ -177,8 +186,8 @@ export function CartPageClient() {
               ${parseFloat(cart.cost.subtotalAmount.amount).toFixed(2)}
             </span>
           </div>
-          <p className="text-gray-500 text-[12px] tracking-[0.24px]">
-            Shipping calculated at checkout
+          <p data-testid="cart-shipping-message" className="text-gray-500 text-[12px] tracking-[0.24px]">
+            {cartShippingMessage}
           </p>
           {rxGate.blocked ? (
             <RxGatePanel signedIn={rxGate.signedIn} />

@@ -77,6 +77,13 @@ export type ProductMetafields = {
   customBadge1: string | null;
   customBadge2: string | null;
   customBadge3: string | null;
+  /** Shipping-display signals, resolved by lib/shipping-display.ts.
+      Null when unset or when storefront access is not enabled on the
+      metafield definition. */
+  shippingDisplayClass: string | null;
+  shippingThreshold: string | null;
+  shippingFlatRate: string | null;
+  freeShippingFlag: string | null;
 };
 
 export type Product = {
