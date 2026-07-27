@@ -262,15 +262,17 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               )}
             </div>
 
-            {/* Product badges — resolver-driven when the flag is on, tag-gated otherwise */}
-            {(shippingDisplay || shipping.badge || product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
+            {/* Product badges — per-variant resolver when the flag is on,
+                resolveShippingDisplay (class metafield / legacy free-shipping
+                tag) otherwise. */}
+            {(shippingDisplay || shipping.badge || product.tags.includes('rx-required')) && (
               <div className="flex flex-wrap gap-2">
                 {shippingDisplay ? (
                   <ShippingBadge shippingDisplay={shippingDisplay} className="px-3 py-1 text-[13px]" />
                 ) : (
-                  product.tags.includes('free-shipping') && (
+                  shipping.badge && (
                     <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-teal-500 text-white">
-                      Free Shipping
+                      {shipping.badge}
                     </span>
                   )
                 )}

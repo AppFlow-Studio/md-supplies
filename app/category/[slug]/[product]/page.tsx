@@ -29,6 +29,8 @@ import {
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { getNonce } from '@/lib/csp-nonce'
+import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
+import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -250,6 +252,10 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     complementary: [] as CollectionProduct[],
   }))
 
+  const variantShippingDisplays = isShippingResolverEnabled()
+    ? resolveVariantsForProduct(productData.product.id)
+    : {}
+
   const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
   const { categories, subcategories } = parseProductTags(productData.product.tags)
   const categoryPath = getProductCategoryPath(
@@ -284,6 +290,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
         complementaryProducts={recsData.complementary}
         breadcrumbs={breadcrumbs}
         partnerSlug={partner?.slug ?? null}
+        variantShippingDisplays={variantShippingDisplays}
       />
     </main>
   )
