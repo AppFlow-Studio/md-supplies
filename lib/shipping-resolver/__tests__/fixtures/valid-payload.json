@@ -2,6 +2,7 @@
   "_meta": {
     "artifact": "shipping-facts",
     "schema_version": "v3.0",
+    "store": "daebb2-76.myshopify.com (mdsupplies.com)",
     "generated_utc": "2026-07-20T20:40:28Z",
     "note": "Trimmed test fixture — a real subset of shipping-facts-v3.json (19 real products), not a full payload. checksum_sha256_of_payload below is not meaningful; the resolver validates against SHIPPING_FACTS_CHECKSUM_SHA256 env var in tests, not this field.",
     "checksum_sha256_of_payload": "TEST-FIXTURE-NOT-VALIDATED"

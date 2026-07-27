@@ -4,13 +4,19 @@ import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { getShippingFactsData, __resetShippingFactsCacheForTests } from '../data'
+import { VALID, DUPLICATE } from './fixtures'
+import { PRODUCTION_SHOP_DOMAIN, QA_SHOP_DOMAIN } from '@/lib/shopify/shop-guard'
 
-const VALID_FIXTURE = join(__dirname, 'fixtures/valid-payload.json')
-const VALID_CHECKSUM = '802f0070e6c122f26afd465d2058f4de6b29dcdd4ec6e0e29e418e2474c47d53'
-const DUPLICATE_FIXTURE = join(__dirname, 'fixtures/duplicate-variant-payload.json')
-const DUPLICATE_CHECKSUM = '900b5bd2691e4491f3fd58b9ce92e353b7f43628b86157e4de1657c7d4a51865'
+const VALID_FIXTURE = VALID.path
+const VALID_CHECKSUM = VALID.checksum
+const DUPLICATE_FIXTURE = DUPLICATE.path
+const DUPLICATE_CHECKSUM = DUPLICATE.checksum
 
 beforeEach(() => {
+  // Default to the shop the primary fixture declares, so cases about loading
+  // and validation are not also asserting the environment gate. The gate has
+  // its own describe block below.
+  vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', VALID.store)
   __resetShippingFactsCacheForTests()
 })
 
@@ -66,7 +72,9 @@ describe('getShippingFactsData', () => {
   it('falls back on a payload that fails schema validation', () => {
     const path = join(tmpdir(), `shipping-resolver-bad-schema-${Date.now()}.json`)
     const badPayload = JSON.stringify({
-      _meta: { schema_version: 'v3.0' },
+      // Valid _meta, so the invalid public_display_class below is the only
+      // schema violation and this case cannot pass for the wrong reason.
+      _meta: { schema_version: 'v3.0', store: VALID.store },
       delivery_profiles: [],
       products: {
         'gid://shopify/Product/1': {
@@ -99,6 +107,7 @@ describe('getShippingFactsData', () => {
   it('detects a variant GID duplicated across two different products', () => {
     vi.stubEnv('SHIPPING_FACTS_PATH', DUPLICATE_FIXTURE)
     vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', DUPLICATE_CHECKSUM)
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', DUPLICATE.store)
     const data = getShippingFactsData()
     expect(data.ok).toBe(true)
     expect(data.duplicateVariantGids.has('gid://shopify/ProductVariant/TEST-dup-variant')).toBe(true)
@@ -110,5 +119,51 @@ describe('getShippingFactsData', () => {
     const first = getShippingFactsData()
     const second = getShippingFactsData()
     expect(second).toBe(first)
+  })
+})
+
+/**
+ * Shopify GIDs are store-specific, so a registry from the wrong shop does not
+ * merely mismatch: every lookup misses while the load still looks healthy, and
+ * the site quietly shows the fallback everywhere with no signal that the wrong
+ * data was mounted. The loader refuses a registry that does not describe the
+ * shop this build may reach.
+ */
+describe('getShippingFactsData, registry-to-environment gate', () => {
+  it('refuses the production registry when the build may only reach QA', () => {
+    // The precise CI/Preview inheritance case: correct file, correct checksum,
+    // valid schema, wrong shop.
+    vi.stubEnv('SHIPPING_FACTS_PATH', VALID_FIXTURE)
+    vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', VALID_CHECKSUM)
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', QA_SHOP_DOMAIN)
+
+    const data = getShippingFactsData()
+    expect(data.ok).toBe(false)
+    expect(data.productsByGid.size).toBe(0)
+  })
+
+  it('accepts the QA registry when the build may only reach QA', () => {
+    vi.stubEnv('SHIPPING_FACTS_PATH', DUPLICATE_FIXTURE)
+    vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', DUPLICATE_CHECKSUM)
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', QA_SHOP_DOMAIN)
+
+    expect(getShippingFactsData().ok).toBe(true)
+  })
+
+  it('refuses a QA registry when the build is pointed at production', () => {
+    // The gate is symmetric: it is about agreement, not about QA being safe.
+    vi.stubEnv('SHIPPING_FACTS_PATH', DUPLICATE_FIXTURE)
+    vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', DUPLICATE_CHECKSUM)
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', PRODUCTION_SHOP_DOMAIN)
+
+    expect(getShippingFactsData().ok).toBe(false)
+  })
+
+  it('defaults to QA, so an environment that declares no shop cannot load production data', () => {
+    vi.stubEnv('SHIPPING_FACTS_PATH', VALID_FIXTURE)
+    vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', VALID_CHECKSUM)
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', '')
+
+    expect(getShippingFactsData().ok).toBe(false)
   })
 })

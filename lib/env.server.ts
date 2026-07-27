@@ -1,4 +1,5 @@
 import 'server-only'
+import { assertShopDomainAllowed } from '@/lib/shopify/shop-guard'
 
 function required(name: string): string {
   const v = process.env[name]
@@ -18,7 +19,11 @@ function optional(name: string, fallback: string): string {
 // variable is actually needed to serve a request. Accessing a module that reads
 // `serverEnv.shopifyStoreDomain` at request time will throw if it is unset.
 export const serverEnv = {
-  get shopifyStoreDomain()     { return required('SHOPIFY_STORE_DOMAIN') },
+  // Every Storefront and Admin URL is built from this value, so the shop guard
+  // sits here rather than at each call site: one gate covers runtime, server
+  // actions, scripts and the CI build. Returns the normalized host, so URLs are
+  // built from the checked value rather than the raw input.
+  get shopifyStoreDomain()     { return assertShopDomainAllowed(required('SHOPIFY_STORE_DOMAIN')) },
   get shopifyStorefrontToken() { return required('SHOPIFY_STOREFRONT_ACCESS_TOKEN') },
   // Admin API credential for the RX prescription gate ONLY (P0 launch-gate
   // ticket): writing/reading the compliance.rx_document / rx_verified

@@ -9,6 +9,9 @@ const REQUIRED: Record<string, string> = {
 }
 
 function stubRequired(omit?: string) {
+  // Not part of REQUIRED: the shop guard defaults to the QA store rather
+  // than throwing when this is absent, so it is not a missing-var case.
+  vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', REQUIRED.SHOPIFY_STORE_DOMAIN)
   for (const [k, v] of Object.entries(REQUIRED)) {
     if (k !== omit) vi.stubEnv(k, v)
   }

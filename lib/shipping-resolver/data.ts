@@ -2,6 +2,7 @@ import 'server-only'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { shippingFactsSchema, type ProductRecord } from './schema'
+import { assertShopDomainAllowed, normalizeShopDomain } from '@/lib/shopify/shop-guard'
 
 // SHA-256 of the shipping-facts-v3.json bytes actually integrated against
 // (pinned 2026-07-24). The file's own self-declared
@@ -59,6 +60,22 @@ function loadShippingFactsData(): ShippingFactsData {
   const result = shippingFactsSchema.safeParse(parsed)
   if (!result.success) {
     console.error('[shipping-resolver] schema validation failed:', result.error.message)
+    return EMPTY_DATA
+  }
+
+  // The registry must describe the shop this build is allowed to reach.
+  // Shopify GIDs are store-specific, so a production payload loaded into a QA
+  // build does not merely mismatch, it silently fails to match anything while
+  // looking healthy. Refusing it makes the wrong-registry case loud instead.
+  // `_meta.store` is a human label ("host (brand.com)"), so take the leading
+  // host token before comparing.
+  const declaredStore = normalizeShopDomain(result.data._meta.store.trim().split(/\s+/)[0])
+  try {
+    assertShopDomainAllowed(declaredStore, `the shipping registry at ${path} (_meta.store)`)
+  } catch (err) {
+    console.error(
+      `[shipping-resolver] ${err instanceof Error ? err.message : String(err)} Every product falls back.`,
+    )
     return EMPTY_DATA
   }
 

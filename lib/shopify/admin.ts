@@ -2,6 +2,7 @@ import 'server-only'
 import { serverEnv } from '@/lib/env.server'
 import { logServerError } from '@/lib/log-error'
 import { RX_METAFIELDS } from '@/lib/rx-gate'
+import { assertShopDomainAllowed } from './shop-guard'
 import type { ShopifyResponse } from './types'
 
 // Narrowly-scoped Admin GraphQL client for the RX prescription gate. The
@@ -45,6 +46,59 @@ async function adminFetch<T>(query: string, variables?: Record<string, unknown>)
     throw new Error(message)
   }
   return json.data
+}
+
+const SHOP_IDENTITY = `#graphql
+  query ShopIdentity {
+    shop { myshopifyDomain }
+  }
+`
+
+let shopIdentityCheck: Promise<void> | null = null
+
+/**
+ * Confirm the token actually authenticates against the shop this build is
+ * allowed to write to, then hold that result for the process.
+ *
+ * The configured-host check in `serverEnv.shopifyStoreDomain` proves where a
+ * request is *addressed*; it cannot prove which shop the credential belongs
+ * to. Only asking Shopify does that. Both must agree before a mutation, so a
+ * QA host paired with a production token, or a token swapped underneath a
+ * correct-looking configuration, is refused rather than executed.
+ *
+ * Failure is never cached: a network blip must not pin the process into a
+ * permanently broken state. A mismatch re-queries and fails again, which is
+ * cheap and always fails closed.
+ */
+async function assertAuthenticatedShopIdentity(): Promise<void> {
+  shopIdentityCheck ??= (async () => {
+    let data: { shop: { myshopifyDomain: string } | null }
+    try {
+      data = await adminFetch<{ shop: { myshopifyDomain: string } | null }>(SHOP_IDENTITY)
+    } catch (err) {
+      throw new Error(
+        '[shop-guard] could not verify the authenticated Shopify shop before an Admin ' +
+          `mutation, so the mutation was refused: ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
+    const reported = data.shop?.myshopifyDomain
+    if (!reported) {
+      throw new Error(
+        '[shop-guard] Shopify did not report a shop identity for this Admin token, so the ' +
+          'mutation was refused.',
+      )
+    }
+    assertShopDomainAllowed(reported, 'the shop this Admin token authenticates against')
+  })().catch((err) => {
+    shopIdentityCheck = null
+    throw err
+  })
+  return shopIdentityCheck
+}
+
+/** Test-only: forces the next mutation to re-verify the shop identity. */
+export function __resetShopIdentityCacheForTests(): void {
+  shopIdentityCheck = null
 }
 
 export type CustomerRxState = {
@@ -110,6 +164,9 @@ export async function setCustomerRxDocument(
   documentPath: string,
   { resetVerified = false }: { resetVerified?: boolean } = {},
 ): Promise<void> {
+  // Every Admin write goes through here. Verify the shop before the first read
+  // so a mutation cannot be composed from data belonging to another store.
+  await assertAuthenticatedShopIdentity()
   const current = await getCustomerRxState(customerId)
   const metafields: Record<string, unknown>[] = [
     {
