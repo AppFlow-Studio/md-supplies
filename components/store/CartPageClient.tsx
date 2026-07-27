@@ -12,7 +12,7 @@ import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
-import { hasLegacyFreeSignal, SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-display'
+import { SHIPPING_FALLBACK_MESSAGE, SHIPPING_CLASS_COPY } from '@/lib/shipping-resolver/copy'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 export function CartPageClient() {
@@ -20,13 +20,18 @@ export function CartPageClient() {
   const lines = cart?.lines.nodes ?? []
   const rxGate = useRxGate(cart)
 
-  // Only claim "Free shipping" when every line carries a free signal. Cart
-  // lines expose product tags but not metafields, so a product that is free
-  // by metafield alone cannot be confirmed here and shows the neutral copy.
-  // Real rates are destination-dependent and come from Shopify at checkout.
-  const allLinesFree = lines.length > 0 &&
-    lines.every((line) => hasLegacyFreeSignal(line.merchandise.product.tags, null))
-  const cartShippingMessage = allLinesFree ? 'Free shipping' : SHIPPING_FALLBACK_MESSAGE
+  // Whole-cart summary, resolved per line from the selected variant's class.
+  // Claiming free shipping for the cart requires every line to be classified
+  // standard-free; one unresolved, held, or non-free line drops the whole
+  // summary to the neutral copy. A line the resolver did not classify is not
+  // evidence of free shipping, so an empty class is treated as not-free rather
+  // than skipped. Shopify checkout remains the authority on the actual charge.
+  const allLinesFree =
+    lines.length > 0 &&
+    lines.every((line) => line.shippingDisplay?.class === 'standard-free')
+  const cartShippingMessage = allLinesFree
+    ? SHIPPING_CLASS_COPY['standard-free'] ?? SHIPPING_FALLBACK_MESSAGE
+    : SHIPPING_FALLBACK_MESSAGE
 
   useEffect(() => {
     if (cart && cart.lines.nodes.length > 0) {

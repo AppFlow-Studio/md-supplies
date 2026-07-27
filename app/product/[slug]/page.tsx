@@ -74,10 +74,6 @@ function normalizeProduct(raw: RawProduct): Product {
     customBadge1:         mv(raw.customBadge1),
     customBadge2:         mv(raw.customBadge2),
     customBadge3:         mv(raw.customBadge3),
-    shippingDisplayClass: mv(raw.shippingDisplayClass),
-    shippingThreshold:    mv(raw.shippingThreshold),
-    shippingFlatRate:     mv(raw.shippingFlatRate),
-    freeShippingFlag:     mv(raw.freeShippingFlag),
   }
 }
 

@@ -74,14 +74,6 @@ export const GET_PRODUCT = `#graphql
       collections(first: 10) {
         nodes { handle title }
       }
-
-      # Shipping-display signals. Each needs Storefront read access enabled on
-      # its definition (see the note above). A gated or unset field returns
-      # null, which lib/shipping-display.ts degrades to the neutral copy.
-      shippingDisplayClass: metafield(namespace: "custom", key: "shipping_display_class") { value }
-      shippingThreshold: metafield(namespace: "custom", key: "shipping_threshold") { value }
-      shippingFlatRate: metafield(namespace: "custom", key: "shipping_flat_rate") { value }
-      freeShippingFlag: metafield(namespace: "custom", key: "free_shipping") { value }
     }
   }
 `;
