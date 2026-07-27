@@ -8,11 +8,13 @@ export type RoadmapCategory = {
 }
 
 // §3.1 approved category structure, checked against the live Shopify
-// catalog on 2026-06-18 via scripts/audit-collections.ts. Categories with
-// an empty matchedHandles array have no live Shopify collection yet and
-// are reported by getUnmappedRoadmapCategories() / the audit script
-// instead of being rendered. `placeholderSlug` maps to the §3.5 BunnyCDN
-// placeholder filename: `${placeholderSlug}-placeholder.webp`.
+// catalog on 2026-06-18 via scripts/audit-category-tree.ts (the
+// audit-collections.ts predecessor was retired 2026-07-27 in favor of the
+// tag-backbone registry's audit — see lib/category-tree.ts). Categories
+// with an empty matchedHandles array have no live Shopify collection yet
+// and are reported by getUnmappedRoadmapCategories() instead of being
+// rendered. `placeholderSlug` maps to the §3.5 BunnyCDN placeholder
+// filename: `${placeholderSlug}-placeholder.webp`.
 export const ROADMAP_CATEGORIES: RoadmapCategory[] = [
   { displayName: 'Gloves', navGroup: 'primary', matchedHandles: ['gloves'], placeholderSlug: 'gloves' },
   { displayName: 'Wound Care', navGroup: 'primary', matchedHandles: ['wound-care'], placeholderSlug: 'wound-care' },

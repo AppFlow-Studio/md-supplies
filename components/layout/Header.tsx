@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
 import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
 import { buildCategoryTreeNav } from '@/lib/category-tree'
+import { LOGO_PATH } from '@/lib/bunnycdn'
 
 interface HeaderProps {
   menuItems: MenuItem[]
@@ -205,7 +206,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
         <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src={'/images/logo.avif'} alt='MDSupplies' width={420} height={100} className='w-auto h-10 object-contain'/>
+            <Image src={LOGO_PATH} alt="MDSupplies" width={420} height={100} className="h-10 w-auto object-contain" />
           </Link>
 
           {/* Desktop nav links — shown only at xl where all items fit without
