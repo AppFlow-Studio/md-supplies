@@ -3,6 +3,7 @@ import type { OCCHub } from '@/types/occ'
 import { AnimatedOCCHeroSection } from './AnimatedOCCHeroSection'
 import { AnimatedOCCProducts } from './AnimatedOCCProducts'
 import { FAQSection } from './FAQSection'
+import { WholesalePricing } from '@/components/home/WholesalePricing'
 import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
@@ -40,7 +41,7 @@ export function OCCHubPage({ hub }: Props) {
           <p>{hub.programExplanation}</p>
           <p>{hub.freeShippingMessage}</p>
         </div>
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-16 md:py-20 lg:py-24">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 my-16 md:my-20 lg:my-24">
           <AnimatedOCCHeroSection
             title={hub.title}
             description={hub.intro}
@@ -55,7 +56,7 @@ export function OCCHubPage({ hub }: Props) {
 
         {/* Eligible categories */}
         {hub.eligibleCategories.length > 0 && (
-          <section className="py-12 border-t border-gray-200">
+          <section className="py-12">
             <h2 className="text-xl font-bold text-navy-900 mb-5">Shop by Category</h2>
             <div className="flex flex-wrap gap-2">
               {hub.eligibleCategories.map((cat) => (
@@ -83,6 +84,9 @@ export function OCCHubPage({ hub }: Props) {
         <FAQSection faq={hub.faq} />
 
       </div>
+
+      {/* Buyer CTA */}
+      <WholesalePricing />
     </main>
   )
 }
