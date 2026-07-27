@@ -11,7 +11,7 @@ const CATEGORIES_PATH = 'categories'
 
 export const GLOBAL_PRODUCT_PLACEHOLDER = `${PROXY_PREFIX}/${CATEGORIES_PATH}/${CATEGORY_IMAGE_FALLBACK.file}`
 
-export const LOGO_PATH = `${PROXY_PREFIX}/logo/logo.avif`
+export const LOGO_PATH = `${PROXY_PREFIX}/logo/logo.png`
 
 function findRoadmapCategory(handle: string) {
   return ROADMAP_CATEGORIES.find((category) =>
