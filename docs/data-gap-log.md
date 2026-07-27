@@ -26,22 +26,27 @@ Format: `YYYY-MM-DD | page/component | missing field(s) | action needed`
 
 ## OCC eligible-product handle verification (DEV-21/E8 §9.1)
 
-The OCC page already resolves **live** prices/images at request time via
-`fetchLiveProducts()` (`app/solutions/occ/page.tsx`), falling back to the static
-values in `lib/occ.ts` when a handle does not resolve. The remaining open item is
-to confirm each handle below exists in Shopify so the live path (not the
-fallback) is used in production. Until verified, prices/images shown are the
-`lib/occ.ts` fallbacks (images are `placehold.co` placeholders).
+**Updated 2026-07-27 — the fetch strategy changed since this was last verified.**
+The OCC page no longer resolves products per-handle with a static fallback. It
+now queries a Shopify **collection** at request time
+(`fetchOCCProducts()` in `app/solutions/occ/page.tsx`), trying each handle in
+`OCC_COLLECTION_HANDLES` (`['occ', 'operation-christmas-child', 'occ-supplies']`)
+in order, then falling back to a `tag:occ` product query if none of those
+collections return results. `lib/occ.ts`'s static `eligibleProducts` (handles
+like `occ-hygiene-kit`) are no longer read by the page — they're unused sample
+data now.
 
-Verify in Shopify admin (Products → search handle) and tick when the live
-product resolves with a real price + image:
+If none of the collection handles nor the `occ` tag resolve in Shopify, the
+"Featured OCC Shoebox Supplies" section renders nothing (no fallback images
+shown).
 
-- [ ] `nitrile-exam-gloves-powder-free`
-- [ ] `latex-exam-gloves-powder-free`
-- [ ] `disposable-bed-pads`
-- [ ] `nasal-cannula-adult`
-- [ ] `simple-face-mask`
-- [ ] `standard-walker`
+Open item — confirm with Izzy / Shopify Admin → Collections:
 
-For any handle that does not resolve, update it to the correct Shopify handle in
-`lib/occ.ts` (or remove the product), then re-check on staging.
+- [ ] One of `occ` / `operation-christmas-child` / `occ-supplies` exists as a
+      collection with the intended eligible products, **or** products are
+      tagged `occ` so the tag-based fallback picks them up.
+- [ ] Once confirmed, verify the OCC page in staging shows live prices/images
+      (not an empty products section).
+
+If the actual collection handle differs from all three guesses, update
+`OCC_COLLECTION_HANDLES` in `app/solutions/occ/page.tsx`.
