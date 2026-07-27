@@ -20,7 +20,7 @@ export function FeaturedProductCard({ product }: Props) {
   return (
     <Link
       href={ROUTES.product(product.handle)}
-      className="group flex flex-col h-full overflow-hidden bg-white border border-gray-100 hover:border-teal-400 hover:shadow-lg transition-all duration-300"
+      className="group flex flex-col h-full overflow-hidden bg-white hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}
       <div className="relative aspect-square w-full overflow-hidden bg-neutral-50 flex items-center justify-center">
