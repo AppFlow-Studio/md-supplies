@@ -124,7 +124,7 @@ async function renderSubcategoryPage(
           vs. the split hero on L1 category pages. */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
         <div className="relative w-full h-[180px] sm:h-[220px] overflow-hidden">
-          <CategoryImage bannerPath={bannerPath} alt={bannerAlt} />
+          <CategoryImage bannerPath={bannerPath} alt={bannerAlt} sizes="100vw" />
         </div>
       </div>
 

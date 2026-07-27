@@ -7,6 +7,8 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
+import { CategoryImage } from '@/components/shared/CategoryImage'
+import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { buildCategoryTreeNav, buildL1Tiles, type ProductTagSummary } from '@/lib/category-tree'
 import { getNonce } from '@/lib/csp-nonce'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
@@ -93,31 +95,30 @@ export default async function CategoriesPage() {
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
             <h2 className="text-navy-900 text-[22px] font-semibold mb-7">Popular Categories</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-[1px] border border-[rgba(0,0,0,0.08)] bg-[rgba(0,0,0,0.08)]">
-              {popularCollections.map((col) => (
-                <Link
-                  key={col.id}
-                  href={ROUTES.category(col.handle)}
-                  className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
-                >
-                  <div className="w-[50px] h-[50px] rounded-xl bg-[rgba(0,193,255,0.15)] flex items-center justify-center overflow-hidden group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">
-                    {col.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={col.image.url}
-                        alt={col.image.altText ?? col.title}
-                        className="w-full h-full object-cover"
+              {popularCollections.map((col) => {
+                const banner = getCategoryBannerConfig(col.handle)
+                return (
+                  <Link
+                    key={col.id}
+                    href={ROUTES.category(col.handle)}
+                    className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
+                  >
+                    <div className="relative w-[50px] h-[50px] rounded-xl overflow-hidden bg-[rgba(0,193,255,0.15)] group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">
+                      <CategoryImage
+                        bannerPath={banner.path}
+                        alt={banner.alt}
+                        sizes="50px"
+                        fallbackLabel={col.title.charAt(0)}
+                        fallbackLabelWrapperClassName="absolute inset-0 flex items-center justify-center"
+                        fallbackLabelTextClassName="text-teal-500 text-[20px] font-bold"
                       />
-                    ) : (
-                      <span className="text-teal-500 text-[20px] font-bold">
-                        {col.title.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[14px] font-semibold text-navy-900 text-center leading-snug">
-                    {col.title}
-                  </span>
-                </Link>
-              ))}
+                    </div>
+                    <span className="text-[14px] font-semibold text-navy-900 text-center leading-snug">
+                      {col.title}
+                    </span>
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -133,24 +134,21 @@ export default async function CategoriesPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
             {l1Tiles.map((tile) => {
               const col = allCollectionsByHandle.get(tile.collectionHandle)
+              const banner = getCategoryBannerConfig(tile.collectionHandle)
               return (
                 <Link
                   key={tile.tag}
                   href={ROUTES.category(tile.collectionHandle)}
                   className="group bg-white border border-gray-200 hover:border-navy-900 transition-colors overflow-hidden"
                 >
-                  {col?.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={col.image.url}
-                      alt={col.image.altText ?? tile.displayName}
-                      className="w-full aspect-[4/3] object-cover"
+                  <div className="relative w-full aspect-[4/3]">
+                    <CategoryImage
+                      bannerPath={banner.path}
+                      alt={banner.alt}
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                      fallbackLabel={tile.displayName.charAt(0)}
                     />
-                  ) : (
-                    <div className="w-full aspect-[4/3] bg-navy-900/5 flex items-center justify-center">
-                      <span className="text-navy-900/20 text-[36px] font-bold">{tile.displayName.charAt(0)}</span>
-                    </div>
-                  )}
+                  </div>
                   <div className="px-4 py-3">
                     <p className="text-navy-900 text-[14px] font-semibold group-hover:underline">
                       {tile.displayName}
