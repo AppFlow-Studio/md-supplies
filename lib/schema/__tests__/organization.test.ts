@@ -30,7 +30,9 @@ describe('buildOrganizationSchema — NAP identity (M7/M12/M26/F2)', () => {
     const cp = buildOrganizationSchema().contactPoint
     expect(cp['@type']).toBe('ContactPoint')
     expect(cp.contactType).toBe('customer support')
-    expect(cp.email).toBe('team@mdsupplies.com')
+    // IZ-COMMS-01: the Organization schema publishes the support address to search
+    // engines, so it has to be the approved one.
+    expect(cp.email).toBe('support@mdsupplies.com')
   })
 
   it('omits telephone and address while the real NAP is not filled in (never fabricates)', () => {

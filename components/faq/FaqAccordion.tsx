@@ -1,4 +1,5 @@
 import { Accordion } from "@/components/ui/Accordion";
+import { SITE_CONTACT } from "@/lib/site-contact";
 
 const FAQ_ITEMS = [
   {
@@ -35,7 +36,9 @@ const FAQ_ITEMS = [
   },
   {
     q: "Who do I contact for help?",
-    a: "Our support team is available Monday–Friday, 8AM–6PM EST. Email support@mdsupplies.com or use the contact form. We respond to all inquiries within 2 hours during business hours.",
+    // Interpolated rather than written out, so the FAQ cannot disagree with the
+    // footer and the schema the way it did before (IZ-COMMS-01).
+    a: `Our support team is available Monday–Friday, 8AM–6PM EST. Email ${SITE_CONTACT.email} or use the contact form. We respond to all inquiries within 2 hours during business hours.`,
   },
 ];
 
