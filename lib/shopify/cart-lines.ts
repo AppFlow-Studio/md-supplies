@@ -21,9 +21,57 @@ import type { Cart } from './types'
 export const CART_LINE_MISSING_MESSAGE =
   'We could not add that item to your cart. Please review your cart before checking out.'
 
+/**
+ * Shown when a line is in the cart but cannot be shipped to the destination.
+ *
+ * Measured on the QA store 2026-07-28: a product whose delivery profile has no
+ * rate for the destination is NOT dropped. The line stays, Shopify returns
+ * warning code MERCHANDISE_OUT_OF_STOCK, and the line contributes 0.00 to the
+ * subtotal while the rest of the cart stays checkout-ready. In the mixed-cart
+ * case the shippable line returned a rate and checkout remained available, so
+ * without this check a customer could pay for a cart that cannot deliver one of
+ * its items.
+ *
+ * Shopify's own wording for this is "already sold out", which is wrong and
+ * unhelpful: the tested variants had 100 units in stock. The problem is the
+ * destination, so the message says that instead of repeating Shopify's.
+ */
+export const CART_LINE_UNSHIPPABLE_MESSAGE =
+  'One or more items cannot be shipped to your address. Please remove them or choose a different address before checking out.'
+
 export interface RequestedLine {
   merchandiseId: string
   quantity: number
+}
+
+/**
+ * Lines that are present and wanted but contribute nothing to the cart total.
+ *
+ * A positive quantity with a zero line cost is Shopify's signal that it cannot
+ * price the line for this destination. It is the only cart-level signal that
+ * survives a plain cart read, because `warnings` is returned on the mutation
+ * payload rather than on the Cart itself, so a page that re-reads the cart would
+ * otherwise lose the fact entirely.
+ *
+ * Deliberately not merged into findMissingMerchandise: an absent line and an
+ * unpriceable line need different messages, and only this one is fixable by the
+ * customer changing address.
+ */
+export function findUnshippableLines(cart: Cart, context: string): string[] {
+  const unshippable = cart.lines.nodes
+    .filter((line) => line.quantity > 0 && Number(line.cost?.totalAmount?.amount ?? 0) === 0)
+    .map((line) => line.merchandise.id)
+  if (unshippable.length === 0) return []
+
+  console.error(
+    `[${context}] cart holds lines that cannot be priced for this destination`,
+    JSON.stringify({
+      lineCount: cart.lines.nodes.length,
+      unshippableMerchandiseIds: unshippable,
+      subtotal: cart.cost?.subtotalAmount?.amount,
+    }),
+  )
+  return unshippable
 }
 
 /**

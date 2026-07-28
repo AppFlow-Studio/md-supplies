@@ -119,7 +119,7 @@ export const BLOCKED_TAG_PATTERNS: readonly RegExp[] = [
 // Any handle without an entry gets DEFAULT_FACET_RULES. Adding a new filter
 // requires a registry entry here — nothing is ever derived from tags.
 //
-// Entries below are grounded in a measured coverage audit of all 10,329 active
+// Entries below are grounded in a measured coverage audit of all 7,385 active
 // products across 30 L1 categories (evidence: IZ-FILTER-01_category-filter-
 // matrix.csv, 540 candidate facets). A facet is registered only where it is at
 // least 60% populated AND carries 2 to 40 distinct values: one value narrows

@@ -296,7 +296,7 @@ describe('filter VALUE validation (NF17) — allowed keys with hostile values ar
 // 20 fell through to Availability/Price/Vendor. These lock in the fix.
 
 describe('category coverage: every audited category has real facets', () => {
-  // Categories from the coverage audit of 10,329 active products, as COLLECTION
+  // Categories from the coverage audit of 7,385 active products, as COLLECTION
   // HANDLES. The audit groups by the `category:` tag, and most tag values match
   // a collection handle, but not all: `testing` is the tag while
   // testing-screening is the collection, and non-medical / non-healthcare are

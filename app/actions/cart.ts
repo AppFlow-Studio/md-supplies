@@ -4,7 +4,12 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { attachCartShippingDisplay } from '@/lib/shipping-resolver/cart'
-import { findMissingMerchandise, CART_LINE_MISSING_MESSAGE } from '@/lib/shopify/cart-lines'
+import {
+  findMissingMerchandise,
+  findUnshippableLines,
+  CART_LINE_MISSING_MESSAGE,
+  CART_LINE_UNSHIPPABLE_MESSAGE,
+} from '@/lib/shopify/cart-lines'
 import {
   CREATE_CART,
   ADD_CART_LINES,
@@ -72,9 +77,18 @@ async function createCart(variantId: string, quantity: number): Promise<AddToCar
     maxAge: 60 * 60 * 24 * 30,
   })
   const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartCreate')
+  // A line that arrived but cannot be priced for the destination is a different
+  // problem from one that never arrived, and only this one is fixable by the
+  // customer. Missing wins when both are true: an absent item is the bigger
+  // surprise, and its message does not promise an address change will help.
+  const unshippable = findUnshippableLines(cart, 'cartCreate')
   return {
     cart: attachCartShippingDisplay(cart),
-    warning: missing.length ? CART_LINE_MISSING_MESSAGE : null,
+    warning: missing.length
+      ? CART_LINE_MISSING_MESSAGE
+      : unshippable.length
+        ? CART_LINE_UNSHIPPABLE_MESSAGE
+        : null,
   }
 }
 
@@ -97,9 +111,14 @@ export async function addToCart(variantId: string, quantity: number): Promise<Ad
     // would discard everything the customer already had and still not add the
     // item.
     const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartLinesAdd')
+    const unshippable = findUnshippableLines(cart, 'cartLinesAdd')
     return {
       cart: attachCartShippingDisplay(cart),
-      warning: missing.length ? CART_LINE_MISSING_MESSAGE : null,
+      warning: missing.length
+        ? CART_LINE_MISSING_MESSAGE
+        : unshippable.length
+          ? CART_LINE_UNSHIPPABLE_MESSAGE
+          : null,
     }
   } catch {
     // The cart may be expired: clear the stale cookie and start over.

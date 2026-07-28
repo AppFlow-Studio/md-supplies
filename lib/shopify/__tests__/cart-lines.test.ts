@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { findMissingMerchandise, CART_LINE_MISSING_MESSAGE } from '../cart-lines'
+import {
+  findMissingMerchandise,
+  findUnshippableLines,
+  CART_LINE_MISSING_MESSAGE,
+  CART_LINE_UNSHIPPABLE_MESSAGE,
+} from '../cart-lines'
 import type { Cart } from '../types'
 
 const VARIANT_A = 'gid://shopify/ProductVariant/1'
@@ -126,5 +131,86 @@ describe('CART_LINE_MISSING_MESSAGE', () => {
 
   it('tells the customer to check the cart before checkout', () => {
     expect(CART_LINE_MISSING_MESSAGE).toMatch(/review your cart/i)
+  })
+})
+
+/**
+ * Same shape, but each line carries its own cost, which is what distinguishes a
+ * priced line from one Shopify could not price for the destination.
+ */
+function cartWithCosts(
+  lines: Array<{ id: string; quantity: number; lineTotal: string }>,
+  subtotal: string,
+): Cart {
+  return {
+    id: 'gid://shopify/Cart/1',
+    checkoutUrl: 'https://example.com/checkout',
+    totalQuantity: lines.reduce((n, l) => n + l.quantity, 0),
+    attributes: [],
+    buyerIdentity: null,
+    cost: {
+      subtotalAmount: { amount: subtotal, currencyCode: 'USD' },
+      totalAmount: { amount: subtotal, currencyCode: 'USD' },
+    },
+    lines: {
+      nodes: lines.map((l, i) => ({
+        id: `gid://shopify/CartLine/${i + 1}`,
+        quantity: l.quantity,
+        merchandise: {
+          id: l.id,
+          title: 'Default Title',
+          sku: 'SKU',
+          selectedOptions: [],
+          product: {
+            id: 'gid://shopify/Product/1',
+            title: 'Test',
+            handle: 'test',
+            images: { nodes: [] },
+          },
+        },
+        cost: { totalAmount: { amount: l.lineTotal, currencyCode: 'USD' } },
+      })),
+    },
+  } as unknown as Cart
+}
+
+describe('findUnshippableLines', () => {
+  it('reports nothing when every line is priced', () => {
+    const cart = cartWithCosts([{ id: VARIANT_A, quantity: 1, lineTotal: '6.30' }], '6.30')
+    expect(findUnshippableLines(cart, 't')).toEqual([])
+  })
+
+  it('reports a line Shopify could not price for the destination', () => {
+    // Observed on the QA store: the line stays in the cart, contributes 0.00 to
+    // the subtotal, and Shopify calls it "sold out" though stock is 100.
+    const cart = cartWithCosts([{ id: VARIANT_A, quantity: 1, lineTotal: '0.0' }], '0.0')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(findUnshippableLines(cart, 't')).toEqual([VARIANT_A])
+  })
+
+  it('reports only the unshippable line in a mixed cart that is still checkout-ready', () => {
+    // The dangerous case. The priced line returned a rate and checkout stayed
+    // available, so without this the customer pays for a cart missing an item.
+    const cart = cartWithCosts(
+      [
+        { id: VARIANT_A, quantity: 1, lineTotal: '0.0' },
+        { id: VARIANT_B, quantity: 1, lineTotal: '6.30' },
+      ],
+      '6.30',
+    )
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(findUnshippableLines(cart, 't')).toEqual([VARIANT_A])
+  })
+
+  it('ignores a zero-quantity line rather than calling it unshippable', () => {
+    const cart = cartWithCosts([{ id: VARIANT_A, quantity: 0, lineTotal: '0.0' }], '0.0')
+    expect(findUnshippableLines(cart, 't')).toEqual([])
+  })
+
+  it('has a message that names the address, not stock', () => {
+    // Shopify says "already sold out" for in-stock items. Repeating that would
+    // send the customer to look for a restock that is not the problem.
+    expect(CART_LINE_UNSHIPPABLE_MESSAGE).toMatch(/address/i)
+    expect(CART_LINE_UNSHIPPABLE_MESSAGE).not.toMatch(/sold out|stock/i)
   })
 })
