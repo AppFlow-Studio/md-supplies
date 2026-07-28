@@ -296,14 +296,18 @@ describe('filter VALUE validation (NF17) — allowed keys with hostile values ar
 // 20 fell through to Availability/Price/Vendor. These lock in the fix.
 
 describe('category coverage: every audited category has real facets', () => {
-  // The 30 L1 categories from the coverage audit of 10,329 active products.
+  // Categories from the coverage audit of 10,329 active products, as COLLECTION
+  // HANDLES. The audit groups by the `category:` tag, and most tag values match
+  // a collection handle, but not all: `testing` is the tag while
+  // testing-screening is the collection, and non-medical / non-healthcare are
+  // tag values held out of the tree with no collection to key an entry on.
   const AUDITED = [
     'exam-room', 'wound-care', 'mobility', 'needles-syringes', 'room-furniture',
     'gloves', 'home-care', 'respiratory', 'emergency-supplies', 'surgery-procedure',
-    'patient-therapy-rehab', 'bariatric', 'hygiene', 'surgical-sutures', 'testing',
-    'apparel', 'dental', 'incontinence', 'pharmacy-products', 'housekeeping-janitorial',
-    'iv-therapy', 'non-medical', 'urology-ostomy', 'sterilization', 'face-masks',
-    'disinfectants', 'office-supplies', 'non-healthcare', 'occ',
+    'patient-therapy-rehab', 'bariatric', 'hygiene', 'surgical-sutures',
+    'testing-screening', 'apparel', 'dental', 'incontinence', 'pharmacy-products',
+    'housekeeping-janitorial', 'iv-therapy', 'urology-ostomy', 'sterilization',
+    'face-masks', 'disinfectants', 'office-supplies', 'occ',
   ]
 
   it('every audited category has an explicit registry entry', () => {
@@ -330,7 +334,7 @@ describe('the category facet the client asked for', () => {
   })
 
   it('renders on every audited category, not just OCC', () => {
-    for (const handle of ['exam-room', 'gloves', 'wound-care', 'testing', 'face-masks']) {
+    for (const handle of ['exam-room', 'gloves', 'wound-care', 'testing-screening', 'face-masks']) {
       expect(getAllowedFacets(handle, [CATEGORY_FACET]), handle).toHaveLength(1)
     }
   })

@@ -72,10 +72,16 @@ export const APPROVED_METAFIELDS = {
   // in most categories, and the field behind the old site's "Categories" list
   // (22 of its 33 values reproduce exactly).
   //
-  // It fails closed today. The production definition has storefront_access:
-  // NONE, so the Storefront API never returns this facet and the rail omits it.
-  // Registered now so it appears the moment that setting is enabled, with no
-  // further code change.
+  // VERIFIED LIVE against the production Storefront API (2026-07-28): returned
+  // on every collection sampled, with counts. occ 39 values, exam-room 100,
+  // wound-care 64, testing-screening 52, mobility 45, surgical-sutures 13.
+  //
+  // Worth recording why that surprised us: the metafield DEFINITION reports
+  // access.storefront NONE, which looks like it should block this. It does not.
+  // That setting governs reading a metafield's VALUE on a product
+  // (product.metafield(...)); filter facets are published separately from the
+  // Search & Discovery index, so a definition can be unreadable yet still
+  // filterable. Do not "fix" the definition on the strength of this facet.
   customerCategory: metafield(METAFIELD_NS, 'customer_filter_category'),
 
   // The public BRAND facet. Deliberately NOT Shopify's `vendor` field: vendor
@@ -159,6 +165,10 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   'hygiene-kits': OCC_RULES,
   'school-supplies': OCC_RULES,
   backpacks: OCC_RULES,
+  // NOTE: no collection with the handle `gifts-toys` exists, in the 07-19
+  // baseline or on the live storefront. This entry predates the coverage audit
+  // and is inert. Left in place rather than removed so whoever added it can
+  // confirm the intended handle.
   'gifts-toys': OCC_RULES,
 
   // 445 products. Type comes from product_type (in UNIVERSAL); glove_size is
@@ -196,18 +206,19 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   bariatric: OCC_RULES,                                       // 258
   hygiene: OCC_RULES,                                         // 256
   'surgical-sutures': withUniversal(APPROVED_METAFIELDS.material), // 192, material 96%
-  testing: withUniversal(APPROVED_METAFIELDS.testsFor),       // 173
+  // The L1 collection handle is testing-screening; `testing` is the category:
+  // tag value and is not a collection. Verified live: 12 facets, 52 category
+  // values.
+  'testing-screening': withUniversal(APPROVED_METAFIELDS.testsFor), // 173
   apparel: OCC_RULES,                                         // 152
   incontinence: OCC_RULES,                                    // 114
   'pharmacy-products': OCC_RULES,                             // 101
   'housekeeping-janitorial': OCC_RULES,                       // 85
-  'non-medical': OCC_RULES,                                   // 76
   'urology-ostomy': OCC_RULES,                                // 52
   sterilization: withUniversal(APPROVED_METAFIELDS.size),     // 51, size 80%
   'face-masks': OCC_RULES,                                    // 35
   disinfectants: OCC_RULES,                                   // 31
   'office-supplies': OCC_RULES,                               // 18
-  'non-healthcare': OCC_RULES,                                // 5
 
   // Confirmed live 2026-07-17 (docs/superpowers/plans/2026-07-17-attribute-
   // facet-audit.md, Task 1): needle_gauge/needle_length/size_length_/
