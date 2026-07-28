@@ -49,9 +49,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(async (variantId: string, qty: number) => {
     try {
       setLastError(null)
-      const updated = await addToCart(variantId, qty)
+      const { cart: updated, warning } = await addToCart(variantId, qty)
       setCart(updated)
       setIsOpen(true)
+      // Shopify can return a cart without a line we asked for and without an
+      // error. The cart is still shown, but the customer is told rather than
+      // left to notice the gap at checkout.
+      if (warning) setLastError(warning)
       const line = updated.lines.nodes.find((l) => l.merchandise.id === variantId)
       if (line) {
         track({

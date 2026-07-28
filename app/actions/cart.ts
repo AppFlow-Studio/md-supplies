@@ -4,6 +4,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { attachCartShippingDisplay } from '@/lib/shipping-resolver/cart'
+import { findMissingMerchandise, CART_LINE_MISSING_MESSAGE } from '@/lib/shopify/cart-lines'
 import {
   CREATE_CART,
   ADD_CART_LINES,
@@ -40,7 +41,18 @@ export async function getCart(): Promise<Cart | null> {
   }
 }
 
-async function createCart(variantId: string, quantity: number): Promise<Cart> {
+/**
+ * An add always yields a usable cart. `warning` is non-null when Shopify did
+ * not return a line we asked for: the cart is still valid and still shown, but
+ * the customer is told the item did not make it.
+ *
+ * A returned value rather than a thrown error on purpose. Next redacts server
+ * action error messages before they reach the browser, so an exception could
+ * not carry this wording to the customer.
+ */
+export type AddToCartResult = { cart: Cart; warning: string | null }
+
+async function createCart(variantId: string, quantity: number): Promise<AddToCartResult> {
   const jar = await cookies()
   const data = await storefrontFetch<{ cartCreate: { cart: Cart; userErrors: UserError[] } }>(
     CREATE_CART,
@@ -49,6 +61,9 @@ async function createCart(variantId: string, quantity: number): Promise<Cart> {
   )
   assertNoUserErrors(data.cartCreate.userErrors, 'cartCreate')
   const cart = data.cartCreate.cart
+  // Claim the cart before validating its contents. If a line went missing we
+  // still want the customer to own this cart rather than orphan it in Shopify
+  // and silently start another one on their next click.
   jar.set(CART_COOKIE, cart.id, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -56,10 +71,14 @@ async function createCart(variantId: string, quantity: number): Promise<Cart> {
     path: '/',
     maxAge: 60 * 60 * 24 * 30,
   })
-  return attachCartShippingDisplay(cart)
+  const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartCreate')
+  return {
+    cart: attachCartShippingDisplay(cart),
+    warning: missing.length ? CART_LINE_MISSING_MESSAGE : null,
+  }
 }
 
-export async function addToCart(variantId: string, quantity: number): Promise<Cart> {
+export async function addToCart(variantId: string, quantity: number): Promise<AddToCartResult> {
   const jar = await cookies()
   const cartId = jar.get(CART_COOKIE)?.value
 
@@ -72,9 +91,18 @@ export async function addToCart(variantId: string, quantity: number): Promise<Ca
       NO_STORE,
     )
     assertNoUserErrors(data.cartLinesAdd.userErrors, 'cartLinesAdd')
-    return attachCartShippingDisplay(data.cartLinesAdd.cart)
+    const cart = data.cartLinesAdd.cart
+    // A missing line is a real answer about this cart, not a sign the cart is
+    // gone, so it is reported rather than retried. Rebuilding the cart here
+    // would discard everything the customer already had and still not add the
+    // item.
+    const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartLinesAdd')
+    return {
+      cart: attachCartShippingDisplay(cart),
+      warning: missing.length ? CART_LINE_MISSING_MESSAGE : null,
+    }
   } catch {
-    // Cart may be expired — create a fresh one and clear the stale cookie
+    // The cart may be expired: clear the stale cookie and start over.
     jar.delete(CART_COOKIE)
     return createCart(variantId, quantity)
   }
