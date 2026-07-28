@@ -31,7 +31,7 @@ describe('getShippingFactsData', () => {
     vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', VALID_CHECKSUM)
     const data = getShippingFactsData()
     expect(data.ok).toBe(true)
-    expect(data.productsByGid.size).toBe(19)
+    expect(data.productsByGid.size).toBe(20)
     expect(data.duplicateVariantGids.size).toBe(0)
   })
 

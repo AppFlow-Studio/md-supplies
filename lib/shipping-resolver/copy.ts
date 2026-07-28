@@ -4,22 +4,35 @@ import type { PublicDisplayClass } from './schema'
 // constant, used by every invalid/missing/duplicate/unknown/held/failed path.
 export const SHIPPING_FALLBACK_MESSAGE = 'Shipping calculated at checkout.'
 
-// Placeholder copy — NOT approved for customer display (ticket item6,
-// blocked on Bilal). standard-paid/manual-quote/unknown intentionally map to
-// null so they fall through to SHIPPING_FALLBACK_MESSAGE, which is equally
-// true for a paid shipment (checkout still calculates the exact price).
-// Editing this object is the only change needed once wording is approved.
+// A class only gets wording here once that wording is approved. Anything null
+// falls through to SHIPPING_FALLBACK_MESSAGE, which is true for every class:
+// checkout always calculates the real charge.
+//
+// standard-free states what the registry already asserts, so it needs no
+// qualifier. standard-paid and manual-quote stay null because naming a price
+// we have not verified is exactly the promise we cannot keep.
+//
+// threshold is null DELIBERATELY. It previously read "Free shipping over a
+// vendor minimum", which was wrong twice over: it was never approved wording,
+// and "over" misstates the rule. Test E01 shows the condition is >=, so a cart
+// at exactly $30.00 qualifies and "over $30" would under-promise at the
+// boundary. The confirmed policy is also narrower than "a vendor minimum": it
+// applies to merchandise actually FULFILLED by Dukal, not to everything
+// carrying the Dukal brand, which is a distinction this resolver cannot yet
+// make. Threshold wording stays blocked until the exact copy is written and
+// approved; until then a threshold product shows the neutral fallback.
 export const SHIPPING_CLASS_COPY: Record<PublicDisplayClass, string | null> = {
   'standard-free': 'Free shipping',
-  threshold: 'Free shipping over a vendor minimum — see checkout for details',
+  threshold: null,
   'standard-paid': null,
   'manual-quote': null,
   unknown: null,
 }
 
-// Badge label shown on cards/quick-add/PDP. Only classes with a badge appear
-// here — standard-paid/manual-quote/unknown render no badge at all (silent).
+// Badge shown on cards/quick-add/PDP. A badge is a promise in three words with
+// no room for a condition, so only a class that is unconditionally true gets
+// one. threshold is excluded for the same reason its copy is null: "Free
+// Shipping Available" implies an entitlement whose condition it cannot state.
 export const SHIPPING_CLASS_BADGE_LABEL: Partial<Record<PublicDisplayClass, string>> = {
   'standard-free': 'Free Shipping',
-  threshold: 'Free Shipping Available',
 }

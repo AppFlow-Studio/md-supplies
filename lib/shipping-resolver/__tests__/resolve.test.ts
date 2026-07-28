@@ -93,6 +93,44 @@ describe('resolveVariantShippingDisplay', () => {
     expect(result.class).toBe('standard-free')
   })
 
+  it('makes no threshold promise, because that wording is not approved', () => {
+    // The class still resolves; only the wording is withheld. "over a vendor
+    // minimum" was wrong twice: unapproved, and "over" misstates a >= rule that
+    // a cart of exactly $30.00 satisfies.
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/8670729830616',
+      'gid://shopify/ProductVariant/48197143396568',
+    )
+    expect(result.class).toBe('threshold')
+    expect(result.message).toBe(SHIPPING_FALLBACK_MESSAGE)
+    expect(result.message).not.toMatch(/free/i)
+    expect(result.message).not.toMatch(/\bover\b/i)
+  })
+
+  it('reads display_copy from the variant, not the parent product', () => {
+    // Product 8743907098840 is one of 41 real cases where a variant carries
+    // copy its product does not: the product's display_copy is null while this
+    // variant has approved min-order wording. Reading copy from the parent
+    // would silently drop it.
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/8743907098840',
+      'gid://shopify/ProductVariant/51930533757144',
+    )
+    expect(result.class).toBe('standard-paid')
+    expect(result.displayCopy).toMatch(/^Vendor shipping is \$45\.95 on orders under \$700/)
+  })
+
+  it('does not lend one variant its sibling\'s copy', () => {
+    // Same product, the sibling whose own copy is null. It must stay null
+    // rather than inherit the other variant's terms.
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/8743907098840',
+      'gid://shopify/ProductVariant/49662378639576',
+    )
+    expect(result.class).toBe('unknown')
+    expect(result.displayCopy).toBeNull()
+  })
+
   it('returns the fallback for a missing product GID', () => {
     const result = resolveVariantShippingDisplay(
       'gid://shopify/Product/does-not-exist',

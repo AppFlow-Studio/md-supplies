@@ -20,10 +20,13 @@ describe('ShippingBadge', () => {
     expect(screen.getByText('Free Shipping')).toBeInTheDocument()
   })
 
-  it('renders a distinct badge for threshold (not the same label as free)', () => {
-    render(<ShippingBadge shippingDisplay={display({ class: 'threshold' })} />)
-    expect(screen.getByText('Free Shipping Available')).toBeInTheDocument()
-    expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+  it('renders nothing for threshold — the condition is unstated, so the badge would over-promise', () => {
+    // A threshold product only ships free once a subtotal condition is met. A
+    // badge has no room to say so, and the wording is not approved: the tested
+    // rule fires at exactly $30 (>=), and the confirmed policy covers only
+    // merchandise Dukal actually fulfils, which this resolver cannot yet tell.
+    const { container } = render(<ShippingBadge shippingDisplay={display({ class: 'threshold' })} />)
+    expect(container).toBeEmptyDOMElement()
   })
 
   it('renders nothing for standard-paid', () => {

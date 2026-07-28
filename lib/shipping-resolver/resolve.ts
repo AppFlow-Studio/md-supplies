@@ -32,7 +32,11 @@ export function resolveVariantShippingDisplay(productGid: string, variantGid: st
   const variant = product.variants[variantGid]
   if (!variant) return FALLBACK
 
-  return buildDisplay(variant.public_display_class, product.display_copy)
+  // Variant class pairs with the VARIANT's own copy. 41 variants in the full
+  // package carry copy their product does not, so reading copy from the parent
+  // would drop approved wording for those and, where the two disagree, could
+  // caption one variant with a sibling's terms.
+  return buildDisplay(variant.public_display_class, variant.display_copy)
 }
 
 export function resolveCardShippingDisplay(productGid: string): ShippingDisplay {
@@ -61,7 +65,7 @@ export function resolveVariantsForProduct(productGid: string): Record<string, Sh
     out[variantGid] =
       product.hold || data.duplicateVariantGids.has(variantGid)
         ? FALLBACK
-        : buildDisplay(variant.public_display_class, product.display_copy)
+        : buildDisplay(variant.public_display_class, variant.display_copy)
   }
   return out
 }
