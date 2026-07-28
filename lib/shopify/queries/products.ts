@@ -74,6 +74,26 @@ export const GET_PRODUCT = `#graphql
       collections(first: 10) {
         nodes { handle title }
       }
+      # normalizeProduct maps a full set of metafields, but none were being
+      # requested, so every one resolved to null. Two of them cause real harm and
+      # are on the assignment, so they are fetched here.
+      #
+      # brandName: the PDP renders brandName ?? vendor. With brandName null it
+      # fell through to vendor on every product, which prints MedPlus on a
+      # Dukal-branded bandage (product 8692868743384, SKU DUK 7609). vendor is the
+      # FULFILLER and disagrees with brand on 51% of active products, so the
+      # fallback was wrong for about half the catalogue.
+      #
+      # estimatedRestockDate: without it an out-of-stock product with a real ETA
+      # renders as a plain "out of stock" and the back-ordered branch in
+      # ProductView is unreachable. 105 active products carry a date.
+      #
+      # Both definitions are storefront-readable (PUBLIC_READ), verified live.
+      # The remaining metafields normalizeProduct maps are still unfetched: adding
+      # them changes what the spec sections render, which needs review rather than
+      # a quiet switch-on.
+      brandName: metafield(namespace: "custom", key: "brand_name") { value }
+      estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
     }
   }
 `;
