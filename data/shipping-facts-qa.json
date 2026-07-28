@@ -1,0 +1,345 @@
+{
+  "_meta": {
+    "artifact": "shipping-facts",
+    "schema_version": "v3.0",
+    "store": "md-supplies-qa-shipping-and-checkout.myshopify.com",
+    "environment": "qa",
+    "source": "Live QA development store, read-only Admin pull. Synthetic fixtures only.",
+    "note": "QA-ONLY registry. Shopify GIDs are store-specific, so these identify QA fixtures and nothing else. Classes here are test behaviour, not client policy. The resolver refuses this file in a build allowed to reach any other shop, and refuses the production package in a QA build.",
+    "products": 17,
+    "variants": 18
+  },
+  "delivery_profiles": [],
+  "products": {
+    "gid://shopify/Product/9353136144617": {
+      "handle": "qa-free",
+      "title": "QA Free Shipping Utility Tip",
+      "diagnostic_status": "clean_free",
+      "public_display_class": "standard-free",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573764784361": {
+          "sku": "QA-RTL10389GB",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136177385": {
+      "handle": "qa-dukal-threshold",
+      "title": "QA Dukal Pocket Eye Test Chart",
+      "diagnostic_status": "clean_threshold",
+      "public_display_class": "threshold",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573764817129": {
+          "sku": "QA-3053",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_threshold",
+          "public_display_class": "threshold",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136210153": {
+      "handle": "qa-paid-1095",
+      "title": "QA Pediatric Arm Sling Small",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573764849897": {
+          "sku": "QA-18-0403",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136242921": {
+      "handle": "qa-dynarex-15",
+      "title": "QA Dynarex Triangular Bandages",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573764882665": {
+          "sku": "QA-3672",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136275689": {
+      "handle": "qa-medchain-15",
+      "title": "QA Medchain Alcohol Prep Pads",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573764915433": {
+          "sku": "QA-101791",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136308457": {
+      "handle": "qa-general-20",
+      "title": "QA Berman Oral Airways Adult",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573764948201": {
+          "sku": "QA-36308",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136341225": {
+      "handle": "qa-graham-2095",
+      "title": "QA Grafco Plastic Funnel 2oz",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573764980969": {
+          "sku": "QA-3618A",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136373993": {
+      "handle": "qa-medplus-30",
+      "title": "QA Exel Butterfly Infusion Set",
+      "diagnostic_status": "no_rate",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": true,
+      "hold_reason": "held_medplus_fulfillment_rate_pending",
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765013737": {
+          "sku": "QA-EXE26704",
+          "effective_rate_class": null,
+          "diagnostic_status": "no_rate",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136406761": {
+      "handle": "qa-min-order-700",
+      "title": "QA Disposable Scalpels Sterile",
+      "diagnostic_status": "conditional_min_order",
+      "public_display_class": "standard-paid",
+      "display_copy": "Vendor shipping is $45.95 on orders under $700 and $20.95 on orders of $700 or more. Final shipping is calculated at checkout.",
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765046505": {
+          "sku": "QA-MPR47101",
+          "effective_rate_class": null,
+          "diagnostic_status": "conditional_min_order",
+          "public_display_class": "standard-paid",
+          "display_copy": "Vendor shipping is $45.95 on orders under $700 and $20.95 on orders of $700 or more. Final shipping is calculated at checkout."
+        }
+      }
+    },
+    "gid://shopify/Product/9353136472297": {
+      "handle": "qa-multi-location",
+      "title": "QA Mylar Emergency Thermal Blanket",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765243113": {
+          "sku": "QA-10-601",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136505065": {
+      "handle": "qa-no-rate",
+      "title": "QA Xylocaine Order-For-Pricing",
+      "diagnostic_status": "no_rate",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765275881": {
+          "sku": "QA-2354",
+          "effective_rate_class": null,
+          "diagnostic_status": "no_rate",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136537833": {
+      "handle": "qa-mixed-profile",
+      "title": "QA Grafco Ear Syringe 2oz",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765308649": {
+          "sku": "QA-3918-2-A",
+          "effective_rate_class": null,
+          "diagnostic_status": "multi_mixed",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51573765341417": {
+          "sku": "QA-3918-2-B",
+          "effective_rate_class": null,
+          "diagnostic_status": "multi_mixed",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136570601": {
+      "handle": "qa-out-of-stock",
+      "title": "QA Out-of-Stock Exam Gloves",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765374185": {
+          "sku": "QA-OOS-1",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136603369": {
+      "handle": "qa-backorder",
+      "title": "QA Backordered Face Masks",
+      "diagnostic_status": "clean_paid",
+      "public_display_class": "standard-paid",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765406953": {
+          "sku": "QA-BACK-1",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_paid",
+          "public_display_class": "standard-paid",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9353136636137": {
+      "handle": "qa-invalid-data",
+      "title": "QA Invalid Shipping Data Widget",
+      "diagnostic_status": "no_rate",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51573765439721": {
+          "sku": "QA-INV-1",
+          "effective_rate_class": null,
+          "diagnostic_status": "no_rate",
+          "public_display_class": "unknown",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9354965516521": {
+      "handle": "qa-boundary-dukal-30",
+      "title": "QA Boundary Dukal Exactly $30",
+      "diagnostic_status": "clean_threshold",
+      "public_display_class": "threshold",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51582832378089": {
+          "sku": "QA-BOUND-30",
+          "effective_rate_class": null,
+          "diagnostic_status": "clean_threshold",
+          "public_display_class": "threshold",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/9354965549289": {
+      "handle": "qa-boundary-minorder-700",
+      "title": "QA Boundary Min-Order Exactly $700",
+      "diagnostic_status": "conditional_min_order",
+      "public_display_class": "standard-paid",
+      "display_copy": "Vendor shipping is $45.95 on orders under $700 and $20.95 on orders of $700 or more. Final shipping is calculated at checkout.",
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/51582832410857": {
+          "sku": "QA-BOUND-700",
+          "effective_rate_class": null,
+          "diagnostic_status": "conditional_min_order",
+          "public_display_class": "standard-paid",
+          "display_copy": "Vendor shipping is $45.95 on orders under $700 and $20.95 on orders of $700 or more. Final shipping is calculated at checkout."
+        }
+      }
+    }
+  }
+}
