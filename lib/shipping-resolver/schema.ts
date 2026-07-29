@@ -36,7 +36,10 @@ const productRecordSchema = z
 
 export const shippingFactsSchema = z
   .object({
-    _meta: z.object({ schema_version: z.string() }).passthrough(),
+    // `store` is required: a registry has to say which shop it describes, or
+    // the loader cannot tell a QA payload from a production one and Shopify
+    // GIDs, which are store-specific, would be matched across stores.
+    _meta: z.object({ schema_version: z.string(), store: z.string() }).passthrough(),
     delivery_profiles: z.array(z.unknown()),
     products: z.record(z.string(), productRecordSchema),
   })

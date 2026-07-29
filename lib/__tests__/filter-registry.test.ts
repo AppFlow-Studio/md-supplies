@@ -289,3 +289,93 @@ describe('filter VALUE validation (NF17) — allowed keys with hostile values ar
     expect(isAllowedFilterInput('{"category":{"id":"gid://shopify/TaxonomyCategory/hb-1"}}')).toBe(true)
   })
 })
+
+// ── Coverage audit outcomes (IZ-FILTER-01) ─────────────────────────────────
+// The client's complaint was that filters "don't cover the product range". The
+// cause was structural: only 10 collections had registry entries and the other
+// 20 fell through to Availability/Price/Vendor. These lock in the fix.
+
+describe('category coverage: every audited category has real facets', () => {
+  // Categories from the coverage audit of 7,385 active products, as COLLECTION
+  // HANDLES. The audit groups by the `category:` tag, and most tag values match
+  // a collection handle, but not all: `testing` is the tag while
+  // testing-screening is the collection, and non-medical / non-healthcare are
+  // tag values held out of the tree with no collection to key an entry on.
+  const AUDITED = [
+    'exam-room', 'wound-care', 'mobility', 'needles-syringes', 'room-furniture',
+    'gloves', 'home-care', 'respiratory', 'emergency-supplies', 'surgery-procedure',
+    'patient-therapy-rehab', 'bariatric', 'hygiene', 'surgical-sutures',
+    'testing-screening', 'apparel', 'dental', 'incontinence', 'pharmacy-products',
+    'housekeeping-janitorial', 'iv-therapy', 'urology-ostomy', 'sterilization',
+    'face-masks', 'disinfectants', 'office-supplies', 'occ',
+  ]
+
+  it('every audited category has an explicit registry entry', () => {
+    const missing = AUDITED.filter((h) => !(h in filterRegistry))
+    expect(missing).toEqual([])
+  })
+
+  it('no audited category is left on the bare default set', () => {
+    for (const handle of AUDITED) {
+      expect(getFacetRules(handle).length, handle).toBeGreaterThan(DEFAULT_FACET_RULES.length)
+    }
+  })
+
+  it('an unknown collection still falls back to the safe default', () => {
+    expect(getFacetRules('not-a-real-collection')).toBe(DEFAULT_FACET_RULES)
+  })
+})
+
+describe('the category facet the client asked for', () => {
+  const CATEGORY_FACET = facet('filter.p.m.custom.customer_filter_category', 'Categories')
+
+  it('renders on OCC, which is where the complaint came from', () => {
+    expect(getAllowedFacets('occ', [CATEGORY_FACET])).toHaveLength(1)
+  })
+
+  it('renders on every audited category, not just OCC', () => {
+    for (const handle of ['exam-room', 'gloves', 'wound-care', 'testing-screening', 'face-masks']) {
+      expect(getAllowedFacets(handle, [CATEGORY_FACET]), handle).toHaveLength(1)
+    }
+  })
+})
+
+describe('brand and fulfilling vendor stay separate (IZ-VENDOR-01)', () => {
+  // Shopify's `vendor` holds the FULFILLING vendor and disagrees with brand on
+  // 51% of active products: the DUK 7609 bandage is branded Dukal but fulfilled
+  // by MedPlus. The public brand facet must therefore read custom.brand_name.
+  it('brand_name is the registered brand facet', () => {
+    const brand = facet('filter.p.m.custom.brand_name', 'Brand')
+    expect(getAllowedFacets('exam-room', [brand])).toHaveLength(1)
+  })
+
+  it('custom.type is never registered, because its meaning is inverted', () => {
+    // On gloves it holds material ("Nitrile Gloves"), not Exam/Surgical. Exam
+    // versus Surgical comes from product_type instead.
+    const wrong = facet('filter.p.m.custom.type', 'Type')
+    for (const handle of ['gloves', 'surgical-sutures', 'occ', 'exam-room']) {
+      expect(getAllowedFacets(handle, [wrong]), handle).toEqual([])
+    }
+  })
+
+  it('gloves get Exam/Surgical from product_type', () => {
+    const pt = facet('filter.p.type', 'Product type')
+    expect(getAllowedFacets('gloves', [pt])).toHaveLength(1)
+  })
+})
+
+describe('registered-but-not-live facets fail closed', () => {
+  it('a registered facet the Storefront API does not return simply does not render', () => {
+    // customer_filter_category has storefront_access NONE in production today,
+    // so Shopify never returns it. Registering it must not fabricate a facet.
+    expect(getAllowedFacets('occ', [])).toEqual([])
+  })
+
+  it('registry entries never reference a source outside the allowlist', () => {
+    for (const [handle, rules] of Object.entries(filterRegistry)) {
+      for (const rule of rules) {
+        expect(ALL_ALLOWED_RULES.some((a) => a.name === rule.name), `${handle}:${rule.name}`).toBe(true)
+      }
+    }
+  })
+})

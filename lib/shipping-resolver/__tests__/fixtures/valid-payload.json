@@ -2,8 +2,9 @@
   "_meta": {
     "artifact": "shipping-facts",
     "schema_version": "v3.0",
+    "store": "daebb2-76.myshopify.com (mdsupplies.com)",
     "generated_utc": "2026-07-20T20:40:28Z",
-    "note": "Trimmed test fixture — a real subset of shipping-facts-v3.json (19 real products), not a full payload. checksum_sha256_of_payload below is not meaningful; the resolver validates against SHIPPING_FACTS_CHECKSUM_SHA256 env var in tests, not this field.",
+    "note": "Trimmed test fixture — a real subset of shipping-facts-v3.json (20 real products), not a full payload. Product 8743907098840 is one of the 41 real cases where a variant carries display_copy its parent product does not, which is why variant-level copy has to be read from the variant. checksum_sha256_of_payload below is not meaningful; the resolver validates against SHIPPING_FACTS_CHECKSUM_SHA256 env var in tests, not this field.",
     "checksum_sha256_of_payload": "TEST-FIXTURE-NOT-VALIDATED"
   },
   "delivery_profiles": [],
@@ -499,6 +500,174 @@
           "diagnostic_status": "partial_coverage",
           "public_display_class": "unknown",
           "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/8743907098840": {
+      "handle": "100-petroleum-jelly-original-13-oz-24-cs",
+      "title": "100% Petroleum Jelly, Original",
+      "vendor": "Shield Line",
+      "product_type": "Personal Care",
+      "diagnostic_status": "multi_mixed",
+      "public_display_class": "unknown",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/49662378639576": {
+          "sku": "MPR-10105",
+          "inventory_item_gid": "gid://shopify/InventoryItem/51763663241432",
+          "stocked_locations": [
+            {
+              "id": "gid://shopify/Location/77708001496",
+              "name": "MDSupplies (Minimum Order $700)"
+            },
+            {
+              "id": "gid://shopify/Location/77652623576",
+              "name": "MDSupplies $20 Shipping"
+            }
+          ],
+          "delivery_profile": {
+            "id": "gid://shopify/DeliveryProfile/99133587672",
+            "name": "$20.95 Shipping (Minimum Order Requirement $700) | $45.95 Shipping for orders under $700"
+          },
+          "effective_rates": [
+            {
+              "location": {
+                "id": "gid://shopify/Location/77708001496",
+                "name": "MDSupplies (Minimum Order $700)"
+              },
+              "location_group": "MDSupplies (Minimum Order $700)",
+              "zones": [
+                {
+                  "zone": "Continental USA",
+                  "countries": [
+                    "US"
+                  ],
+                  "methods": [
+                    {
+                      "name": "Economy",
+                      "rate": "20.95",
+                      "currency": "USD",
+                      "conditions": [
+                        {
+                          "field": "TOTAL_PRICE",
+                          "operator": "GREATER_THAN_OR_EQUAL_TO",
+                          "amount": "700.0",
+                          "currency": "USD",
+                          "weight_value": null,
+                          "weight_unit": null
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Economy (5 to 8 business days)",
+                      "rate": "45.95",
+                      "currency": "USD",
+                      "conditions": [
+                        {
+                          "field": "TOTAL_PRICE",
+                          "operator": "GREATER_THAN_OR_EQUAL_TO",
+                          "amount": "0.0",
+                          "currency": "USD",
+                          "weight_value": null,
+                          "weight_unit": null
+                        },
+                        {
+                          "field": "TOTAL_PRICE",
+                          "operator": "LESS_THAN_OR_EQUAL_TO",
+                          "amount": "699.99",
+                          "currency": "USD",
+                          "weight_value": null,
+                          "weight_unit": null
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "effective_rate_class": "COND_PAID",
+          "diagnostic_status": "partial_coverage",
+          "public_display_class": "unknown",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/51930533757144": {
+          "sku": "MPR-10103",
+          "inventory_item_gid": "gid://shopify/InventoryItem/54042886963416",
+          "stocked_locations": [
+            {
+              "id": "gid://shopify/Location/77708001496",
+              "name": "MDSupplies (Minimum Order $700)"
+            }
+          ],
+          "delivery_profile": {
+            "id": "gid://shopify/DeliveryProfile/99133587672",
+            "name": "$20.95 Shipping (Minimum Order Requirement $700) | $45.95 Shipping for orders under $700"
+          },
+          "effective_rates": [
+            {
+              "location": {
+                "id": "gid://shopify/Location/77708001496",
+                "name": "MDSupplies (Minimum Order $700)"
+              },
+              "location_group": "MDSupplies (Minimum Order $700)",
+              "zones": [
+                {
+                  "zone": "Continental USA",
+                  "countries": [
+                    "US"
+                  ],
+                  "methods": [
+                    {
+                      "name": "Economy",
+                      "rate": "20.95",
+                      "currency": "USD",
+                      "conditions": [
+                        {
+                          "field": "TOTAL_PRICE",
+                          "operator": "GREATER_THAN_OR_EQUAL_TO",
+                          "amount": "700.0",
+                          "currency": "USD",
+                          "weight_value": null,
+                          "weight_unit": null
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Economy (5 to 8 business days)",
+                      "rate": "45.95",
+                      "currency": "USD",
+                      "conditions": [
+                        {
+                          "field": "TOTAL_PRICE",
+                          "operator": "GREATER_THAN_OR_EQUAL_TO",
+                          "amount": "0.0",
+                          "currency": "USD",
+                          "weight_value": null,
+                          "weight_unit": null
+                        },
+                        {
+                          "field": "TOTAL_PRICE",
+                          "operator": "LESS_THAN_OR_EQUAL_TO",
+                          "amount": "699.99",
+                          "currency": "USD",
+                          "weight_value": null,
+                          "weight_unit": null
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "effective_rate_class": "COND_PAID",
+          "diagnostic_status": "conditional_min_order",
+          "public_display_class": "standard-paid",
+          "display_copy": "Vendor shipping is $45.95 on orders under $700 and $20.95 on orders of $700 or more. Final shipping is calculated at checkout."
         }
       }
     }

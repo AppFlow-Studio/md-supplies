@@ -1,11 +1,11 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { join } from 'node:path'
 import { __resetShippingFactsCacheForTests } from '../data'
+import { VALID } from './fixtures'
 import { attachCartShippingDisplay } from '../cart'
 import type { Cart } from '@/lib/shopify/types'
 
-const VALID_FIXTURE = join(__dirname, 'fixtures/valid-payload.json')
-const VALID_CHECKSUM = '802f0070e6c122f26afd465d2058f4de6b29dcdd4ec6e0e29e418e2474c47d53'
+const VALID_FIXTURE = VALID.path
+const VALID_CHECKSUM = VALID.checksum
 
 function stubCart(productId: string, variantId: string): Cart {
   return {
@@ -63,6 +63,7 @@ describe('attachCartShippingDisplay', () => {
     vi.stubEnv('SHIPPING_RESOLVER_ENABLED', 'true')
     vi.stubEnv('SHIPPING_FACTS_PATH', VALID_FIXTURE)
     vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', VALID_CHECKSUM)
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', VALID.store)
     const cart = stubCart('gid://shopify/Product/8651919917272', 'gid://shopify/ProductVariant/46997871591640')
     const result = attachCartShippingDisplay(cart)
     expect(result.lines.nodes[0].shippingDisplay?.class).toBe('standard-free')

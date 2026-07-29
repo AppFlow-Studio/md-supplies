@@ -66,6 +66,30 @@ export const APPROVED_METAFIELDS = {
   length: metafield(METAFIELD_NS, 'needle_length'),
   volume: metafield(METAFIELD_NS, 'volume'),
   weight: metafield(METAFIELD_NS, 'weight'),
+
+  // The category facet the client is actually asking for, and the
+  // highest-coverage attribute in the catalogue: populated on 100% of products
+  // in most categories, and the field behind the old site's "Categories" list
+  // (22 of its 33 values reproduce exactly).
+  //
+  // VERIFIED LIVE against the production Storefront API (2026-07-28): returned
+  // on every collection sampled, with counts. occ 39 values, exam-room 100,
+  // wound-care 64, testing-screening 52, mobility 45, surgical-sutures 13.
+  //
+  // Worth recording why that surprised us: the metafield DEFINITION reports
+  // access.storefront NONE, which looks like it should block this. It does not.
+  // That setting governs reading a metafield's VALUE on a product
+  // (product.metafield(...)); filter facets are published separately from the
+  // Search & Discovery index, so a definition can be unreadable yet still
+  // filterable. Do not "fix" the definition on the strength of this facet.
+  customerCategory: metafield(METAFIELD_NS, 'customer_filter_category'),
+
+  // The public BRAND facet. Deliberately NOT Shopify's `vendor` field: vendor
+  // holds the FULFILLING vendor, which disagrees with brand on 51% of active
+  // products (the DUK 7609 bandage is branded Dukal but fulfilled by MedPlus).
+  // Rendering vendor as "Brand" would mislabel half the catalogue, so brand and
+  // fulfiller stay separate exactly as the shipping rules require.
+  brandName: metafield(METAFIELD_NS, 'brand_name'),
 } as const
 
 // ── Hard deny: raw tags never render, no matter what S&D returns ───────────
@@ -94,43 +118,107 @@ export const BLOCKED_TAG_PATTERNS: readonly RegExp[] = [
 // ── Per-collection facet sets, keyed by collection handle ───────────────────
 // Any handle without an entry gets DEFAULT_FACET_RULES. Adding a new filter
 // requires a registry entry here — nothing is ever derived from tags.
-const OCC_RULES: FacetRule[] = [AVAILABILITY, PRICE, VENDOR, PRODUCT_TYPE]
+//
+// Entries below are grounded in a measured coverage audit of all 7,385 active
+// products across 30 L1 categories (evidence: IZ-FILTER-01_category-filter-
+// matrix.csv, 540 candidate facets). A facet is registered only where it is at
+// least 60% populated AND carries 2 to 40 distinct values: one value narrows
+// nothing, and a value per product is a list rather than a filter.
+//
+// Before that audit only 10 collections had entries and the other 20 fell
+// through to Availability/Price/Vendor, which is exactly the client's complaint
+// that filters "don't cover the product range".
+
+// Measured at or near 100% population in every audited category, so every
+// collection gets these. Registering a facet does not force it to render: the
+// Storefront API has to return it, so anything not yet live simply fails closed.
+const UNIVERSAL: FacetRule[] = [
+  APPROVED_METAFIELDS.customerCategory,
+  APPROVED_METAFIELDS.brandName,
+  APPROVED_METAFIELDS.orderSize,
+  PRODUCT_TYPE,
+  VENDOR,
+  PRICE,
+  AVAILABILITY,
+]
+
+/** Category-specific facets first, then the universal set. */
+function withUniversal(...specific: FacetRule[]): FacetRule[] {
+  return [...specific, ...UNIVERSAL]
+}
+
+// NOTE ON `custom.type`: deliberately never registered. Its meaning is not
+// consistent across categories — on gloves it holds MATERIAL values ("Nitrile
+// Gloves", "Latex Gloves"), which is the inversion Bilal reported. Exam versus
+// Surgical, the value he wants under Type, comes from `product_type` instead,
+// which is 100% populated on gloves (Exam Glove 343, Surgical Glove 70) and is
+// already an approved source. So gloves get a correct Type facet with no data
+// migration, and Material waits on `custom.material` being populated (0.9%
+// today, so it fails closed until then).
+const OCC_RULES: FacetRule[] = withUniversal()
 
 export const filterRegistry: Record<string, FacetRule[]> = {
   // OCC hub + its eligible collections: no glove / needle / testing facets.
+  // The category facet matters most here: it is what the client's old site
+  // exposed and what the complaint is about.
   occ: OCC_RULES,
   'hygiene-kits': OCC_RULES,
   'school-supplies': OCC_RULES,
   backpacks: OCC_RULES,
+  // NOTE: no collection with the handle `gifts-toys` exists, in the 07-19
+  // baseline or on the live storefront. This entry predates the coverage audit
+  // and is inert. Left in place rather than removed so whoever added it can
+  // confirm the intended handle.
   'gifts-toys': OCC_RULES,
 
-  gloves: [
+  // 445 products. Type comes from product_type (in UNIVERSAL); glove_size is
+  // only 39% populated so it fails closed until filled from vendor data.
+  gloves: withUniversal(
     APPROVED_METAFIELDS.gloveSize,
     variantOption('size'),
     APPROVED_METAFIELDS.material,
-    VENDOR,
-    PRICE,
-    AVAILABILITY,
-  ],
+  ),
 
-  'needles-syringes': [
+  // 593 products. Measured: needle gauge 80%, needle length 78%.
+  'needles-syringes': withUniversal(
     APPROVED_METAFIELDS.needleGauge,
     APPROVED_METAFIELDS.length,
     APPROVED_METAFIELDS.volume,
-    APPROVED_METAFIELDS.orderSize,
-    VENDOR,
-    PRICE,
-    AVAILABILITY,
-  ],
+  ),
 
-  mobility: [
+  // 638 products.
+  mobility: withUniversal(
     APPROVED_METAFIELDS.weight,
     APPROVED_METAFIELDS.size,
     variantOption('size'),
-    VENDOR,
-    PRICE,
-    AVAILABILITY,
-  ],
+  ),
+
+  // ── Categories added from the coverage audit ──────────────────────────────
+  // Each previously fell through to Availability/Price/Vendor only.
+  'exam-room': OCC_RULES,                                     // 845 products
+  'wound-care': withUniversal(APPROVED_METAFIELDS.size),      // 723, size 66%
+  'room-furniture': OCC_RULES,                                // 512
+  'home-care': OCC_RULES,                                     // 423
+  respiratory: OCC_RULES,                                     // 408
+  'emergency-supplies': OCC_RULES,                            // 355
+  'surgery-procedure': OCC_RULES,                             // 319
+  'patient-therapy-rehab': OCC_RULES,                         // 299
+  bariatric: OCC_RULES,                                       // 258
+  hygiene: OCC_RULES,                                         // 256
+  'surgical-sutures': withUniversal(APPROVED_METAFIELDS.material), // 192, material 96%
+  // The L1 collection handle is testing-screening; `testing` is the category:
+  // tag value and is not a collection. Verified live: 12 facets, 52 category
+  // values.
+  'testing-screening': withUniversal(APPROVED_METAFIELDS.testsFor), // 173
+  apparel: OCC_RULES,                                         // 152
+  incontinence: OCC_RULES,                                    // 114
+  'pharmacy-products': OCC_RULES,                             // 101
+  'housekeeping-janitorial': OCC_RULES,                       // 85
+  'urology-ostomy': OCC_RULES,                                // 52
+  sterilization: withUniversal(APPROVED_METAFIELDS.size),     // 51, size 80%
+  'face-masks': OCC_RULES,                                    // 35
+  disinfectants: OCC_RULES,                                   // 31
+  'office-supplies': OCC_RULES,                               // 18
 
   // Confirmed live 2026-07-17 (docs/superpowers/plans/2026-07-17-attribute-
   // facet-audit.md, Task 1): needle_gauge/needle_length/size_length_/
@@ -138,28 +226,20 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   // collection today -- same gauge/length/order-size metafield family as
   // needles-syringes above, but with size in place of volume, since dental
   // needle products carry gauge/length/size attributes, not a fill volume.
-  dental: [
+  dental: withUniversal(
     APPROVED_METAFIELDS.needleGauge,
     APPROVED_METAFIELDS.length,
     APPROVED_METAFIELDS.size,
-    APPROVED_METAFIELDS.orderSize,
-    VENDOR,
-    PRICE,
-    AVAILABILITY,
-  ],
+  ),
 
   // Confirmed live 2026-07-17 (same audit as dental above) -- IV catheter
   // gauge is the attribute in question (24g-iv-catheters etc.), same
   // metafield family.
-  'iv-therapy': [
+  'iv-therapy': withUniversal(
     APPROVED_METAFIELDS.needleGauge,
     APPROVED_METAFIELDS.length,
     APPROVED_METAFIELDS.size,
-    APPROVED_METAFIELDS.orderSize,
-    VENDOR,
-    PRICE,
-    AVAILABILITY,
-  ],
+  ),
 }
 
 // Safe default for any collection without an explicit registry entry.
@@ -196,6 +276,10 @@ export const ALL_ALLOWED_RULES: FacetRule[] = [
   VENDOR,
   PRICE,
   AVAILABILITY,
+  // Variant options are an approved source and were already referenced by the
+  // gloves and mobility entries, but were missing from this list, so the guard
+  // test could not actually verify those two entries. Listed explicitly now.
+  variantOption('size'),
   ...Object.values(APPROVED_METAFIELDS),
 ]
 

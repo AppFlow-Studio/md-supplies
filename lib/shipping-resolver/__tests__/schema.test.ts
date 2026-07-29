@@ -26,7 +26,7 @@ function validProduct(overrides: Record<string, unknown> = {}) {
 
 function payload(products: Record<string, unknown>) {
   return {
-    _meta: { schema_version: 'v3.0' },
+    _meta: { schema_version: 'v3.0', store: 'test.myshopify.com' },
     delivery_profiles: [],
     products,
   }
@@ -65,7 +65,7 @@ describe('shippingFactsSchema', () => {
 
   it('rejects a payload missing the top-level products key', () => {
     const result = shippingFactsSchema.safeParse({
-      _meta: { schema_version: 'v3.0' },
+      _meta: { schema_version: 'v3.0', store: 'test.myshopify.com' },
       delivery_profiles: [],
     })
     expect(result.success).toBe(false)

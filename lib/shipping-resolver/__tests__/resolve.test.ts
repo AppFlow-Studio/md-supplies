@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { join } from 'node:path'
 import { __resetShippingFactsCacheForTests } from '../data'
 import {
   resolveVariantShippingDisplay,
@@ -7,17 +6,22 @@ import {
   resolveVariantsForProduct,
 } from '../resolve'
 import { SHIPPING_FALLBACK_MESSAGE } from '../copy'
+import { VALID, DUPLICATE } from './fixtures'
 
-const VALID_FIXTURE = join(__dirname, 'fixtures/valid-payload.json')
-const VALID_CHECKSUM = '802f0070e6c122f26afd465d2058f4de6b29dcdd4ec6e0e29e418e2474c47d53'
-const DUPLICATE_FIXTURE = join(__dirname, 'fixtures/duplicate-variant-payload.json')
-const DUPLICATE_CHECKSUM = '900b5bd2691e4491f3fd58b9ce92e353b7f43628b86157e4de1657c7d4a51865'
+const VALID_FIXTURE = VALID.path
+const VALID_CHECKSUM = VALID.checksum
+const DUPLICATE_FIXTURE = DUPLICATE.path
+const DUPLICATE_CHECKSUM = DUPLICATE.checksum
 
 const FALLBACK = { class: 'unknown', message: SHIPPING_FALLBACK_MESSAGE, displayCopy: null }
 
 beforeEach(() => {
   vi.stubEnv('SHIPPING_FACTS_PATH', VALID_FIXTURE)
   vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', VALID_CHECKSUM)
+  // These cases exercise resolution, not the environment gate. The payload is
+  // real production data, which the plan permits for offline schema/resolver
+  // work, so the allowed shop is set to match what the fixture declares.
+  vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', VALID.store)
   __resetShippingFactsCacheForTests()
 })
 
@@ -89,6 +93,44 @@ describe('resolveVariantShippingDisplay', () => {
     expect(result.class).toBe('standard-free')
   })
 
+  it('makes no threshold promise, because that wording is not approved', () => {
+    // The class still resolves; only the wording is withheld. "over a vendor
+    // minimum" was wrong twice: unapproved, and "over" misstates a >= rule that
+    // a cart of exactly $30.00 satisfies.
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/8670729830616',
+      'gid://shopify/ProductVariant/48197143396568',
+    )
+    expect(result.class).toBe('threshold')
+    expect(result.message).toBe(SHIPPING_FALLBACK_MESSAGE)
+    expect(result.message).not.toMatch(/free/i)
+    expect(result.message).not.toMatch(/\bover\b/i)
+  })
+
+  it('reads display_copy from the variant, not the parent product', () => {
+    // Product 8743907098840 is one of 41 real cases where a variant carries
+    // copy its product does not: the product's display_copy is null while this
+    // variant has approved min-order wording. Reading copy from the parent
+    // would silently drop it.
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/8743907098840',
+      'gid://shopify/ProductVariant/51930533757144',
+    )
+    expect(result.class).toBe('standard-paid')
+    expect(result.displayCopy).toMatch(/^Vendor shipping is \$45\.95 on orders under \$700/)
+  })
+
+  it('does not lend one variant its sibling\'s copy', () => {
+    // Same product, the sibling whose own copy is null. It must stay null
+    // rather than inherit the other variant's terms.
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/8743907098840',
+      'gid://shopify/ProductVariant/49662378639576',
+    )
+    expect(result.class).toBe('unknown')
+    expect(result.displayCopy).toBeNull()
+  })
+
   it('returns the fallback for a missing product GID', () => {
     const result = resolveVariantShippingDisplay(
       'gid://shopify/Product/does-not-exist',
@@ -145,6 +187,8 @@ describe('duplicate-variant-GID handling', () => {
   beforeEach(() => {
     vi.stubEnv('SHIPPING_FACTS_PATH', DUPLICATE_FIXTURE)
     vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', DUPLICATE_CHECKSUM)
+    // This fixture is synthetic QA data, so the allowed shop moves with it.
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', DUPLICATE.store)
     __resetShippingFactsCacheForTests()
   })
 

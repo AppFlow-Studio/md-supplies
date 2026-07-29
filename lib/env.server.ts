@@ -1,4 +1,5 @@
 import 'server-only'
+import { assertShopDomainAllowed } from '@/lib/shopify/shop-guard'
 
 function required(name: string): string {
   const v = process.env[name]
@@ -18,7 +19,11 @@ function optional(name: string, fallback: string): string {
 // variable is actually needed to serve a request. Accessing a module that reads
 // `serverEnv.shopifyStoreDomain` at request time will throw if it is unset.
 export const serverEnv = {
-  get shopifyStoreDomain()     { return required('SHOPIFY_STORE_DOMAIN') },
+  // Every Storefront and Admin URL is built from this value, so the shop guard
+  // sits here rather than at each call site: one gate covers runtime, server
+  // actions, scripts and the CI build. Returns the normalized host, so URLs are
+  // built from the checked value rather than the raw input.
+  get shopifyStoreDomain()     { return assertShopDomainAllowed(required('SHOPIFY_STORE_DOMAIN')) },
   get shopifyStorefrontToken() { return required('SHOPIFY_STOREFRONT_ACCESS_TOKEN') },
   // Admin API credential for the RX prescription gate ONLY (P0 launch-gate
   // ticket): writing/reading the compliance.rx_document / rx_verified
@@ -32,6 +37,9 @@ export const serverEnv = {
   get shopifyWebhookSecret()   { return required('SHOPIFY_WEBHOOK_SECRET') },
   get resendApiKey()           { return required('RESEND_API_KEY') },
   get resendFromEmail()        { return optional('RESEND_FROM_EMAIL', 'noreply@mdsupplies.com') },
+  // IZ-COMMS-01: support@ is the only approved recipient. The default used to be
+  // team@, which the plan forbids, so an unset RESEND_TO_EMAIL silently sent every
+  // contact and sourcing submission to the wrong inbox.
   get resendToEmail()          { return optional('RESEND_TO_EMAIL', 'support@mdsupplies.com') },
   get bunnyCdnAccessKey()      { return required('BUNNYCDN_STORAGE_ACCESS_KEY') },
   get bunnyCdnHostname()       { return optional('BUNNYCDN_STORAGE_HOSTNAME', 'ny.storage.bunnycdn.com') },

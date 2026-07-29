@@ -4,6 +4,8 @@ import { CartPageClient } from '../CartPageClient'
 import { useCart } from '../CartProvider'
 import { track } from '@/lib/analytics/track'
 import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/events'
+import { SHIPPING_CLASS_COPY, SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
+import type { PublicDisplayClass } from '@/lib/shipping-resolver/schema'
 
 vi.mock('../CartProvider', () => ({ useCart: vi.fn() }))
 vi.mock('../CartToast', () => ({ CartToast: () => null }))
@@ -49,6 +51,30 @@ const mockLine = {
     },
   },
   cost: { totalAmount: { amount: '29.98', currencyCode: 'USD' } },
+}
+
+/**
+ * A cart line carrying a server-resolved shipping class, shaped exactly as
+ * attachCartShippingDisplay produces it (class + the class's copy). The cart
+ * summary reads only `class`; `message` is built the same way resolve.ts
+ * builds it so the fixture cannot drift from the real resolver output.
+ */
+function lineWithClass(
+  base: typeof mockLine,
+  id: string,
+  variantId: string,
+  cls: PublicDisplayClass,
+) {
+  return {
+    ...base,
+    id,
+    merchandise: { ...base.merchandise, id: variantId },
+    shippingDisplay: {
+      class: cls,
+      message: SHIPPING_CLASS_COPY[cls] ?? SHIPPING_FALLBACK_MESSAGE,
+      displayCopy: null,
+    },
+  }
 }
 
 const mockCart = {
@@ -172,30 +198,44 @@ describe('CartPageClient', () => {
     expect(screen.getByText('Shipping calculated at checkout.')).toBeInTheDocument()
   })
 
-  it('shows "Free shipping" only when every cart line carries a free signal', () => {
-    const freeLine = {
-      ...mockLine,
-      merchandise: {
-        ...mockLine.merchandise,
-        product: { ...mockLine.merchandise.product, tags: ['free-shipping'] },
-      },
-    }
+  it('claims free shipping only when the resolver classified every line standard-free', () => {
+    const freeLine = lineWithClass(mockLine, 'line-1', 'variant-1', 'standard-free')
     setupUseCart({ cart: { ...mockCart, lines: { nodes: [freeLine] } } })
     render(<CartPageClient />)
     expect(screen.getByText('Free shipping')).toBeInTheDocument()
   })
 
-  it('mixed cart (free + unresolved lines) falls back to the neutral copy', () => {
-    const freeLine = {
+  it('drops the whole-cart claim to neutral copy when one line is not free', () => {
+    const freeLine = lineWithClass(mockLine, 'line-1', 'variant-1', 'standard-free')
+    const paidLine = lineWithClass(mockLine, 'line-2', 'variant-2', 'standard-paid')
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [freeLine, paidLine] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('Shipping calculated at checkout.')).toBeInTheDocument()
+    expect(screen.queryByText('Free shipping')).not.toBeInTheDocument()
+  })
+
+  it('treats an unresolved line as not-free rather than skipping it', () => {
+    const freeLine = lineWithClass(mockLine, 'line-1', 'variant-1', 'standard-free')
+    // No shippingDisplay at all: the resolver is off, or the GID did not match.
+    const unresolved = { ...mockLine, id: 'line-2' }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [freeLine, unresolved] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('Shipping calculated at checkout.')).toBeInTheDocument()
+    expect(screen.queryByText('Free shipping')).not.toBeInTheDocument()
+  })
+
+  // Regression guard: a `free-shipping` product tag is an uncurated catalog
+  // signal, not an approved source for a customer-facing shipping promise.
+  // The cart summary must ignore it entirely.
+  it('never claims free shipping from a free-shipping product tag alone', () => {
+    const taggedLine = {
       ...mockLine,
-      id: 'line-2',
       merchandise: {
         ...mockLine.merchandise,
-        id: 'variant-2',
         product: { ...mockLine.merchandise.product, tags: ['free-shipping'] },
       },
     }
-    setupUseCart({ cart: { ...mockCart, lines: { nodes: [mockLine, freeLine] } } })
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [taggedLine] } } })
     render(<CartPageClient />)
     expect(screen.getByText('Shipping calculated at checkout.')).toBeInTheDocument()
     expect(screen.queryByText('Free shipping')).not.toBeInTheDocument()

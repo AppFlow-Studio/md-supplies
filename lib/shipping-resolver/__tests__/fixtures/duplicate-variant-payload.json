@@ -2,6 +2,7 @@
   "_meta": {
     "artifact": "shipping-facts",
     "schema_version": "v3.0",
+    "store": "md-supplies-qa-shipping-and-checkout.myshopify.com",
     "note": "Synthetic fixture for the duplicate-variant-GID test case only — not real store data. checksum_sha256_of_payload below is not meaningful; tests validate against SHIPPING_FACTS_CHECKSUM_SHA256.",
     "checksum_sha256_of_payload": "TEST-FIXTURE-NOT-VALIDATED"
   },
