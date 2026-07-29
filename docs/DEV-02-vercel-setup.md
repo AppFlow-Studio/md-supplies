@@ -39,7 +39,7 @@ Add each row below with the exact scopes shown. Server-only secrets must never a
 | `NEXT_PUBLIC_GTM_ID` | ✅ | — | — | `GTM-5BQJLLJV` — Production only; code already excludes it on staging |
 | `RESEND_API_KEY` | ✅ | ✅ | — | Secret — from 1Password |
 | `RESEND_FROM_EMAIL` | ✅ | ✅ | — | `noreply@mdsupplies.com` |
-| `RESEND_TO_EMAIL` | ✅ | ✅ | — | `team@mdsupplies.com` |
+| `RESEND_TO_EMAIL` | ✅ | ✅ | — | `support@mdsupplies.com` |
 | `RESEND_SOURCING_TO_EMAIL` | ✅ | ✅ | — | `sourcing@mdsupplies.com` |
 | `BUNNYCDN_STORAGE_ACCESS_KEY` | ✅ | ✅ | ✅ | Secret — from 1Password |
 | `BUNNYCDN_STORAGE_HOSTNAME` | ✅ | ✅ | ✅ | `ny.storage.bunnycdn.com` |

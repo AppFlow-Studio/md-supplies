@@ -104,7 +104,7 @@ export const serverEnv = {
   // Resend
   resendApiKey:           required('RESEND_API_KEY'),
   resendFromEmail:        optional('RESEND_FROM_EMAIL', 'noreply@mdsupplies.com'),
-  resendToEmail:          optional('RESEND_TO_EMAIL', 'team@mdsupplies.com'),
+  resendToEmail:          optional('RESEND_TO_EMAIL', 'support@mdsupplies.com'),
   // BunnyCDN
   bunnyCdnAccessKey:      required('BUNNYCDN_STORAGE_ACCESS_KEY'),
   bunnyCdnHostname:       optional('BUNNYCDN_STORAGE_HOSTNAME', 'ny.storage.bunnycdn.com'),

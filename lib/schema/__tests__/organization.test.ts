@@ -47,7 +47,7 @@ describe('buildOrganizationSchema — with real NAP filled in', () => {
     vi.resetModules()
     vi.doMock('@/lib/site-contact', () => ({
       SITE_CONTACT: {
-        email: 'team@mdsupplies.com',
+        email: 'support@mdsupplies.com',
         phone: '+18005550100',
         phoneDisplay: '(800) 555-0100',
         address: {
