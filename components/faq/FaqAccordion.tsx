@@ -1,5 +1,6 @@
 import { Accordion } from "@/components/ui/Accordion";
 import { SITE_CONTACT } from "@/lib/site-contact";
+import { RETURN_POLICY_PLAIN_TEXT } from "@/lib/policy/return-policy";
 
 const FAQ_ITEMS = [
   {
@@ -24,7 +25,9 @@ const FAQ_ITEMS = [
   },
   {
     q: "What's your return policy?",
-    a: "We accept returns on unopened, undamaged products within 30 days of delivery. Items must be in original packaging. Contact support to initiate a return and receive a prepaid shipping label.",
+    // DEV-POLICY-01: the approved plan §7.2 copy, verbatim, from the central
+    // policy module — this FAQ can never drift from /returns or the PDP tab.
+    a: RETURN_POLICY_PLAIN_TEXT,
   },
   {
     q: "Are your products authentic?",
@@ -38,7 +41,9 @@ const FAQ_ITEMS = [
     q: "Who do I contact for help?",
     // Interpolated rather than written out, so the FAQ cannot disagree with the
     // footer and the schema the way it did before (IZ-COMMS-01).
-    a: `Our support team is available Monday–Friday, 8AM–6PM EST. Email ${SITE_CONTACT.email} or use the contact form. We respond to all inquiries within 2 hours during business hours.`,
+    // No response-time promise: "within 2 hours" was an unsupported service
+    // claim (client-liability stop rule) — removed pending written approval.
+    a: `Our support team is available Monday–Friday, 8AM–6PM EST. Email ${SITE_CONTACT.email} or use the contact form.`,
   },
 ];
 

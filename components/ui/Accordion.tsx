@@ -47,7 +47,7 @@ export function Accordion({ items, initialOpen = 0 }: Props) {
               style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <p className="pb-6 text-[15px] text-gray-500 leading-[1.65]">{a}</p>
+                <p className="pb-6 text-[15px] text-gray-500 leading-[1.65] whitespace-pre-line">{a}</p>
               </div>
             </div>
           </div>

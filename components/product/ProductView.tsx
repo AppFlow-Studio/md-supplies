@@ -17,9 +17,11 @@ import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
 import { ShippingBadge } from './ShippingBadge'
 import { ShippingBlock } from './ShippingBlock'
+import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
+import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 
-type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
-const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
 
 function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
   return variants.find((v) => v.availableForSale) ?? variants[0]
@@ -381,11 +383,15 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
           <div className="border-b border-gray-200">
-            <div className="flex overflow-x-auto scrollbar-hide">
+            <div className="flex overflow-x-auto scrollbar-hide" role="tablist" aria-label="Product information">
               {TABS.map((tab) => (
                 <button
                   key={tab}
                   type="button"
+                  role="tab"
+                  id={`product-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
+                  aria-selected={activeTab === tab}
+                  aria-controls="product-tab-panel"
                   onClick={() => setActiveTab(tab)}
                   className={`px-5 py-5 text-[15px] font-semibold tracking-[0.3px] whitespace-nowrap border-b-[3px] transition-colors ${
                     activeTab === tab
@@ -399,7 +405,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             </div>
           </div>
 
-          <div className="py-10 sm:py-14">
+          <div
+            className="py-10 sm:py-14"
+            id="product-tab-panel"
+            role="tabpanel"
+            aria-labelledby={`product-tab-${activeTab.toLowerCase().replace(/\s+/g, '-')}`}
+          >
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-8 max-w-[760px]">
                 {/* Item Number */}
@@ -489,17 +500,16 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               </div>
             )}
 
-            {activeTab === 'VENDOR SHIPPING & RETURNS' && (
-              <div className="flex flex-col gap-4 max-w-[760px]">
-                <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                  Orders are processed through trusted medical supply partners with clear product
-                  and shipping details, and ship fast so your facility stays stocked.
-                </p>
-                <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                  Return policies vary by vendor. Returns are accepted for unopened, undamaged items
-                  in original packaging — contact support to initiate a return authorization.
-                </p>
-              </div>
+            {activeTab === 'RETURNS' && (
+              // DEV-POLICY-01: always the approved policy from the central
+              // module — vendor-specific copy renders here once IZ-PROD-04
+              // populates the approved production source; until then every
+              // product shows the approved general fallback (never empty,
+              // never invented).
+              <ReturnPolicyContent
+                sections={resolveReturnPolicy({ vendor: product.vendor }).sections}
+                headingLevel="h3"
+              />
             )}
 
             {activeTab === 'REVIEWS' && (

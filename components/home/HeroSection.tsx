@@ -94,8 +94,9 @@ export function HeroSection({ products }: Props) {
                 <p className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px] leading-snug">
                   OCC Program
                 </p>
+                {/* Approved OCC copy (plan §7.3) — no payment-terms claim. */}
                 <p className="text-navy-900 text-[16px] font-semibold tracking-[0.32px] leading-snug mt-0.5">
-                  Dedicated pricing, terms &amp; account support
+                  Dedicated pricing and account support
                 </p>
               </div>
               <Link
