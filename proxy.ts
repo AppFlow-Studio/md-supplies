@@ -201,7 +201,7 @@ export function proxy(request: NextRequest): Response {
   const categoryMatch = pathname.match(/^\/category\/([^/]+)$/)
   if (categoryMatch) {
     const query = request.nextUrl.searchParams
-    if (query.has('sort') || query.has('filter') || query.has('page')) {
+    if (query.has('sort') || query.has('filter') || query.has('page') || query.has('q')) {
       const url = request.nextUrl.clone()
       url.pathname = `/category-browse/${categoryMatch[1]}`
       return withCsp(NextResponse.rewrite(url), nonce)

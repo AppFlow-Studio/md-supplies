@@ -197,6 +197,19 @@ export const GET_COLLECTION_PRODUCT_CARDS = `#graphql
   }
 `;
 
+// DEV-SEARCH-01: IDs-only membership page for server-side search-scope
+// enforcement on collections without a registry tag scope (OCC).
+export const GET_COLLECTION_PRODUCT_IDS = `#graphql
+  query GetCollectionProductIds($handle: String!, $first: Int!, $after: String) {
+    collection(handle: $handle) {
+      products(first: $first, after: $after) {
+        nodes { id }
+        pageInfo { hasNextPage endCursor }
+      }
+    }
+  }
+`;
+
 export const GET_COLLECTIONS_FOR_SITEMAP = `#graphql
   query GetCollectionsForSitemap($first: Int!) {
     collections(first: $first) {

@@ -7,7 +7,7 @@ import type { Product, CollectionProduct } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { CategoryResults } from '@/components/category/CategoryResults'
-import { parseSortKey, parseFilterParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
+import { parseSortKey, parseFilterParam, parseSearchParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
@@ -50,8 +50,9 @@ interface Props {
   searchParams: Promise<CategorySearchParams>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
+  const sp = await searchParams
   const l1 = getL1ByCollectionHandle(slug)
 
   if (l1) {
@@ -63,6 +64,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
       const title = humanizeTag(node.tag)
       const canonical = `${SITE_URL}${ROUTES.subcategory(canonicalL1.collectionHandle, node.tag)}`
+      // Filtered / sorted / searched L2 views are noindex and canonicalize to
+      // the clean route (plan §3.5).
+      const isQueryVariant =
+        parseFilterParam(sp.filter).length > 0 || Boolean(sp.sort) || Boolean(parseSearchParam(sp.q))
+
+      if (isQueryVariant) {
+        return buildMetadata({ pageType: 'subcategory', title, canonical, noIndex: true })
+      }
 
       // Check SEO database for optimized title/description.
       const seoDB = getSubcategorySeo(slug, handle)
@@ -83,10 +92,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         }
       }
 
+      // Neutral copy only — no shipping-speed or pricing promises in metadata
+      // (client-liability stop rule).
       return buildMetadata({
         pageType: 'subcategory',
         title,
-        description: `Shop ${title} within ${canonicalL1.displayName} at MDSupplies — fast shipping, bulk pricing available.`,
+        description: `Shop ${title} within ${canonicalL1.displayName} at MDSupplies.`,
         canonical,
       })
     }
@@ -120,6 +131,7 @@ async function renderSubcategoryPage(
   const title = humanizeTag(node.tag)
   const activeFilterStrings = parseFilterParam(sp.filter)
   const { sortKey, reverse } = parseSortKey(sp.sort)
+  const searchQuery = parseSearchParam(sp.q)
   const currentPage = parseInt(sp.page ?? '1', 10)
   if (isNaN(currentPage) || currentPage < 1) notFound()
 
@@ -208,6 +220,8 @@ async function renderSubcategoryPage(
           activeFilterStrings={activeFilterStrings}
           currentPage={currentPage}
           trackingParamsSource={sp}
+          searchQuery={searchQuery}
+          searchScopeTitle={title}
         />
       </div>
 

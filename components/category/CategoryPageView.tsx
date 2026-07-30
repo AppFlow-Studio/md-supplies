@@ -38,6 +38,15 @@ export type CategorySearchParams = {
   sort?: string
   filter?: string | string[]
   page?: string
+  /** DEV-SEARCH-01: collection-scoped search text. */
+  q?: string | string[]
+}
+
+/** ?q= must be a single sane string; arrays and junk collapse to undefined. */
+export function parseSearchParam(q?: string | string[]): string | undefined {
+  if (typeof q !== 'string') return undefined
+  const trimmed = q.trim()
+  return trimmed ? trimmed.slice(0, 80) : undefined
 }
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
@@ -71,6 +80,8 @@ function page1RedirectUrl(slug: string, sp: CategorySearchParams, activeFilterSt
   const p = new URLSearchParams()
   if (sp.sort) p.set('sort', sp.sort)
   activeFilterStrings.forEach((f) => p.append('filter', f))
+  const q = parseSearchParam(sp.q)
+  if (q) p.set('q', q)
   withTrackingParams(p, sp)
   const qs = p.toString()
   return qs ? `${ROUTES.category(slug)}?${qs}` : ROUTES.category(slug)
@@ -80,7 +91,8 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
   const base = SITE_URL
 
   const activeFilterStrings = parseFilterParam(sp.filter)
-  const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
+  // Search states are noindex like filtered states (plan §3.5).
+  const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort) || Boolean(parseSearchParam(sp.q))
   const requestedPage = parseInt(sp.page ?? '1', 10)
   const currentPage = requestedPage > MAX_CATEGORY_PAGE ? 1 : requestedPage
 
@@ -158,8 +170,9 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   const nonce = await getNonce()
   const activeFilterStrings = parseFilterParam(sp.filter)
   const { sortKey, reverse } = parseSortKey(sp.sort)
+  const searchQuery = parseSearchParam(sp.q)
   const currentPage = parseInt(sp.page ?? '1', 10)
-  const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
+  const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort) || Boolean(searchQuery)
 
   if (isNaN(currentPage) || currentPage < 1) notFound()
   if (currentPage > MAX_CATEGORY_PAGE) redirect(page1RedirectUrl(slug, sp, activeFilterStrings))
@@ -270,7 +283,13 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
       {/* Main layout */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
         <CategoryResults
-          source={{ kind: 'collection', handle: slug }}
+          source={{
+            kind: 'collection',
+            handle: slug,
+            // Registry-backed L1s scope text search by their category tag
+            // (the same membership source the L2 pages are built on).
+            searchScope: l1 ? `tag:"category:${l1.tag}"` : undefined,
+          }}
           baseUrl={ROUTES.category(slug)}
           facetKey={slug}
           sortKey={sortKey}
@@ -279,6 +298,8 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           activeFilterStrings={activeFilterStrings}
           currentPage={currentPage}
           trackingParamsSource={sp}
+          searchQuery={searchQuery}
+          searchScopeTitle={collection.title}
         />
       </div>
 

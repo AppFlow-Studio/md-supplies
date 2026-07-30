@@ -11,6 +11,7 @@ import { withTrackingParams, type TrackingParamSource } from '@/lib/analytics/tr
 import { CATEGORY_PAGE_SIZE } from '@/lib/category-utils'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { CategoryFilters } from '@/components/category/CategoryFilters'
+import { CategorySearch } from '@/components/category/CategorySearch'
 import { CategorySort } from '@/components/category/CategorySort'
 import { ProductGrid } from '@/components/category/ProductGrid'
 import { CategoryPagination } from '@/components/category/CategoryPagination'
@@ -39,6 +40,10 @@ interface Props {
   activeFilterStrings: string[]
   currentPage: number
   trackingParamsSource: TrackingParamSource
+  /** DEV-SEARCH-01: current ?q= text, scoped server-side to this source. */
+  searchQuery?: string
+  /** Display title for the search field label ("Search within {title}"). */
+  searchScopeTitle?: string
 }
 
 export async function CategoryResults({
@@ -51,12 +56,16 @@ export async function CategoryResults({
   activeFilterStrings,
   currentPage,
   trackingParamsSource,
+  searchQuery,
+  searchScopeTitle,
 }: Props) {
-  const isFiltered = activeFilterStrings.length > 0 || Boolean(sortParam)
+  const searchText = searchQuery?.trim() || undefined
+  const isFiltered = activeFilterStrings.length > 0 || Boolean(sortParam) || Boolean(searchText)
 
   const persistParams = new URLSearchParams()
   if (sortParam) persistParams.set('sort', sortParam)
   activeFilterStrings.forEach((f) => persistParams.append('filter', f))
+  if (searchText) persistParams.set('q', searchText)
   withTrackingParams(persistParams, trackingParamsSource)
   const page1Qs = persistParams.toString()
   const page1Url = page1Qs ? `${baseUrl}?${page1Qs}` : baseUrl
@@ -70,6 +79,7 @@ export async function CategoryResults({
       sortKey,
       reverse,
       filters: parseFilters(activeFilterStrings),
+      text: searchText,
     })
   } catch (err) {
     if (currentPage > 1) {
@@ -96,10 +106,21 @@ export async function CategoryResults({
     const p = new URLSearchParams()
     if (sortParam) p.set('sort', sortParam)
     next.forEach((f) => p.append('filter', f))
+    if (searchText) p.set('q', searchText)
     withTrackingParams(p, trackingParamsSource)
     const qs = p.toString()
     return qs ? `${baseUrl}?${qs}` : baseUrl
   }
+
+  // Clearing the search keeps sort/filter state (and vice versa).
+  const clearSearchUrl = (() => {
+    const p = new URLSearchParams()
+    if (sortParam) p.set('sort', sortParam)
+    activeFilterStrings.forEach((f) => p.append('filter', f))
+    withTrackingParams(p, trackingParamsSource)
+    const qs = p.toString()
+    return qs ? `${baseUrl}?${qs}` : baseUrl
+  })()
 
   const filterLabelMap = new Map(
     allowedFacets.flatMap((g) => g.values.map((v) => [v.input, v.label] as const)),
@@ -141,10 +162,25 @@ export async function CategoryResults({
       {/* Product area */}
       <ScrollToResults page={currentPage}>
         <div className="flex-1 min-w-0">
+          {/* Collection-scoped search (DEV-SEARCH-01). Suspense: reads
+              useSearchParams() for tracking params — see the sidebar note. */}
+          <Suspense fallback={null}>
+            <CategorySearch
+              scopeTitle={searchScopeTitle ?? title}
+              searchQuery={searchText}
+              currentSort={sortParam}
+              activeFilters={activeFilterStrings}
+            />
+          </Suspense>
+
           {/* Sort bar */}
           <div className="flex items-center justify-between mb-6">
-            <p className="text-gray-500 text-[15px]">
-              Showing {products.length} products
+            {/* aria-live: announces updated counts after async filter/search
+                navigations without refocusing. */}
+            <p className="text-gray-500 text-[15px]" aria-live="polite">
+              {searchText
+                ? `${products.length} result${products.length === 1 ? '' : 's'} for “${searchText}”`
+                : `Showing ${products.length} products`}
             </p>
             {/* Suspense: CategorySort reads useSearchParams() — see the
                 sidebar boundary note above. */}
@@ -152,10 +188,23 @@ export async function CategoryResults({
               <CategorySort
                 currentSort={sortParam}
                 activeFilters={activeFilterStrings}
-                limitedSortOptions={source.kind === 'tag'}
+                limitedSortOptions={source.kind === 'tag' || Boolean(searchText)}
               />
             </Suspense>
           </div>
+
+          {/* Active search chip — mirrors the filter chips below */}
+          {searchText && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              <Link
+                href={clearSearchUrl}
+                className="flex items-center gap-1 bg-navy-900 text-white text-[12px] font-medium px-3 h-[28px] hover:bg-navy-950 transition-colors"
+              >
+                Search: {searchText}
+                <X size={11} />
+              </Link>
+            </div>
+          )}
 
           {/* Active filter chips */}
           {activeFilterStrings.length > 0 && (
@@ -194,10 +243,11 @@ export async function CategoryResults({
             />
           </Suspense>
 
-          {/* Product grid */}
+          {/* Product grid. Empty search results recover by clearing the
+              query (keeping filters), not by dumping the whole state. */}
           <ProductGrid
             products={products}
-            emptyStateHref={baseUrl}
+            emptyStateHref={searchText ? clearSearchUrl : baseUrl}
             categorySlug={handle}
             itemListId={handle}
             itemListName={title}
