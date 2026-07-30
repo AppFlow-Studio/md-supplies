@@ -19,6 +19,7 @@ import { ShippingBadge } from './ShippingBadge'
 import { ShippingBlock } from './ShippingBlock'
 import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
+import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
@@ -102,15 +103,19 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
       ? Math.round(((compareAt - price) / compareAt) * 100)
       : null
 
-  const restockDate = product.estimatedRestockDate
-    ? new Date(product.estimatedRestockDate).toLocaleDateString('en-US', {
-        month: 'long', day: 'numeric', year: 'numeric',
-      })
-    : null
+  // DEV-LABEL-01 / DEV-CATALOG-01: backorder + RX come from the shared label
+  // contract (single metafield source, stale ETAs suppressed) so card and PDP
+  // can never disagree. availableForSale only gates purchasability — it is
+  // never presented as a real-time "In Stock" inventory claim.
+  const backorderLabel = resolveBackorderLabel({
+    estimatedRestockDate: product.estimatedRestockDate,
+    availableForSale: selectedVariant.availableForSale,
+  })
+  const rxLabel = resolveRxLabel(product.tags)
 
-  const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
-    if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
-    return 'in_stock'
+  const stockStatus: 'available' | 'out_of_stock' | 'backordered' = (() => {
+    if (!selectedVariant.availableForSale) return backorderLabel ? 'backordered' : 'out_of_stock'
+    return 'available'
   })()
 
   const brandDisplay = product.brandName ?? product.vendor
@@ -214,46 +219,47 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               SKU: {variantSku}
             </p>
 
-            {/* Availability */}
-            <div className="flex items-center gap-2">
-              {stockStatus === 'in_stock' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-green-500" />
-                  <span className="text-gray-500 text-[13px] tracking-[0.26px]">
-                    In Stock
-                  </span>
-                </>
-              )}
-              {stockStatus === 'backordered' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
-                  <span className="text-orange-600 text-[13px] font-semibold tracking-[0.26px]">
-                    Back-ordered – ships {restockDate ?? 'soon'}
-                  </span>
-                </>
-              )}
-              {stockStatus === 'out_of_stock' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
-                  <span className="text-red-500 text-[13px] font-semibold tracking-[0.26px]">
-                    Out of Stock
-                  </span>
-                </>
-              )}
-            </div>
+            {/* Availability — negative states only. No "In stock" claim:
+                vendor inventory is not real time (DEV-CATALOG-01), so an
+                available product simply shows no availability text and the
+                add-to-cart control does the talking. */}
+            {stockStatus !== 'available' && (
+              <div className="flex items-center gap-2">
+                {stockStatus === 'backordered' && backorderLabel && (
+                  <>
+                    <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
+                    <span className="text-orange-600 text-[13px] font-semibold tracking-[0.26px]">
+                      {backorderLabel.text}
+                    </span>
+                  </>
+                )}
+                {stockStatus === 'out_of_stock' && (
+                  <>
+                    <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
+                    <span className="text-red-500 text-[13px] font-semibold tracking-[0.26px]">
+                      Out of Stock
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Product badges. A shipping claim may come only from the resolver,
                 never from a tag: `free-shipping` is an uncurated catalog tag and
                 is not an approved source for a customer-facing promise. The RX
-                badge is a separate, non-shipping label and keeps its tag. */}
-            {(shippingDisplay || product.tags.includes('rx-required')) && (
+                badge is a display-only label from the shared contract
+                (lib/labels) — it never enforces checkout behavior. */}
+            {(shippingDisplay || rxLabel) && (
               <div className="flex flex-wrap gap-2">
                 {shippingDisplay && (
                   <ShippingBadge shippingDisplay={shippingDisplay} className="px-3 py-1 text-[13px]" />
                 )}
-                {product.tags.includes('rx-required') && (
-                  <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white">
-                    RX Only
+                {rxLabel && (
+                  <span
+                    aria-label={rxLabel.accessibleText}
+                    className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white"
+                  >
+                    {rxLabel.text}
                   </span>
                 )}
               </div>

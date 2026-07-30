@@ -60,18 +60,12 @@ export function QuickAddContent({ product, titleId }: Props) {
     <>
       {/* Left panel — image gallery */}
       <div className="relative bg-[#f9faf9] sm:w-[43%] shrink-0 flex flex-col items-center justify-center gap-3 p-6 sm:overflow-y-auto min-h-[200px]">
-        {product.shippingDisplay ? (
+        {/* Shipping claim only from the resolver — no tag fallback
+            (DEV-LABEL-01 §8.3). */}
+        {product.shippingDisplay && (
           <div className="absolute top-4 left-4">
             <ShippingBadge shippingDisplay={product.shippingDisplay} className="px-3 py-1.5 text-[13px] font-bold" />
           </div>
-        ) : (
-          product.hasFreeShipping && (
-            <div className="absolute top-4 left-4 bg-[#006e46] px-3 py-1.5">
-              <span className="text-[#f9faf9] text-[13px] font-bold leading-[28px] tracking-[0.26px]">
-                FREE SHIPPING
-              </span>
-            </div>
-          )
         )}
 
         {/* Main image */}
@@ -136,15 +130,17 @@ export function QuickAddContent({ product, titleId }: Props) {
           </p>
         )}
 
-        {/* In-stock indicator */}
-        <div className="flex items-center gap-2">
-          <span
-            className={`size-[8px] rounded-full shrink-0 ${selectedVariant?.available ? 'bg-green-500' : 'bg-red-400'}`}
-          />
-          <p className="text-gray-500 text-[13px] tracking-[0.26px]">
-            {selectedVariant?.available ? 'In Stock' : 'Out of Stock'}
-          </p>
-        </div>
+        {/* Availability — negative state only (DEV-CATALOG-01): no "In stock"
+            claim, since vendor inventory is not real time. Purchasability is
+            governed by the add-to-cart control. */}
+        {!selectedVariant?.available && (
+          <div className="flex items-center gap-2">
+            <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
+            <p className="text-red-500 text-[13px] font-semibold tracking-[0.26px]">
+              Out of Stock
+            </p>
+          </div>
+        )}
 
         {/* Divider */}
         <div className="h-px bg-gray-200" />

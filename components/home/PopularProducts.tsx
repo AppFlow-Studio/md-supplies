@@ -45,9 +45,8 @@ function toCardData(product: CollectionProduct): ProductCardData {
     compareAtPrice,
     sku: '',
     available: product.availableForSale,
-    hasFreeShipping: product.tags.includes('free-shipping'),
     shippingDisplay: product.shippingDisplay ?? null,
-    isRx: product.tags.includes('rx-required'),
+    isRx: product.tags.some((t) => t === 'rx-required' || t === 'compliance:rx-only'),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
       title: v.title,
@@ -104,9 +103,13 @@ export function PopularProducts({ products }: Props) {
                     <span className="text-[13px] font-semibold text-teal-500 tracking-[0.26px]">
                       {product.vendor}
                     </span>
-                    <span className="text-[13px] font-semibold text-gray-500 tracking-[0.26px]">
-                      {product.availableForSale ? 'in stock' : 'out of stock'}
-                    </span>
+                    {/* Negative availability only (DEV-CATALOG-01) — no
+                        real-time inventory claim. */}
+                    {!product.availableForSale && (
+                      <span className="text-[13px] font-semibold text-gray-500 tracking-[0.26px]">
+                        out of stock
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-[14px] font-semibold text-black leading-snug line-clamp-3">
