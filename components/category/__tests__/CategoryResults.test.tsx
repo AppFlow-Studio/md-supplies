@@ -100,7 +100,9 @@ function mockCollection(slug: string, nodes: CollectionProduct[] = []): Collecti
 
 function baseProps(slug: string) {
   return {
-    slug,
+    source: { kind: 'collection' as const, handle: slug },
+    baseUrl: `/category/${slug}`,
+    facetKey: slug,
     sortKey: 'COLLECTION_DEFAULT',
     reverse: false,
     sortParam: undefined,

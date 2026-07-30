@@ -1,0 +1,14 @@
+# Checksum-verified data is checked out with LF on every platform.
+#
+# The shipping resolver gates its data load on a SHA-256 of the file's bytes
+# (lib/shipping-resolver/data.ts), and its test fixtures are pinned to literal
+# hashes. With git's core.autocrlf=true — the Windows default — checkout
+# rewrites LF to CRLF, the bytes change, the hash no longer matches, the loader
+# correctly refuses the file, and 11 resolver tests fail for a reason that has
+# nothing to do with the code. Pinning eol keeps a checksum-verified artifact
+# byte-identical wherever it is checked out.
+#
+# Deliberately scoped to the checksum-gated paths rather than all *.json, so
+# this does not renormalize unrelated committed files.
+lib/shipping-resolver/__tests__/fixtures/*.json text eol=lf
+data/shipping-facts-*.json                      text eol=lf

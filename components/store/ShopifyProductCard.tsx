@@ -7,6 +7,7 @@ import { ProductImage } from '@/components/shared/ProductImage'
 import { track } from '@/lib/analytics/track'
 import { buildSelectItemEvent, toGA4Item, currencyOf } from '@/lib/analytics/events'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 interface Props {
   product: CollectionProduct
@@ -74,18 +75,22 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
 
       {/* Info */}
       <Link href={href} onClick={handleSelect} className="px-[22px] pt-[19px] pb-[22px] flex flex-col">
-        <span className="text-[#0086b1] text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
+        <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
           {product.vendor}
         </span>
         <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
           {product.title}
         </p>
-        {(product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
+        {(product.shippingDisplay || product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {product.tags.includes('free-shipping') && (
-              <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-teal-500 text-white">
-                Free Shipping
-              </span>
+            {product.shippingDisplay ? (
+              <ShippingBadge shippingDisplay={product.shippingDisplay} />
+            ) : (
+              product.tags.includes('free-shipping') && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-teal-500 text-white">
+                  Free Shipping
+                </span>
+              )
             )}
             {product.tags.includes('rx-required') && (
               <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-amber-600 text-white">

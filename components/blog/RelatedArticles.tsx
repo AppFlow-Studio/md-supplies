@@ -57,7 +57,7 @@ export function RelatedArticles({ articles, heading = 'More Articles' }: Props) 
                 {a.excerpt && (
                   <p className="text-gray-500 text-[14px] leading-6 line-clamp-2">{a.excerpt}</p>
                 )}
-                <p className="text-gray-400 text-[13px]">{a.author.name}</p>
+                <p className="text-gray-500 text-[13px]">{a.author.name}</p>
               </div>
             </Link>
           ))}

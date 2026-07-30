@@ -5,6 +5,8 @@ import { customerFetch } from '@/lib/shopify/customer'
 import { GET_CUSTOMER, GET_CUSTOMER_ORDERS, GET_CUSTOMER_ADDRESSES } from '@/lib/shopify/queries/customer'
 import { AccountView } from '@/components/account/AccountView'
 import type { Customer, CustomerOrder, CustomerAddress } from '@/components/account/AccountView'
+import { RxDocumentCard } from '@/components/account/RxDocumentCard'
+import { getRxAccountState } from '@/app/actions/rx'
 
 export const metadata: Metadata = {
   title: 'My Account | MD Supplies',
@@ -61,5 +63,18 @@ export default async function AccountPage() {
     return <AccountView customer={null} orders={[]} addresses={[]} />
   }
 
-  return <AccountView customer={customer} orders={orders} addresses={addresses} />
+  const rxState = await getRxAccountState()
+
+  return (
+    <AccountView
+      customer={customer}
+      orders={orders}
+      addresses={addresses}
+      rxCard={
+        customer ? (
+          <RxDocumentCard hasDocument={rxState.hasDocument} verified={rxState.verified} />
+        ) : undefined
+      }
+    />
+  )
 }

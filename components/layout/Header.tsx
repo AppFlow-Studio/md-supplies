@@ -13,7 +13,8 @@ import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
 import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
-import { buildCategoryNav } from '@/lib/category-nav'
+import { buildCategoryTreeNav } from '@/lib/category-tree'
+import { LOGO_PATH } from '@/lib/bunnycdn'
 
 interface HeaderProps {
   menuItems: MenuItem[]
@@ -139,7 +140,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
 
   const categoriesItem = menuItems.find((item) => item.type === 'CATALOG')
   const otherItems = menuItems.filter((item) => item.type !== 'CATALOG')
-  const categoryNav = buildCategoryNav(collections)
+  const categoryNav = buildCategoryTreeNav(collections)
 
   // NF11: menu hrefs are slugified from Shopify menu TITLES with no guarantee
   // the slug is a real collection handle. Reconcile against the live handle
@@ -205,7 +206,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
         <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src={'/images/logo.avif'} alt='MDSupplies' width={420} height={100} className='w-auto h-10 object-contain'/>
+            <Image src={LOGO_PATH} alt="MDSupplies" width={420} height={100} className="h-10 w-auto object-contain" />
           </Link>
 
           {/* Desktop nav links — shown only at xl where all items fit without
@@ -384,7 +385,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
           <div className="flex items-center justify-end gap-3 shrink-0 ml-auto">
             <Link
               href={ROUTES.contact}
-              className="hidden sm:flex bg-teal-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-[#006d92] transition-colors"
+              className="hidden sm:flex bg-teal-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-[#00566f] transition-colors"
             >
               Contact Us
             </Link>
@@ -564,7 +565,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
             <Link
               href={ROUTES.contact}
               onClick={() => setMobileOpen(false)}
-              className="mt-3 bg-teal-500 text-white text-sm font-semibold px-5 py-3 rounded-full text-center hover:bg-[#006d92] transition-colors"
+              className="mt-3 bg-teal-500 text-white text-sm font-semibold px-5 py-3 rounded-full text-center hover:bg-[#00566f] transition-colors"
             >
               Contact Us
             </Link>

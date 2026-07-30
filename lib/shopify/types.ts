@@ -1,3 +1,5 @@
+import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
+
 export type ShopifyError = {
   message: string;
   locations?: { line: number; column: number }[];
@@ -109,6 +111,7 @@ export type CollectionProduct = {
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
   variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
+  shippingDisplay?: ShippingDisplay | null;
 };
 
 export type CollectionFilter = {
@@ -154,10 +157,13 @@ export type CartLine = {
       id: string;
       title: string;
       handle: string;
+      vendor: string;
+      tags: string[];
       images: { nodes: ProductImage[] };
     };
   };
   cost: { totalAmount: Money };
+  shippingDisplay?: ShippingDisplay | null;
 };
 
 export type CartCost = {
@@ -171,6 +177,7 @@ export type Cart = {
   checkoutUrl: string;
   totalQuantity: number;
   attributes: { key: string; value: string }[];
+  buyerIdentity: { customer: { id: string } | null } | null;
   lines: { nodes: CartLine[] };
   cost: CartCost;
 };

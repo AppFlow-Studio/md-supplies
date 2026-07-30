@@ -2,6 +2,7 @@ import { FaqAccordion }    from "@/components/faq/FaqAccordion";
 import { buildMetadata } from '@/lib/seo'
 import { WholesalePricing } from "@/components/home/WholesalePricing";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { SITE_CONTACT } from "@/lib/site-contact";
 
 export const metadata = buildMetadata({
   pageType: 'static',
@@ -46,11 +47,14 @@ export default function FaqPage() {
               </FadeIn>
 
               <FadeIn delay={0.3}>
+                {/* Reads SITE_CONTACT so this cannot drift from the footer and the
+                    Organization schema, which is how the site ended up showing
+                    support@ here and team@ everywhere else (IZ-COMMS-01). */}
                 <a
-                  href="mailto:support@mdsupplies.com"
+                  href={`mailto:${SITE_CONTACT.email}`}
                   className="text-teal-500 text-[13px] sm:text-[15px] font-semibold tracking-[0.75px] uppercase hover:underline break-all"
                 >
-                  SUPPORT@MDSUPPLIES.COM
+                  {SITE_CONTACT.email.toUpperCase()}
                 </a>
               </FadeIn>
 

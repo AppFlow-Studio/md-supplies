@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { serverEnv } from '@/lib/env.server'
+import { RX_STORAGE_PREFIX } from '@/lib/rx-storage'
 
 export async function GET(
   _req: NextRequest,
@@ -9,6 +10,13 @@ export async function GET(
 
   if (path.some((segment) => segment === '..' || segment === '.' || segment === '')) {
     return new NextResponse(null, { status: 400 })
+  }
+
+  // RX prescription documents are sensitive PII stored on the same zone —
+  // they must never be reachable through this public proxy. Owners fetch
+  // their own document via the authenticated /api/account/rx-document route.
+  if (path[0] === RX_STORAGE_PREFIX) {
+    return new NextResponse(null, { status: 404 })
   }
 
   const upstreamUrl = `https://${serverEnv.bunnyCdnHostname}/${serverEnv.bunnyCdnZone}/${path.map(encodeURIComponent).join('/')}`
@@ -22,6 +30,7 @@ export async function GET(
     status: 200,
     headers: {
       'Content-Type': upstream.headers.get('content-type') ?? 'application/octet-stream',
+      'X-Content-Type-Options': 'nosniff',
       'Cache-Control': 'public, max-age=31536000, immutable',
     },
   })

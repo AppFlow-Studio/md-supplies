@@ -34,6 +34,10 @@ export function IndustryPage({ industry }: Props) {
       {/* Hero image */}
       {industry.heroImage && (
         <div className="bg-navy-900 overflow-hidden h-[200px] sm:h-[280px] relative">
+          {/* Decorative 30%-opacity backdrop behind the hero text — served
+              pre-sized from the Shopify CDN, so next/image optimization adds
+              nothing here. eslint-disable-next-line @next/next/no-img-element */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={industry.heroImage.url}
             alt={industry.heroImage.altText}

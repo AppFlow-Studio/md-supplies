@@ -8,8 +8,8 @@ afterEach(cleanup)
 // next/image and next/link are used by QuickAddContent (rendered inside QuickAddModal)
 vi.mock('next/image', () => ({
   default: (props: React.ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean; sizes?: string }) => {
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
     const { fill: _fill, sizes: _sizes, ...rest } = props
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
     return <img {...rest} />
   },
 }))

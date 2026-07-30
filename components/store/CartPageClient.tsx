@@ -11,10 +11,27 @@ import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/eve
 import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { useRxGate, RxGatePanel } from './RxCheckoutGate'
+import { SHIPPING_FALLBACK_MESSAGE, SHIPPING_CLASS_COPY } from '@/lib/shipping-resolver/copy'
+import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
+  const rxGate = useRxGate(cart)
+
+  // Whole-cart summary, resolved per line from the selected variant's class.
+  // Claiming free shipping for the cart requires every line to be classified
+  // standard-free; one unresolved, held, or non-free line drops the whole
+  // summary to the neutral copy. A line the resolver did not classify is not
+  // evidence of free shipping, so an empty class is treated as not-free rather
+  // than skipped. Shopify checkout remains the authority on the actual charge.
+  const allLinesFree =
+    lines.length > 0 &&
+    lines.every((line) => line.shippingDisplay?.class === 'standard-free')
+  const cartShippingMessage = allLinesFree
+    ? SHIPPING_CLASS_COPY['standard-free'] ?? SHIPPING_FALLBACK_MESSAGE
+    : SHIPPING_FALLBACK_MESSAGE
 
   useEffect(() => {
     if (cart && cart.lines.nodes.length > 0) {
@@ -54,7 +71,8 @@ export function CartPageClient() {
     } catch (err) {
       console.error('[CartPageClient] failed to stamp ga_client_id:', err)
     }
-    window.location.href = cart.checkoutUrl
+    // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
+    await rxGate.proceedToCheckout()
   }
 
   if (lines.length === 0 || !cart) {
@@ -108,6 +126,11 @@ export function CartPageClient() {
                   </Link>
                   {variantTitle !== 'Default Title' && (
                     <p className="text-gray-500 text-[12px] tracking-[0.24px]">{variantTitle}</p>
+                  )}
+                  {line.shippingDisplay && (
+                    <div className="mt-1">
+                      <ShippingBadge shippingDisplay={line.shippingDisplay} />
+                    </div>
                   )}
                   {line.merchandise.sku && (
                     <p className="text-gray-400 text-[11px] tracking-[0.22px] mb-1">
@@ -168,16 +191,20 @@ export function CartPageClient() {
               ${parseFloat(cart.cost.subtotalAmount.amount).toFixed(2)}
             </span>
           </div>
-          <p className="text-gray-500 text-[12px] tracking-[0.24px]">
-            Shipping calculated at checkout
+          <p data-testid="cart-shipping-message" className="text-gray-500 text-[12px] tracking-[0.24px]">
+            {cartShippingMessage}
           </p>
-          <a
-            href={cart.checkoutUrl}
-            onClick={handleCheckoutClick}
-            className="bg-navy-900 text-white h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase hover:bg-navy-950 transition-colors"
-          >
-            Proceed to Checkout
-          </a>
+          {rxGate.blocked ? (
+            <RxGatePanel signedIn={rxGate.signedIn} />
+          ) : (
+            <a
+              href={cart.checkoutUrl}
+              onClick={handleCheckoutClick}
+              className="bg-navy-900 text-white h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase hover:bg-navy-950 transition-colors"
+            >
+              Proceed to Checkout
+            </a>
+          )}
         </div>
       </div>
       <CartToast />

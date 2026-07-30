@@ -10,10 +10,13 @@ import { buildBeginCheckoutEvent } from '@/lib/analytics/events'
 import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { useRxGate, RxGatePanel } from './RxCheckoutGate'
+import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
+  const rxGate = useRxGate(cart)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -81,7 +84,8 @@ export function CartPopup() {
       console.error('[CartPopup] failed to stamp ga_client_id:', err)
     }
 
-    window.location.href = cart.checkoutUrl
+    // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
+    await rxGate.proceedToCheckout()
   }
 
   return (
@@ -167,9 +171,14 @@ export function CartPopup() {
                         {line.merchandise.product.title}
                       </Link>
                       {variantTitle !== 'Default Title' && (
-                        <p className="text-gray-500 text-[12px] tracking-[0.24px] mb-3">
+                        <p className="text-gray-500 text-[12px] tracking-[0.24px] mb-1">
                           {variantTitle}
                         </p>
+                      )}
+                      {line.shippingDisplay && (
+                        <div className="mb-2">
+                          <ShippingBadge shippingDisplay={line.shippingDisplay} />
+                        </div>
                       )}
                       <div className="flex items-center justify-between">
                         {/* Qty stepper */}
@@ -232,13 +241,17 @@ export function CartPopup() {
             <p className="text-gray-500 text-[12px] tracking-[0.24px]">
               Shipping and taxes calculated at checkout
             </p>
-            <a
-              href={cart.checkoutUrl}
-              onClick={handleCheckoutClick}
-              className="bg-navy-900 text-white h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase hover:bg-navy-950 transition-colors"
-            >
-              Proceed to Checkout
-            </a>
+            {rxGate.blocked ? (
+              <RxGatePanel signedIn={rxGate.signedIn} />
+            ) : (
+              <a
+                href={cart.checkoutUrl}
+                onClick={handleCheckoutClick}
+                className="bg-navy-900 text-white h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase hover:bg-navy-950 transition-colors"
+              >
+                Proceed to Checkout
+              </a>
+            )}
             <Link
               href="/cart"
               onClick={closeCart}

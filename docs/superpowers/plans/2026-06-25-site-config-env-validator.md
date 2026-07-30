@@ -174,7 +174,7 @@ git commit -m "feat: add lib/site-config for canonical origin and public OAuth I
     shopifyAdminToken: string        // SHOPIFY_ADMIN_ACCESS_TOKEN
     resendApiKey: string             // RESEND_API_KEY
     resendFromEmail: string          // RESEND_FROM_EMAIL (default: 'noreply@mdsupplies.com')
-    resendToEmail: string            // RESEND_TO_EMAIL (default: 'team@mdsupplies.com')
+    resendToEmail: string            // RESEND_TO_EMAIL (default: 'support@mdsupplies.com')
     bunnyCdnAccessKey: string        // BUNNYCDN_STORAGE_ACCESS_KEY
     bunnyCdnHostname: string         // BUNNYCDN_STORAGE_HOSTNAME (default: 'ny.storage.bunnycdn.com')
     bunnyCdnZone: string             // BUNNYCDN_STORAGE_ZONE (default: 'md-supplies')
@@ -225,7 +225,7 @@ describe('serverEnv — happy path', () => {
     stubRequired()
     const { serverEnv } = await import('@/lib/env.server')
     expect(serverEnv.resendFromEmail).toBe('noreply@mdsupplies.com')
-    expect(serverEnv.resendToEmail).toBe('team@mdsupplies.com')
+    expect(serverEnv.resendToEmail).toBe('support@mdsupplies.com')
     expect(serverEnv.bunnyCdnHostname).toBe('ny.storage.bunnycdn.com')
     expect(serverEnv.bunnyCdnZone).toBe('md-supplies')
   })
@@ -288,7 +288,7 @@ export const serverEnv = {
   shopifyAdminToken:      required('SHOPIFY_ADMIN_ACCESS_TOKEN'),
   resendApiKey:           required('RESEND_API_KEY'),
   resendFromEmail:        optional('RESEND_FROM_EMAIL', 'noreply@mdsupplies.com'),
-  resendToEmail:          optional('RESEND_TO_EMAIL', 'team@mdsupplies.com'),
+  resendToEmail:          optional('RESEND_TO_EMAIL', 'support@mdsupplies.com'),
   bunnyCdnAccessKey:      required('BUNNYCDN_STORAGE_ACCESS_KEY'),
   bunnyCdnHostname:       optional('BUNNYCDN_STORAGE_HOSTNAME', 'ny.storage.bunnycdn.com'),
   bunnyCdnZone:           optional('BUNNYCDN_STORAGE_ZONE', 'md-supplies'),

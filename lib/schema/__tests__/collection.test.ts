@@ -10,9 +10,9 @@ describe('buildCollectionPageSchema', () => {
     )
   })
 
-  it('@type is CollectionPage', () => {
-    expect(buildCollectionPageSchema({ name: 'Exam Gloves', url: BASE_URL })['@type']).toBe(
-      'CollectionPage',
+  it('@type is CollectionPage + ProductCollection (category-tree ticket)', () => {
+    expect(buildCollectionPageSchema({ name: 'Exam Gloves', url: BASE_URL })['@type']).toEqual(
+      ['CollectionPage', 'ProductCollection'],
     )
   })
 

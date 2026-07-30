@@ -46,6 +46,7 @@ function toCardData(product: CollectionProduct): ProductCardData {
     sku: '',
     available: product.availableForSale,
     hasFreeShipping: product.tags.includes('free-shipping'),
+    shippingDisplay: product.shippingDisplay ?? null,
     isRx: product.tags.includes('rx-required'),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
@@ -103,7 +104,7 @@ export function PopularProducts({ products }: Props) {
                     <span className="text-[13px] font-semibold text-teal-500 tracking-[0.26px]">
                       {product.vendor}
                     </span>
-                    <span className="text-[13px] font-semibold text-gray-500/60 tracking-[0.26px]">
+                    <span className="text-[13px] font-semibold text-gray-500 tracking-[0.26px]">
                       {product.availableForSale ? 'in stock' : 'out of stock'}
                     </span>
                   </div>

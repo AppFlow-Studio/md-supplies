@@ -62,3 +62,38 @@ describe('CategorySort tracking-param preservation', () => {
     expect(url).not.toContain('after=')
   })
 })
+
+describe('CategorySort limitedSortOptions', () => {
+  it('renders all 5 options when limitedSortOptions is unset (no regression)', () => {
+    render(<CategorySort activeFilters={[]} />)
+
+    fireEvent.click(screen.getByText('SORT BY:'))
+
+    expect(screen.getAllByText('Featured').length).toBeGreaterThan(0)
+    expect(screen.getByText('Best Selling')).toBeInTheDocument()
+    expect(screen.getByText('Price: Low to High')).toBeInTheDocument()
+    expect(screen.getByText('Price: High to Low')).toBeInTheDocument()
+    expect(screen.getByText('Newest')).toBeInTheDocument()
+  })
+
+  it('renders only Featured/Price options when limitedSortOptions is true', () => {
+    render(<CategorySort activeFilters={[]} limitedSortOptions />)
+
+    fireEvent.click(screen.getByText('SORT BY:'))
+
+    expect(screen.getAllByText('Featured').length).toBeGreaterThan(0)
+    expect(screen.getByText('Price: Low to High')).toBeInTheDocument()
+    expect(screen.getByText('Price: High to Low')).toBeInTheDocument()
+    expect(screen.queryByText('Best Selling')).toBeNull()
+    expect(screen.queryByText('Newest')).toBeNull()
+  })
+
+  it('falls back to Featured as selected when currentSort is a hidden option under limitedSortOptions', () => {
+    render(<CategorySort activeFilters={[]} currentSort="BEST_SELLING" limitedSortOptions />)
+
+    // "Featured" should appear as the selected label next to "SORT BY:",
+    // not "Best Selling" (which is hidden and shouldn't render at all).
+    expect(screen.getByText('Featured')).toBeInTheDocument()
+    expect(screen.queryByText('Best Selling')).toBeNull()
+  })
+})

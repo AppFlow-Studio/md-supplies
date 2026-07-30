@@ -8,7 +8,9 @@ interface CollectionPageInput {
 export function buildCollectionPageSchema(input: CollectionPageInput) {
   return {
     '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
+    // Category-tree ticket: L1 + L2 pages emit CollectionPage AND
+    // ProductCollection (schema.org allows multi-typing).
+    '@type': ['CollectionPage', 'ProductCollection'],
     name: input.name,
     url: input.url,
     ...(input.description ? { description: input.description } : {}),

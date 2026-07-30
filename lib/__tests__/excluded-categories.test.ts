@@ -4,7 +4,9 @@ import { EXCLUDED_COLLECTION_HANDLES } from '../excluded-categories'
 describe('EXCLUDED_COLLECTION_HANDLES', () => {
   it('excludes §2.4 removed categories', () => {
     expect(EXCLUDED_COLLECTION_HANDLES.has('pharmaceuticals')).toBe(true)
-    expect(EXCLUDED_COLLECTION_HANDLES.has('beds')).toBe(true)
+    // beds un-excluded 2026-07-17: category-tree ticket places Beds under
+    // Room Furniture, superseding the older §2.4 removal.
+    expect(EXCLUDED_COLLECTION_HANDLES.has('beds')).toBe(false)
     expect(EXCLUDED_COLLECTION_HANDLES.has('bariatric-beds')).toBe(true)
     expect(EXCLUDED_COLLECTION_HANDLES.has('maternity-and-infant-care')).toBe(true)
     expect(EXCLUDED_COLLECTION_HANDLES.has('maternity-infant-care')).toBe(true)

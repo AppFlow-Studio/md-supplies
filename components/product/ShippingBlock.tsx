@@ -1,26 +1,20 @@
-import type { Product } from '@/types/product'
+import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 
 interface Props {
-  product: Pick<Product, 'shippingMessage' | 'leadTime'>
+  shippingDisplay: ShippingDisplay | null
 }
 
-export function ShippingBlock({ product }: Props) {
-  if (!product.shippingMessage && !product.leadTime) return null
+export function ShippingBlock({ shippingDisplay }: Props) {
+  if (!shippingDisplay) return null
+  const text = shippingDisplay.displayCopy ?? shippingDisplay.message
 
   return (
     <section aria-labelledby="shipping-heading" className="border-t border-gray-200 pt-8">
       <h2 id="shipping-heading" className="text-xl font-semibold text-navy-900 mb-4">
         Shipping
       </h2>
-      <div className="bg-neutral-50 rounded-lg p-4 flex flex-col gap-2 text-sm">
-        {product.shippingMessage && (
-          <p className="text-navy-900">{product.shippingMessage}</p>
-        )}
-        {product.leadTime && (
-          <p className="text-gray-500">
-            <span className="font-medium text-navy-900">Lead time:</span> {product.leadTime}
-          </p>
-        )}
+      <div className="bg-neutral-50 rounded-lg p-4 text-sm text-navy-900">
+        {text}
       </div>
     </section>
   )

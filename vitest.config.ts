@@ -8,6 +8,9 @@ export default defineConfig({
     },
   },
   test: {
+    // `.only`/focused tests are forbidden everywhere, not just in CI, so a
+    // stray focus can never slip through a local run that "looked green".
+    allowOnly: false,
     projects: [
       {
         extends: true,
@@ -32,6 +35,7 @@ export default defineConfig({
           include: [
             'components/**/*.test.tsx',
             'components/**/__tests__/**/*.test.tsx',
+            'app/**/__tests__/**/*.test.tsx',
           ],
         },
       },

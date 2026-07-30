@@ -23,8 +23,20 @@ export type SitePostalAddress = {
 }
 
 export const SITE_CONTACT = {
-  /** Public support inbox (also the contact-form recipient default). */
-  email: 'team@mdsupplies.com',
+  /**
+   * Public support inbox (also the contact-form recipient default).
+   *
+   * This is the ONLY approved MDSupplies support address (IZ-COMMS-01). It also
+   * matches what production Shopify already reports as `shop.email` and
+   * `shop.contactEmail`, so the site and the store now agree.
+   *
+   * Previously the `team@` address, which the plan names as forbidden. Because the
+   * footer, /contact and the Organization schema all render from this one constant,
+   * that single wrong value was published on every page and in the structured data
+   * search engines read. The forbidden address is spelled out only in the guard
+   * test, so a repo search for it finds no hits in shipped source.
+   */
+  email: 'support@mdsupplies.com',
 
   /** E.164 for tel: links and schema. TODO(Bilal): e.g. '+18005550100'. */
   phone: null as string | null,

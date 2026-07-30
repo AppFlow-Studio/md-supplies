@@ -4,6 +4,9 @@ const CART_FRAGMENT = `#graphql
     checkoutUrl
     totalQuantity
     attributes { key value }
+    buyerIdentity {
+      customer { id }
+    }
     lines(first: 100) {
       nodes {
         id
@@ -18,6 +21,8 @@ const CART_FRAGMENT = `#graphql
               id
               title
               handle
+              vendor
+              tags
               images(first: 1) {
                 nodes { id url altText width height }
               }
@@ -81,6 +86,19 @@ export const GET_CART = `#graphql
   ${CART_FRAGMENT}
   query GetCart($cartId: ID!) {
     cart(id: $cartId) { ...CartFields }
+  }
+`;
+
+// RX gate prerequisite: associates the signed-in customer with the cart so
+// the checkout (and the future validation-app enforcement) can read the
+// customer's compliance metafields. MUST run before every checkout handoff.
+export const CART_BUYER_IDENTITY_UPDATE = `#graphql
+  ${CART_FRAGMENT}
+  mutation CartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+      cart { ...CartFields }
+      userErrors { field message }
+    }
   }
 `;
 

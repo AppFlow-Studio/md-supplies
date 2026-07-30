@@ -9,6 +9,9 @@ const REQUIRED: Record<string, string> = {
 }
 
 function stubRequired(omit?: string) {
+  // Not part of REQUIRED: the shop guard defaults to the QA store rather
+  // than throwing when this is absent, so it is not a missing-var case.
+  vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', REQUIRED.SHOPIFY_STORE_DOMAIN)
   for (const [k, v] of Object.entries(REQUIRED)) {
     if (k !== omit) vi.stubEnv(k, v)
   }
@@ -36,7 +39,9 @@ describe('serverEnv — happy path', () => {
     stubRequired()
     const { serverEnv } = await import('@/lib/env.server')
     expect(serverEnv.resendFromEmail).toBe('noreply@mdsupplies.com')
-    expect(serverEnv.resendToEmail).toBe('team@mdsupplies.com')
+    // IZ-COMMS-01: support@ is the only approved recipient. The default was team@,
+    // so an unset RESEND_TO_EMAIL sent every form submission to a forbidden inbox.
+    expect(serverEnv.resendToEmail).toBe('support@mdsupplies.com')
     expect(serverEnv.bunnyCdnHostname).toBe('ny.storage.bunnycdn.com')
     expect(serverEnv.bunnyCdnZone).toBe('md-supplies')
   })
@@ -60,6 +65,7 @@ describe('serverEnv — missing required vars', () => {
     SHOPIFY_STOREFRONT_ACCESS_TOKEN: (e) => e.shopifyStorefrontToken,
     RESEND_API_KEY: (e) => e.resendApiKey,
     BUNNYCDN_STORAGE_ACCESS_KEY: (e) => e.bunnyCdnAccessKey,
+    SHOPIFY_ADMIN_ACCESS_TOKEN: (e) => e.shopifyAdminToken,
   }
 
   it('import does not throw even when required vars are missing', async () => {

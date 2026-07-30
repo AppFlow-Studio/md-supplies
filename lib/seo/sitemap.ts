@@ -1,12 +1,12 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL } from './constants'
-import { STAGING_GUARD } from './robots'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { getAllowedHandles, getHandleToCanonicalSlugMap } from '@/lib/category-nav'
+import { CATEGORY_TREE_L1, buildL2Tree } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { INDUSTRIES } from '@/lib/industries'
 import { STATIC_ARTICLES } from '@/lib/blog-static'
 
@@ -33,16 +33,35 @@ async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
     const data = await storefrontFetch<{
       collections: { nodes: { handle: string; updatedAt: string }[] }
     }>(GET_COLLECTIONS_FOR_SITEMAP, { first: 250 })
-    const allowed = getAllowedHandles()
-    const canonicalSlugMap = getHandleToCanonicalSlugMap()
+    const allowedHandles = new Set(CATEGORY_TREE_L1.map((c) => c.collectionHandle))
     return data.collections.nodes
-      .filter((c) => allowed.has(c.handle))
+      .filter((c) => allowedHandles.has(c.handle))
       .map((c) => ({
-        url: `${SITE_URL}/category/${canonicalSlugMap.get(c.handle) ?? c.handle}`,
+        url: `${SITE_URL}/category/${c.handle}`,
         changeFrequency: 'weekly' as const,
         priority: 0.8,
         lastModified: new Date(c.updatedAt),
       }))
+  } catch {
+    return []
+  }
+}
+
+async function fetchSubcategoryUrls(): Promise<SitemapEntry[]> {
+  try {
+    const summaries = await fetchProductTagSummaries()
+    const l2Nodes = buildL2Tree(summaries)
+    return l2Nodes
+      .map((node): SitemapEntry | null => {
+        const l1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)
+        if (!l1) return null
+        return {
+          url: `${SITE_URL}/category/${l1.collectionHandle}/${node.tag}`,
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }
+      })
+      .filter((e): e is SitemapEntry => e !== null)
   } catch {
     return []
   }
@@ -104,11 +123,7 @@ async function fetchArticleUrls(): Promise<SitemapEntry[]> {
   }
 }
 
-export async function getSitemapUrls(
-  isStaging: boolean = STAGING_GUARD,
-): Promise<MetadataRoute.Sitemap> {
-  if (isStaging) return []
-
+export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
   const partnerUrls: SitemapEntry[] = PARTNERS.map(p => ({
     url: `${SITE_URL}/partners/${p.slug}`,
     changeFrequency: 'monthly' as const,
@@ -130,8 +145,9 @@ export async function getSitemapUrls(
     priority: 0.5,
   }))
 
-  const [categoryUrls, productUrls, articleUrls] = await Promise.all([
+  const [categoryUrls, subcategoryUrls, productUrls, articleUrls] = await Promise.all([
     fetchCategoryUrls(),
+    fetchSubcategoryUrls(),
     fetchProductUrls(),
     fetchArticleUrls(),
   ])
@@ -147,6 +163,7 @@ export async function getSitemapUrls(
   return [
     ...STATIC_URLS,
     ...categoryUrls,
+    ...subcategoryUrls,
     ...productUrls,
     ...partnerUrls,
     ...industryUrls,

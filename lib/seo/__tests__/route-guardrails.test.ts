@@ -19,7 +19,13 @@ import path from 'node:path'
 
 const APP_DIR = fileURLToPath(new URL('../../../app', import.meta.url))
 
-/** Recursively collect every `page.tsx` under `app/`, returned app-relative. */
+/**
+ * Recursively collect every `page.tsx` under `app/`, returned app-relative with
+ * `/` separators on every platform. The separator matters: the route-group and
+ * allowlist checks below compare against forward-slash literals, so a raw
+ * `path.relative` result on Windows ("(noindex)\\account\\page.tsx") would miss
+ * every one of them and scan private pages as if they were launch pages.
+ */
 function findPageFiles(dir: string, appRoot: string = dir): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -27,7 +33,7 @@ function findPageFiles(dir: string, appRoot: string = dir): string[] {
     if (entry.isDirectory()) {
       out.push(...findPageFiles(full, appRoot))
     } else if (entry.name === 'page.tsx') {
-      out.push(path.relative(appRoot, full))
+      out.push(path.relative(appRoot, full).split(path.sep).join('/'))
     }
   }
   return out

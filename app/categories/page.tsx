@@ -7,8 +7,11 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
-import { getAllowedHandles, buildCategoryNav } from '@/lib/category-nav'
+import { CategoryImage } from '@/components/shared/CategoryImage'
+import { getCategoryBannerConfig } from '@/lib/bunnycdn'
+import { buildCategoryTreeNav, buildL1Tiles, type ProductTagSummary } from '@/lib/category-tree'
 import { getNonce } from '@/lib/csp-nonce'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 
 export const revalidate = 60
 
@@ -27,24 +30,43 @@ type CollectionNode = {
 
 export default async function CategoriesPage() {
   const nonce = await getNonce()
-  let collections: CollectionNode[] = []
+
+  // Two independent reads, fetched (and failed) independently: `allCollections`
+  // supplies both the Popular Categories strip (nav-registry-sourced, out of
+  // this ticket's scope) and tile artwork for the grid below; `l1Tiles` is the
+  // tag-derived registry that decides WHICH tiles the grid renders.
+  // buildL1Tiles always returns all 25 static tiles regardless of its input
+  // (an empty summaries array just yields productCount: 0 on each), so the
+  // grid's identity/links never depend on fetchProductTagSummaries()
+  // succeeding — these must not share a try/catch, or a GET_COLLECTIONS
+  // artwork-fetch failure would blank the entire grid unnecessarily.
+  // Verified 2026-07-16: this page has never read from the stale custom
+  // "Categories"/"Home page" collections — the trocar-size top-level
+  // tiles came from getAllowedHandles() flattening synthesized sub-handles
+  // (e.g. the 4 trocar-size collections) into one flat allowlist set.
+  let allCollections: CollectionNode[] = []
   try {
-    const data = await storefrontFetch<{ collections: { nodes: CollectionNode[] } }>(
-      GET_COLLECTIONS,
-      { first: 250 },
-    )
-    const allowed = getAllowedHandles()
-    collections = data.collections.nodes.filter((c) => allowed.has(c.handle))
+    const data = await storefrontFetch<{ collections: { nodes: CollectionNode[] } }>(GET_COLLECTIONS, { first: 250 })
+    allCollections = data.collections.nodes
   } catch {
-    // degrade gracefully — render empty state
+    // degrade gracefully — Popular strip and tile artwork render without images
   }
 
-  const collectionsByHandle = new Map(collections.map((c) => [c.handle, c]))
-  const popularCollections = buildCategoryNav(collections)
+  let summaries: ProductTagSummary[] = []
+  try {
+    summaries = await fetchProductTagSummaries()
+  } catch {
+    // degrade gracefully — grid still renders all 25 tiles from the static
+    // allowlist, just with productCount 0
+  }
+  const l1Tiles = buildL1Tiles(summaries)
+
+  const allCollectionsByHandle = new Map(allCollections.map((c) => [c.handle, c]))
+  const popularCollections = buildCategoryTreeNav(allCollections)
     .primary
     .map((entry) => {
       const handle = entry.href.split('/').pop() ?? ''
-      return collectionsByHandle.get(handle)
+      return allCollectionsByHandle.get(handle)
     })
     .filter((c): c is CollectionNode => c != null)
     .slice(0, 8)
@@ -73,31 +95,30 @@ export default async function CategoriesPage() {
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
             <h2 className="text-navy-900 text-[22px] font-semibold mb-7">Popular Categories</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-[1px] border border-[rgba(0,0,0,0.08)] bg-[rgba(0,0,0,0.08)]">
-              {popularCollections.map((col) => (
-                <Link
-                  key={col.id}
-                  href={ROUTES.category(col.handle)}
-                  className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
-                >
-                  <div className="w-[50px] h-[50px] rounded-xl bg-[rgba(0,193,255,0.15)] flex items-center justify-center overflow-hidden group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">
-                    {col.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={col.image.url}
-                        alt={col.image.altText ?? col.title}
-                        className="w-full h-full object-cover"
+              {popularCollections.map((col) => {
+                const banner = getCategoryBannerConfig(col.handle)
+                return (
+                  <Link
+                    key={col.id}
+                    href={ROUTES.category(col.handle)}
+                    className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
+                  >
+                    <div className="relative w-[50px] h-[50px] rounded-xl overflow-hidden bg-[rgba(0,193,255,0.15)] group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">
+                      <CategoryImage
+                        bannerPath={banner.path}
+                        alt={banner.alt}
+                        sizes="50px"
+                        fallbackLabel={col.title.charAt(0)}
+                        fallbackLabelWrapperClassName="absolute inset-0 flex items-center justify-center"
+                        fallbackLabelTextClassName="text-teal-500 text-[20px] font-bold"
                       />
-                    ) : (
-                      <span className="text-teal-500 text-[20px] font-bold">
-                        {col.title.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[14px] font-semibold text-navy-900 text-center leading-snug">
-                    {col.title}
-                  </span>
-                </Link>
-              ))}
+                    </div>
+                    <span className="text-[14px] font-semibold text-navy-900 text-center leading-snug">
+                      {col.title}
+                    </span>
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -107,40 +128,40 @@ export default async function CategoriesPage() {
       <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
         <h2 className="text-navy-900 text-[22px] font-semibold mb-7">Browse All Categories</h2>
 
-        {collections.length === 0 ? (
+        {l1Tiles.length === 0 ? (
           <p className="text-gray-500 text-[15px]">No categories found.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-            {collections.map((col) => (
-              <Link
-                key={col.id}
-                href={ROUTES.category(col.handle)}
-                className="group bg-white border border-gray-200 hover:border-navy-900 transition-colors overflow-hidden"
-              >
-                {col.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={col.image.url}
-                    alt={col.image.altText ?? col.title}
-                    className="w-full aspect-[4/3] object-cover"
-                  />
-                ) : (
-                  <div className="w-full aspect-[4/3] bg-navy-900/5 flex items-center justify-center">
-                    <span className="text-navy-900/20 text-[36px] font-bold">{col.title.charAt(0)}</span>
+            {l1Tiles.map((tile) => {
+              const col = allCollectionsByHandle.get(tile.collectionHandle)
+              const banner = getCategoryBannerConfig(tile.collectionHandle)
+              return (
+                <Link
+                  key={tile.tag}
+                  href={ROUTES.category(tile.collectionHandle)}
+                  className="group bg-white border border-gray-200 hover:border-navy-900 transition-colors overflow-hidden"
+                >
+                  <div className="relative w-full aspect-[4/3]">
+                    <CategoryImage
+                      bannerPath={banner.path}
+                      alt={banner.alt}
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                      fallbackLabel={tile.displayName.charAt(0)}
+                    />
                   </div>
-                )}
-                <div className="px-4 py-3">
-                  <p className="text-navy-900 text-[14px] font-semibold group-hover:underline">
-                    {col.title}
-                  </p>
-                  {col.description && (
-                    <p className="text-gray-500 text-[12px] mt-1 line-clamp-2">
-                      {col.description}
+                  <div className="px-4 py-3">
+                    <p className="text-navy-900 text-[14px] font-semibold group-hover:underline">
+                      {tile.displayName}
                     </p>
-                  )}
-                </div>
-              </Link>
-            ))}
+                    {col?.description && (
+                      <p className="text-gray-500 text-[12px] mt-1 line-clamp-2">
+                        {col.description}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>

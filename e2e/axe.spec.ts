@@ -14,6 +14,10 @@ const ROUTES: Array<{ path: string; name: string }> = [
 
 for (const { path, name } of ROUTES) {
   test(`${name} (${path}) has no serious or critical axe violations`, async ({ page }) => {
+    // Scan the reduced-motion rendering (globals.css honors it, WCAG 2.3.3):
+    // otherwise axe can sample the announcement-bar text mid-fade and flag a
+    // phantom contrast failure from the blended semi-transparent color.
+    await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto(path)
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -31,6 +35,7 @@ for (const { path, name } of ROUTES) {
 }
 
 test('cart panel (opened) has no serious or critical axe violations', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await page.getByRole('button', { name: /cart/i }).click()
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()

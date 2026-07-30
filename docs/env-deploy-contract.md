@@ -22,7 +22,7 @@ secret — can never be bundled into client-side JavaScript.
 | `SHOPIFY_STOREFRONT_ACCESS_TOKEN` | ✅ required | **yes** | no | `lib/env.server.ts` |
 | `RESEND_API_KEY` | ✅ required | **yes** | no | `lib/env.server.ts` |
 | `RESEND_FROM_EMAIL` | optional (default `noreply@mdsupplies.com`) | no | no | `lib/env.server.ts` |
-| `RESEND_TO_EMAIL` | optional (default `team@mdsupplies.com`) | no | no | `lib/env.server.ts` |
+| `RESEND_TO_EMAIL` | optional (default `support@mdsupplies.com`) | no | no | `lib/env.server.ts` |
 | `RESEND_SOURCING_TO_EMAIL` | optional (falls back to `RESEND_TO_EMAIL`) | no | no | `lib/resend.ts` |
 | `BUNNYCDN_STORAGE_ACCESS_KEY` | ✅ required | **yes** | no | `lib/env.server.ts` |
 | `BUNNYCDN_STORAGE_HOSTNAME` | optional (default `ny.storage.bunnycdn.com`) | no | no | `lib/env.server.ts` |

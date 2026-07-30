@@ -6,6 +6,7 @@ import { ShieldCheck, Truck, Loader2, Minus, Plus } from 'lucide-react'
 import { useCart } from '@/components/store/CartProvider'
 import type { ProductCardData } from '@/types/product'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { ShippingBadge } from '@/components/product/ShippingBadge'
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -59,12 +60,18 @@ export function QuickAddContent({ product, titleId }: Props) {
     <>
       {/* Left panel — image gallery */}
       <div className="relative bg-[#f9faf9] sm:w-[43%] shrink-0 flex flex-col items-center justify-center gap-3 p-6 sm:overflow-y-auto min-h-[200px]">
-        {product.hasFreeShipping && (
-          <div className="absolute top-4 left-4 bg-[#006e46] px-3 py-1.5">
-            <span className="text-[#f9faf9] text-[13px] font-bold leading-[28px] tracking-[0.26px]">
-              FREE SHIPPING
-            </span>
+        {product.shippingDisplay ? (
+          <div className="absolute top-4 left-4">
+            <ShippingBadge shippingDisplay={product.shippingDisplay} className="px-3 py-1.5 text-[13px] font-bold" />
           </div>
+        ) : (
+          product.hasFreeShipping && (
+            <div className="absolute top-4 left-4 bg-[#006e46] px-3 py-1.5">
+              <span className="text-[#f9faf9] text-[13px] font-bold leading-[28px] tracking-[0.26px]">
+                FREE SHIPPING
+              </span>
+            </div>
+          )
         )}
 
         {/* Main image */}
@@ -110,7 +117,7 @@ export function QuickAddContent({ product, titleId }: Props) {
       {/* Right panel — details */}
       <div className="flex-1 overflow-y-auto py-10 px-8 flex flex-col gap-4 min-w-0">
         {/* Vendor */}
-        <p className="text-[#0086b1] text-[15px] font-semibold tracking-[0.3px]">
+        <p className="text-teal-500 text-[15px] font-semibold tracking-[0.3px]">
           {product.vendor || product.brand}
         </p>
 
