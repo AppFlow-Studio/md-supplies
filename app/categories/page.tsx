@@ -104,13 +104,14 @@ export default async function CategoriesPage() {
                     className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
                   >
                     <div className="relative w-[50px] h-[50px] rounded-xl overflow-hidden bg-[rgba(0,193,255,0.15)] group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">
+                      {/* DEV-CAT-01: no initial-letter placeholder. Every
+                          active category resolves to a curated BunnyCDN image
+                          (lib/category-images.ts); a load failure degrades to
+                          the neutral panel, never to a letter tile. */}
                       <CategoryImage
                         bannerPath={banner.path}
                         alt={banner.alt}
                         sizes="50px"
-                        fallbackLabel={col.title.charAt(0)}
-                        fallbackLabelWrapperClassName="absolute inset-0 flex items-center justify-center"
-                        fallbackLabelTextClassName="text-teal-500 text-[20px] font-bold"
                       />
                     </div>
                     <span className="text-[14px] font-semibold text-navy-900 text-center leading-snug">
@@ -142,11 +143,11 @@ export default async function CategoriesPage() {
                   className="group bg-white border border-gray-200 hover:border-navy-900 transition-colors overflow-hidden"
                 >
                   <div className="relative w-full aspect-[4/3]">
+                    {/* No initial-letter placeholder — see the note above. */}
                     <CategoryImage
                       bannerPath={banner.path}
                       alt={banner.alt}
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                      fallbackLabel={tile.displayName.charAt(0)}
                     />
                   </div>
                   <div className="px-4 py-3">
