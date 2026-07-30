@@ -53,18 +53,66 @@ describe('cartRequiresRxGate', () => {
   })
 })
 
-describe('resolveGateStatus', () => {
+describe('resolveGateStatus — enforcement ENABLED', () => {
+  const on = { enforcementEnabled: true }
   it('blocks a signed-out RX cart (forced account creation)', () => {
-    expect(resolveGateStatus({ cartHasRx: true, signedIn: false, hasDocument: false, verified: false }).blocked).toBe(true)
+    expect(resolveGateStatus({ cartHasRx: true, signedIn: false, hasDocument: false, verified: false, ...on }).blocked).toBe(true)
   })
   it('blocks a signed-in RX cart with no document', () => {
-    expect(resolveGateStatus({ cartHasRx: true, signedIn: true, hasDocument: false, verified: false }).blocked).toBe(true)
+    expect(resolveGateStatus({ cartHasRx: true, signedIn: true, hasDocument: false, verified: false, ...on }).blocked).toBe(true)
   })
   it('unblocks once a document is on file — never asks again', () => {
-    expect(resolveGateStatus({ cartHasRx: true, signedIn: true, hasDocument: true, verified: false }).blocked).toBe(false)
-    expect(resolveGateStatus({ cartHasRx: true, signedIn: true, hasDocument: true, verified: true }).blocked).toBe(false)
+    expect(resolveGateStatus({ cartHasRx: true, signedIn: true, hasDocument: true, verified: false, ...on }).blocked).toBe(false)
+    expect(resolveGateStatus({ cartHasRx: true, signedIn: true, hasDocument: true, verified: true, ...on }).blocked).toBe(false)
   })
   it('never blocks a cart without gated RX lines', () => {
-    expect(resolveGateStatus({ cartHasRx: false, signedIn: false, hasDocument: false, verified: false }).blocked).toBe(false)
+    expect(resolveGateStatus({ cartHasRx: false, signedIn: false, hasDocument: false, verified: false, ...on }).blocked).toBe(false)
+  })
+})
+
+/**
+ * Plan §9.1: RX checkout enforcement is a BLOCKED compliance decision, so it
+ * must not be able to block a customer's checkout at the launch default.
+ * These tests are the guard on that.
+ */
+describe('resolveGateStatus — enforcement DISABLED (launch default)', () => {
+  const off = { enforcementEnabled: false }
+
+  it('never blocks, whatever the cart and account state', () => {
+    for (const signedIn of [true, false]) {
+      for (const hasDocument of [true, false]) {
+        for (const verified of [true, false]) {
+          expect(
+            resolveGateStatus({ cartHasRx: true, signedIn, hasDocument, verified, ...off }).blocked,
+          ).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('still reports the underlying state (so the UI can invite an upload)', () => {
+    const status = resolveGateStatus({ cartHasRx: true, signedIn: true, hasDocument: false, verified: false, ...off })
+    expect(status.cartHasRx).toBe(true)
+    expect(status.hasDocument).toBe(false)
+    expect(status.blocked).toBe(false)
+  })
+
+  it('defaults to disabled when the env flag is unset or not exactly "true"', async () => {
+    const original = process.env.RX_CHECKOUT_ENFORCEMENT
+    try {
+      for (const value of [undefined, '', 'false', 'TRUE', '1', 'yes']) {
+        if (value === undefined) delete process.env.RX_CHECKOUT_ENFORCEMENT
+        else process.env.RX_CHECKOUT_ENFORCEMENT = value
+        const { isRxEnforcementEnabled } = await import('../rx-gate')
+        expect(isRxEnforcementEnabled(), `value ${JSON.stringify(value)} must not enable enforcement`).toBe(false)
+        // No explicit flag → resolveGateStatus reads the env and cannot block.
+        expect(
+          resolveGateStatus({ cartHasRx: true, signedIn: false, hasDocument: false, verified: false }).blocked,
+        ).toBe(false)
+      }
+    } finally {
+      if (original === undefined) delete process.env.RX_CHECKOUT_ENFORCEMENT
+      else process.env.RX_CHECKOUT_ENFORCEMENT = original
+    }
   })
 })

@@ -74,8 +74,12 @@ export async function getRxGateStatus(): Promise<RxGateStatus> {
       verified: state.verified,
     })
   } catch (err) {
-    // Admin API unavailable (e.g. token not yet provisioned): fail CLOSED for
-    // RX carts — blocking a sale is recoverable, an ungated RX sale is not.
+    // Admin API unavailable (e.g. token not yet provisioned): treat the
+    // document as absent, which fails CLOSED for RX carts *when enforcement
+    // is enabled* (blocking a sale is recoverable, an ungated RX sale is
+    // not). While RX_CHECKOUT_ENFORCEMENT is off — the launch default, since
+    // the compliance decision is still blocked — resolveGateStatus never
+    // returns blocked, so this cannot stop a checkout.
     console.error('[rx] getCustomerRxState failed:', err)
     return resolveGateStatus({ cartHasRx, signedIn: true, hasDocument: false, verified: false })
   }

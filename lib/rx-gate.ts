@@ -90,14 +90,43 @@ export type RxGateStatus = {
   blocked: boolean
 }
 
+/**
+ * RX checkout ENFORCEMENT flag (plan §9.1 — BLOCKED).
+ *
+ * The execution plan lists RX account-level upload and checkout enforcement as
+ * a blocked compliance decision: affected products/states, acceptable
+ * documents, verification owner, expiry, guest flow, retention/deletion, and
+ * the checkout rule itself are all unresolved. Implementation existing is not
+ * approval.
+ *
+ * So enforcement is off unless explicitly enabled, and it fails safe on any
+ * unset/invalid value. With it disabled the upload UI, storage, scanning, and
+ * document state all still work (a customer may add a document voluntarily)
+ * and the RX Only label still displays — only the checkout BLOCK is withheld.
+ *
+ * To enable: record the written client/compliance approval in the repo, then
+ * set RX_CHECKOUT_ENFORCEMENT=true in the target environment.
+ */
+export function isRxEnforcementEnabled(): boolean {
+  return process.env.RX_CHECKOUT_ENFORCEMENT === 'true'
+}
+
 export function resolveGateStatus(input: {
   cartHasRx: boolean
   signedIn: boolean
   hasDocument: boolean
   verified: boolean
+  /** Defaults to the env flag; injectable for tests. */
+  enforcementEnabled?: boolean
 }): RxGateStatus {
+  const enforcementEnabled = input.enforcementEnabled ?? isRxEnforcementEnabled()
   return {
-    ...input,
-    blocked: input.cartHasRx && (!input.signedIn || !input.hasDocument),
+    cartHasRx: input.cartHasRx,
+    signedIn: input.signedIn,
+    hasDocument: input.hasDocument,
+    verified: input.verified,
+    // Never blocks while enforcement is disabled, regardless of cart contents.
+    blocked:
+      enforcementEnabled && input.cartHasRx && (!input.signedIn || !input.hasDocument),
   }
 }

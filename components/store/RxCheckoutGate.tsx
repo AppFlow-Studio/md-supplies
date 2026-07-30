@@ -11,6 +11,12 @@ import type { Cart } from '@/lib/shopify/types'
 // UX layer only — the CTA block is bypassable by cart URL by design; the
 // compliance control is the companion validation app. prepareCheckout()
 // re-checks server-side and runs cartBuyerIdentityUpdate before handoff.
+//
+// Enforcement (whether an RX cart's checkout CTA is actually blocked) is
+// gated by RX_CHECKOUT_ENFORCEMENT and OFF by default — the compliance
+// decision is still blocked in the execution plan (§9.1). With it off,
+// `blocked` is always false server-side (lib/rx-gate.ts resolveGateStatus),
+// so this panel simply never renders and checkout proceeds normally.
 
 export function useRxGate(cart: Cart | null) {
   // null = status unknown (loading); gate renders only on a definite block.
