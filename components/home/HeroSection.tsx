@@ -65,8 +65,10 @@ export function HeroSection({ products }: Props) {
             </h1>
 
             {/* Description */}
+            {/* Product-count claim removed — blocked pending the dated
+                catalog census (lib/claims.ts / IZ-PROD-09). */}
             <p className="text-gray-500 text-[18px] leading-[30px] tracking-[0.36px] max-w-[516px]">
-              Shop 8,000+ medical, home care, testing, mobility, and care supplies online.
+              Shop medical, home care, testing, mobility, and care supplies online.
               MDSupplies serves healthcare teams, organizations, businesses, and individual
               customers with clear product access and reliable ordering support.
             </p>

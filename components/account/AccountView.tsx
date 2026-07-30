@@ -172,21 +172,10 @@ function LoggedOutView() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="w-full bg-white">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 grid grid-cols-2 lg:grid-cols-3 gap-8">
-          {[
-            { value: "1,000+",   label: "Active Accounts" },
-            { value: "Reliable", label: "Fulfillment"     },
-            { value: "24-48 hr", label: "Fast Support"    },
-          ].map(({ value, label }) => (
-            <div key={label} className="flex flex-col items-center gap-2 text-center">
-              <span className="text-navy-900 text-[35px] font-semibold leading-none">{value}</span>
-              <span className="text-gray-500 text-[15px] uppercase tracking-[0.3px]">{label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Stats section removed: "1,000+ Active Accounts", "Reliable
+          Fulfillment", and "24-48 hr Fast Support" were unsourced
+          customer-facing claims (plan §2.1). Blocked pending written client
+          evidence — see lib/claims.ts; no replacement numbers invented. */}
 
       {/* What You Can Do */}
       <section className="w-full bg-navy-900">

@@ -7,6 +7,7 @@ import {
   ShieldCheck, Truck, Package, ChevronDown,
   Search, User, ShoppingCart, Menu, X, Building2,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 import { useCart } from '@/components/store/CartProvider'
 import { SearchDropdown } from '@/components/layout/SearchDropdown'
@@ -15,6 +16,7 @@ import { ROUTES } from '@/lib/routes'
 import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
 import { buildCategoryTreeNav } from '@/lib/category-tree'
 import { LOGO_PATH } from '@/lib/bunnycdn'
+import { approvedClaims, type ClaimKey } from '@/lib/claims'
 
 interface HeaderProps {
   menuItems: MenuItem[]
@@ -27,12 +29,23 @@ const ANNOUNCEMENTS = [
   'Shop medical supplies by category, brand, or industry',
 ]
 
-const STATS = [
-  { label: '12,000+', sublabel: 'Facilities', icon: Building2 },
-  { label: '99.8%', sublabel: 'Order Accuracy', icon: ShieldCheck },
-  { label: 'Fast', sublabel: 'Shipping', icon: Truck },
-  { label: '8,000+', sublabel: 'Products', icon: Package },
-]
+// Top-bar claims are gated on the approved-claims register (lib/claims.ts).
+// All four are BLOCKED pending written client evidence (plan §2.1 /
+// IZ-PROD-09), so the stats bars render nothing today rather than showing an
+// unsourced number. Approving a claim there brings its tile back automatically.
+const STAT_ICONS: Record<ClaimKey, LucideIcon> = {
+  facilitiesServed: Building2,
+  orderAccuracy: ShieldCheck,
+  shippingSpeed: Truck,
+  productCount: Package,
+}
+
+const STATS = approvedClaims(['facilitiesServed', 'orderAccuracy', 'shippingSpeed', 'productCount'])
+  .map(({ key, claim }) => ({
+    label: claim.text,
+    sublabel: claim.label ?? '',
+    icon: STAT_ICONS[key],
+  }))
 
 function titleToSlug(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -186,20 +199,22 @@ export function Header({ menuItems, collections }: HeaderProps) {
         </div>
       </div>
 
-      {/* 2 — Stats bar */}
-      <div className="hidden md:flex bg-neutral-50 border-b border-blue-50 h-11.5 items-center">
-        <div className="max-w-360 mx-auto px-8 w-full flex items-center justify-center gap-12 lg:gap-16">
-          {STATS.map(({ label, sublabel, icon: Icon }) => (
-            <div key={sublabel} className="flex items-center gap-2 text-sm text-navy-900">
-              <Icon size={18} className="text-teal-500 shrink-0" />
-              <span>
-                <strong className="font-bold">{label}</strong>{' '}
-                <span className="text-gray-500">{sublabel}</span>
-              </span>
-            </div>
-          ))}
+      {/* 2 — Stats bar (only when claims are approved; see lib/claims.ts) */}
+      {STATS.length > 0 && (
+        <div className="hidden md:flex bg-neutral-50 border-b border-blue-50 h-11.5 items-center">
+          <div className="max-w-360 mx-auto px-8 w-full flex items-center justify-center gap-12 lg:gap-16">
+            {STATS.map(({ label, sublabel, icon: Icon }) => (
+              <div key={sublabel} className="flex items-center gap-2 text-sm text-navy-900">
+                <Icon size={18} className="text-teal-500 shrink-0" />
+                <span>
+                  <strong className="font-bold">{label}</strong>{' '}
+                  <span className="text-gray-500">{sublabel}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 3 — Main nav */}
       <nav className="bg-white border-b border-blue-50 h-18 flex items-center relative">
@@ -443,14 +458,16 @@ export function Header({ menuItems, collections }: HeaderProps) {
           id="mobile-menu"
           className={`${mobileOpen ? 'block' : 'hidden'} xl:hidden absolute top-full left-0 right-0 bg-white border-b border-blue-50 shadow-lg z-50 max-h-[80vh] overflow-y-auto`}
         >
-          <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-neutral-50 border-b border-blue-50">
-            {STATS.map(({ label, sublabel, icon: Icon }) => (
-              <div key={sublabel} className="flex items-center gap-1.5 text-xs text-navy-900">
-                <Icon size={14} className="text-teal-500 shrink-0" />
-                <span><strong>{label}</strong> {sublabel}</span>
-              </div>
-            ))}
-          </div>
+          {STATS.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-neutral-50 border-b border-blue-50">
+              {STATS.map(({ label, sublabel, icon: Icon }) => (
+                <div key={sublabel} className="flex items-center gap-1.5 text-xs text-navy-900">
+                  <Icon size={14} className="text-teal-500 shrink-0" />
+                  <span><strong>{label}</strong> {sublabel}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <nav className="px-4 py-3 flex flex-col gap-1">
             {/* Categories mobile */}

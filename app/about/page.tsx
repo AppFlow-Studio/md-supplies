@@ -4,6 +4,10 @@ import { SITE_URL } from '@/lib/seo/constants'
 import { ShieldCheck, Package, Headphones } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
+import { approvedClaims } from '@/lib/claims'
+
+// Claims gated on the approved-claims register — see lib/claims.ts.
+const ABOUT_STATS = approvedClaims(['productCount', 'facilitiesServed'])
 
 const IMG_HERO      = "/images/about/HERO.png";
 const IMG_BRANDS    = "/images/about/brands.png";
@@ -43,9 +47,10 @@ export default function AboutPage() {
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
+              {/* No fulfillment-speed promise (plan §2.1). */}
               <p className="text-gray-500 text-[18px] font-medium leading-[1.65] max-w-[516px]">
                 We serve clinics, urgent care centers, HRT practices, and first responders with
-                brands you already know and fast, reliable fulfillment.
+                brands you already know.
               </p>
             </FadeIn>
             <FadeIn delay={0.3}>
@@ -81,12 +86,14 @@ export default function AboutPage() {
               <h2 className="text-[28px] font-semibold text-navy-900 tracking-[0.56px] leading-[1.3]">
                 Built for Facilities Like Yours
               </h2>
+              {/* No shipping-speed promise and no product-count figure —
+                  both blocked pending written evidence (lib/claims.ts). */}
               <p className="text-gray-500 text-[18px] font-medium leading-[1.65]">
-                MDSupplies was built for healthcare professionals who need reliable products,
-                fast shipping, and fair pricing — without the red tape of traditional distributors.
+                MDSupplies was built for healthcare professionals who need reliable products
+                and fair pricing — without the red tape of traditional distributors.
               </p>
               <p className="text-gray-500 text-[18px] font-medium leading-[1.65]">
-                We stock over 8,000 products from trusted manufacturers. Whether you&apos;re
+                We stock products from trusted manufacturers. Whether you&apos;re
                 restocking an urgent care clinic, managing supplies for an HRT practice, or
                 equipping a first responder team — we make ordering simple.
               </p>
@@ -96,14 +103,16 @@ export default function AboutPage() {
           {/* Right 2×2 tile grid */}
           <div className="flex-1 grid grid-cols-2 gap-6">
 
-            {/* Tile 1 – 99.8% Accuracy */}
+            {/* Tile 1 – Order Verification. The "99.8% Accuracy" figure is a
+                blocked claim (lib/claims.ts) — the tile keeps the verifiable
+                process statement without the unsourced number. */}
             <FadeIn delay={0}>
               <div className="bg-white p-8 flex flex-col gap-3">
                 <div className="w-[50px] h-[50px] rounded-xl bg-[rgba(0,193,255,0.15)] flex items-center justify-center shrink-0">
                   <ShieldCheck size={24} className="text-teal-500" />
                 </div>
                 <h3 className="text-navy-900 text-[22px] font-semibold leading-[1.3] mt-2">
-                  99.8% Accuracy
+                  Order Verification
                 </h3>
                 <p className="text-gray-500 text-[15px] leading-[1.65]">
                   Every order is picked and verified before it ships.
@@ -111,7 +120,7 @@ export default function AboutPage() {
               </div>
             </FadeIn>
 
-            {/* Tile 2 – Vast Inventory */}
+            {/* Tile 2 – Vast Inventory (product-count claim blocked) */}
             <FadeIn delay={0.08}>
               <div className="bg-[rgba(11,23,43,0.06)] p-8 flex flex-col gap-3">
                 <div className="w-[50px] h-[50px] rounded-xl bg-[rgba(11,23,43,0.08)] flex items-center justify-center shrink-0">
@@ -121,7 +130,7 @@ export default function AboutPage() {
                   Vast Inventory
                 </h3>
                 <p className="text-gray-500 text-[15px] leading-[1.65]">
-                  Browse 8,000+ products from trusted brands.
+                  Browse medical supplies from trusted brands.
                 </p>
               </div>
             </FadeIn>
@@ -222,28 +231,27 @@ export default function AboutPage() {
               />
             </FadeIn>
 
-            {/* Stats */}
-            <FadeIn delay={0.16}>
-              <div className="bg-navy-900 p-8 flex flex-col justify-center gap-5">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[#f9fafc] text-[35px] font-semibold leading-none">
-                    8,000+
-                  </span>
-                  <span className="text-gray-500 text-[13px] tracking-[0.3px] uppercase">
-                    Products
-                  </span>
+            {/* Stats — rendered only for claims approved in lib/claims.ts.
+                Product-count and facilities-served are both blocked pending
+                written evidence (IZ-PROD-09), so this tile is absent today
+                rather than showing unsourced numbers. */}
+            {ABOUT_STATS.length > 0 && (
+              <FadeIn delay={0.16}>
+                <div className="bg-navy-900 p-8 flex flex-col justify-center gap-5">
+                  {ABOUT_STATS.map(({ key, claim }, i) => (
+                    <div key={key} className="flex flex-col gap-1">
+                      {i > 0 && <div className="h-px bg-white/20 mb-4" />}
+                      <span className="text-[#f9fafc] text-[35px] font-semibold leading-none">
+                        {claim.text}
+                      </span>
+                      <span className="text-gray-500 text-[13px] tracking-[0.3px] uppercase leading-tight">
+                        {claim.label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="h-px bg-white/20" />
-                <div className="flex flex-col gap-1">
-                  <span className="text-[#f9fafc] text-[35px] font-semibold leading-none">
-                    12,000+
-                  </span>
-                  <span className="text-gray-500 text-[13px] tracking-[0.3px] uppercase leading-tight">
-                    Facilities Served
-                  </span>
-                </div>
-              </div>
-            </FadeIn>
+              </FadeIn>
+            )}
 
             {/* Dedicated Support */}
             <FadeIn delay={0.24}>
@@ -254,8 +262,9 @@ export default function AboutPage() {
                 <h3 className="text-navy-900 text-[22px] font-semibold leading-[1.3] mt-2">
                   Dedicated Support
                 </h3>
+                {/* No response-time promise (unsupported service claim). */}
                 <p className="text-gray-500 text-[15px] leading-[1.65]">
-                  Real people who respond in hours, not days.
+                  Real people you can reach by email or through the contact form.
                 </p>
                 <Link
                   href="/contact"
