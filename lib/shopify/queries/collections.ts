@@ -73,6 +73,9 @@ export const GET_COLLECTION = `#graphql
           vendor
           availableForSale
           tags
+          # DEV-LABEL-01: single backorder source, shared with the PDP so
+          # card and PDP can never disagree.
+          estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
           priceRange {
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }

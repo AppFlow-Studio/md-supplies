@@ -108,6 +108,9 @@ export type CollectionProduct = {
   vendor: string;
   availableForSale: boolean;
   tags: string[];
+  /** Raw backorder metafield (DEV-LABEL-01 single source); flattened by the
+      label contract, may be absent on queries that don't request it. */
+  estimatedRestockDate?: { value: string } | null;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
   variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };

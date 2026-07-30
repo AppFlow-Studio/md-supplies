@@ -206,6 +206,8 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
           vendor
           availableForSale
           tags
+          # DEV-LABEL-01: single backorder source, shared with the PDP.
+          estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
           priceRange {
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }

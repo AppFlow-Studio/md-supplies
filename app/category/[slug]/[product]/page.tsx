@@ -33,6 +33,7 @@ import { getSubcategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
+import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -281,13 +282,16 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
   }
 
   // Fall back to product
-  const productData = await storefrontFetch<{ product: Product | null }>(
+  const rawProductData = await storefrontFetch<{ product: RawProduct | null }>(
     GET_PRODUCT,
     { handle },
     productFetchOptions(handle),
   )
 
-  if (!productData.product) notFound()
+  if (!rawProductData.product) notFound()
+  // Same metafield flattening as /product/[slug] — without it ProductView
+  // receives raw `{ value }` objects (broken spec rows / backorder date).
+  const productData = { product: normalizeProduct(rawProductData.product) }
   if (productData.product.variants.nodes.length === 0) notFound()
 
   const partner = PARTNERS.find(

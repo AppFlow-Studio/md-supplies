@@ -32,9 +32,8 @@ function toCardData(product: CollectionProduct): ProductCardData {
     compareAtPrice,
     sku: '',
     available: product.availableForSale,
-    hasFreeShipping: product.tags.includes('free-shipping'),
     shippingDisplay: product.shippingDisplay ?? null,
-    isRx: product.tags.includes('rx-required'),
+    isRx: product.tags.some((t) => t === 'rx-required' || t === 'compliance:rx-only'),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
       title: v.title,

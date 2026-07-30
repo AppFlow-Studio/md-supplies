@@ -8,6 +8,7 @@ import { track } from '@/lib/analytics/track'
 import { buildSelectItemEvent, toGA4Item, currencyOf } from '@/lib/analytics/events'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { resolveProductLabels } from '@/lib/labels/labels'
 
 interface Props {
   product: CollectionProduct
@@ -81,24 +82,36 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
         <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
           {product.title}
         </p>
-        {(product.shippingDisplay || product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {product.shippingDisplay ? (
-              <ShippingBadge shippingDisplay={product.shippingDisplay} />
-            ) : (
-              product.tags.includes('free-shipping') && (
-                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-teal-500 text-white">
-                  Free Shipping
+        {/* DEV-LABEL-01: a shipping claim comes ONLY from the resolver-backed
+            ShippingBadge — the raw `free-shipping` tag fallback is gone (an
+            uncurated tag must never create a shipping promise). RX/backorder
+            come from the shared label contract, so card and PDP agree. */}
+        {(() => {
+          const labels = resolveProductLabels({
+            tags: product.tags,
+            estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
+            availableForSale: product.availableForSale,
+          })
+          if (!product.shippingDisplay && labels.length === 0) return null
+          return (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {product.shippingDisplay && (
+                <ShippingBadge shippingDisplay={product.shippingDisplay} />
+              )}
+              {labels.map((label) => (
+                <span
+                  key={label.type}
+                  aria-label={label.accessibleText}
+                  className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded text-white ${
+                    label.type === 'rx-only' ? 'bg-amber-600' : 'bg-orange-500'
+                  }`}
+                >
+                  {label.text}
                 </span>
-              )
-            )}
-            {product.tags.includes('rx-required') && (
-              <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-amber-600 text-white">
-                RX Only
-              </span>
-            )}
-          </div>
-        )}
+              ))}
+            </div>
+          )
+        })()}
         <div className="flex items-baseline gap-2">
           <span className="text-black text-[18px] font-bold tracking-[0.36px]">
             ${price.toFixed(2)}
