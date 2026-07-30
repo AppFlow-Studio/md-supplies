@@ -25,6 +25,8 @@ import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
 import { getNonce } from '@/lib/csp-nonce'
+import { getCategorySeo } from '@/lib/seo/categorySeo'
+import { FAQSection } from '@/components/b2b/FAQSection'
 
 // Shared server-rendered category page, used by two routes:
 //  - app/category/[slug]           — static/ISR canonical view (sp is {})
@@ -118,6 +120,26 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
       })
     }
 
+    // Unfiltered page 1: use SEO database values when available.
+    const seoDB = getCategorySeo(slug)
+    if (seoDB) {
+      const base = buildMetadata({
+        pageType: 'category',
+        slug,
+        description: seoDB.metaDescription,
+        image: data.collection.image?.url,
+        imageWidth: data.collection.image?.width,
+        imageHeight: data.collection.image?.height,
+      })
+      const og = (base.openGraph ?? {}) as Record<string, unknown>
+      return {
+        ...base,
+        title: seoDB.title,
+        description: seoDB.metaDescription,
+        openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
+      }
+    }
+
     return buildMetadata({
       pageType: 'category',
       title: metaTitle,
@@ -167,6 +189,9 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   const banner = getCategoryBannerConfig(slug)
   const clusterLinks = getClusterLinks(slug)
 
+  // SEO database — H1 override, answer block, and FAQ on unfiltered page 1.
+  const seoData = (!isFiltered && currentPage === 1) ? getCategorySeo(slug) : undefined
+
   const { collection } = data
 
   return (
@@ -188,14 +213,18 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
             </div>
 
             <h1 className="text-navy-900 text-[40px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
-              {collection.title}
+              {seoData ? seoData.h1 : collection.title}
             </h1>
 
-            {collection.description && (
+            {seoData ? (
+              <p className="text-gray-500 text-[15px] leading-[1.75] mb-8 max-w-[500px]">
+                {seoData.answerBlock}
+              </p>
+            ) : collection.description ? (
               <p className="text-gray-500 text-[15px] leading-[1.75] mb-8 max-w-[500px]">
                 {collection.description}
               </p>
-            )}
+            ) : null}
 
             <Link
               href={ROUTES.category(slug)}
@@ -252,6 +281,13 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           trackingParamsSource={sp}
         />
       </div>
+
+      {/* FAQ section — below product grid (SEO database) */}
+      {seoData && seoData.faqs.length > 0 && (
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
+          <FAQSection faq={seoData.faqs} />
+        </div>
+      )}
 
       {/* Related categories */}
       {relatedCategories.length > 0 && (
