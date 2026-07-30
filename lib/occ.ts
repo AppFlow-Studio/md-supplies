@@ -9,16 +9,14 @@ export const OCC_HUB: OCCHub = {
     { handle: 'hygiene-kits',    title: 'Hygiene Kits' },
     { handle: 'school-supplies', title: 'School Supplies' },
     { handle: 'backpacks',       title: 'Backpacks' },
-    { handle: 'gifts-toys',      title: 'Gifts & Toys' },
+    // 'gifts-toys' removed: no collection with that handle exists (see the
+    // note in lib/filter-registry.ts), so the link 404'd. PENDING IZZY:
+    // confirm the intended gifts/toys collection handle, then restore.
   ],
-  eligibleProducts: [
-    { handle: 'occ-hygiene-kit',       title: 'Hygiene Kit',        image: 'https://placehold.co/400x400/e5eff7/0086b1?text=Hygiene+Kit',    price: 599  },
-    { handle: 'occ-school-supply-kit', title: 'School Supply Kit',  image: 'https://placehold.co/400x400/fef9c3/854d0e?text=School+Kit',     price: 799  },
-    { handle: 'occ-backpack',          title: 'Backpack',           image: 'https://placehold.co/400x400/e5eff7/0086b1?text=Backpack',       price: 1299 },
-    { handle: 'occ-coloring-book',     title: 'Coloring Book Set',  image: 'https://placehold.co/400x400/dbeafe/1d4ed8?text=Coloring+Books', price: 299  },
-    { handle: 'occ-crayons',           title: 'Crayons (12-Pack)',  image: 'https://placehold.co/400x400/fef9c3/854d0e?text=Crayons',        price: 149  },
-    { handle: 'occ-plush-toy',         title: 'Plush Toy',          image: 'https://placehold.co/400x400/f0fdf4/166534?text=Plush+Toy',      price: 899  },
-  ],
+  // No hardcoded placeholder products: the featured block renders live
+  // products from the canonical OCC collection (app/solutions/occ/page.tsx)
+  // or nothing at all — never fake catalog entries.
+  eligibleProducts: [],
   faq: [
     {
       question: 'What is Operation Christmas Child?',

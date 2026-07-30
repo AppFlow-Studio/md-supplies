@@ -10,9 +10,15 @@ import { SITE_URL } from '@/lib/seo/constants'
 
 interface Props {
   hub: OCCHub
+  /**
+   * DEV-OCC-01: the complete canonical OCC catalog (grid + filters + search +
+   * sort + pagination), rendered below the clearly-labeled featured block so
+   * featured items never masquerade as the full assortment.
+   */
+  catalog?: React.ReactNode
 }
 
-export function OCCHubPage({ hub }: Props) {
+export function OCCHubPage({ hub, catalog }: Props) {
   const pageUrl = `${SITE_URL}/solutions/occ`
   const pageDescription = hub.seoDescription || hub.intro
 
@@ -58,25 +64,40 @@ export function OCCHubPage({ hub }: Props) {
         {hub.eligibleCategories.length > 0 && (
           <section className="py-12">
             <h2 className="text-xl font-bold text-navy-900 mb-5">Shop by Category</h2>
-            <div className="flex flex-wrap gap-2">
-              {hub.eligibleCategories.map((cat) => (
-                <Link
-                  key={cat.handle}
-                  href={`/category/${cat.handle}`}
-                  className="px-4 py-2 rounded-full border border-gray-200 bg-white text-sm font-medium text-navy-900 hover:border-teal-500 hover:text-teal-500 transition-colors"
-                >
-                  {cat.title}
-                </Link>
-              ))}
-            </div>
+            {/* Server-rendered crawlable category navigation (plan §3.1) —
+                real anchors in semantic nav/list markup, distinct from the
+                attribute filters in the catalog below. */}
+            <nav aria-label="OCC categories">
+              <ul className="flex flex-wrap gap-2 list-none p-0 m-0">
+                {hub.eligibleCategories.map((cat) => (
+                  <li key={cat.handle}>
+                    <Link
+                      href={`/category/${cat.handle}`}
+                      className="inline-flex items-center min-h-[44px] px-4 py-2 rounded-full border border-gray-200 bg-white text-sm font-medium text-navy-900 hover:border-teal-500 hover:text-teal-500 transition-colors"
+                    >
+                      {cat.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </section>
         )}
 
-        {/* Eligible products */}
+        {/* Eligible products — clearly labeled featured block; the complete
+            catalog renders below it. */}
         {hub.eligibleProducts.length > 0 && (
           <section className="py-12 border-t border-gray-200">
             <h2 className="text-xl font-bold text-navy-900 mb-6">Featured OCC Shoebox Supplies</h2>
             <AnimatedOCCProducts products={hub.eligibleProducts} />
+          </section>
+        )}
+
+        {/* Complete canonical OCC catalog */}
+        {catalog && (
+          <section className="py-12 border-t border-gray-200" id="all-occ-products">
+            <h2 className="text-xl font-bold text-navy-900 mb-6">All OCC Products</h2>
+            <div className="flex gap-0 items-start">{catalog}</div>
           </section>
         )}
 
