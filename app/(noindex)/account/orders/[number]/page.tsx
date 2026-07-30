@@ -7,6 +7,7 @@ import { customerFetch } from '@/lib/shopify/customer'
 import { GET_ORDER_DETAILS } from '@/lib/shopify/queries/customer'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { computeFulfillmentSummary, shipmentStatusLabel } from '@/lib/fulfillment'
 
 export const metadata: Metadata = {
   title: 'Order Details | MD Supplies',
@@ -22,8 +23,10 @@ type Props = {
 type Money = { amount: string; currencyCode: string }
 
 type DetailLineItem = {
+  id: string
   title: string | null
   quantity: number
+  refundableQuantity: number
   sku: string | null
   variantTitle: string | null
   image: { url: string; altText: string | null } | null
@@ -53,7 +56,15 @@ type DetailOrder = {
   } | null
   lineItems: { nodes: DetailLineItem[] }
   fulfillments: {
-    nodes: { trackingInformation: { company: string | null; number: string | null; url: string | null }[] }[]
+    nodes: {
+      id: string
+      createdAt: string | null
+      status: string | null
+      latestShipmentStatus: string | null
+      isPickedUp: boolean
+      trackingInformation: { company: string | null; number: string | null; url: string | null }[]
+      fulfillmentLineItems: { nodes: { quantity: number | null; lineItem: { id: string } | null }[] }
+    }[]
   }
 }
 
@@ -107,7 +118,31 @@ export default async function OrderDetailPage({ params }: Props) {
   if (!order) notFound()
 
   const { label: statusLabel, style: statusStyle } = getFulfillmentDisplay(order.fulfillmentStatus)
-  const tracking = order.fulfillments.nodes.flatMap((f) => f.trackingInformation)
+
+  // DEV-ACCOUNT-01: per-shipment item/quantity detail plus exact remaining
+  // quantities — never just an order-level "Partial" badge.
+  const summary = computeFulfillmentSummary(
+    order.lineItems.nodes.map((li) => ({
+      id: li.id,
+      title: li.title ?? 'Item',
+      sku: li.sku,
+      variantTitle: li.variantTitle && li.variantTitle !== 'Default Title' ? li.variantTitle : null,
+      image: li.image,
+      quantity: li.quantity,
+      refundableQuantity: li.refundableQuantity,
+    })),
+    order.fulfillments.nodes.map((f) => ({
+      id: f.id,
+      createdAt: f.createdAt,
+      status: f.status,
+      latestShipmentStatus: f.latestShipmentStatus,
+      isPickedUp: f.isPickedUp,
+      trackingInformation: f.trackingInformation,
+      lines: f.fulfillmentLineItems.nodes
+        .filter((fl) => fl.lineItem != null)
+        .map((fl) => ({ lineItemId: fl.lineItem!.id, quantity: fl.quantity })),
+    })),
+  )
 
   return (
     <main className="bg-[#f9fafc] min-h-screen">
@@ -221,38 +256,155 @@ export default async function OrderDetailPage({ params }: Props) {
               </div>
             )}
 
-            {/* Tracking */}
-            {tracking.length > 0 && (
-              <div className="px-8 py-6">
-                <h3 className="text-gray-500 text-[12px] font-semibold uppercase tracking-[0.3px] mb-3">
-                  Tracking
-                </h3>
-                <div className="flex flex-col gap-3">
-                  {tracking.map((t, i) => {
-                    const label = `${t.company ? `${t.company} — ` : ''}${t.number ?? ''}`.trim() || 'Tracking'
-                    return t.url ? (
-                      <a
-                        key={i}
-                        href={t.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-teal-500 text-[14px] font-medium hover:underline"
-                      >
-                        <Truck size={16} />
-                        {label}
-                      </a>
-                    ) : (
-                      <span key={i} className="inline-flex items-center gap-2 text-navy-900 text-[14px]">
-                        <Truck size={16} />
-                        {label}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* ── Shipments (DEV-ACCOUNT-01) ── */}
+        <section className="mt-8">
+          <h2 className="text-navy-900 text-[20px] font-semibold mb-4">Shipments</h2>
+
+          {!summary.hasShipments && summary.pending.length > 0 && (
+            <p className="text-gray-500 text-[14px] mb-4">
+              No items have shipped yet. You&apos;ll see shipment and tracking details here once
+              your order starts shipping.
+            </p>
+          )}
+
+          <div className="flex flex-col gap-4">
+            {summary.shipments.map((shipment, idx) => (
+              <div key={shipment.id} className="bg-white border border-gray-200">
+                <div className="flex flex-wrap items-center gap-3 px-6 py-4 border-b border-gray-100">
+                  <span className="text-navy-900 text-[15px] font-semibold">
+                    Shipment {idx + 1} of {summary.shipments.length}
+                  </span>
+                  <span className="inline-flex px-3 py-1 text-[12px] font-semibold rounded-full bg-blue-100 text-blue-700">
+                    {shipmentStatusLabel(shipment)}
+                  </span>
+                  {shipment.createdAt && (
+                    <span className="text-gray-500 text-[13px]">{formatDate(shipment.createdAt)}</span>
+                  )}
+                </div>
+
+                {/* Every tracking number for this fulfillment; number renders
+                    as text when Shopify provides no URL — never a fabricated
+                    carrier link. */}
+                {shipment.trackingInformation.length > 0 && (
+                  <div className="flex flex-col gap-2 px-6 py-4 border-b border-gray-100">
+                    {shipment.trackingInformation.map((t, i) => {
+                      const label = `${t.company ? `${t.company} — ` : ''}${t.number ?? ''}`.trim() || 'Tracking'
+                      return t.url ? (
+                        <a
+                          key={i}
+                          href={t.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-teal-500 text-[14px] font-medium hover:underline"
+                        >
+                          <Truck size={16} />
+                          {label}
+                        </a>
+                      ) : (
+                        <span key={i} className="inline-flex items-center gap-2 text-navy-900 text-[14px]">
+                          <Truck size={16} />
+                          {label}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div className="divide-y divide-gray-100">
+                  {shipment.items.map((item) => (
+                    <div key={item.lineItemId} className="flex items-center gap-4 px-6 py-4">
+                      {item.image ? (
+                        <div className="relative w-[48px] h-[48px] border border-gray-200 shrink-0 overflow-hidden">
+                          <ProductImage
+                            src={item.image.url}
+                            alt={cleanShopifyAlt(item.image.altText) ?? item.title}
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-[48px] h-[48px] bg-neutral-100 border border-gray-200 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-navy-900 text-[14px] font-medium">{item.title}</p>
+                        {item.variantTitle && <p className="text-gray-500 text-[13px]">{item.variantTitle}</p>}
+                        {item.sku && <p className="text-gray-400 text-[12px]">SKU: {item.sku}</p>}
+                      </div>
+                      <span className="text-navy-900 text-[14px] font-semibold shrink-0">
+                        Qty {item.quantity}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pending / not yet shipped — exact remaining quantities */}
+          {summary.pending.length > 0 && (
+            <div className="bg-white border border-gray-200 mt-4">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <span className="text-navy-900 text-[15px] font-semibold">
+                  {summary.hasShipments ? 'Pending — not yet shipped' : 'Not yet shipped'}
+                </span>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {summary.pending.map((p) => (
+                  <div key={p.lineItemId} className="flex items-center gap-4 px-6 py-4">
+                    {p.image ? (
+                      <div className="relative w-[48px] h-[48px] border border-gray-200 shrink-0 overflow-hidden">
+                        <ProductImage
+                          src={p.image.url}
+                          alt={cleanShopifyAlt(p.image.altText) ?? p.title}
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-[48px] h-[48px] bg-neutral-100 border border-gray-200 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-navy-900 text-[14px] font-medium">{p.title}</p>
+                      {p.variantTitle && <p className="text-gray-500 text-[13px]">{p.variantTitle}</p>}
+                      {p.sku && <p className="text-gray-400 text-[12px]">SKU: {p.sku}</p>}
+                      {p.refundedQuantity > 0 && (
+                        <p className="text-gray-500 text-[12px]">{p.refundedQuantity} canceled/refunded</p>
+                      )}
+                    </div>
+                    <span className="text-navy-900 text-[14px] font-semibold shrink-0">
+                      Qty {p.remaining} remaining
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Canceled/refunded-only lines: disclosed, never shown as pending */}
+          {summary.refundedOnly.length > 0 && (
+            <div className="bg-white border border-gray-200 mt-4">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <span className="text-navy-900 text-[15px] font-semibold">Canceled / refunded</span>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {summary.refundedOnly.map((p) => (
+                  <div key={p.lineItemId} className="flex items-center gap-4 px-6 py-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-navy-900 text-[14px] font-medium">{p.title}</p>
+                      {p.sku && <p className="text-gray-400 text-[12px]">SKU: {p.sku}</p>}
+                    </div>
+                    <span className="text-gray-500 text-[14px] shrink-0">
+                      Qty {p.refundedQuantity} canceled/refunded
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </main>
   )
