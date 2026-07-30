@@ -106,16 +106,17 @@ describe('proxy — 301 static redirects', () => {
     expect(res?.headers.get('Location')).toContain('/industries/private-practice')
   })
 
-  it('row 6: /articles/types-of-sutures.html → /blog/types-of-sutures', () => {
+  // TEMP: blog not yet live in Shopify; pointing to category until articles are published
+  it('row 6: /articles/types-of-sutures.html → /category/surgical-sutures (temp)', () => {
     const res = proxy(req('/articles/types-of-sutures.html'))
     expect(res?.status).toBe(301)
-    expect(res?.headers.get('Location')).toContain('/blog/types-of-sutures')
+    expect(res?.headers.get('Location')).toContain('/category/surgical-sutures')
   })
 
-  it('row 13: /articles/types-of-needles.html → /blog/types-of-needles', () => {
+  it('row 13: /articles/types-of-needles.html → /category/needles-syringes (temp)', () => {
     const res = proxy(req('/articles/types-of-needles.html'))
     expect(res?.status).toBe(301)
-    expect(res?.headers.get('Location')).toContain('/blog/types-of-needles')
+    expect(res?.headers.get('Location')).toContain('/category/needles-syringes')
   })
 
   it('DEV-11: /b2b → /contact (single 301, account-scope cleanup)', () => {
@@ -153,6 +154,110 @@ describe('proxy — category-level 410s (§4.3)', () => {
   })
 })
 
+describe('proxy — item-level 410 Gone entries', () => {
+  it('row 2: Narcotics Storage → 410', () => {
+    const res = proxy(req('/medical-supply-store/Pharmaceuticals/Medication Aids/Narcotics Storage-GRF8SCRI15.html'))
+    expect(res?.status).toBe(410)
+    expect(res?.headers.get('Location')).toBeNull()
+  })
+
+  it('row 21: Pharmaceutical Injectables → 410', () => {
+    const res = proxy(req('/medical-supply-store/Pharmaceuticals/Injectables-U1GD8BVMR5.html'))
+    expect(res?.status).toBe(410)
+  })
+
+  it('row 17: Thorne VeganPro Vanilla → 410', () => {
+    const res = proxy(req('/medical-supplies-Thorne Research-VeganPro Complex Vanilla-WQEMF6Q8IH.html'))
+    expect(res?.status).toBe(410)
+  })
+
+  it('row 18: Thorne VeganPro Chocolate → 410', () => {
+    const res = proxy(req('/medical-supplies-Thorne Research-VeganPro Complex Chocolate-TIH9JNRQT6.html'))
+    expect(res?.status).toBe(410)
+  })
+
+  it('+ normalization: Thorne Vanilla via + encoding → 410', () => {
+    // Inbound URL has + signs; proxy normalizes to spaces before matching
+    const res = proxy(req('/medical-supplies-Thorne+Research-VeganPro+Complex+Vanilla-WQEMF6Q8IH.html'))
+    expect(res?.status).toBe(410)
+  })
+})
+
+describe('proxy — new 301 entries (backlink recovery)', () => {
+  it('face-coverings root → /category/face-masks (no chain)', () => {
+    const res = proxy(req('/category/face-coverings'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/face-masks')
+  })
+
+  it('face-coverings subtree → /category/face-masks/<product> (single hop, no chain)', () => {
+    const res = proxy(req('/category/face-coverings/kn95-mask-50-pack'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/face-masks/kn95-mask-50-pack')
+  })
+
+  it('row 3: Dynarex Specimen Containers → /partners/dynarex', () => {
+    const res = proxy(req('/medical-supplies-Dynarex-Specimen-Containers-4oz-22I48F9UI7.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/partners/dynarex')
+  })
+
+  it('row 5: Exel Insulin Syringe → /category/needles-syringes', () => {
+    const res = proxy(req('/medical-supplies-Exel-Insulin-Syringe-05cc-29g-x-12-8DKB9DMTEX.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/needles-syringes')
+  })
+
+  it('row 9: 10cc Syringes (++ double-space normalization) → /category/needles-syringes', () => {
+    // "Needles++Syringes" in the raw URL normalizes to "Needles  Syringes" (double space)
+    const res = proxy(req('/medical-supply-store/Needles++Syringes/Syringes/10cc+Syringes+w+Needle-DMGAATSB9S.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/needles-syringes')
+  })
+
+  it('row 11: NDD EASYONE SPIRETTES → /category/respiratory', () => {
+    const res = proxy(req('/medical-supplies-ndd+Medical+Technologies+Inc.-EASYONE+SPIRETTES-I78AVCLDSL.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/respiratory')
+  })
+
+  it('row 12: Leg Immobilizers → /category/emergency-supplies', () => {
+    const res = proxy(req('/medical-supply-store/Emergency+Supplies/Immobilizers/Leg+Immobilizers-IQ9MV1MBEB.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/emergency-supplies')
+  })
+
+  it('row 14: Emergency Trauma Dressings (++ double-space) → /category/wound-care', () => {
+    const res = proxy(req('/medical-supply-store/Wound++Skin+Care/Wound+Care+Dressings/Emergency++Trauma+Dressings-1MRS82K82J.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/wound-care')
+  })
+
+  it('row 16: Feather Sterile Surgical Blades → /category/wound-care', () => {
+    const res = proxy(req('/medical-supplies-Feather-Sterile+Surgical+Blades+11-2ULXL3BIJK.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/wound-care')
+  })
+
+  it('row 19: Graham Drape Sheet → /product/drape-sheets-40-x-60-2-ply-blue-100-cs', () => {
+    const res = proxy(req('/medical-supplies-Graham+Medical-Drape+Sheet+White+40+x+60+2-Ply-XVUAKHW2KF.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/product/drape-sheets-40-x-60-2-ply-blue-100-cs')
+  })
+
+  it('row 20: Triangular Bandages (++ double-space) → /category/wound-care', () => {
+    const res = proxy(req('/medical-supply-store/Wound++Skin+Care/Elastic+Bandages/Triangular+Bandages-ATPW8HKJSB.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/wound-care')
+  })
+
+  it('row 24: Lipid/Glucose Testing → /category/testing-screening', () => {
+    const res = proxy(req('/medical-supply-store/Testing-and-Screening/Diagnostic-Tests/Lipid-Glucose-Testing-Z2IP7J6EF7.html'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/category/testing-screening')
+  })
+})
+
 describe('proxy — path normalization (pass-through for unknown)', () => {
   it('passes through unknown paths', () => {
     expectPassThrough(proxy(req('/some-random-page')))
@@ -162,7 +267,9 @@ describe('proxy — path normalization (pass-through for unknown)', () => {
     const targets = [
       '/categories', '/category/gloves', '/category/face-masks', '/category/hygiene',
       '/partners/drive-medical', '/partners/dynarex', '/industries/private-practice',
-      '/blog/types-of-sutures', '/blog/types-of-needles',
+      '/category/surgical-sutures', '/category/needles-syringes',
+      '/category/respiratory', '/category/emergency-supplies', '/category/wound-care',
+      '/category/testing-screening', '/product/drape-sheets-40-x-60-2-ply-blue-100-cs',
     ]
     for (const target of targets) {
       expectPassThrough(proxy(req(target)))

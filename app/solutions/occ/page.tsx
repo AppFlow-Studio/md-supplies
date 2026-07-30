@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { buildMetadata } from '@/lib/seo'
+import { getSolutionSeo } from '@/lib/seo/solutionSeo'
 import { OCC_HUB } from '@/lib/occ'
 import { OCCHubPage } from '@/components/b2b/OCCHub'
 import { storefrontFetch } from '@/lib/shopify/storefront'
@@ -12,11 +13,16 @@ import { SITE_URL } from '@/lib/seo/constants'
 
 export const revalidate = 3600
 
-export const metadata: Metadata = buildMetadata({
+const _occSeo = getSolutionSeo('occ')
+const _occBase = buildMetadata({
   pageType: 'occ',
   title: OCC_HUB.seoTitle,
   description: OCC_HUB.seoDescription || OCC_HUB.intro,
 })
+const _occOg = (_occBase.openGraph ?? {}) as Record<string, unknown>
+export const metadata: Metadata = _occSeo
+  ? { ..._occBase, title: _occSeo.title, description: _occSeo.metaDescription, openGraph: { ..._occOg, title: _occSeo.title, description: _occSeo.metaDescription } }
+  : _occBase
 
 // Possible collection handles — first one that returns products wins.
 // Confirm the exact handle with Izzy / Shopify Admin → Collections.
@@ -84,8 +90,8 @@ export default async function OCCPage() {
   return (
     <>
       <WebPageSchema
-        name={OCC_HUB.seoTitle || OCC_HUB.title}
-        description={OCC_HUB.seoDescription || OCC_HUB.intro}
+        name={_occSeo?.title ?? OCC_HUB.seoTitle ?? OCC_HUB.title}
+        description={_occSeo?.metaDescription ?? OCC_HUB.seoDescription ?? OCC_HUB.intro}
         url={`${SITE_URL}/solutions/occ`}
       />
       <BreadcrumbSchema

@@ -51,52 +51,76 @@ function isGoneCategory(pathname: string): boolean {
 
 // ─── Redirect + 410 map ──────────────────────────────────────────────────────
 //
-// 410s first (definitive removal), then 301s.
-// Rows pending handoff (old URLs unknown) are listed as TODO comments.
+// 410s first (definitive removal), then 301s grouped by destination type.
 //
 const REDIRECT_ENTRIES: RedirectEntry[] = [
 
   // ── 410 Gone (permanently removed — do not recreate) ──────────────────────
-  // TODO row 2  (Narcotics Storage):         { from: '<old-path>', status: 410 }
-  // TODO row 17 (Thorne VeganPro Vanilla):   { from: '<old-path>', status: 410 }
-  // TODO row 18 (Thorne VeganPro Chocolate): { from: '<old-path>', status: 410 }
-  // TODO row 21 (Injectables):               { from: '<old-path>', status: 410 }
+  // Pharmaceuticals retired: DEA/compliance exposure (41 products removed from catalog).
+  { from: '/medical-supply-store/Pharmaceuticals/Medication Aids/Narcotics Storage-GRF8SCRI15.html', status: 410 },
+  { from: '/medical-supply-store/Pharmaceuticals/Injectables-U1GD8BVMR5.html',                       status: 410 },
+  // Thorne Research supplements: not MDSupplies inventory; links are spam-adjacent.
+  { from: '/medical-supplies-Thorne Research-VeganPro Complex Vanilla-WQEMF6Q8IH.html',               status: 410 },
+  { from: '/medical-supplies-Thorne Research-VeganPro Complex Chocolate-TIH9JNRQT6.html',             status: 410 },
 
   // ── 301 Recoverable redirects ─────────────────────────────────────────────
+
+  // Note: /category/face-coverings → /category/face-masks is handled as a subtree
+  // redirect in the proxy() function below (covers both root and nested paths).
+
   // Category / hub pages
-  { from: '/Medical-Supply-Store.html',                         to: '/categories',              status: 301 },
-  { from: '/all-categories.html',                               to: '/categories',              status: 301 },
-  { from: '/medical-supply-store/Gloves-G78R26U43E.html',      to: '/category/gloves',         status: 301 },
-  { from: '/face-masks-n95-kn95.html',                         to: '/category/face-masks',     status: 301 },
-  { from: '/medical-supply-store/Face-Masks-CYR82C7EBL.html', to: '/category/face-masks',     status: 301 },
-  { from: '/medical-supply-store/Hygiene-WQ2ENW7KU6.html',    to: '/category/hygiene',        status: 301 },
+  { from: '/Medical-Supply-Store.html',                                                                 to: '/categories',                                     status: 301 },
+  { from: '/all-categories.html',                                                                       to: '/categories',                                     status: 301 },
+  { from: '/medical-supply-store/Gloves-G78R26U43E.html',                                              to: '/category/gloves',                                status: 301 },
+  { from: '/face-masks-n95-kn95.html',                                                                  to: '/category/face-masks',                            status: 301 },
+  { from: '/medical-supply-store/Face-Masks-CYR82C7EBL.html',                                          to: '/category/face-masks',                            status: 301 },
+  { from: '/medical-supply-store/Hygiene-WQ2ENW7KU6.html',                                             to: '/category/hygiene',                               status: 301 },
 
   // Partners / vendors
-  { from: '/supplies-by-vendor/Drive-Medical-VQTWVE3SWE.html', to: '/partners/drive-medical', status: 301 },
-  { from: '/Durable-Equipment-Medical.html',                   to: '/partners/drive-medical',  status: 301 },
-  { from: '/supplies-by-vendor/Dynarex-MM7QQM8CLP.html',      to: '/partners/dynarex',        status: 301 },
+  { from: '/supplies-by-vendor/Drive-Medical-VQTWVE3SWE.html',                                         to: '/partners/drive-medical',                         status: 301 },
+  { from: '/Durable-Equipment-Medical.html',                                                            to: '/partners/drive-medical',                         status: 301 },
+  { from: '/supplies-by-vendor/Dynarex-MM7QQM8CLP.html',                                               to: '/partners/dynarex',                               status: 301 },
+  // Dynarex Specimen Containers 4oz: no active product handle in catalog or redirects-ready.json.
+  // Nearest brand-level match. Update to /product/<handle> if product added to Shopify catalog.
+  { from: '/medical-supplies-Dynarex-Specimen-Containers-4oz-22I48F9UI7.html',                         to: '/partners/dynarex',                               status: 301 },
 
   // Industries
-  { from: '/Medical-Supplies-for-Doctors.html',                to: '/industries/private-practice', status: 301 },
+  { from: '/Medical-Supplies-for-Doctors.html',                                                        to: '/industries/private-practice',                    status: 301 },
 
-  // Blog articles (blog routes are live — direct redirect)
-  { from: '/articles/types-of-sutures.html',                   to: '/blog/types-of-sutures',  status: 301 },
-  { from: '/articles/types-of-needles.html',                   to: '/blog/types-of-needles',  status: 301 },
+  // Needles & Syringes
+  { from: '/medical-supplies-Exel-Insulin-Syringe-05cc-29g-x-12-8DKB9DMTEX.html',                     to: '/category/needles-syringes',                      status: 301 },
+  // "Needles  Syringes" — double space from legacy ++ URL encoding
+  { from: '/medical-supply-store/Needles  Syringes/Syringes/10cc Syringes w Needle-DMGAATSB9S.html',  to: '/category/needles-syringes',                      status: 301 },
+
+  // Respiratory — spirometry mouthpieces, not drug-panel testing
+  { from: '/medical-supplies-ndd Medical Technologies Inc.-EASYONE SPIRETTES-I78AVCLDSL.html',         to: '/category/respiratory',                           status: 301 },
+
+  // Emergency Supplies — no /category/immobilizers handle; emergency-supplies is correct parent
+  { from: '/medical-supply-store/Emergency Supplies/Immobilizers/Leg Immobilizers-IQ9MV1MBEB.html',   to: '/category/emergency-supplies',                    status: 301 },
+
+  // Wound Care — double spaces from legacy ++ URL encoding in "Wound  Skin Care" and
+  // "Emergency  Trauma Dressings"
+  { from: '/medical-supply-store/Wound  Skin Care/Wound Care Dressings/Emergency  Trauma Dressings-1MRS82K82J.html', to: '/category/wound-care',             status: 301 },
+  { from: '/medical-supplies-Feather-Sterile Surgical Blades 11-2ULXL3BIJK.html',                     to: '/category/wound-care',                            status: 301 },
+  { from: '/medical-supply-store/Wound  Skin Care/Elastic Bandages/Triangular Bandages-ATPW8HKJSB.html', to: '/category/wound-care',                         status: 301 },
+
+  // Consolidated product redirect — white 40×60 2-ply variant maps to blue master
+  // (verified in docs/redirects-ready.json lines 4855–4856). Single hop; no chain.
+  // ACTION: verify /product/drape-sheets-40-x-60-2-ply-blue-100-cs returns 200 before deploy.
+  { from: '/medical-supplies-Graham Medical-Drape Sheet White 40 x 60 2-Ply-XVUAKHW2KF.html',         to: '/product/drape-sheets-40-x-60-2-ply-blue-100-cs', status: 301 },
+
+  // Testing & Screening — verified handle is testing-screening, not "testing"
+  { from: '/medical-supply-store/Testing-and-Screening/Diagnostic-Tests/Lipid-Glucose-Testing-Z2IP7J6EF7.html', to: '/category/testing-screening',            status: 301 },
+
+  // Blog articles — TEMPORARY category fallbacks until rebuilt posts are live in Shopify.
+  // UPDATE post-launch: swap destinations to /blog/types-of-sutures and /blog/types-of-needles
+  // once those articles are published and confirmed returning 200.
+  { from: '/articles/types-of-sutures.html',                                                           to: '/category/surgical-sutures',                      status: 301 }, // TEMP
+  { from: '/articles/types-of-needles.html',                                                           to: '/category/needles-syringes',                      status: 301 }, // TEMP
 
   // Account-scope cleanup (DEV-11): /b2b was a duplicate account dashboard.
   // It is retired in favor of a single wholesale entry point at /contact.
-  { from: '/b2b',                                              to: '/contact',                 status: 301 },
-
-  // TODO row 3  (Dynarex specimen container): { from: '<old-path>', to: '/category/needles-syringes', status: 301 }
-  // TODO row 5  (Exel insulin syringe):        { from: '<old-path>', to: '/category/needles-syringes', status: 301 }
-  // TODO row 9  (10cc syringe):                { from: '<old-path>', to: '/category/needles-syringes', status: 301 }
-  // TODO row 11 (NDD EasyOne Spirettes):       { from: '<old-path>', to: '/category/respiratory',      status: 301 }
-  // TODO row 12 (leg immobilizer):             { from: '<old-path>', to: '/category/immobilizers',     status: 301 }
-  // TODO row 14 (trauma dressing):             { from: '<old-path>', to: '/category/wound-care',       status: 301 }
-  // TODO row 16 (Feather blades):              { from: '<old-path>', to: '/category/surgery-procedure', status: 301 }
-  // TODO row 19 (Graham drape sheet):          { from: '<old-path>', to: '/category/surgery-procedure', status: 301 }
-  // TODO row 20 (triangular bandage):          { from: '<old-path>', to: '/category/wound-care',        status: 301 }
-  // TODO row 24 (glucose testing):             { from: '<old-path>', to: '/category/testing',           status: 301 }
+  { from: '/b2b',                                                                                       to: '/contact',                                        status: 301 },
 ]
 
 // Stamps the enforcing + parallel Report-Only CSP headers (M10) onto every
@@ -125,6 +149,14 @@ export function proxy(request: NextRequest): Response {
 
   // Definitive removal first: permanently-gone categories (§4.3).
   if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), nonce)
+
+  // Face Masks canonical alias: Shopify collection handle is face-coverings; canonical
+  // public URL is /category/face-masks. Subtree redirect so both the category root and
+  // nested product paths (e.g. /category/face-coverings/n95-mask) arrive in one hop.
+  if (pathname === '/category/face-coverings' || pathname.startsWith('/category/face-coverings/')) {
+    const newPath = pathname.replace('/category/face-coverings', '/category/face-masks')
+    return NextResponse.redirect(new URL(newPath, request.url), 301)
+  }
 
   for (const entry of REDIRECT_ENTRIES) {
     if (pathname !== entry.from) continue

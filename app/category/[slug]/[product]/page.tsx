@@ -18,6 +18,8 @@ import { PARTNERS } from '@/lib/partners'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
 import { getNonce } from '@/lib/csp-nonce'
+import { getSubcategorySeo } from '@/lib/seo/categorySeo'
+import { FAQSection } from '@/components/b2b/FAQSection'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -49,6 +51,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (subData.collection) {
     const { title, description, seo } = subData.collection
+
+    // Check SEO database for optimized title/description.
+    const seoDB = getSubcategorySeo(slug, handle)
+    if (seoDB) {
+      const base = buildMetadata({
+        pageType: 'subcategory',
+        slug: handle,
+        parentSlug: slug,
+        description: seoDB.metaDescription,
+        canonical: `${SITE_URL}/category/${slug}/${handle}`,
+      })
+      const og = (base.openGraph ?? {}) as Record<string, unknown>
+      return {
+        ...base,
+        title: seoDB.title,
+        description: seoDB.metaDescription,
+        openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
+      }
+    }
+
     return buildMetadata({
       pageType: 'subcategory',
       title: seo?.title || title,
@@ -100,6 +122,7 @@ export default async function CategoryProductPage({ params }: Props) {
 
   if (subData.collection) {
     const collection = subData.collection
+    const seoData = getSubcategorySeo(slug, handle)
     const [siblings, relatedCategories] = await Promise.all([
       getSiblingSubcategories(slug, handle),
       getRelatedCategories(subHandle),
@@ -120,13 +143,17 @@ export default async function CategoryProductPage({ params }: Props) {
           <div className="relative bg-white overflow-hidden flex min-h-[260px] sm:min-h-[300px]">
             <div className="relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 max-w-[560px]">
               <h1 className="text-navy-900 text-[36px] sm:text-[44px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
-                {collection.title}
+                {seoData ? seoData.h1 : collection.title}
               </h1>
-              {collection.description && (
+              {seoData ? (
+                <p className="text-gray-500 text-[15px] leading-[1.75] max-w-[500px]">
+                  {seoData.answerBlock}
+                </p>
+              ) : collection.description ? (
                 <p className="text-gray-500 text-[15px] leading-[1.75] max-w-[500px]">
                   {collection.description}
                 </p>
-              )}
+              ) : null}
             </div>
 
             <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
@@ -173,6 +200,13 @@ export default async function CategoryProductPage({ params }: Props) {
             itemListName={collection.title}
           />
         </div>
+
+        {/* FAQ section — below product grid, above related categories */}
+        {seoData && seoData.faqs.length > 0 && (
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
+            <FAQSection faq={seoData.faqs} />
+          </div>
+        )}
 
         {relatedCategories.length > 0 && (
           <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">

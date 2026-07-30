@@ -5,6 +5,10 @@ export type RoadmapCategory = {
   navGroup: 'primary' | 'more'
   matchedHandles: string[]
   placeholderSlug: string
+  // When set, this slug is used for all public URLs (/category/<canonicalSlug>) while
+  // matchedHandles still contains the actual Shopify collection handle(s). Lets the
+  // canonical URL differ from the Shopify handle without a Shopify admin rename.
+  canonicalSlug?: string
 }
 
 // §3.1 approved category structure, checked against the live Shopify
@@ -61,7 +65,7 @@ export const ROADMAP_CATEGORIES: RoadmapCategory[] = [
   { displayName: 'Housekeeping & Janitorial', navGroup: 'more', matchedHandles: ['housekeeping-janitorial'], placeholderSlug: 'housekeeping-janitorial' },
   { displayName: 'Bariatric', navGroup: 'more', matchedHandles: ['bariatric'], placeholderSlug: 'bariatric' },
   { displayName: 'Room Furniture', navGroup: 'more', matchedHandles: ['seating', 'exam-tables'], placeholderSlug: 'room-furniture' },
-  { displayName: 'Face Masks', navGroup: 'more', matchedHandles: ['face-coverings'], placeholderSlug: 'face-masks' },
+  { displayName: 'Face Masks', navGroup: 'more', matchedHandles: ['face-coverings'], placeholderSlug: 'face-masks', canonicalSlug: 'face-masks' },
   { displayName: 'Pharmacy Products', navGroup: 'more', matchedHandles: ['pharmacy-products'], placeholderSlug: 'pharmacy-products' },
 ]
 
@@ -78,7 +82,7 @@ export function buildCategoryNav(
     const matchedHandle = category.matchedHandles.find((h) => liveHandles.has(h))
     if (!matchedHandle) continue
 
-    const entry: NavEntry = { displayName: category.displayName, href: ROUTES.category(matchedHandle) }
+    const entry: NavEntry = { displayName: category.displayName, href: ROUTES.category(category.canonicalSlug ?? matchedHandle) }
     if (category.navGroup === 'primary') primary.push(entry)
     else more.push(entry)
   }
@@ -97,4 +101,27 @@ export function getUnmappedRoadmapCategories(
 
 export function getAllowedHandles(): Set<string> {
   return new Set(ROADMAP_CATEGORIES.flatMap((c) => c.matchedHandles))
+}
+
+// Returns the actual Shopify collection handle for a canonical URL slug.
+// When a category has canonicalSlug set, its public URL slug differs from the
+// Shopify handle — this function resolves the slug back to the handle for API calls.
+export function getShopifyHandle(slug: string): string {
+  const cat = ROADMAP_CATEGORIES.find((c) => c.canonicalSlug === slug)
+  return cat ? cat.matchedHandles[0] : slug
+}
+
+// Returns a Map of Shopify collection handle → canonical URL slug for all categories
+// that define a canonicalSlug override. Used by the sitemap to emit canonical URLs
+// instead of raw Shopify handles.
+export function getHandleToCanonicalSlugMap(): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const cat of ROADMAP_CATEGORIES) {
+    if (cat.canonicalSlug) {
+      for (const h of cat.matchedHandles) {
+        map.set(h, cat.canonicalSlug)
+      }
+    }
+  }
+  return map
 }

@@ -6,8 +6,9 @@ import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { getAllowedHandles } from '@/lib/category-nav'
+import { getAllowedHandles, getHandleToCanonicalSlugMap } from '@/lib/category-nav'
 import { INDUSTRIES } from '@/lib/industries'
+import { STATIC_ARTICLES } from '@/lib/blog-static'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
 
@@ -33,10 +34,11 @@ async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
       collections: { nodes: { handle: string; updatedAt: string }[] }
     }>(GET_COLLECTIONS_FOR_SITEMAP, { first: 250 })
     const allowed = getAllowedHandles()
+    const canonicalSlugMap = getHandleToCanonicalSlugMap()
     return data.collections.nodes
       .filter((c) => allowed.has(c.handle))
       .map((c) => ({
-        url: `${SITE_URL}/category/${c.handle}`,
+        url: `${SITE_URL}/category/${canonicalSlugMap.get(c.handle) ?? c.handle}`,
         changeFrequency: 'weekly' as const,
         priority: 0.8,
         lastModified: new Date(c.updatedAt),
@@ -121,11 +123,26 @@ export async function getSitemapUrls(
     priority: 0.6,
   }))
 
+  // Static blog articles (not in Shopify — must be included separately).
+  const staticArticleUrls: SitemapEntry[] = Object.keys(STATIC_ARTICLES).map((handle) => ({
+    url: `${SITE_URL}/blog/${handle}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  }))
+
   const [categoryUrls, productUrls, articleUrls] = await Promise.all([
     fetchCategoryUrls(),
     fetchProductUrls(),
     fetchArticleUrls(),
   ])
+
+  // Merge Shopify article URLs with static article URLs, deduplicating by URL.
+  const shopifyArticleHandles = new Set(
+    articleUrls.map((e) => e.url.split('/blog/')[1]),
+  )
+  const deduplicatedStaticUrls = staticArticleUrls.filter(
+    (e) => !shopifyArticleHandles.has(e.url.split('/blog/')[1]),
+  )
 
   return [
     ...STATIC_URLS,
@@ -134,5 +151,6 @@ export async function getSitemapUrls(
     ...partnerUrls,
     ...industryUrls,
     ...articleUrls,
+    ...deduplicatedStaticUrls,
   ]
 }

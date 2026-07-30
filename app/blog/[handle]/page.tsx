@@ -17,6 +17,8 @@ import { BlogPostingSchema } from "@/components/schema/BlogPostingSchema";
 import { BreadcrumbSchema } from "@/components/schema/BreadcrumbSchema";
 import { SITE_URL } from "@/lib/seo/constants";
 import { STATIC_ARTICLES } from '@/lib/blog-static'
+import { getBlogSeo } from '@/lib/seo/blogSeo'
+import { FAQSection } from '@/components/b2b/FAQSection'
 import { LOGO_PATH } from "@/lib/bunnycdn";
 import { withBlogImage } from "@/lib/blog-images";
 
@@ -82,13 +84,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (STATIC_ARTICLES[handle]) {
     const article = STATIC_ARTICLES[handle]
-    return buildMetadata({
+    const blogSeo = getBlogSeo(handle)
+    const base = buildMetadata({
       pageType: 'blog-article',
       title: article.seo?.title || article.title,
       description: article.seo?.description || (article.excerpt ? trimDescription(article.excerpt, 155) : undefined),
       slug: handle,
       image: article.image?.url,
     })
+    if (!blogSeo) return base
+    const og = (base.openGraph ?? {}) as Record<string, unknown>
+    return {
+      ...base,
+      title: blogSeo.title,
+      description: blogSeo.metaDescription,
+      openGraph: { ...og, title: blogSeo.title, description: blogSeo.metaDescription },
+    }
   }
 
   try {
@@ -114,6 +125,8 @@ export default async function ArticlePage({ params }: Props) {
   if (!found) notFound();
 
   const { article } = found;
+
+  const blogSeo = found.blogHandle === 'static' ? getBlogSeo(handle) : undefined
 
   let relatedArticles: BlogArticleSummary[] = [];
   try {
@@ -232,6 +245,15 @@ export default async function ArticlePage({ params }: Props) {
                 dangerouslySetInnerHTML={{ __html: article.contentHtml }}
               />
             </FadeIn>
+
+            {/* FAQ section — static articles with SEO DB FAQs only */}
+            {blogSeo?.faqs && blogSeo.faqs.length > 0 && (
+              <FadeIn delay={0.12}>
+                <div className="mt-12 pt-8 border-t border-gray-200">
+                  <FAQSection faq={blogSeo.faqs} />
+                </div>
+              </FadeIn>
+            )}
 
             {/* Back link */}
             <FadeIn delay={0.15}>

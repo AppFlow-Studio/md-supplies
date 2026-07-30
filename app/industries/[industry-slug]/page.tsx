@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
+import { getIndustrySeo } from '@/lib/seo/industrySeo'
 import { INDUSTRIES, isIndustryComplete } from '@/lib/industries'
 import { IndustryPage } from '@/components/b2b/IndustryPage'
 import { storefrontFetch } from '@/lib/shopify/storefront'
@@ -25,15 +26,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { 'industry-slug': slug } = await params
   const industry = INDUSTRIES.find((i) => i.slug === slug)
   if (!industry) return {}
-  return buildMetadata({
+
+  const seoDB = getIndustrySeo(slug)
+
+  // Use SEO database values when available; otherwise fall back to industry data.
+  // Pass only the industry name as `title` so buildMetadata appends
+  // " Supplies — MDSupplies" correctly (avoids the doubled-suffix bug).
+  const base = buildMetadata({
     pageType: 'industry',
-    title: `${industry.name} Medical Supplies — MDSupplies`,
-    description: industry.description,
+    title: industry.name,
+    description: seoDB?.metaDescription ?? industry.description,
     slug: industry.slug,
     image: `${SITE_URL}${industry.image}`,
     // Thin pages (awaiting client FAQ copy) stay out of the index until complete.
     noIndex: !isIndustryComplete(industry),
   })
+
+  if (seoDB) {
+    const og = (base.openGraph ?? {}) as Record<string, unknown>
+    return {
+      ...base,
+      title: seoDB.title,
+      description: seoDB.metaDescription,
+      openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
+    }
+  }
+
+  return base
 }
 
 export default async function IndustryDetailPage({ params }: Props) {
@@ -68,11 +87,15 @@ export default async function IndustryDetailPage({ params }: Props) {
   const subcategories =
     subcategoryResult.status === 'fulfilled' ? subcategoryResult.value : []
 
+  const seoDB = getIndustrySeo(slug)
+
   const industry: Industry = {
     slug: industryStatic.slug,
     name: industryStatic.name,
     isPopulated: relevantProducts.length > 0,
-    intro: industryStatic.description,
+    intro: seoDB?.answerBlock ?? industryStatic.description,
+    seoTitle: seoDB?.title,
+    seoDescription: seoDB?.metaDescription,
     buyerType: industryStatic.buyerType,
     heroImage: industryStatic.image
       ? { url: industryStatic.image, altText: `${industryStatic.name} supplies` }
