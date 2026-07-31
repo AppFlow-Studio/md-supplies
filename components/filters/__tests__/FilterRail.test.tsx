@@ -33,9 +33,11 @@ function priceFacet(min: number, max: number): CollectionFilter {
   } as CollectionFilter
 }
 
-const VENDOR_FACET = facet('filter.p.vendor', 'Vendor', [
-  { label: 'Medline', input: '{"productVendor":"Medline"}' },
-  { label: 'Dynarex', input: '{"productVendor":"Dynarex"}' },
+// Brand, not vendor: filter.p.vendor is hard-denied by the registry since the live
+// store's Vendor facet was removed (2026-07-29), so no real rail can receive it.
+const VENDOR_FACET = facet('filter.p.m.custom.brand_name', 'Brand', [
+  { label: 'Medline', input: '{"productMetafield":{"namespace":"custom","key":"brand_name","value":"Medline"}}' },
+  { label: 'Dynarex', input: '{"productMetafield":{"namespace":"custom","key":"brand_name","value":"Dynarex"}}' },
 ])
 
 // buildUrl mirrors the wrappers: filters serialised into ?filter= params.
@@ -66,7 +68,11 @@ describe('FilterRail — optimistic multi-select (NF6)', () => {
 
   it('reconciles with the server value when the prop changes (e.g. chip removal)', () => {
     const { rerender } = render(
-      <FilterRail filters={[VENDOR_FACET]} activeFilters={['{"productVendor":"Medline"}']} buildUrl={buildUrl} />,
+      <FilterRail
+        filters={[VENDOR_FACET]}
+        activeFilters={['{"productMetafield":{"namespace":"custom","key":"brand_name","value":"Medline"}}']}
+        buildUrl={buildUrl}
+      />,
     )
     expect(screen.getAllByRole('checkbox')[0]).toHaveAttribute('aria-checked', 'true')
 
