@@ -14,6 +14,12 @@ interface Props {
   fallbackLabelWrapperClassName?: string
   /** Classes for the fallbackLabel text itself (size + color). */
   fallbackLabelTextClassName?: string
+  /**
+   * Called when every image source has failed. Lets a parent collapse the
+   * space the image was occupying instead of showing a large empty panel —
+   * see CategoryHeroImage.
+   */
+  onUnavailable?: () => void
 }
 
 // Fallback chain: approved BunnyCDN banner → optional caller-supplied URL → letter/neutral panel.
@@ -26,9 +32,15 @@ export function CategoryImage({
   fallbackLabel,
   fallbackLabelWrapperClassName = 'absolute inset-0 bg-navy-900/5 flex items-center justify-center',
   fallbackLabelTextClassName = 'text-navy-900/20 text-[36px] font-bold',
+  onUnavailable,
 }: Props) {
   const [bannerFailed, setBannerFailed] = useState(false)
   const [fallbackFailed, setFallbackFailed] = useState(false)
+
+  const markUnavailable = () => {
+    // Reported once every source is exhausted, so the parent can collapse.
+    if (!fallbackUrl) onUnavailable?.()
+  }
 
   if (!bannerFailed) {
     return (
@@ -38,7 +50,10 @@ export function CategoryImage({
         fill
         sizes={sizes}
         className="object-cover"
-        onError={() => setBannerFailed(true)}
+        onError={() => {
+          setBannerFailed(true)
+          markUnavailable()
+        }}
       />
     )
   }
@@ -50,7 +65,10 @@ export function CategoryImage({
         src={fallbackUrl}
         alt={alt}
         className="absolute inset-0 w-full h-full object-cover"
-        onError={() => setFallbackFailed(true)}
+        onError={() => {
+          setFallbackFailed(true)
+          onUnavailable?.()
+        }}
       />
     )
   }

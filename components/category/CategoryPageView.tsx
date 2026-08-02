@@ -20,7 +20,7 @@ import {
   CATEGORY_TREE_L1,
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
-import { CategoryImage } from '@/components/shared/CategoryImage'
+import { CategoryHeroImage } from '@/components/shared/CategoryHeroImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
@@ -214,46 +214,41 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         <Breadcrumb items={[{ label: collection.title }]} />
       </div>
 
-      {/* ── Hero — banner image always present (BunnyCDN → Shopify → neutral panel) ── */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-8">
-        <div className="relative bg-white overflow-hidden flex min-h-[320px] sm:min-h-[380px]">
+      {/* ── Hero ──
+          Density (Phase 9): was min-h 320/380px, which pushed the toolbar and
+          products below the fold. Now ~180-220px mobile / ~220-280px desktop.
+          The artwork collapses entirely when no image can load, instead of
+          reserving a large blank panel. */}
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
+        <div className="relative bg-white overflow-hidden flex min-h-[180px] sm:min-h-[220px] lg:min-h-[240px]">
           {/* Text content */}
-          <div className="relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 max-w-[560px]">
-            <div className="inline-flex self-start items-center bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-1.5 mb-5">
-              <span className="text-teal-500 text-[13px] font-semibold tracking-[0.3px]">
+          <div className="relative z-10 flex flex-col justify-center px-6 sm:px-10 py-6 sm:py-8 max-w-[560px]">
+            <div className="inline-flex self-start items-center bg-[rgba(0,193,255,0.2)] rounded-full px-3 py-1 mb-3">
+              <span className="text-teal-500 text-[12px] font-semibold tracking-[0.3px]">
                 CERTIFIED MEDICAL SUPPLIER
               </span>
             </div>
 
-            <h1 className="text-navy-900 text-[40px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
+            <h1 className="text-navy-900 text-[28px] sm:text-[34px] lg:text-[40px] font-semibold leading-[1.15] tracking-[-0.01em] mb-2">
               {seoData ? seoData.h1 : collection.title}
             </h1>
 
+            {/* Two lines max: the full description still renders in the About
+                section below, so the hero stays compact. */}
             {seoData ? (
-              <p className="text-gray-500 text-[15px] leading-[1.75] mb-8 max-w-[500px]">
+              <p className="text-gray-500 text-[15px] leading-[1.6] max-w-[500px] line-clamp-2">
                 {seoData.answerBlock}
               </p>
             ) : collection.description ? (
-              <p className="text-gray-500 text-[15px] leading-[1.75] mb-8 max-w-[500px]">
+              <p className="text-gray-500 text-[15px] leading-[1.6] max-w-[500px] line-clamp-2">
                 {collection.description}
               </p>
             ) : null}
-
-            <Link
-              href={ROUTES.category(slug)}
-              className="self-start border border-navy-900 text-navy-900 text-[14px] font-semibold px-6 h-[52px] flex items-center hover:bg-navy-900 hover:text-white transition-colors"
-            >
-              View All {collection.title}
-            </Link>
           </div>
 
-          {/* Right: banner image — only on larger screens, matching the existing layout */}
-          <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
-            <CategoryImage
-              bannerPath={banner.path}
-              alt={banner.alt}
-            />
-          </div>
+          {/* Right: banner artwork — collapses entirely when unavailable so a
+              CDN failure never leaves a blank panel (Phase 4). */}
+          <CategoryHeroImage bannerPath={banner.path} alt={banner.alt} />
         </div>
       </div>
 

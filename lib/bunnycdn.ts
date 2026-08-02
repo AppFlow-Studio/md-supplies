@@ -11,7 +11,18 @@ const CATEGORIES_PATH = 'categories'
 
 export const GLOBAL_PRODUCT_PLACEHOLDER = `${PROXY_PREFIX}/${CATEGORIES_PATH}/${CATEGORY_IMAGE_FALLBACK.file}`
 
-export const LOGO_PATH = `${PROXY_PREFIX}/logo/logo.png`
+/**
+ * Site logo — served from the bundled asset in `public/images`, NOT from the
+ * BunnyCDN proxy.
+ *
+ * The logo is brand-critical chrome on every page: it must not depend on a
+ * third-party storage credential. On 2026-08-02 every Bunny request returned
+ * 401 Unauthorized (invalid storage AccessKey), and because the proxy mapped
+ * every upstream failure to 404 the logo simply rendered broken sitewide. The
+ * identical file already existed at public/images/logo.png, so serving it
+ * locally removes the dependency entirely.
+ */
+export const LOGO_PATH = '/images/logo.png'
 
 function findRoadmapCategory(handle: string) {
   return ROADMAP_CATEGORIES.find((category) =>
