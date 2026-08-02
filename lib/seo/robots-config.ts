@@ -9,12 +9,11 @@ import { STAGING_GUARD } from './robots'
  *  - NEXT_PUBLIC_SITE_URL=https://mdsupplies.com  (canonical production domain)
  *  - NEXT_PUBLIC_IS_STAGING=true                   (staging deployments only — forces noindex)
  */
-// /category-browse/ is the internal dynamic twin of /category/ (proxy
-// rewrite target for ?sort/filter/page) — never crawled directly.
 // /search is deliberately NOT listed: it is noindex,follow via its page
 // metadata (pageType 'utility'), and a robots disallow would both conflict
 // with that (crawlers can't see the noindex) and be redundant (audit L19).
-const DISALLOWED_PATHS = ['/api/', '/account/', '/cart', '/internal/', '/b2b', '/category-browse/']
+// /category-browse/ removed: the twin route no longer exists (Phase 5).
+const DISALLOWED_PATHS = ['/api/', '/account/', '/cart', '/internal/', '/b2b']
 
 // Explicit AI-crawler posture (audit L5): these bots are ALLOWED, under the
 // same path restrictions as everyone else. Being explicit documents the

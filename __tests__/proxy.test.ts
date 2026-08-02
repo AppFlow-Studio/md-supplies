@@ -376,31 +376,31 @@ describe('proxy — brands wildcard', () => {
   })
 })
 
-describe('proxy — category query variants rewrite to /category-browse (H1)', () => {
-  it('rewrites /category/gloves?page=2, preserving the query', () => {
-    const res = proxy(req('/category/gloves', '?page=2'))
-    expect(res?.headers.get('x-middleware-rewrite')).toBe(
-      'https://mdsupplies.com/category-browse/gloves?page=2',
-    )
+describe('proxy — category query variants are NOT rewritten (twin route removed)', () => {
+  // Phase 5: /category/[slug] reads searchParams directly and is the only
+  // category route. The old rewrite to /category-browse put the clean and
+  // filtered views on different route segments, so every filter/sort/search
+  // interaction crossed a route boundary and remounted the page.
+  it('passes through ?page, ?sort, ?filter and ?q without rewriting', () => {
+    expectPassThrough(proxy(req('/category/gloves', '?page=2')))
+    expectPassThrough(proxy(req('/category/gloves', '?sort=PRICE_ASC')))
+    expectPassThrough(proxy(req('/category/gloves', '?filter=size:large')))
+    expectPassThrough(proxy(req('/category/gloves', '?q=nitrile')))
   })
 
-  it('rewrites sort and filter variants', () => {
-    expect(proxy(req('/category/gloves', '?sort=PRICE_ASC'))?.headers.get('x-middleware-rewrite'))
-      .toContain('/category-browse/gloves')
-    expect(proxy(req('/category/gloves', '?filter=size:large'))?.headers.get('x-middleware-rewrite'))
-      .toContain('/category-browse/gloves')
+  it('never emits a /category-browse rewrite header', () => {
+    for (const q of ['?page=2', '?sort=PRICE_ASC', '?filter=size:large', '?q=nitrile', '']) {
+      const res = proxy(req('/category/gloves', q))
+      expect(res?.headers.get('x-middleware-rewrite') ?? '').not.toContain('category-browse')
+    }
   })
 
-  it('does not rewrite the canonical category page (no query)', () => {
+  it('passes through the canonical category page (no query)', () => {
     expectPassThrough(proxy(req('/category/gloves')))
   })
 
-  it('does not rewrite tracking-only queries (utm/gclid do not change results)', () => {
+  it('passes through tracking-only queries (utm/gclid do not change results)', () => {
     expectPassThrough(proxy(req('/category/gloves', '?utm_source=chatgpt.com&gclid=x')))
-  })
-
-  it('does not rewrite subcategory/product paths under /category', () => {
-    expectPassThrough(proxy(req('/category/gloves/nitrile-exam-gloves', '?page=2')))
   })
 })
 

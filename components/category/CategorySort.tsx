@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useCatalogTransition } from '@/components/category/CatalogTransition'
 import { ChevronDown } from 'lucide-react'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
@@ -26,7 +27,7 @@ interface Props {
 }
 
 export function CategorySort({ currentSort, activeFilters, limitedSortOptions }: Props) {
-  const router = useRouter()
+  const { navigate } = useCatalogTransition()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
@@ -43,7 +44,7 @@ export function CategorySort({ currentSort, activeFilters, limitedSortOptions }:
     activeFilters.forEach((f) => params.append('filter', f))
     withTrackingParams(params, searchParams)
     const qs = params.toString()
-    router.push(qs ? `${pathname}?${qs}` : pathname)
+    navigate(qs ? `${pathname}?${qs}` : pathname)
     setOpen(false)
   }
 

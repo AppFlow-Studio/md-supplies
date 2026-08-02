@@ -17,6 +17,8 @@ import { ProductGrid } from '@/components/category/ProductGrid'
 import { CategoryPagination } from '@/components/category/CategoryPagination'
 import { FilterDrawer } from '@/components/category/FilterDrawer'
 import { ScrollToResults } from '@/components/category/ScrollToResults'
+import { CatalogTransitionProvider } from '@/components/category/CatalogTransition'
+import { CatalogResultsState } from '@/components/category/CatalogResultsState'
 import { ROUTES } from '@/lib/routes'
 
 function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
@@ -126,8 +128,12 @@ export async function CategoryResults({
     allowedFacets.flatMap((g) => g.values.map((v) => [v.input, v.label] as const)),
   )
 
+  // Complete results state — any change here is a new result set (drives the
+  // scroll anchor). Includes filters, sort, search and page.
+  const resultsKey = JSON.stringify([activeFilterStrings, sortParam ?? '', searchText ?? '', currentPage])
+
   return (
-    <>
+    <CatalogTransitionProvider>
       {/* ItemList of this page's visible products (audit L16) — canonical
           (unfiltered) views only, positions continue across pages. */}
       {!isFiltered && products.length > 0 && (
@@ -160,8 +166,8 @@ export async function CategoryResults({
       </aside>
 
       {/* Product area */}
-      <ScrollToResults page={currentPage}>
-        <div className="flex-1 min-w-0">
+      <ScrollToResults resultsKey={resultsKey}>
+        <div>
           {/* Collection-scoped search (DEV-SEARCH-01). Suspense: reads
               useSearchParams() for tracking params — see the sidebar note. */}
           <Suspense fallback={null}>
@@ -243,15 +249,19 @@ export async function CategoryResults({
             />
           </Suspense>
 
-          {/* Product grid. Empty search results recover by clearing the
-              query (keeping filters), not by dumping the whole state. */}
-          <ProductGrid
-            products={products}
-            emptyStateHref={searchText ? clearSearchUrl : baseUrl}
-            categorySlug={handle}
-            itemListId={handle}
-            itemListName={title}
-          />
+          {/* Product grid. Only THIS subtree reacts to a pending navigation:
+              products dim but stay on screen, so nothing flashes and the
+              surrounding layout never unmounts. Empty search results recover
+              by clearing the query (keeping filters), not the whole state. */}
+          <CatalogResultsState>
+            <ProductGrid
+              products={products}
+              emptyStateHref={searchText ? clearSearchUrl : baseUrl}
+              categorySlug={handle}
+              itemListId={handle}
+              itemListName={title}
+            />
+          </CatalogResultsState>
 
           {/* Pagination — works for both plain and filtered/sorted views */}
           <CategoryPagination
@@ -262,6 +272,6 @@ export async function CategoryResults({
           />
         </div>
       </ScrollToResults>
-    </>
+    </CatalogTransitionProvider>
   )
 }

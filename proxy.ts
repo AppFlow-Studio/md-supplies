@@ -186,27 +186,19 @@ export function proxy(request: NextRequest): Response {
     return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), nonce)
   }
 
-  // ── Category query variants → dynamic twin route (audit H1) ────────────────
+  // ── Category query variants: no rewrite (twin route removed) ───────────────
   //
-  // /category/[slug] is statically generated (ISR) and therefore cannot read
-  // searchParams at request time. Requests whose query actually changes the
-  // rendered results (?sort/filter/page — tracking params like utm_* don't)
-  // are rewritten to /category-browse/[slug], a dynamic route rendering the
-  // same view. Rewrite (not redirect): the canonical URL stays in the bar.
+  // Historically /category/[slug] was statically generated and could not read
+  // searchParams, so query variants were rewritten onto a dynamic twin at
+  // /category-browse/[slug]. Since the CSP nonce (M10) forces every route to
+  // render per-request, that twin bought nothing — and it cost real UX: the
+  // clean view and the filtered view were DIFFERENT route segments, so every
+  // filter/sort/search/page interaction crossed a route boundary and remounted
+  // the page instead of updating in place. That is the "full page reload" feel
+  // reported on category pages.
   //
-  // NOTE (M10): since the CSP nonce (below) now forces every route dynamic
-  // anyway, this rewrite is no longer load-bearing — both sides render
-  // dynamically now. Left in place as still-correct, not-yet-cleaned-up
-  // behavior; not touched by the CSP change.
-  const categoryMatch = pathname.match(/^\/category\/([^/]+)$/)
-  if (categoryMatch) {
-    const query = request.nextUrl.searchParams
-    if (query.has('sort') || query.has('filter') || query.has('page') || query.has('q')) {
-      const url = request.nextUrl.clone()
-      url.pathname = `/category-browse/${categoryMatch[1]}`
-      return withCsp(NextResponse.rewrite(url), nonce)
-    }
-  }
+  // /category/[slug] now reads searchParams directly and is the only category
+  // route, so these interactions are ordinary in-segment client navigations.
 
   // Pass-through: forward the nonce as a request header so downstream Server
   // Components can read it via headers() (lib/csp-nonce.ts), and set it on

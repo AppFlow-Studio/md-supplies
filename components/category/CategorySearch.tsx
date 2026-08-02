@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useRef, useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useCatalogTransition } from '@/components/category/CatalogTransition'
 import { Search, X, Loader2 } from 'lucide-react'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
 
@@ -25,10 +26,10 @@ interface Props {
 
 export function CategorySearch({ scopeTitle, searchQuery, currentSort, activeFilters }: Props) {
   const pathname = usePathname()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [value, setValue] = useState(searchQuery ?? '')
-  const [isPending, startTransition] = useTransition()
+  // Shared with filters/sort/pagination so one indicator covers them all.
+  const { pending: isPending, navigate } = useCatalogTransition()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // External URL changes (Back/Forward, clearing the search chip) win over
@@ -54,7 +55,7 @@ export function CategorySearch({ scopeTitle, searchQuery, currentSort, activeFil
   const commit = (q: string) => {
     // A new query resets pagination (no `page` param is carried over) and
     // must not scroll-jump the viewport.
-    startTransition(() => router.push(buildUrl(q), { scroll: false }))
+    navigate(buildUrl(q))
   }
 
   const onChange = (next: string) => {

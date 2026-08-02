@@ -28,11 +28,11 @@ import { getNonce } from '@/lib/csp-nonce'
 import { getCategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 
-// Shared server-rendered category page, used by two routes:
-//  - app/category/[slug]           — static/ISR canonical view (sp is {})
-//  - app/category-browse/[slug]    — dynamic view for ?sort/filter/page
-//    variants (proxy.ts rewrites /category/<slug>?<query> onto it, since a
-//    statically-generated route cannot read searchParams at request time).
+// Server-rendered category view for the single canonical route
+// app/category/[slug], which reads searchParams directly. The former
+// /category-browse twin and its proxy rewrite were removed in Phase 5: having
+// the clean and filtered views on different route segments forced a remount on
+// every filter/sort/search interaction.
 
 export type CategorySearchParams = {
   sort?: string
