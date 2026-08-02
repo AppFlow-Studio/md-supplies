@@ -3,21 +3,13 @@ import { OCC_HUB } from '@/lib/occ'
 import { getOccCollectionHandle } from '@/lib/occ-collection'
 
 describe('OCC hub data (E8 §9.1)', () => {
-  // DEV-OCC-01: the featured block is sourced live from the canonical OCC
-  // collection at request time (app/solutions/occ/page.tsx). The static hub
-  // data must therefore ship NO invented catalog entries — the previous
-  // placehold.co products were fake products presented as real assortment.
-  it('ships no hardcoded placeholder products', () => {
-    expect(OCC_HUB.eligibleProducts).toEqual([])
-  })
-
-  it('any product present still satisfies the card contract (handle + real price)', () => {
-    for (const p of OCC_HUB.eligibleProducts) {
-      expect(p.handle.trim()).not.toBe('')
-      expect(p.image).not.toMatch(/placehold\.co/)
-      expect(Number.isFinite(p.price)).toBe(true)
-      expect(p.price).toBeGreaterThan(0)
-    }
+  // OCC now renders the full canonical collection through CategoryResults,
+  // exactly like a category page. There is no featured block and no
+  // hardcoded product data at all — the placeholder products that once lived
+  // here were fake catalog entries shown in front of the real assortment.
+  it('carries no hardcoded product data', () => {
+    expect('eligibleProducts' in OCC_HUB).toBe(false)
+    expect(JSON.stringify(OCC_HUB)).not.toContain('placehold.co')
   })
 
   it('every linked eligible category is a real routable handle', () => {

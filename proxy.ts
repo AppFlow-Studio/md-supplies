@@ -186,6 +186,18 @@ export function proxy(request: NextRequest): Response {
     return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), nonce)
   }
 
+  // ── /category/occ → /solutions/occ (single OCC route) ──────────────────────
+  //
+  // `occ` is a real Shopify collection handle, so /category/occ rendered a
+  // second, competing OCC page. OCC is browsed like a category but lives at
+  // one canonical URL; the duplicate 301s here rather than splitting link
+  // equity and confusing shoppers.
+  if (pathname === '/category/occ' || pathname === '/category/occ/') {
+    const url = new URL('/solutions/occ', request.url)
+    url.search = request.nextUrl.search
+    return withCsp(NextResponse.redirect(url, 301), nonce)
+  }
+
   // ── Category query variants: no rewrite (twin route removed) ───────────────
   //
   // Historically /category/[slug] was statically generated and could not read

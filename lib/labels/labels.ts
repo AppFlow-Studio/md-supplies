@@ -18,7 +18,7 @@
 // lib/labels/fordeer-provider.ts). When one is, its provider output
 // normalizes into this same ProductLabel shape — components stay unchanged.
 
-export type ProductLabelType = 'rx-only' | 'backorder'
+export type ProductLabelType = 'rx-only' | 'backorder' | 'promo'
 
 export type ProductLabel = {
   type: ProductLabelType
@@ -28,7 +28,7 @@ export type ProductLabel = {
   accessibleText: string
   /** Lower renders first. */
   priority: number
-  source: 'tag' | 'metafield'
+  source: 'tag' | 'metafield' | 'metaobject'
 }
 
 // RX display tag values observed in the catalog. `compliance:rx-only` is the

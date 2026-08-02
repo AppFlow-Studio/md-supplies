@@ -13,10 +13,6 @@ export const OCC_HUB: OCCHub = {
     // note in lib/filter-registry.ts), so the link 404'd. PENDING IZZY:
     // confirm the intended gifts/toys collection handle, then restore.
   ],
-  // No hardcoded placeholder products: the featured block renders live
-  // products from the canonical OCC collection (app/solutions/occ/page.tsx)
-  // or nothing at all — never fake catalog entries.
-  eligibleProducts: [],
   faq: [
     {
       question: 'What is Operation Christmas Child?',
