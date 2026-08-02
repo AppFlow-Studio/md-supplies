@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { CurrencySwitcher } from './CurrencySwitcher'
-import type { AvailableCountry, SlimCollection } from '@/lib/shopify/types'
+import type { AvailableCountry } from '@/lib/shopify/types'
 import { ROUTES } from '@/lib/routes'
 import { buildCategoryTreeNav } from '@/lib/category-tree'
 import { LOGO_PATH } from '@/lib/bunnycdn'
@@ -28,7 +28,8 @@ const COMPANY_HELP = [
 ]
 
 interface FooterProps {
-  collections: SlimCollection[]
+  /** Complete live collection-handle set for nav reconciliation (DEV-NAV-01). */
+  collections: { handle: string }[]
   availableCountries?: AvailableCountry[]
 }
 

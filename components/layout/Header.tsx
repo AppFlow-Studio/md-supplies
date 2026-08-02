@@ -13,14 +13,15 @@ import { useCart } from '@/components/store/CartProvider'
 import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
-import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
-import { buildCategoryTreeNav } from '@/lib/category-tree'
+import type { MenuItem } from '@/lib/shopify/types'
+import { buildCategoryTreeNav, CATEGORY_TREE_L1 } from '@/lib/category-tree'
 import { LOGO_PATH } from '@/lib/bunnycdn'
 import { approvedClaims, type ClaimKey } from '@/lib/claims'
 
 interface HeaderProps {
   menuItems: MenuItem[]
-  collections: SlimCollection[]
+  /** Complete live collection-handle set for nav reconciliation (DEV-NAV-01). */
+  collections: { handle: string }[]
 }
 
 const ANNOUNCEMENTS = [
@@ -160,9 +161,16 @@ export function Header({ menuItems, collections }: HeaderProps) {
   // list (already in props) and fail closed to /categories instead of
   // shipping a sitewide 404. Skipped when the collections fetch failed
   // (empty list) — degrading every link would be worse than the risk.
+  //
+  // DEV-NAV-01: the reviewed registry wins over the live-list check. A
+  // registry L1 is a validated canonical route, so it must never degrade to
+  // /categories — that regression is exactly what sent Needles/Syringes to
+  // the generic page when the live list was truncated.
   const validHandles = new Set(collections.map((c) => c.handle))
+  const registryHandles = new Set(CATEGORY_TREE_L1.map((c) => c.collectionHandle))
   const categoryHref = (title: string) => {
     const slug = titleToSlug(title)
+    if (registryHandles.has(slug)) return ROUTES.category(slug)
     if (validHandles.size > 0 && !validHandles.has(slug)) return ROUTES.categories
     return ROUTES.category(slug)
   }

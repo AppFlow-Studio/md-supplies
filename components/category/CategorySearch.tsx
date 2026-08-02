@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Search, X, Loader2 } from 'lucide-react'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
@@ -31,11 +31,14 @@ export function CategorySearch({ scopeTitle, searchQuery, currentSort, activeFil
   const [isPending, startTransition] = useTransition()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // External URL changes (Back/Forward, filter chip removal) win over local
-  // typing state.
-  useEffect(() => {
+  // External URL changes (Back/Forward, clearing the search chip) win over
+  // local typing state. Adjusted during render rather than in an effect —
+  // React re-runs this component immediately without a cascading commit.
+  const [lastQuery, setLastQuery] = useState(searchQuery)
+  if (searchQuery !== lastQuery) {
+    setLastQuery(searchQuery)
     setValue(searchQuery ?? '')
-  }, [searchQuery])
+  }
 
   const buildUrl = (q: string) => {
     const p = new URLSearchParams()
