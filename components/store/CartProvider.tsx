@@ -17,7 +17,8 @@ interface CartContextValue {
   cart: Cart | null
   isOpen: boolean
   lastError: string | null
-  addItem(variantId: string, qty: number): Promise<void>
+  /** Resolves true only when Shopify actually added the requested line. */
+  addItem(variantId: string, qty: number): Promise<boolean>
   removeItem(lineId: string): Promise<void>
   updateItem(lineId: string, qty: number): Promise<void>
   openCart(): void
@@ -46,7 +47,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true }
   }, [])
 
-  const addItem = useCallback(async (variantId: string, qty: number) => {
+  const addItem = useCallback(async (variantId: string, qty: number): Promise<boolean> => {
     try {
       setLastError(null)
       const { cart: updated, warning } = await addToCart(variantId, qty)
@@ -57,7 +58,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // left to notice the gap at checkout.
       if (warning) setLastError(warning)
       const line = updated.lines.nodes.find((l) => l.merchandise.id === variantId)
-      if (line) {
+      // Report the real outcome so callers never show "Added!" for a line
+      // Shopify silently dropped (Phase 11).
+      if (!line) return false
+      {
         track({
           ...buildAddToCartEvent({
             currency: line.cost.totalAmount.currencyCode,
@@ -70,9 +74,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }),
         })
       }
+      return !warning
     } catch (err) {
       console.error('[CartProvider] addItem failed:', err)
       setLastError('Failed to add item. Please try again.')
+      return false
     }
   }, [])
 

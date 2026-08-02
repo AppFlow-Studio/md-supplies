@@ -6,6 +6,7 @@ import {BadgeCheck, Headset, Truck} from "lucide-react";
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { getIndustryImagePath } from '@/lib/bunnycdn'
 import { approvedClaims } from '@/lib/claims'
+import { OCC_PANEL_HEADING, OCC_PANEL_SUBHEAD, OCC_PANEL_CTA } from '@/lib/occ-copy'
 
 export const revalidate = 3600
 
@@ -70,12 +71,12 @@ export default function IndustriesPage() {
             {/* OCC Program banner */}
             <div className="bg-[rgba(0,193,255,0.2)] flex items-center gap-4 px-6 py-5 mt-2 max-w-[541px]">
               <div className="flex flex-col gap-0.5">
-                <span className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px]">OCC Program</span>
-                {/* Approved OCC copy (plan §7.3) — no payment-terms claim. */}
-                <span className="text-navy-900 text-[16px] font-semibold tracking-[0.32px]">Dedicated pricing and account support</span>
+                <span className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px]">{OCC_PANEL_HEADING}</span>
+                {/* Centralized in lib/occ-copy.ts — see the client decision point there. */}
+                <span className="text-navy-900 text-[16px] font-semibold tracking-[0.32px]">{OCC_PANEL_SUBHEAD}</span>
               </div>
               <Link href="/solutions/occ" className="group ml-auto text-teal-500 text-[15px] font-semibold whitespace-nowrap inline-flex items-center gap-1">
-                Shop OCC <AnimatedArrow size={14} />
+                {OCC_PANEL_CTA} <AnimatedArrow size={14} />
               </Link>
             </div>
           </div>

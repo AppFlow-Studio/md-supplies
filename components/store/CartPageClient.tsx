@@ -12,6 +12,7 @@ import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
+import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
 import { SHIPPING_FALLBACK_MESSAGE, SHIPPING_CLASS_COPY } from '@/lib/shipping-resolver/copy'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
 
@@ -19,6 +20,10 @@ export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
   const rxGate = useRxGate(cart)
+  // Phase 11: a line with no usable total would transact at $0 or be silently
+  // dropped at checkout. Block the handoff and name the offending items.
+  const blockedLines = cart ? blockedCartLines(cart.lines.nodes) : []
+  const checkoutBlocked = blockedLines.length > 0
 
   // Whole-cart summary, resolved per line from the selected variant's class.
   // Claiming free shipping for the cart requires every line to be classified
@@ -194,7 +199,20 @@ export function CartPageClient() {
           <p data-testid="cart-shipping-message" className="text-gray-500 text-[12px] tracking-[0.24px]">
             {cartShippingMessage}
           </p>
-          {rxGate.blocked ? (
+          {checkoutBlocked ? (
+            <div className="border border-amber-300 bg-amber-50 p-4 flex flex-col gap-2">
+              <p className="text-navy-900 text-[14px] font-semibold">Pricing needed before checkout</p>
+              <p className="text-gray-600 text-[13px] leading-relaxed">
+                {blockedCheckoutMessage(blockedLines)}
+              </p>
+              <span
+                aria-disabled="true"
+                className="bg-gray-200 text-gray-500 h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase cursor-not-allowed"
+              >
+                Proceed to Checkout
+              </span>
+            </div>
+          ) : rxGate.blocked ? (
             <RxGatePanel signedIn={rxGate.signedIn} />
           ) : (
             <a

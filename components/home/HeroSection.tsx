@@ -4,6 +4,7 @@ import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
 import type { CollectionProduct } from "@/lib/shopify/types";
 import { Van } from "lucide-react";
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { OCC_PANEL_HEADING, OCC_PANEL_SUBHEAD, OCC_PANEL_CTA } from '@/lib/occ-copy'
 
 interface Props {
   products: CollectionProduct[];
@@ -95,18 +96,19 @@ export function HeroSection({ products }: Props) {
               <Van className="w-10 h-9"/>
               <div className="flex-1">
                 <p className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px] leading-snug">
-                  OCC Program
+                  {OCC_PANEL_HEADING}
                 </p>
-                {/* Approved OCC copy (plan §7.3) — no payment-terms claim. */}
+                {/* Copy is centralized in lib/occ-copy.ts, which documents the
+                    open client decision on unconditional free shipping. */}
                 <p className="text-navy-900 text-[16px] font-semibold tracking-[0.32px] leading-snug mt-0.5">
-                  Dedicated pricing and account support
+                  {OCC_PANEL_SUBHEAD}
                 </p>
               </div>
               <Link
                 href="/solutions/occ"
                 className="group text-teal-500 text-[15px] font-semibold shrink-0 tracking-[0.3px] inline-flex items-center gap-1"
               >
-                Shop OCC <AnimatedArrow size={14} />
+                {OCC_PANEL_CTA} <AnimatedArrow size={14} />
               </Link>
             </div>
 

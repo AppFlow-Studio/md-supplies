@@ -21,6 +21,7 @@ import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
+import { hasUsablePrice } from '@/lib/purchasability'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
@@ -48,7 +49,9 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
           </span>
         )}
         <p className="text-black text-[13px] font-semibold leading-5 line-clamp-2">{product.title}</p>
-        <span className="text-black text-[16px] font-bold">${price.toFixed(2)}</span>
+        <span className="text-black text-[16px] font-bold">
+          {hasUsablePrice(price) ? `$${price.toFixed(2)}` : 'Contact for pricing'}
+        </span>
       </div>
     </Link>
   )
@@ -298,12 +301,19 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               />
             )}
 
-            {/* Price */}
+            {/* Price. A zero/missing price is a quote-only item, not a $0
+                product and not an out-of-stock or no-rate signal (Phase 11). */}
             <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-black text-[35px] font-extrabold leading-none tracking-[0.7px]">
-                ${price.toFixed(2)}
-              </span>
-              {compareAt && compareAt > price && (
+              {hasUsablePrice(price) ? (
+                <span className="text-black text-[35px] font-extrabold leading-none tracking-[0.7px]">
+                  ${price.toFixed(2)}
+                </span>
+              ) : (
+                <span className="text-navy-900 text-[24px] font-semibold leading-none tracking-[0.4px]">
+                  Contact for pricing
+                </span>
+              )}
+              {hasUsablePrice(price) && compareAt && compareAt > price && (
                 <span className="text-gray-500 text-[15px] line-through tracking-[0.3px]">
                   ${compareAt.toFixed(2)}
                 </span>
@@ -373,6 +383,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 variantId={selectedVariant.id}
                 quantity={orderQty}
                 availableForSale={selectedVariant.availableForSale}
+                price={price}
               />
             </div>
 
