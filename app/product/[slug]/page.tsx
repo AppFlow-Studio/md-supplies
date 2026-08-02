@@ -5,6 +5,7 @@ import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
+import { publicBrand } from '@/lib/brand'
 import { ProductView } from '@/components/product/ProductView'
 import { PARTNERS } from '@/lib/partners'
 import { ProductSchema } from '@/components/schema/ProductSchema'
@@ -54,11 +55,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     )
     if (!data.product) return buildMetadata({ pageType: 'product', title: 'Product' })
     const product = normalizeProduct(data.product)
-    const brand = product.brandName ?? product.vendor
+    // Public brand only — never the fulfilling vendor (lib/brand.ts).
+    const brand = publicBrand(product)
     return buildMetadata({
       pageType: 'product',
       title: product.seo?.title || product.title,
-      description: product.seo?.description || trimDescription(`${brand} — ${product.description}`, 155),
+      description:
+        product.seo?.description ||
+        trimDescription(brand ? `${brand} — ${product.description}` : product.description, 155),
       slug,
       image: product.images.nodes[0]?.url,
       imageWidth: product.images.nodes[0]?.width,
@@ -110,7 +114,9 @@ export default async function ProductPage({ params }: Props) {
     // gtin only when the Shopify barcode is a checksum-valid GTIN — most
     // barcodes in this catalog are SKU copies and must not be emitted (M5).
     gtin: normalizeGtin(firstVariant?.barcode),
-    brand: product.brandName ?? product.vendor,
+    // Product structured data: omit brand entirely rather than emit the
+    // fulfilling vendor as a consumer brand (lib/brand.ts).
+    brand: publicBrand(product) ?? undefined,
     price: parseFloat(firstVariant?.price?.amount ?? '0'),
     priceCurrency: firstVariant?.price?.currencyCode ?? 'USD',
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',

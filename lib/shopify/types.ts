@@ -108,6 +108,9 @@ export type CollectionProduct = {
   vendor: string;
   availableForSale: boolean;
   tags: string[];
+  /** Raw `custom.brand_name`. The ONLY approved public brand source —
+      resolve via lib/brand.ts, never fall back to `vendor`. */
+  brandName?: { value: string } | null;
   /** Raw backorder metafield (DEV-LABEL-01 single source); flattened by the
       label contract, may be absent on queries that don't request it. */
   estimatedRestockDate?: { value: string } | null;

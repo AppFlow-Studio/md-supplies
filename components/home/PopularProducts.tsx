@@ -9,6 +9,7 @@ import { ProductImage } from '@/components/shared/ProductImage'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import type { ProductCardData } from '@/types/product'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { publicBrand } from '@/lib/brand'
 
 interface Props {
   products: CollectionProduct[]
@@ -39,8 +40,9 @@ function toCardData(product: CollectionProduct): ProductCardData {
       width: img.width ?? 800,
       height: img.height ?? 800,
     })),
-    brand: product.vendor,
-    vendor: product.vendor,
+    // Public brand only; never the fulfilling vendor (lib/brand.ts).
+    brand: publicBrand(product) ?? '',
+    vendor: '',
     price,
     compareAtPrice,
     sku: '',
@@ -100,9 +102,12 @@ export function PopularProducts({ products }: Props) {
 
                 <div className="flex flex-col gap-1.5 p-3 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-teal-500 tracking-[0.26px]">
-                      {product.vendor}
-                    </span>
+                    {/* Public brand only (lib/brand.ts) — never the vendor. */}
+                    {publicBrand(product) && (
+                      <span className="text-[13px] font-semibold text-teal-500 tracking-[0.26px]">
+                        {publicBrand(product)}
+                      </span>
+                    )}
                     {/* Negative availability only (DEV-CATALOG-01) — no
                         real-time inventory claim. */}
                     {!product.availableForSale && (

@@ -38,7 +38,6 @@ function metafield(namespace: string, key: string): FacetRule {
 
 const AVAILABILITY = exact('availability', 'filter.v.availability')
 const PRICE = exact('price', 'filter.v.price')
-const VENDOR = exact('vendor', 'filter.p.vendor')
 // Both spellings observed across Storefront API versions.
 const PRODUCT_TYPE = exact('productType', 'filter.p.type', 'filter.p.product_type')
 const CATEGORY = exact('category', 'filter.p.category')
@@ -93,8 +92,19 @@ export const APPROVED_METAFIELDS = {
 } as const
 
 // ── Hard deny: raw tags never render, no matter what S&D returns ───────────
+// `filter.p.vendor` is denied for the same reason brand deliberately reads a
+// metafield: Shopify's vendor field holds the FULFILLING vendor (MedPlus,
+// Medchain, …), and Bilal's 2026-07-28 instruction forbids exposing internal
+// fulfillers as customer-facing brands. The live store's Vendor facet was
+// removed from Search & Discovery on 2026-07-29 (CHANGE-01 in the agency
+// repo's live-filters bundle); a registry that still allowed it would
+// reintroduce on this site exactly what was removed from the live one.
 export function isBlockedFacetId(facetId: string): boolean {
-  return facetId === 'filter.p.tag' || facetId.startsWith('filter.p.tag.')
+  return (
+    facetId === 'filter.p.tag' ||
+    facetId.startsWith('filter.p.tag.') ||
+    facetId === 'filter.p.vendor'
+  )
 }
 
 // Internal taxonomy/ops tag values that must never leak into the UI.
@@ -137,7 +147,6 @@ const UNIVERSAL: FacetRule[] = [
   APPROVED_METAFIELDS.brandName,
   APPROVED_METAFIELDS.orderSize,
   PRODUCT_TYPE,
-  VENDOR,
   PRICE,
   AVAILABILITY,
 ]
@@ -243,18 +252,17 @@ export const filterRegistry: Record<string, FacetRule[]> = {
 }
 
 // Safe default for any collection without an explicit registry entry.
-export const DEFAULT_FACET_RULES: FacetRule[] = [AVAILABILITY, PRICE, VENDOR]
+export const DEFAULT_FACET_RULES: FacetRule[] = [AVAILABILITY, PRICE]
 
 // Search spans every collection, so unlike getAllowedFacets there is no
 // collection handle to key a per-collection allowlist on. One registry
 // entry covers all of search: the same non-tag sources approved anywhere
-// (availability/price/vendor/productType) plus every approved metafield,
+// (availability/price/productType) plus every approved metafield,
 // since a search result set can span collections with different metafield
 // registries.
 export const SEARCH_FACET_RULES: FacetRule[] = [
   AVAILABILITY,
   PRICE,
-  VENDOR,
   PRODUCT_TYPE,
   ...Object.values(APPROVED_METAFIELDS),
 ]
@@ -273,7 +281,6 @@ export function getSearchFacets(facets: CollectionFilter[]): CollectionFilter[] 
 export const ALL_ALLOWED_RULES: FacetRule[] = [
   CATEGORY,
   PRODUCT_TYPE,
-  VENDOR,
   PRICE,
   AVAILABILITY,
   // Variant options are an approved source and were already referenced by the

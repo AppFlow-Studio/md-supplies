@@ -75,6 +75,9 @@ export const GET_COLLECTION = `#graphql
           tags
           # DEV-LABEL-01: single backorder source, shared with the PDP so
           # card and PDP can never disagree.
+          # Public brand. Cards must never fall back to the Shopify vendor
+          # field (the fulfilling vendor) — see lib/brand.ts.
+          brandName: metafield(namespace: "custom", key: "brand_name") { value }
           estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
           priceRange {
             minVariantPrice { amount currencyCode }

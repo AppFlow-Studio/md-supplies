@@ -44,22 +44,36 @@ function makeProduct(overrides: Partial<CollectionProduct> = {}): CollectionProd
 
 describe('toGA4Item', () => {
   it('maps a CollectionProduct to a GA4 item using the first variant price', () => {
-    expect(toGA4Item(makeProduct())).toEqual({
+    expect(toGA4Item(makeProduct({ brandName: { value: 'Dukal' } }))).toEqual({
       item_id: 'gid://shopify/ProductVariant/10',
       item_name: 'Nitrile Exam Gloves',
       price: 19.99,
-      item_brand: 'MedBrand',
+      item_brand: 'Dukal',
     })
   })
 
   it('falls back to priceRange and product id when there is no variant', () => {
-    const product = makeProduct({ variants: { nodes: [] } })
+    const product = makeProduct({ variants: { nodes: [] }, brandName: { value: 'Dukal' } })
     expect(toGA4Item(product)).toEqual({
       item_id: 'gid://shopify/Product/1',
       item_name: 'Nitrile Exam Gloves',
       price: 19.99,
-      item_brand: 'MedBrand',
+      item_brand: 'Dukal',
     })
+  })
+
+  // `vendor` is the FULFILLING vendor (MedPlus, Medchain, …). Reporting it as
+  // item_brand leaked internal fulfillment data into analytics; brand_name is
+  // the only approved source and item_brand is omitted when it is absent.
+  it('omits item_brand entirely rather than reporting the vendor', () => {
+    const item = toGA4Item(makeProduct({ vendor: 'MedPlus' }))
+    expect(item).not.toHaveProperty('item_brand')
+    expect(JSON.stringify(item)).not.toContain('MedPlus')
+  })
+
+  it('prefers brand_name over vendor when both are present', () => {
+    const item = toGA4Item(makeProduct({ vendor: 'MedPlus', brandName: { value: 'Dukal' } }))
+    expect(item.item_brand).toBe('Dukal')
   })
 })
 

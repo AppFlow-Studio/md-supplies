@@ -20,6 +20,7 @@ import { ShippingBlock } from './ShippingBlock'
 import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
+import { publicBrand } from '@/lib/brand'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
@@ -40,9 +41,12 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
         <ProductImage src={image?.url} alt={cleanShopifyAlt(image?.altText) ?? product.title} />
       </div>
       <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
-        <span className="text-teal-500 text-[12px] font-semibold uppercase tracking-[0.24px]">
-          {product.vendor}
-        </span>
+        {/* Public brand only — omitted when none is approved (lib/brand.ts). */}
+        {publicBrand(product) && (
+          <span className="text-teal-500 text-[12px] font-semibold uppercase tracking-[0.24px]">
+            {publicBrand(product)}
+          </span>
+        )}
         <p className="text-black text-[13px] font-semibold leading-5 line-clamp-2">{product.title}</p>
         <span className="text-black text-[16px] font-bold">${price.toFixed(2)}</span>
       </div>
@@ -65,6 +69,12 @@ interface Props {
 }
 
 export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
+  // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
+  // Medchain, …) and must never be presented as a brand — when brand_name is
+  // absent the brand line, spec row, and analytics item_brand are all omitted.
+  // Declared before the analytics effect that reads it.
+  const brandDisplay = publicBrand(product)
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     () => getDefaultVariant(product.variants.nodes),
   )
@@ -82,7 +92,8 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             item_id: selectedVariant.id,
             item_name: product.title,
             price: parseFloat(selectedVariant.price.amount),
-            item_brand: product.vendor,
+            // Public brand only; never the fulfilling vendor (lib/brand.ts).
+            ...(brandDisplay ? { item_brand: brandDisplay } : {}),
           },
         }),
       },
@@ -117,8 +128,6 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
     if (!selectedVariant.availableForSale) return backorderLabel ? 'backordered' : 'out_of_stock'
     return 'available'
   })()
-
-  const brandDisplay = product.brandName ?? product.vendor
 
   const variantSku = selectedVariant.sku || (selectedVariant.id.split('/').pop() ?? '')
 
@@ -194,20 +203,25 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
           {/* Right – Product info */}
           <div className="flex-1 flex flex-col gap-5">
             {/* Brand */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              {partnerSlug ? (
-                <Link
-                  href={`/partners/${partnerSlug}`}
-                  className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase hover:text-teal-600 transition-colors"
-                >
-                  {brandDisplay}
-                </Link>
-              ) : (
-                <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
-                  {brandDisplay}
-                </span>
-              )}
-            </div>
+            {/* Brand line renders only for an approved public brand. The
+                partner link is also brand-gated: linking a partner page from
+                a fulfilling-vendor string would leak the same information. */}
+            {brandDisplay && (
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                {partnerSlug ? (
+                  <Link
+                    href={`/partners/${partnerSlug}`}
+                    className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase hover:text-teal-600 transition-colors"
+                  >
+                    {brandDisplay}
+                  </Link>
+                ) : (
+                  <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
+                    {brandDisplay}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Title */}
             <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">

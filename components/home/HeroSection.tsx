@@ -36,7 +36,8 @@ function ProductCard({ product, priority = false }: { product: CollectionProduct
       </div>
       <div className="p-3 flex flex-col gap-0.5">
         <p className="text-[14px] font-semibold text-navy-900 leading-snug line-clamp-2">{product.title}</p>
-        <p className="text-[12px] text-gray-500">From ${price.toFixed(2)} · {product.vendor}</p>
+        {/* No vendor: it is the fulfilling vendor, not a brand (lib/brand.ts). */}
+        <p className="text-[12px] text-gray-500">From ${price.toFixed(2)}</p>
       </div>
     </Link>
   );

@@ -38,13 +38,11 @@ export function ProductCard({ product }: Props) {
           />
         </div>
 
-        {/* Brand · Vendor */}
-        <p className="text-xs text-gray-500 truncate">
-          {product.brand}
-          {product.vendor && product.vendor !== product.brand && (
-            <> · {product.vendor}</>
-          )}
-        </p>
+        {/* Public brand only — the vendor suffix was an internal-fulfiller
+            leak (lib/brand.ts). */}
+        {product.brand && (
+          <p className="text-xs text-gray-500 truncate">{product.brand}</p>
+        )}
 
         {/* Title */}
         <h3 className="text-sm font-semibold text-navy-900 leading-snug line-clamp-2 group-hover:text-teal-500 transition-colors">

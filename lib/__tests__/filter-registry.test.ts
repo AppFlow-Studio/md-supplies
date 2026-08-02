@@ -100,11 +100,12 @@ describe('filter registry guard: no blocked source can ever render', () => {
 })
 
 describe('page-specific facet sets', () => {
-  it('OCC shows availability/price/vendor/type only — no glove/needle/testing facets', () => {
+  it('OCC shows availability/price/type only — no vendor, glove, needle or testing facets', () => {
     const ids = getAllowedFacets('occ', HOSTILE_FACETS).map((f) => f.id)
     expect(ids).toEqual(
-      expect.arrayContaining(['filter.v.availability', 'filter.v.price', 'filter.p.vendor', 'filter.p.type']),
+      expect.arrayContaining(['filter.v.availability', 'filter.v.price', 'filter.p.type']),
     )
+    expect(ids).not.toContain('filter.p.vendor')
     expect(ids).not.toContain('filter.p.m.custom.glove_size')
     expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
     expect(ids).not.toContain('filter.p.m.custom.tests_for')
@@ -116,7 +117,7 @@ describe('page-specific facet sets', () => {
     expect(ids).toContain('filter.p.m.custom.glove_size')
     expect(ids).toContain('filter.p.m.custom.material')
     expect(ids).toContain('filter.v.option.size')
-    expect(ids).toContain('filter.p.vendor')
+    expect(ids).not.toContain('filter.p.vendor')
     expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
     expect(ids).not.toContain('filter.v.option.color')
   })
@@ -167,16 +168,19 @@ describe('page-specific facet sets', () => {
     expect(ids).not.toContain('filter.p.m.custom.glove_size')
   })
 
-  it('unlisted collections fall back to availability/price/vendor only', () => {
+  it('unlisted collections fall back to availability/price only', () => {
     const ids = getAllowedFacets('some-unlisted-collection', HOSTILE_FACETS).map((f) => f.id)
-    expect(ids.sort()).toEqual(['filter.p.vendor', 'filter.v.availability', 'filter.v.price'])
+    expect(ids.sort()).toEqual(['filter.v.availability', 'filter.v.price'])
   })
 })
 
 describe('isBlockedFacetId / stripBlockedFacets', () => {
-  it('blocks the tag facet and its value ids', () => {
+  it('blocks the tag facet, its value ids, and the fulfilling-vendor facet', () => {
     expect(isBlockedFacetId('filter.p.tag')).toBe(true)
     expect(isBlockedFacetId('filter.p.tag.discontinued')).toBe(true)
+    // vendor = internal fulfiller; removed from the live store's S&D on 2026-07-29,
+    // and hard-denied here so no registry entry can ever reintroduce it
+    expect(isBlockedFacetId('filter.p.vendor')).toBe(true)
     expect(isBlockedFacetId('filter.v.availability')).toBe(false)
   })
 
@@ -188,15 +192,15 @@ describe('isBlockedFacetId / stripBlockedFacets', () => {
 })
 
 describe('getSearchFacets (NF3 — search-wide registry allowlist)', () => {
-  it('allows availability/price/vendor/productType and approved metafields', () => {
+  it('allows availability/price/productType and approved metafields, never vendor', () => {
     const facets = [
       facet('filter.v.availability'),
       facet('filter.v.price'),
-      facet('filter.p.vendor'),
       facet('filter.p.type'),
       facet('filter.p.m.custom.material'),
     ]
     expect(getSearchFacets(facets).map((f) => f.id)).toEqual(facets.map((f) => f.id))
+    expect(getSearchFacets([facet('filter.p.vendor', 'Brand')])).toEqual([])
   })
 
   it('drops raw tag facets and any facet not on the search allowlist', () => {
@@ -349,9 +353,11 @@ describe('brand and fulfilling vendor stay separate (IZ-VENDOR-01)', () => {
     expect(getAllowedFacets('exam-room', [brand])).toHaveLength(1)
   })
 
-  it('custom.type is never registered, because its meaning is inverted', () => {
-    // On gloves it holds material ("Nitrile Gloves"), not Exam/Surgical. Exam
-    // versus Surgical comes from product_type instead.
+  it('custom.type is never registered here; Exam/Surgical comes from product_type', () => {
+    // Registered-source policy, not a data claim: the live store's custom.type DATA
+    // was corrected on 2026-07-31 (CHANGE-03: Type now holds Exam/Surgical), so
+    // registering it can be reconsidered, but that is a deliberate registry decision,
+    // not a drive-by. Until then product_type carries the use distinction.
     const wrong = facet('filter.p.m.custom.type', 'Type')
     for (const handle of ['gloves', 'surgical-sutures', 'occ', 'exam-room']) {
       expect(getAllowedFacets(handle, [wrong]), handle).toEqual([])

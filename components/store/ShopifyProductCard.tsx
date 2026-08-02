@@ -9,6 +9,7 @@ import { buildSelectItemEvent, toGA4Item, currencyOf } from '@/lib/analytics/eve
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
 import { resolveProductLabels } from '@/lib/labels/labels'
+import { publicBrand } from '@/lib/brand'
 
 interface Props {
   product: CollectionProduct
@@ -28,6 +29,7 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
     : null
   const image = product.images.nodes[0]
   const hasDiscount = compareAt !== null && compareAt > price
+  const brand = publicBrand(product)
 
   const href = categorySlug
     ? `/category/${categorySlug}/${product.handle}`
@@ -76,9 +78,16 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
 
       {/* Info */}
       <Link href={href} onClick={handleSelect} className="px-[22px] pt-[19px] pb-[22px] flex flex-col">
-        <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
-          {product.vendor}
-        </span>
+        {/* Public brand only (custom.brand_name). `vendor` is the FULFILLING
+            vendor and must never be shown as a brand — when no approved brand
+            exists the line is omitted entirely (lib/brand.ts). */}
+        {brand ? (
+          <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
+            {brand}
+          </span>
+        ) : (
+          <span className="leading-[25px]" aria-hidden />
+        )}
         <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
           {product.title}
         </p>

@@ -6,6 +6,7 @@ import type { ProductCardData } from '@/types/product'
 import { QuickAddModal } from '@/components/product/QuickAddModal'
 import {Plus} from "lucide-react";
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { publicBrand } from '@/lib/brand'
 
 function toCardData(product: CollectionProduct): ProductCardData {
   const image = product.images.nodes[0]
@@ -26,8 +27,9 @@ function toCardData(product: CollectionProduct): ProductCardData {
       width: image?.width ?? 800,
       height: image?.height ?? 800,
     },
-    brand: product.vendor,
-    vendor: product.vendor,
+    // Public brand only; never the fulfilling vendor (lib/brand.ts).
+    brand: publicBrand(product) ?? '',
+    vendor: '',
     price,
     compareAtPrice,
     sku: '',

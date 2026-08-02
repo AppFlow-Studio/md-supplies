@@ -36,12 +36,8 @@ export function ProductInfo({ product, selectedVariant }: Props) {
             <dd className="text-gray-500">{product.brand}</dd>
           </div>
         )}
-        {product.vendor && (
-          <div className="flex gap-2">
-            <dt className="font-medium text-navy-900 w-20 shrink-0">Vendor</dt>
-            <dd className="text-gray-500">{product.vendor}</dd>
-          </div>
-        )}
+        {/* Vendor row removed: Shopify `vendor` is the fulfilling vendor and
+            is not customer-facing information (lib/brand.ts). */}
         {product.partnerVendor && (
           <div className="flex gap-2">
             <dt className="font-medium text-navy-900 w-20 shrink-0">Partner</dt>

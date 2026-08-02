@@ -8,7 +8,9 @@ interface Props {
   sku: string
   mpn?: string
   gtin?: string
-  brand: string
+  /** Public brand (custom.brand_name). Undefined when none is approved —
+      never the fulfilling vendor, so the Brand node is simply omitted. */
+  brand?: string
   price: number
   priceCurrency: string
   availability: 'InStock' | 'OutOfStock' | 'PreOrder'
@@ -47,7 +49,7 @@ export async function ProductSchema({
     description,
     image,
     sku,
-    brand: { '@type': 'Brand', name: brand },
+    ...(brand ? { brand: { '@type': 'Brand', name: brand } } : {}),
     offers: {
       '@type': 'Offer',
       url,
