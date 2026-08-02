@@ -50,17 +50,22 @@ export function CategorySort({ currentSort, activeFilters, limitedSortOptions }:
 
   return (
     <div className="relative">
+      {/* Phase 8: on mobile this is a full-width 48px control sitting beside
+          Filters; on desktop it stays a compact inline control aligned right. */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="w-full sm:w-auto flex items-center justify-center sm:justify-start gap-2 h-[48px] sm:h-auto px-4 sm:px-0 border sm:border-0 border-navy-900 bg-white sm:bg-transparent"
       >
-        <span className="text-gray-500 text-[13px] tracking-[0.26px]">SORT BY:</span>
-        <span className="text-navy-900 text-[15px] font-semibold tracking-[0.3px]">
+        <span className="text-gray-500 text-[14px] sm:text-[13px] tracking-[0.26px]">Sort:</span>
+        <span className="text-navy-900 text-[16px] sm:text-[15px] font-semibold tracking-[0.3px]">
           {selected.label}
         </span>
         <ChevronDown
-          size={13}
+          size={15}
+          aria-hidden
           className={`text-navy-900 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>

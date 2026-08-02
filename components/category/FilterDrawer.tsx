@@ -15,6 +15,15 @@ export function FilterDrawer({ filters, activeFilters, currentSort }: Props) {
   const [open, setOpen] = useState(false)
   const count = activeFilters.length
   const panelRef = useRef<HTMLDivElement>(null)
+  // Focus returns here on close instead of being dropped to the document.
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  // Focus returns to the trigger when the drawer closes (Phase 6).
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (wasOpen.current && !open) triggerRef.current?.focus()
+    wasOpen.current = open
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -55,17 +64,20 @@ export function FilterDrawer({ filters, activeFilters, currentSort }: Props) {
 
   return (
     <>
-      {/* Trigger — mobile only */}
-      <div className="lg:hidden mb-4">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2 border border-navy-900 text-navy-900 text-[14px] font-semibold px-4 h-[40px] hover:bg-neutral-50 transition-colors"
-        >
-          <SlidersHorizontal size={15} />
-          {count > 0 ? `Filters (${count})` : 'Filters'}
-        </button>
-      </div>
+      {/* Trigger — mobile only. Lives in the discovery toolbar beside Sort
+          (Phase 8): full-width, 48px, and always word-labelled so the control
+          is unambiguous for older shoppers. */}
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        className="lg:hidden w-full flex items-center justify-center gap-2 border border-navy-900 bg-white text-navy-900 text-[16px] font-semibold px-4 h-[48px] hover:bg-neutral-50 transition-colors"
+      >
+        <SlidersHorizontal size={17} aria-hidden />
+        {count > 0 ? `Filters (${count})` : 'Filters'}
+      </button>
 
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">

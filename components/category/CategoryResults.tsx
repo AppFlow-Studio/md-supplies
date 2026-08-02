@@ -179,24 +179,43 @@ export async function CategoryResults({
             />
           </Suspense>
 
-          {/* Sort bar */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Discovery toolbar (Phase 8).
+              Desktop: result count left, sort right, both aligned with the grid.
+              Mobile/tablet: a dedicated row where Filters and Sort sit side by
+              side as equal, clearly-labelled 48px targets — no icon-only
+              ambiguity and no hover-dependent controls. */}
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {/* aria-live: announces updated counts after async filter/search
-                navigations without refocusing. */}
-            <p className="text-gray-500 text-[15px]" aria-live="polite">
+                navigations without moving focus. */}
+            <p className="text-gray-600 text-[16px]" aria-live="polite" role="status">
               {searchText
                 ? `${products.length} result${products.length === 1 ? '' : 's'} for “${searchText}”`
-                : `Showing ${products.length} products`}
+                : `Showing ${products.length} product${products.length === 1 ? '' : 's'}`}
             </p>
-            {/* Suspense: CategorySort reads useSearchParams() — see the
-                sidebar boundary note above. */}
-            <Suspense fallback={null}>
-              <CategorySort
-                currentSort={sortParam}
-                activeFilters={activeFilterStrings}
-                limitedSortOptions={source.kind === 'tag' || Boolean(searchText)}
-              />
-            </Suspense>
+
+            <div className="flex items-stretch gap-2">
+              {/* Mobile filter trigger sits in the toolbar beside Sort. */}
+              <div className="lg:hidden flex-1">
+                <Suspense fallback={null}>
+                  <FilterDrawer
+                    filters={filters}
+                    activeFilters={activeFilterStrings}
+                    currentSort={sortParam}
+                  />
+                </Suspense>
+              </div>
+              <div className="flex-1 sm:flex-none">
+                {/* Suspense: CategorySort reads useSearchParams() — see the
+                    sidebar boundary note above. */}
+                <Suspense fallback={null}>
+                  <CategorySort
+                    currentSort={sortParam}
+                    activeFilters={activeFilterStrings}
+                    limitedSortOptions={source.kind === 'tag' || Boolean(searchText)}
+                  />
+                </Suspense>
+              </div>
+            </div>
           </div>
 
           {/* Active search chip — mirrors the filter chips below */}
@@ -239,15 +258,6 @@ export async function CategoryResults({
               })}
             </div>
           )}
-
-          {/* Mobile filter drawer (renders CategoryFilters → useSearchParams) */}
-          <Suspense fallback={null}>
-            <FilterDrawer
-              filters={filters}
-              activeFilters={activeFilterStrings}
-              currentSort={sortParam}
-            />
-          </Suspense>
 
           {/* Product grid. Only THIS subtree reacts to a pending navigation:
               products dim but stay on screen, so nothing flashes and the

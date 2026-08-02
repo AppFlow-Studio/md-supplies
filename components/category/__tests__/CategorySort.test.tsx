@@ -18,7 +18,7 @@ beforeEach(() => {
 })
 
 function selectSort(label: string) {
-  fireEvent.click(screen.getByText('SORT BY:'))
+  fireEvent.click(screen.getByText('Sort:'))
   fireEvent.click(screen.getByText(label))
 }
 
@@ -67,7 +67,7 @@ describe('CategorySort limitedSortOptions', () => {
   it('renders all 5 options when limitedSortOptions is unset (no regression)', () => {
     render(<CategorySort activeFilters={[]} />)
 
-    fireEvent.click(screen.getByText('SORT BY:'))
+    fireEvent.click(screen.getByText('Sort:'))
 
     expect(screen.getAllByText('Featured').length).toBeGreaterThan(0)
     expect(screen.getByText('Best Selling')).toBeInTheDocument()
@@ -79,7 +79,7 @@ describe('CategorySort limitedSortOptions', () => {
   it('renders only Featured/Price options when limitedSortOptions is true', () => {
     render(<CategorySort activeFilters={[]} limitedSortOptions />)
 
-    fireEvent.click(screen.getByText('SORT BY:'))
+    fireEvent.click(screen.getByText('Sort:'))
 
     expect(screen.getAllByText('Featured').length).toBeGreaterThan(0)
     expect(screen.getByText('Price: Low to High')).toBeInTheDocument()

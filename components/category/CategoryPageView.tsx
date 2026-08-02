@@ -27,6 +27,7 @@ import { withTrackingParams } from '@/lib/analytics/tracking-params'
 import { getNonce } from '@/lib/csp-nonce'
 import { getCategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
+import { SubcategoryNavigator } from '@/components/category/SubcategoryNavigator'
 
 // Server-rendered category view for the single canonical route
 // app/category/[slug], which reads searchParams directly. The former
@@ -252,28 +253,19 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         </div>
       </div>
 
-      {/* ── Subcategory tabs ── */}
-      {subcategories.length > 0 && (
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
-          <div className="flex flex-wrap gap-2 items-center">
-            {subcategories.map((sub) => (
-              <Link
-                key={sub.slug}
-                href={ROUTES.subcategory(slug, sub.slug)}
-                className="border border-[rgba(102,102,100,0.2)] bg-white text-navy-900 text-[13px] font-semibold px-4 h-[52px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
-              >
-                {sub.label}
-              </Link>
-            ))}
-            <Link
-              href={ROUTES.category(slug)}
-              className="bg-navy-900 text-white text-[13px] font-semibold px-4 h-[52px] flex items-center hover:bg-navy-800 transition-colors whitespace-nowrap"
-            >
-              All
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* ── Subcategory navigation (Phase 7) ──
+          Was a flex-wrap wall of 52px buttons; with 47-97 subcategories on the
+          big categories that pushed products well below the fold. */}
+      <SubcategoryNavigator
+        items={subcategories.map((sub) => ({
+          label: sub.label,
+          href: ROUTES.subcategory(slug, sub.slug),
+        }))}
+        allHref={ROUTES.category(slug)}
+        allLabel={`All ${collection.title}`}
+        allActive
+        ariaLabel={`${collection.title} subcategories`}
+      />
 
       {/* Main layout */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">

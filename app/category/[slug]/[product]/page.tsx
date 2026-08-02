@@ -7,12 +7,11 @@ import type { Product, CollectionProduct } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { CategoryResults } from '@/components/category/CategoryResults'
+import { SubcategoryNavigator } from '@/components/category/SubcategoryNavigator'
 import { parseSortKey, parseFilterParam, parseSearchParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
-import { CategoryImage } from '@/components/shared/CategoryImage'
-import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
@@ -142,8 +141,6 @@ async function renderSubcategoryPage(
     : undefined
 
   const canonicalUrl = `${SITE_URL}${ROUTES.subcategory(slug, handle)}`
-  const bannerPath = getSubcategoryBannerPath(node.tag)
-  const bannerAlt = `${title} — MDSupplies medical supplies`
   const seoData = getSubcategorySeo(slug, handle)
 
   return (
@@ -157,21 +154,16 @@ async function renderSubcategoryPage(
         />
       </div>
 
-      {/* Simpler thumbnail-style banner for L2 subcategory pages (§3.3),
-          vs. the split hero on L1 category pages. */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
-        <div className="relative w-full h-[180px] sm:h-[220px] overflow-hidden">
-          <CategoryImage bannerPath={bannerPath} alt={bannerAlt} sizes="100vw" />
-        </div>
-      </div>
-
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
-        <h1 className="text-navy-900 text-[36px] sm:text-[44px] font-semibold leading-[1.2] tracking-[-0.01em] mb-2">
+      {/* Compact L2 header (Phase 9): breadcrumb + H1 + parent context. No
+          full-width banner — an L2 page should reach its products fast, and
+          the wide thumbnail was mostly empty space once the CDN failed. */}
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-4">
+        <h1 className="text-navy-900 text-[26px] sm:text-[32px] font-semibold leading-[1.15] tracking-[-0.01em] mb-1">
           {seoData ? seoData.h1 : title}
         </h1>
         <p className="text-gray-500 text-[15px]">Part of {l1.displayName}</p>
         {seoData && (
-          <p className="text-gray-500 text-[15px] leading-[1.75] mt-2 max-w-[640px]">
+          <p className="text-gray-500 text-[15px] leading-[1.6] mt-2 max-w-[640px] line-clamp-2">
             {seoData.answerBlock}
           </p>
         )}
@@ -185,30 +177,20 @@ async function renderSubcategoryPage(
         )}
       </div>
 
-      {siblings.length > 0 && (
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
-          <div className="flex flex-wrap gap-2 items-center">
-            <Link
-              href={ROUTES.category(slug)}
-              className="border border-gray-200 bg-white text-navy-900 text-[13px] font-semibold px-4 h-[44px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
-            >
-              All {l1.displayName}
-            </Link>
-            {siblings.map((sib) => (
-              <Link
-                key={sib.tag}
-                href={ROUTES.subcategory(slug, sib.tag)}
-                className="border border-gray-200 bg-white text-navy-900 text-[13px] font-semibold px-4 h-[44px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
-              >
-                {humanizeTag(sib.tag)}
-              </Link>
-            ))}
-            <span className="bg-navy-900 text-white text-[13px] font-semibold px-4 h-[44px] flex items-center whitespace-nowrap">
-              {title}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Sibling subcategories (Phase 7): the current one is marked active
+          inside the navigator rather than appended as a dead chip. */}
+      <SubcategoryNavigator
+        items={[
+          ...siblings.map((sib) => ({
+            label: humanizeTag(sib.tag),
+            href: ROUTES.subcategory(slug, sib.tag),
+          })),
+          { label: title, href: ROUTES.subcategory(slug, handle), active: true },
+        ].sort((a, b) => a.label.localeCompare(b.label))}
+        allHref={ROUTES.category(slug)}
+        allLabel={`All ${l1.displayName}`}
+        ariaLabel={`${l1.displayName} subcategories`}
+      />
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
         <CategoryResults
