@@ -13,6 +13,26 @@
 
 export const RX_TAG = 'compliance:rx-only'
 
+// Legacy display tag still present on part of the catalog. Recognised so the
+// RX set can only widen — see the union rule in isRxProduct().
+export const RX_LEGACY_TAG = 'rx-required'
+
+/**
+ * The store's own RX declaration, `custom.is_rx_only`.
+ *
+ * Catalog audit 2026-08-02 (docs/audits/2026-08-02-catalog-cro): the metafield
+ * is true on 501 products while the tag covers only 461 — the tag set is a
+ * strict SUBSET. The 40-product gap is all ACTIVE and unambiguously
+ * prescription (Xylocaine w/ Epinephrine, Bupivacaine injection, Bacteriostatic
+ * Water marked "Physician's License Required"). Keying on the tag alone made
+ * them invisible to the gate.
+ *
+ * Reading this field decides no policy — it consumes a declaration Shopify
+ * already carries, and it can only ADD products to the RX set, never remove
+ * them. PENDING IZZY: confirm the canonical source and reconcile the two.
+ */
+export const RX_PRODUCT_METAFIELD = { namespace: 'custom', key: 'is_rx_only' } as const
+
 // Customer metafields storing the account-level document state. Written
 // server-side via the Admin API (lib/shopify/admin.ts), never from the
 // browser token.
@@ -34,6 +54,14 @@ export type RxProductInput = {
   tags?: string[]
   vendor?: string
   title?: string
+  /** `custom.is_rx_only` when the query selected it (raw metafield or value). */
+  isRxOnly?: { value: string } | string | null
+}
+
+/** Truthy Shopify boolean-metafield values ("true"/"1"/"yes"). */
+function metafieldIsTrue(v: RxProductInput['isRxOnly']): boolean {
+  const raw = typeof v === 'string' ? v : v?.value
+  return ['true', '1', 'yes'].includes((raw ?? '').trim().toLowerCase())
 }
 
 /**
@@ -51,9 +79,20 @@ export function isExemptProduct(product: RxProductInput): boolean {
   return isInsulinSyringeExempt(product)
 }
 
-/** RX-flagged product per the canonical source, before exemptions. */
+/**
+ * RX-flagged per the canonical sources, before exemptions.
+ *
+ * UNION of the tag and the store's `custom.is_rx_only` metafield: a product is
+ * RX if EITHER says so. Union (not intersection) is the fail-safe direction —
+ * a disagreement between the two sources can only widen the RX set, never
+ * silently drop a prescription item.
+ */
 export function isRxProduct(product: RxProductInput): boolean {
-  return (product.tags ?? []).some((t) => t.trim().toLowerCase() === RX_TAG)
+  const tagged = (product.tags ?? []).some((t) => {
+    const v = t.trim().toLowerCase()
+    return v === RX_TAG || v === RX_LEGACY_TAG
+  })
+  return tagged || metafieldIsTrue(product.isRxOnly)
 }
 
 /** An RX line that actually gates checkout = RX-flagged and not exempt. */

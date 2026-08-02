@@ -116,3 +116,45 @@ describe('resolveGateStatus — enforcement DISABLED (launch default)', () => {
     }
   })
 })
+
+/**
+ * Catalog audit 2026-08-02: `custom.is_rx_only` is true on 501 products while
+ * the RX tag covers only 461 — the tag set is a strict subset. Keying on the
+ * tag alone left 40 ACTIVE prescription products (injectable anesthetics,
+ * bacteriostatic water) undetected. Detection now UNIONs the two signals so a
+ * source disagreement can only widen the RX set.
+ */
+describe('isRxProduct — union of tag and custom.is_rx_only metafield', () => {
+  it('detects via the canonical tag alone', () => {
+    expect(isRxProduct({ tags: ['compliance:rx-only'] })).toBe(true)
+  })
+
+  it('detects via the legacy display tag alone', () => {
+    expect(isRxProduct({ tags: ['rx-required'] })).toBe(true)
+  })
+
+  it('detects via the metafield alone — the 40-product gap', () => {
+    expect(isRxProduct({ tags: [], isRxOnly: { value: 'true' } })).toBe(true)
+    expect(isRxProduct({ tags: ['category:pharmacy-products'], isRxOnly: 'true' })).toBe(true)
+  })
+
+  it('accepts the truthy metafield spellings Shopify emits', () => {
+    for (const v of ['true', 'TRUE', ' True ', '1', 'yes']) {
+      expect(isRxProduct({ tags: [], isRxOnly: { value: v } }), `value ${v}`).toBe(true)
+    }
+  })
+
+  it('stays false for non-RX products and falsy/absent metafield values', () => {
+    for (const v of ['false', '0', 'no', '', null, undefined]) {
+      expect(isRxProduct({ tags: [], isRxOnly: v as never }), `value ${String(v)}`).toBe(false)
+    }
+    expect(isRxProduct({ tags: ['category:gloves'] })).toBe(false)
+    expect(isRxProduct({})).toBe(false)
+  })
+
+  it('exemptions still apply on top of the widened detection', () => {
+    // Dynarex exemption (June client decision) must survive the union.
+    expect(isRxProduct({ tags: [], isRxOnly: { value: 'true' }, vendor: 'Dynarex' })).toBe(true)
+    expect(isGatedRxProduct({ tags: [], isRxOnly: { value: 'true' }, vendor: 'Dynarex' })).toBe(false)
+  })
+})

@@ -23,6 +23,11 @@ const CART_FRAGMENT = `#graphql
               handle
               vendor
               tags
+              # RX detection reads the tag AND the store's own declaration:
+              # the tag set is a strict subset of this metafield (40 active
+              # prescription products carry the metafield but no tag).
+              # See lib/rx-gate.ts and the 2026-08-02 catalog audit.
+              isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
               images(first: 1) {
                 nodes { id url altText width height }
               }

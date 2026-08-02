@@ -162,6 +162,8 @@ export type CartLine = {
       handle: string;
       vendor: string;
       tags: string[];
+      /** `custom.is_rx_only` — second RX signal, union'd with the tag. */
+      isRxOnly?: { value: string } | null;
       images: { nodes: ProductImage[] };
     };
   };
