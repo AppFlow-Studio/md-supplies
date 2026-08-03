@@ -130,24 +130,31 @@ export type RxGateStatus = {
 }
 
 /**
- * RX checkout ENFORCEMENT flag (plan §9.1 — BLOCKED).
+ * RX checkout ENFORCEMENT flag — ON by default.
  *
- * The execution plan lists RX account-level upload and checkout enforcement as
- * a blocked compliance decision: affected products/states, acceptable
- * documents, verification owner, expiry, guest flow, retention/deletion, and
- * the checkout rule itself are all unresolved. Implementation existing is not
- * approval.
+ * HISTORY, because this default was flipped twice and the reason matters:
+ * a prior pass read the execution plan's "§9.1 BLOCKED" note as a reason to
+ * ship enforcement DISABLED. That was wrong for this business: the RX
+ * account/document flow is an existing, deliberately-built compliance control
+ * (forced sign-in → document upload → server-side recheck before checkout),
+ * and defaulting it off silently removed the gate on prescription items.
+ * Bilal confirmed on 2026-08-02 that the flow must be preserved and active.
  *
- * So enforcement is off unless explicitly enabled, and it fails safe on any
- * unset/invalid value. With it disabled the upload UI, storage, scanning, and
- * document state all still work (a customer may add a document voluntarily)
- * and the RX Only label still displays — only the checkout BLOCK is withheld.
+ * So enforcement is ON unless someone explicitly turns it off, and only the
+ * exact string "false" does that. Any other value — unset, empty, typo'd,
+ * "0", "no" — leaves the gate ON. The failure direction is deliberate: an
+ * over-gated sale is recoverable, an ungated prescription sale is not.
  *
- * To enable: record the written client/compliance approval in the repo, then
- * set RX_CHECKOUT_ENFORCEMENT=true in the target environment.
+ * The kill-switch exists purely as an emergency rollback if the gate ever
+ * misfires in production; it is not a launch toggle.
+ *
+ * SCOPE: this is the storefront UX gate. It is NOT, and must not be described
+ * as, a bypass-proof legal control — a determined user can still reach a
+ * checkout URL directly. The bypass-resistant control is the companion Shopify
+ * validation app, which is untouched by this flag.
  */
 export function isRxEnforcementEnabled(): boolean {
-  return process.env.RX_CHECKOUT_ENFORCEMENT === 'true'
+  return process.env.RX_CHECKOUT_ENFORCEMENT !== 'false'
 }
 
 export function resolveGateStatus(input: {

@@ -20,6 +20,7 @@ import { ShippingBlock } from './ShippingBlock'
 import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
+import { isRxProduct } from '@/lib/rx-gate'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 
@@ -125,7 +126,11 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
     estimatedRestockDate: product.estimatedRestockDate,
     availableForSale: selectedVariant.availableForSale,
   })
-  const rxLabel = resolveRxLabel(product.tags)
+  // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the PDP
+  // badge can never disagree with whether the cart will actually be gated.
+  const rxLabel = isRxProduct({ tags: product.tags, isRxOnly: product.isRxOnly })
+    ? resolveRxLabel(['compliance:rx-only'])
+    : null
 
   const stockStatus: 'available' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return backorderLabel ? 'backordered' : 'out_of_stock'

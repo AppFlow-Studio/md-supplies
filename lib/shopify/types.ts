@@ -69,6 +69,8 @@ export type ProductMetafields = {
   needleLength: string | null;
   sizeLength: string | null;
   estimatedRestockDate: string | null;
+  /** Raw `custom.is_rx_only`; union'd with the RX tag by lib/rx-gate.ts. */
+  isRxOnly?: { value: string } | null;
   testsFor: string | null;
   detectableDrugs: string | null;
   adulterants: string | null;

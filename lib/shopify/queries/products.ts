@@ -94,6 +94,11 @@ export const GET_PRODUCT = `#graphql
       # a quiet switch-on.
       brandName: metafield(namespace: "custom", key: "brand_name") { value }
       estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+      # RX: the gate UNIONs the compliance:rx-only tag with the store's own
+      # declaration. The tag set is a strict SUBSET of this metafield (40 active
+      # prescription products carry the metafield and no tag), so the PDP must
+      # read both or its badge disagrees with the cart gate.
+      isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
     }
   }
 `;

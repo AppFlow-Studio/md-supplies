@@ -71,14 +71,15 @@ describe('resolveGateStatus — enforcement ENABLED', () => {
 })
 
 /**
- * Plan §9.1: RX checkout enforcement is a BLOCKED compliance decision, so it
- * must not be able to block a customer's checkout at the launch default.
- * These tests are the guard on that.
+ * The kill-switch (RX_CHECKOUT_ENFORCEMENT=false) exists ONLY as an emergency
+ * rollback if the gate misfires in production. It is not a launch toggle: the
+ * RX account/document flow is an existing compliance control and ships ON.
+ * Default-ON behaviour is covered in rx-compliance-regression.test.ts.
  */
-describe('resolveGateStatus — enforcement DISABLED (launch default)', () => {
+describe('resolveGateStatus — emergency kill-switch explicitly set to false', () => {
   const off = { enforcementEnabled: false }
 
-  it('never blocks, whatever the cart and account state', () => {
+  it('does not block, whatever the cart and account state', () => {
     for (const signedIn of [true, false]) {
       for (const hasDocument of [true, false]) {
         for (const verified of [true, false]) {
@@ -97,18 +98,17 @@ describe('resolveGateStatus — enforcement DISABLED (launch default)', () => {
     expect(status.blocked).toBe(false)
   })
 
-  it('defaults to disabled when the env flag is unset or not exactly "true"', async () => {
+  it('requires the exact string "false" — no near-miss value disables the gate', async () => {
     const original = process.env.RX_CHECKOUT_ENFORCEMENT
     try {
-      for (const value of [undefined, '', 'false', 'TRUE', '1', 'yes']) {
+      for (const value of [undefined, '', 'FALSE', '0', 'no', 'off']) {
         if (value === undefined) delete process.env.RX_CHECKOUT_ENFORCEMENT
         else process.env.RX_CHECKOUT_ENFORCEMENT = value
         const { isRxEnforcementEnabled } = await import('../rx-gate')
-        expect(isRxEnforcementEnabled(), `value ${JSON.stringify(value)} must not enable enforcement`).toBe(false)
-        // No explicit flag → resolveGateStatus reads the env and cannot block.
+        expect(isRxEnforcementEnabled(), `value ${JSON.stringify(value)} must NOT disable the gate`).toBe(true)
         expect(
           resolveGateStatus({ cartHasRx: true, signedIn: false, hasDocument: false, verified: false }).blocked,
-        ).toBe(false)
+        ).toBe(true)
       }
     } finally {
       if (original === undefined) delete process.env.RX_CHECKOUT_ENFORCEMENT
