@@ -138,7 +138,8 @@ export function QuickAddContent({ product, titleId }: Props) {
         {!selectedVariant?.available && (
           <div className="flex items-center gap-2">
             <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
-            <p className="text-red-500 text-[13px] font-semibold tracking-[0.26px]">
+            {/* red-700 for the same 4.5:1 contrast reason as ProductView. */}
+            <p className="text-red-700 text-[13px] font-semibold tracking-[0.26px]">
               Out of Stock
             </p>
           </div>

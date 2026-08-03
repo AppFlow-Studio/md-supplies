@@ -216,7 +216,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {partnerSlug ? (
                   <Link
                     href={`/partners/${partnerSlug}`}
-                    className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase hover:text-teal-600 transition-colors"
+                    className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase hover:text-teal-700 transition-colors"
                   >
                     {brandDisplay}
                   </Link>
@@ -255,7 +255,11 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {stockStatus === 'out_of_stock' && (
                   <>
                     <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
-                    <span className="text-red-500 text-[13px] font-semibold tracking-[0.26px]">
+                    {/* red-700, not red-500: at 13px, red-500 on white is
+                        3.81:1 — below the 4.5:1 WCAG AA minimum and flagged
+                        serious by axe. red-700 is 6.42:1, which matters for a
+                        storefront serving older shoppers. */}
+                    <span className="text-red-700 text-[13px] font-semibold tracking-[0.26px]">
                       Out of Stock
                     </span>
                   </>

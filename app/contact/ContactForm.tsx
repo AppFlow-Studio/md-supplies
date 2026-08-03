@@ -65,7 +65,7 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-7" noValidate>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="name" className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.06em]">
-          Full Name <span className="text-red-500">*</span>
+          Full Name <span className="text-red-700">*</span>
         </label>
         <input
           id="name"
@@ -84,7 +84,7 @@ export function ContactForm() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="email" className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.06em]">
-          Email Address <span className="text-red-500">*</span>
+          Email Address <span className="text-red-700">*</span>
         </label>
         <input
           id="email"
@@ -121,7 +121,7 @@ export function ContactForm() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="message" className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.06em]">
-          Message <span className="text-red-500">*</span>
+          Message <span className="text-red-700">*</span>
         </label>
         <textarea
           id="message"
