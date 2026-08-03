@@ -65,3 +65,8 @@ next-env.d.ts
 # Phase 13 responsive capture output — 14MB of regenerable PNGs.
 # Regenerate: E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/responsive.spec.ts
 docs/audits/2026-08-02-catalog-cro/screenshots/
+
+# Phase 8 bulk migration evidence — ~81k lines, regenerable from
+# scripts/industries-mapping-dryrun.mjs + the dated catalog export.
+# Committed instead: summary, unmapped, rollback SCHEMA, sha256 checksums.
+docs/audits/2026-08-02-catalog-cro/evidence/
