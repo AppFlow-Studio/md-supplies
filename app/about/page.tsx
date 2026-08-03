@@ -141,7 +141,7 @@ export default function AboutPage() {
                 <h3 className="text-[#f9fafc] text-[22px] font-semibold leading-[1.3]">
                   Trusted Brands
                 </h3>
-                <p className="text-[#9e9e9e] text-[15px] leading-[1.65]">
+                <p className="text-ink-muted-on-dark text-[15px] leading-[1.65]">
                   BD, Dynarex, Cardinal Health — names you know.
                 </p>
               </div>
@@ -197,7 +197,7 @@ export default function AboutPage() {
               <h3 className="text-[#f9fafc] text-[30px] sm:text-[35px] font-semibold leading-[1.1] mb-3 drop-shadow-md">
                 Fast Fulfillment
               </h3>
-              <p className="text-[#9e9e9e] text-[15px] leading-[1.65] max-w-[480px] drop-shadow">
+              <p className="text-ink-muted-on-dark text-[15px] leading-[1.65] max-w-[480px] drop-shadow">
                 Orders ship from our warehouse to facilities nationwide.
               </p>
             </div>

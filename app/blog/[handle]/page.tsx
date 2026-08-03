@@ -209,7 +209,7 @@ export default async function ArticlePage({ params }: Props) {
               {/* Meta: date + read time */}
               <p className="text-teal-500 text-[13px] tracking-[0.75px] uppercase mb-3 font-semibold">
                 {publishedDate}
-                <span className="text-gray-300 mx-2">•</span>
+                <span aria-hidden="true" className="text-ink-separator mx-2">•</span>
                 <span className="text-gray-500 font-normal">{readMins} min read</span>
               </p>
 

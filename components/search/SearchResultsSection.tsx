@@ -70,7 +70,7 @@ export function SearchResultsSection({
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-6">
-        <Search size={48} className="text-gray-300" />
+        <Search size={48} aria-hidden className="text-gray-300" />
         <div className="text-center">
           <p className="text-navy-900 text-[20px] font-semibold mb-2">
             No results for &ldquo;{q}&rdquo;

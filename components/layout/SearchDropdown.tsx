@@ -320,7 +320,7 @@ export function SearchDropdown({ onClose }: Props) {
                 <button
                   type="button"
                   onClick={() => navigate(`/search?q=${encodeURIComponent(query)}`)}
-                  className="text-[12px] font-semibold text-teal-500 hover:text-teal-700 transition-colors flex items-center gap-1 focus:outline-none"
+                  className="text-[12px] font-semibold text-teal-500 hover:text-ink-link transition-colors flex items-center gap-1 focus:outline-none"
                 >
                   See all results for &ldquo;{query}&rdquo;
                   <ArrowRight size={11} />

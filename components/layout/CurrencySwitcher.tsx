@@ -82,7 +82,7 @@ export function CurrencySwitcher({ availableCountries }: Props) {
               onClick={() => handleSelect(country)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-[13px] hover:bg-neutral-50 transition-colors text-left ${
                 country.isoCode === currentIsoCode
-                  ? 'text-teal-700 font-semibold bg-teal-50'
+                  ? 'text-ink-link font-semibold bg-teal-50'
                   : 'text-navy-900'
               }`}
             >

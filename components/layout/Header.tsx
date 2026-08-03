@@ -315,7 +315,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
                   <div className="mt-4 pt-3 border-t border-gray-100">
                     <Link
                       href={ROUTES.categories}
-                      className="text-[13px] text-teal-500 font-semibold hover:text-teal-700 transition-colors"
+                      className="text-[13px] text-teal-500 font-semibold hover:text-ink-link transition-colors"
                     >
                       Browse all categories →
                     </Link>

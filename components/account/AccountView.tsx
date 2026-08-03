@@ -162,7 +162,7 @@ function LoggedOutView() {
                 href={href}
                 className="group flex items-center gap-2 px-4 py-2.5 border border-gray-200 hover:border-teal-400 transition-colors"
               >
-                <Icon size={16} className="text-gray-400 group-hover:text-teal-500 transition-colors shrink-0" />
+                <Icon size={16} className="text-gray-500 group-hover:text-ink-link transition-colors shrink-0" />
                 <span className="text-[13px] font-semibold uppercase tracking-[0.3px] text-gray-500 group-hover:text-teal-500 transition-colors whitespace-nowrap">
                   {label}
                 </span>

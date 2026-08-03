@@ -365,7 +365,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
                 </p>
                 <Link
                   href={ROUTES.solutions.occ}
-                  className="border border-teal-500 bg-teal-50 text-teal-700 text-[14px] px-4 py-2 hover:bg-teal-100 transition-colors inline-block"
+                  className="border border-teal-500 bg-teal-50 text-ink-link text-[14px] px-4 py-2 hover:bg-teal-100 transition-colors inline-block"
                 >
                   OCC Program — Bulk Orders
                 </Link>

@@ -85,7 +85,7 @@ export function CartPageClient() {
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14">
         <h1 className="text-navy-900 text-[32px] font-bold mb-8">Your Cart</h1>
         <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <ShoppingCart size={56} className="text-gray-300" />
+          <ShoppingCart size={56} aria-hidden className="text-gray-300" />
           <p className="text-gray-500 text-[15px]">Your cart is empty</p>
           <Link href="/" className="text-teal-500 text-[14px] font-semibold hover:underline">
             Continue Shopping

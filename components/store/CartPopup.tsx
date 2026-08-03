@@ -135,7 +135,7 @@ export function CartPopup() {
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {lines.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 py-20">
-              <ShoppingCart size={48} className="text-gray-300" />
+              <ShoppingCart size={48} aria-hidden className="text-gray-300" />
               <p className="text-gray-500 text-[15px] tracking-[0.3px]">Your cart is empty</p>
               <button
                 type="button"

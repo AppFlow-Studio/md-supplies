@@ -41,7 +41,7 @@ export function RelatedArticles({ articles, heading = 'More Articles' }: Props) 
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3 flex-wrap">
                   {a.tags[0] && (
-                    <span className="bg-teal-50 text-teal-700 text-[11px] font-semibold px-2 py-0.5 border border-teal-200 uppercase tracking-[0.22px]">
+                    <span className="bg-teal-50 text-ink-link text-[11px] font-semibold px-2 py-0.5 border border-teal-200 uppercase tracking-[0.22px]">
                       {a.tags[0]}
                     </span>
                   )}

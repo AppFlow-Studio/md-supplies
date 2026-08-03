@@ -7,9 +7,9 @@ export default function ProductLoading() {
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
         <div className="flex items-center gap-2">
           <Skeleton className="h-4 w-10" />
-          <span className="text-gray-300">›</span>
+          <span aria-hidden="true" className="text-ink-separator">›</span>
           <Skeleton className="h-4 w-20" />
-          <span className="text-gray-300">›</span>
+          <span aria-hidden="true" className="text-ink-separator">›</span>
           <Skeleton className="h-4 w-40" />
         </div>
       </div>

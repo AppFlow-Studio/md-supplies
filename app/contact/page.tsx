@@ -26,14 +26,14 @@ export default function ContactPage() {
           <address className="not-italic text-gray-500 text-[15px] leading-[1.75] mb-10 space-y-0.5">
             <p>
               Email:{' '}
-              <a href={`mailto:${SITE_CONTACT.email}`} className="text-teal-700 hover:text-teal-500 transition-colors">
+              <a href={`mailto:${SITE_CONTACT.email}`} className="text-ink-link hover:text-ink-link-hover transition-colors">
                 {SITE_CONTACT.email}
               </a>
             </p>
             {SITE_CONTACT.phone && (
               <p>
                 Phone:{' '}
-                <a href={`tel:${SITE_CONTACT.phone}`} className="text-teal-700 hover:text-teal-500 transition-colors">
+                <a href={`tel:${SITE_CONTACT.phone}`} className="text-ink-link hover:text-ink-link-hover transition-colors">
                   {SITE_CONTACT.phoneDisplay ?? SITE_CONTACT.phone}
                 </a>
               </p>
