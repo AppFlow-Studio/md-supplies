@@ -51,12 +51,19 @@ Add these fields exactly:
 
 | Field name | Key | Type | Required |
 |---|---|---|---|
+| Internal name | `internal_name` | Single line text | ✅ |
 | Text | `text` | Single line text | ✅ |
 | Accessible text | `accessible_text` | Single line text | — |
 | Style | `style` | Single line text | — |
 | Priority | `priority` | Integer | — |
 | Starts at | `starts_at` | Date and time | — |
 | Ends at | `ends_at` | Date and time | — |
+| Destination URL | `destination_url` | URL | — |
+| Active | `is_active` | True or false | — |
+
+`internal_name` is what you type in the assignment CSV; `text` is what the
+customer sees. Keeping them separate lets you rename customer copy without
+breaking your CSVs.
 
 Then, still on the definition: **Storefronts → enable "Storefront API"** access.
 Without this the storefront reads `null`.
@@ -113,10 +120,12 @@ render, so nothing downstream changes. It also:
    unknown or conflicting, the customer sees *"Shipping calculated at
    checkout."* This is the precedence rule from the execution plan §8.3 and it
    is deliberately not overridable from Admin.
-2. **An `Rx Only` label is display only.** It never gates checkout. Checkout
-   enforcement is a separate, flag-gated compliance decision
-   (`RX_CHECKOUT_ENFORCEMENT`, off by default) pending the outstanding
-   client/legal answers.
+2. **An `Rx Only` label is display only.** It never gates checkout, and it can
+   neither create nor clear RX status. The real gate is the account/document
+   flow in `lib/rx-gate.ts` (tag ∪ `custom.is_rx_only`), which is **ON by
+   default**; `RX_CHECKOUT_ENFORCEMENT=false` exists only as an emergency kill
+   switch. A regression test proves a label reading "Rx Only" on a non-RX
+   product does not gate that cart.
 
 ### Backorder: prefer the field you already have
 
@@ -145,3 +154,94 @@ Send them the request in `audit/izzy-production-handoff-2026-07-30.md` (IZ-03).
 If they confirm a supported API, app proxy, metafield output or webhook, the
 provider stub at `lib/labels/fordeer-provider.ts` is where it plugs in — it
 already fails safe and refuses to invent labels.
+
+---
+
+## Tooling (all read-only / dry-run — no Shopify writes)
+
+### 1. Detect whether the definitions exist
+
+```bash
+node scripts/labels-detect-definitions.mjs
+```
+
+Read-only. Reports whether the `product_label` metaobject and the
+`custom.product_labels` metafield exist, which required fields are present, and
+whether any Fordeer-owned data is reachable. Exit 0 = ready, 1 = not ready.
+
+Run against this store on 2026-08-02: **both MISSING**, and **no Fordeer-owned
+Shopify data of any kind** — confirming the storefront correctly renders nothing
+and that Fordeer keeps its rules outside Shopify.
+
+### 2. Plan assignments from your CSV (dry run)
+
+```bash
+node scripts/labels-assign-dryrun.mjs your-list.csv
+```
+
+**Input CSV** (header required, column order free):
+
+| column | required | use |
+|---|---|---|
+| `product_id` | preferred | Shopify product GID or numeric id — the identity |
+| `handle` | fallback | resolved read-only; must match exactly one product |
+| `sku` | optional | **reference only, never used to match** |
+| `label` | yes | the `internal_name` of an existing `product_label` |
+
+`sku` is deliberately non-identifying: the catalog has **3,166 SKU values that
+span more than one product**, so matching on SKU would assign labels to the
+wrong items.
+
+**Outputs** (written, never applied):
+
+- `labels-proposed-writes.json` — per product: current value, proposed value,
+  and whether it is a no-op
+- `labels-rollback.json` — each product's **current** value, captured before
+  anything is planned, so a future write can be reverted exactly
+- `labels-rejected.csv` — rows that could not be safely resolved (unknown
+  label, unresolvable handle, no identity), with the reason. Rejected rows are
+  never guessed.
+
+### 3. Applying the plan
+
+Not implemented, deliberately. Applying requires a Shopify write and therefore
+your separate explicit approval. When approved, the apply step consumes
+`labels-proposed-writes.json` and `labels-rollback.json` is the revert.
+
+## Storefront query fragment (add when the definitions exist)
+
+Against the official Storefront schema. Add to each product/card selection:
+
+```graphql
+productLabels: metafield(namespace: "custom", key: "product_labels") {
+  references(first: 10) {
+    nodes {
+      ... on Metaobject {
+        handle
+        fields { key value }
+      }
+    }
+  }
+}
+```
+
+`lib/labels/shopify-labels.ts` already consumes exactly this shape via
+`resolveShopifyLabels()`. It is not wired into the live queries yet: requesting
+a metafield whose definition does not exist is harmless but noisy, and the
+shape should be confirmed against real definitions rather than assumed.
+
+## Hard limits enforced in code
+
+These labels are **presentation only**. They may never be a source for:
+
+| Concern | Real source |
+|---|---|
+| Free shipping | shipping resolver `public_display_class` |
+| RX gating | `lib/rx-gate.ts` (tag ∪ `custom.is_rx_only`) |
+| Availability / out of stock | Shopify `availableForSale` |
+| Backorder state | `custom.estimated_back_order_restock_date` |
+| Price | Shopify variant price |
+| Fulfillment policy | Shopify delivery profiles |
+
+A regression test asserts a label reading "Rx Only" on a non-RX product does
+**not** gate that cart, and that no label can clear RX status on a real one.
