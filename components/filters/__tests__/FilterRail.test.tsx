@@ -55,6 +55,8 @@ describe('FilterRail — optimistic multi-select (NF6)', () => {
   it('two rapid checkbox clicks keep BOTH selections in the second URL', () => {
     render(<FilterRail filters={[VENDOR_FACET]} activeFilters={[]} buildUrl={buildUrl} />)
 
+    // Phase 3: non-Category groups start COLLAPSED, so open it first.
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
     // No prop update happens between the clicks (server round-trip pending)
     const boxes = screen.getAllByRole('checkbox')
     fireEvent.click(boxes[0])

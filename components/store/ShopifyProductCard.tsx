@@ -10,6 +10,7 @@ import { cleanShopifyAlt } from '@/lib/alt-text'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
+import { hasUsablePrice } from '@/lib/purchasability'
 
 interface Props {
   product: CollectionProduct
@@ -71,13 +72,10 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             <div className="absolute inset-0 bg-white/60" />
           )}
         </Link>
-
-        {/* Quick add — sibling of the image link, not nested inside it, so clicks never navigate */}
-        <ShopifyQuickAddButton product={product} />
       </div>
 
       {/* Info */}
-      <Link href={href} onClick={handleSelect} className="px-[22px] pt-[19px] pb-[22px] flex flex-col">
+      <Link href={href} onClick={handleSelect} className="px-[22px] pt-[19px] pb-3 flex flex-col flex-1">
         {/* Public brand only (custom.brand_name). `vendor` is the FULFILLING
             vendor and must never be shown as a brand — when no approved brand
             exists the line is omitted entirely (lib/brand.ts). */}
@@ -121,17 +119,32 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             </div>
           )
         })()}
-        <div className="flex items-baseline gap-2">
-          <span className="text-black text-[18px] font-bold tracking-[0.36px]">
-            ${price.toFixed(2)}
-          </span>
-          {hasDiscount && (
+        {/* Price sits at the bottom of the body (mt-auto) so every card in a
+            row lines its footer up regardless of title length or label count. */}
+        <div className="flex items-baseline gap-2 mt-auto">
+          {hasUsablePrice(price) ? (
+            <span className="text-black text-[18px] font-bold tracking-[0.36px]">
+              ${price.toFixed(2)}
+            </span>
+          ) : (
+            <span className="text-navy-900 text-[15px] font-semibold tracking-[0.3px]">
+              Contact for pricing
+            </span>
+          )}
+          {hasUsablePrice(price) && hasDiscount && (
             <span className="text-gray-500 text-[14px] line-through tracking-[0.28px]">
               ${compareAt!.toFixed(2)}
             </span>
           )}
         </div>
       </Link>
+
+      {/* Card footer/action row (Phase 4). The quick-add control lives HERE,
+          bottom-right of the whole card — not overlaid on the image, where it
+          covered product photography and sat outside the card's own layout. */}
+      <div className="px-[22px] pb-[18px] pt-1 flex items-center justify-end">
+        <ShopifyQuickAddButton product={product} />
+      </div>
     </div>
   )
 }

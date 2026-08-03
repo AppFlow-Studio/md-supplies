@@ -179,12 +179,14 @@ export async function CategoryResults({
             />
           </Suspense>
 
-          {/* Discovery toolbar (Phase 8).
-              Desktop: result count left, sort right, both aligned with the grid.
-              Mobile/tablet: a dedicated row where Filters and Sort sit side by
-              side as equal, clearly-labelled 48px targets — no icon-only
-              ambiguity and no hover-dependent controls. */}
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Discovery toolbar — exact requested hierarchy.
+              Row 1 is the search field ALONE (rendered above). Row 2 is result
+              count left / Sort far right, with Sort pushed to the grid's right
+              edge so it never reads as part of the left filter rail. Row 3 is
+              the active chips. Products follow immediately.
+              Mobile/tablet: full-width search, then Filters + Sort as equal
+              48px controls. */}
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             {/* aria-live: announces updated counts after async filter/search
                 navigations without moving focus. */}
             <p className="text-gray-600 text-[16px]" aria-live="polite" role="status">
@@ -204,7 +206,7 @@ export async function CategoryResults({
                   />
                 </Suspense>
               </div>
-              <div className="flex-1 sm:flex-none">
+              <div className="flex-1 sm:flex-none sm:ml-auto sm:pl-6">
                 {/* Suspense: CategorySort reads useSearchParams() — see the
                     sidebar boundary note above. */}
                 <Suspense fallback={null}>
