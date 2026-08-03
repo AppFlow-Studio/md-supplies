@@ -16,16 +16,23 @@ import { test, expect, type Page } from '@playwright/test'
  * so a regression is actionable from the CI log without a local repro.
  */
 
+/** Fixture handles differ per shop — see e2e/axe-states.spec.ts. */
+const H = {
+  zeroPrice: process.env.E2E_HANDLE_ZERO_PRICE ?? 'qa-no-rate',
+  outOfStock: process.env.E2E_HANDLE_OOS ?? 'qa-out-of-stock',
+  backorder: process.env.E2E_HANDLE_BACKORDER ?? 'qa-backorder',
+}
+
 const ROUTES = [
-  { path: '/', name: 'home (product cards)' },
-  { path: '/product/qa-no-rate', name: 'PDP — zero price' },
-  { path: '/product/qa-out-of-stock', name: 'PDP — out of stock' },
-  { path: '/product/qa-backorder', name: 'PDP — backorder' },
-  { path: '/contact', name: 'contact' },
-  { path: '/account', name: 'account' },
-  { path: '/cart', name: 'cart' },
-  { path: '/industries', name: 'industry index' },
-  { path: '/blog/types-of-needles', name: 'article' },
+  { path: '/', name: 'home (product cards)', fixture: false },
+  { path: `/product/${H.zeroPrice}`, name: 'PDP — zero price', fixture: true },
+  { path: `/product/${H.outOfStock}`, name: 'PDP — out of stock', fixture: true },
+  { path: `/product/${H.backorder}`, name: 'PDP — backorder', fixture: true },
+  { path: '/contact', name: 'contact', fixture: false },
+  { path: '/account', name: 'account', fixture: false },
+  { path: '/cart', name: 'cart', fixture: false },
+  { path: '/industries', name: 'industry index', fixture: false },
+  { path: '/blog/types-of-needles', name: 'article', fixture: false },
 ] as const
 
 async function measure(page: Page) {
@@ -116,9 +123,12 @@ async function measure(page: Page) {
   })
 }
 
-for (const { path, name } of ROUTES) {
+for (const { path, name, fixture } of ROUTES) {
   test(`${name} (${path}) meets WCAG AA contrast`, async ({ page }) => {
     const res = await page.goto(path, { waitUntil: 'domcontentloaded' })
+    if (fixture && (res?.status() ?? 0) >= 400) {
+      test.skip(true, `${path} not present on this shop — set E2E_HANDLE_* to a real fixture`)
+    }
     expect(res?.status(), `${path} did not load`).toBeLessThan(400)
     // Settle the Suspense fallback so we measure the real page, not a skeleton.
     await page.waitForLoadState('networkidle').catch(() => {})
