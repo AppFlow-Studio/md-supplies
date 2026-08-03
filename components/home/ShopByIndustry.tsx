@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
-import { INDUSTRIES } from '@/lib/industries'
+import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
 import { ROUTES } from '@/lib/routes'
 
 export function ShopByIndustry() {
@@ -22,7 +22,8 @@ export function ShopByIndustry() {
         </FadeIn>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {INDUSTRIES.slice(0,4).map(({ name, slug, image }, i) => (
+          {/* Supported industries only — see lib/industries.ts. */}
+          {SUPPORTED_INDUSTRIES.slice(0,4).map(({ name, slug, image }, i) => (
             <FadeIn key={slug} delay={i * 0.08}>
               <Link
                 href={ROUTES.industry(slug)}

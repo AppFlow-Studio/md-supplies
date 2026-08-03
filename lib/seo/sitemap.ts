@@ -7,7 +7,7 @@ import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
 import { CATEGORY_TREE_L1, buildL2Tree } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
-import { INDUSTRIES } from '@/lib/industries'
+import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
 import { STATIC_ARTICLES } from '@/lib/blog-static'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
@@ -132,7 +132,10 @@ export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
 
   // Industry detail pages are index,follow content pages (built out with FAQs
   // in Priority #11), so they belong in the sitemap per closeout §12.2.
-  const industryUrls: SitemapEntry[] = INDUSTRIES.map(i => ({
+  // Only industries with unique content AND a validated assortment. The
+  // sitemap previously listed all twelve while seven of them served noindex,
+  // which asks Google to crawl URLs that then refuse indexing.
+  const industryUrls: SitemapEntry[] = SUPPORTED_INDUSTRIES.map(i => ({
     url: `${SITE_URL}/industries/${i.slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.6,

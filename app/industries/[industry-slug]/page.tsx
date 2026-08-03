@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
 import { getIndustrySeo } from '@/lib/seo/industrySeo'
-import { INDUSTRIES, isIndustryComplete } from '@/lib/industries'
+import { INDUSTRIES, isIndustryIndexable } from '@/lib/industries'
 import { IndustryPage } from '@/components/b2b/IndustryPage'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
@@ -39,7 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     slug: industry.slug,
     image: `${SITE_URL}${industry.image}`,
     // Thin pages (awaiting client FAQ copy) stay out of the index until complete.
-    noIndex: !isIndustryComplete(industry),
+    // Thin OR unbacked by products ⇒ noindex,follow (lib/industries.ts).
+    noIndex: !isIndustryIndexable(industry),
   })
 
   if (seoDB) {

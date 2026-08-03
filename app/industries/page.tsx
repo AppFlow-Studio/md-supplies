@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { INDUSTRIES } from '@/lib/industries'
+import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
 import {BadgeCheck, Headset, Truck} from "lucide-react";
@@ -116,7 +116,12 @@ export default function IndustriesPage() {
             Industries We Serve
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {INDUSTRIES.map(({ name, slug, image, description }) => (
+            {/* Only industries with unique content AND a validated product
+                assortment. Seven of the twelve (EMS, Long-Term Care, Physical
+                Therapy, Private Practice, Dental, Veterinary, Community
+                Health) have NO approved product membership in the catalog, so
+                linking them from here would build a doorway network. */}
+            {SUPPORTED_INDUSTRIES.map(({ name, slug, image, description }) => (
               <Link
                 key={slug}
                 href={`/industries/${slug}`}

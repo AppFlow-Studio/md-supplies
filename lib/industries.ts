@@ -218,3 +218,39 @@ export function isIndustryComplete(industry: Industry): boolean {
     industry.buyerType?.trim() && industry.description?.trim() && industry.faq?.length,
   )
 }
+
+/**
+ * Does this industry have a VALIDATED product assortment?
+ *
+ * Catalog audit 2026-08-02 against the July-7 export: the catalog carries
+ * exactly SIX `industry:` values on active products —
+ *   clinic 6,390 · urgent-care 4,344 · home-care 3,091 · hrt-surgery 531 ·
+ *   pharmacy 282 · occ-charities 106
+ * (counts overlap; a product may carry several). Five of them back an industry
+ * page here; occ-charities is served by /solutions/occ.
+ *
+ * Everything else — EMS, Long-Term Care, Physical Therapy, Private Practice,
+ * Dental, Veterinary, Community Health — has NO approved product membership.
+ * A generic occurrence of "dental" or "physical therapy" inside some other tag
+ * does not establish an industry assignment, and human-medical products must
+ * not be poured into Veterinary just to fill a page.
+ */
+export function hasValidatedAssortment(industry: Industry): boolean {
+  return Boolean(industry.tag?.trim())
+}
+
+/**
+ * Indexable = unique content AND a real assortment. Both are required: a page
+ * with copy but no products is a thin doorway, and a page with products but no
+ * copy is a duplicate of the category it wraps.
+ *
+ * This is the single predicate for metadata robots, sitemap inclusion and the
+ * Industries grid, so those three can no longer disagree — the sitemap
+ * previously listed all twelve while seven of them served `noindex`.
+ */
+export function isIndustryIndexable(industry: Industry): boolean {
+  return isIndustryComplete(industry) && hasValidatedAssortment(industry)
+}
+
+/** Industries safe to surface in navigation, the grid and the sitemap. */
+export const SUPPORTED_INDUSTRIES: Industry[] = INDUSTRIES.filter(isIndustryIndexable)
