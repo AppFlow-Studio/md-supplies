@@ -1,4 +1,4 @@
-import { WholesalePricing } from "@/components/home/WholesalePricing";
+import { WholesalePricingSkeleton } from "@/components/home/WholesalePricingSkeleton";
 import { Skeleton }         from "@/components/ui/Skeleton";
 
 export default function BlogLoading() {
@@ -41,7 +41,7 @@ export default function BlogLoading() {
         </div>
       </section>
 
-      <WholesalePricing />
+      <WholesalePricingSkeleton />
     </main>
   );
 }

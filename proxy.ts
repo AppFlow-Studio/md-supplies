@@ -218,6 +218,20 @@ export function proxy(request: NextRequest): Response {
   // inline scripts Next.js renders for this request.
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-nonce', nonce)
+
+  // Next.js reads the CSP from the REQUEST header to discover the nonce it
+  // must stamp on the script tags IT emits (bootstrap + chunk loaders). Next's
+  // own CSP guide sets both request and response headers; we only set the
+  // response, and the result was that a single chunk script rendered WITHOUT a
+  // nonce on /blog/[handle]. Under 'strict-dynamic' the 'self' source is
+  // ignored, so that one nonce-less same-origin script was blocked outright —
+  // the long-standing console error on that route.
+  //
+  // Setting it here does not widen the policy by one character: it is the
+  // identical string already sent on the response. It only tells Next which
+  // nonce is in force.
+  requestHeaders.set('Content-Security-Policy', buildCsp(nonce, process.env.NODE_ENV === 'development'))
+
   return withCsp(NextResponse.next({ request: { headers: requestHeaders } }), nonce)
 }
 
