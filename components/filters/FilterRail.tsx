@@ -281,7 +281,7 @@ export function FilterRail({ filters, activeFilters, buildUrl }: Props) {
   // back/forward). Render-phase state adjustment per React's
   // "adjusting state when a prop changes" pattern.
   const [selected, setSelected] = useState(activeFilters)
-  const activeKey = activeFilters.join(' ')
+  const activeKey = activeFilters.join('\u0000')
   const [syncedKey, setSyncedKey] = useState(activeKey)
   if (activeKey !== syncedKey) {
     setSyncedKey(activeKey)

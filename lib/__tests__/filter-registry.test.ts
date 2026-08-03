@@ -217,7 +217,7 @@ describe('isAllowedFilterInput (URL ?filter= values)', () => {
   it('accepts known ProductFilter keys', () => {
     expect(isAllowedFilterInput('{"available":true}')).toBe(true)
     expect(isAllowedFilterInput('{"price":{"min":0,"max":50}}')).toBe(true)
-    expect(isAllowedFilterInput('{"productVendor":"Medline"}')).toBe(true)
+    expect(isAllowedFilterInput('{"productType":"Exam Glove"}')).toBe(true)
     expect(isAllowedFilterInput('{"variantOption":{"name":"size","value":"M"}}')).toBe(true)
     expect(
       isAllowedFilterInput('{"productMetafield":{"namespace":"custom","key":"material","value":"nitrile"}}'),
@@ -240,7 +240,7 @@ describe('isAllowedFilterObject (server-action-supplied filter objects)', () => 
   it('accepts already-parsed objects with known ProductFilter keys', () => {
     expect(isAllowedFilterObject({ available: true })).toBe(true)
     expect(isAllowedFilterObject({ price: { min: 0, max: 50 } })).toBe(true)
-    expect(isAllowedFilterObject({ productVendor: 'Medline' })).toBe(true)
+    expect(isAllowedFilterObject({ productType: 'Exam Glove' })).toBe(true)
   })
 
   it('rejects raw-tag objects and unknown keys, mirroring isAllowedFilterInput', () => {
@@ -266,9 +266,9 @@ describe('filter VALUE validation (NF17) — allowed keys with hostile values ar
   })
 
   it('rejects non-string / oversized / empty string values', () => {
-    expect(isAllowedFilterInput('{"productVendor":123}')).toBe(false)
-    expect(isAllowedFilterInput('{"productVendor":""}')).toBe(false)
-    expect(isAllowedFilterInput(`{"productVendor":"${'x'.repeat(200)}"}`)).toBe(false)
+    expect(isAllowedFilterInput('{"productType":123}')).toBe(false)
+    expect(isAllowedFilterInput('{"productType":""}')).toBe(false)
+    expect(isAllowedFilterInput(`{"productType":"${'x'.repeat(200)}"}`)).toBe(false)
     expect(isAllowedFilterInput('{"available":"yes"}')).toBe(false)
   })
 
@@ -283,10 +283,24 @@ describe('filter VALUE validation (NF17) — allowed keys with hostile values ar
 
   it('BLOCKED_TAG_PATTERNS are enforced on string values under allowed keys', () => {
     expect(isAllowedFilterInput('{"productType":"compliance:fda-510k"}')).toBe(false)
-    expect(isAllowedFilterInput('{"productVendor":"partner:medplus"}')).toBe(false)
+    expect(isAllowedFilterInput('{"variantOption":{"name":"size","value":"partner:medplus"}}')).toBe(false)
     expect(isAllowedFilterInput('{"productMetafield":{"namespace":"custom","key":"material","value":"discontinued"}}')).toBe(false)
     // Normal values still pass
     expect(isAllowedFilterInput('{"productType":"Exam Gloves"}')).toBe(true)
+  })
+
+  // Regression: denying the `filter.p.vendor` FACET only stops the rail from
+  // RENDERING a Vendor group. The URL/server-action input path is a separate
+  // gate, and it used to accept `productVendor` — so a crafted or crawled
+  // `?filter={"productVendor":"MedPlus"}` still filtered the catalogue by
+  // internal fulfilling vendor and minted an indexable faceted URL keyed on a
+  // fulfiller name. Both gates must stay closed.
+  it('rejects productVendor on the INPUT path, not just the facet path', () => {
+    expect(isAllowedFilterInput('{"productVendor":"MedPlus"}')).toBe(false)
+    expect(isAllowedFilterInput('{"productVendor":"Medline"}')).toBe(false)
+    expect(isAllowedFilterObject({ productVendor: 'MedPlus' })).toBe(false)
+    // ...and it cannot ride along beside an otherwise-valid key.
+    expect(isAllowedFilterInput('{"available":true,"productVendor":"MedPlus"}')).toBe(false)
   })
 
   it('still accepts valid category-id objects', () => {

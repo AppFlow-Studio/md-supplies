@@ -98,6 +98,10 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             tags: product.tags,
             estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
             availableForSale: product.availableForSale,
+            // Same tag ∪ custom.is_rx_only union as the PDP and the cart gate:
+            // without it the 40 ACTIVE metafield-only RX products carry no
+            // "RX Only" badge on any grid.
+            isRxOnly: product.isRxOnly ?? null,
           })
           if (!product.shippingDisplay && labels.length === 0) return null
           return (

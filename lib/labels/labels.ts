@@ -37,8 +37,22 @@ export type ProductLabel = {
 // RX tag and retire the other.
 const RX_LABEL_TAGS = ['rx-required', 'compliance:rx-only']
 
-export function resolveRxLabel(tags: string[] | undefined): ProductLabel | null {
-  if (!tags?.some((t) => RX_LABEL_TAGS.includes(t))) return null
+/**
+ * The "RX Only" badge renders from RX POLICY, not from tags alone and never
+ * from a client-authored label metaobject. `isRxOnly` is the store's own
+ * `custom.is_rx_only` declaration; passing it makes this agree with the
+ * tag ∪ metafield union that lib/rx-gate.ts uses to gate checkout. Omitting it
+ * degrades to the historical tag-only behaviour rather than throwing, so
+ * callers that genuinely have no metafield data still work.
+ */
+export function resolveRxLabel(
+  tags: string[] | undefined,
+  isRxOnly?: { value: string } | string | null,
+): ProductLabel | null {
+  const taggedRx = tags?.some((t) => RX_LABEL_TAGS.includes(t)) ?? false
+  const raw = typeof isRxOnly === 'string' ? isRxOnly : isRxOnly?.value
+  const metafieldRx = ['true', '1', 'yes'].includes((raw ?? '').trim().toLowerCase())
+  if (!taggedRx && !metafieldRx) return null
   return {
     type: 'rx-only',
     text: 'RX Only',
@@ -86,10 +100,12 @@ export function resolveProductLabels(input: {
   tags?: string[]
   estimatedRestockDate?: string | null
   availableForSale?: boolean
+  /** `custom.is_rx_only` — union'd with the RX tag, see resolveRxLabel. */
+  isRxOnly?: { value: string } | string | null
   now?: Date
 }): ProductLabel[] {
   const labels: ProductLabel[] = []
-  const rx = resolveRxLabel(input.tags)
+  const rx = resolveRxLabel(input.tags, input.isRxOnly)
   if (rx) labels.push(rx)
   const backorder = resolveBackorderLabel({
     estimatedRestockDate: input.estimatedRestockDate,

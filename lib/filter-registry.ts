@@ -364,7 +364,16 @@ const INPUT_VALIDATORS: Record<string, (v: unknown) => boolean> = {
     return true
   },
   productType: isSaneString,
-  productVendor: isSaneString,
+  // `productVendor` is deliberately ABSENT. Denying the `filter.p.vendor` FACET
+  // only stops the rail from rendering a Vendor group — it does not stop a
+  // hand-crafted or crawled `?filter={"productVendor":"MedPlus"}` from being
+  // accepted here and forwarded to the Storefront API, which would filter the
+  // catalogue by internal FULFILLING vendor, render a vendor chip, and mint
+  // indexable faceted URLs keyed on fulfiller names. Facet-deny and input-deny
+  // are two separate gates and both have to close. Omitting the key is the
+  // enforcement: unknown keys are default-denied by isAllowedFilterObject.
+  // The partner pages do NOT depend on this — they pass `vendor:"…"` as a
+  // Storefront `query` string, which never reaches this validator.
   variantOption: (v) => {
     if (typeof v !== 'object' || v === null || Array.isArray(v)) return false
     const o = v as Record<string, unknown>

@@ -8,6 +8,7 @@ import {Plus} from "lucide-react";
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { publicBrand } from '@/lib/brand'
 import { resolvePurchasable, purchasabilityLabel } from '@/lib/purchasability'
+import { isRxProduct } from '@/lib/rx-gate'
 
 function toCardData(product: CollectionProduct): ProductCardData {
   const image = product.images.nodes[0]
@@ -36,7 +37,11 @@ function toCardData(product: CollectionProduct): ProductCardData {
     sku: '',
     available: product.availableForSale,
     shippingDisplay: product.shippingDisplay ?? null,
-    isRx: product.tags.some((t) => t === 'rx-required' || t === 'compliance:rx-only'),
+    // Shared union (tag ∪ custom.is_rx_only), never a local re-implementation:
+    // this used to hand-roll a tag-only check, which silently NARROWED RX
+    // detection on grid cards versus the PDP and cart. Detection lives in one
+    // place so the three surfaces cannot drift apart.
+    isRx: isRxProduct({ tags: product.tags, isRxOnly: product.isRxOnly }),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
       title: v.title,

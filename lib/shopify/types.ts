@@ -116,6 +116,10 @@ export type CollectionProduct = {
   /** Raw backorder metafield (DEV-LABEL-01 single source); flattened by the
       label contract, may be absent on queries that don't request it. */
   estimatedRestockDate?: { value: string } | null;
+  /** Raw `custom.is_rx_only`. Union'd with the RX tag by lib/rx-gate.ts so a
+      grid card's RX badge matches the PDP and the checkout gate. Optional:
+      queries that don't select it degrade to tag-only detection. */
+  isRxOnly?: { value: string } | null;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
   variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };

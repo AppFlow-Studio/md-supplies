@@ -13,6 +13,28 @@ describe('resolveRxLabel', () => {
     expect(resolveRxLabel(['free-shipping'])).toBeNull()
     expect(resolveRxLabel(undefined)).toBeNull()
   })
+
+  // The badge must render from RX POLICY (tag ∪ custom.is_rx_only), matching
+  // the checkout gate. Tag-only detection missed 40 ACTIVE prescription
+  // products in the 2026-08-02 catalog audit.
+  it('renders from the metafield alone, with no RX tag present', () => {
+    expect(resolveRxLabel([], { value: 'true' })?.type).toBe('rx-only')
+    expect(resolveRxLabel(['category:pharmacy-products'], 'true')?.type).toBe('rx-only')
+    expect(resolveRxLabel(undefined, { value: 'yes' })?.type).toBe('rx-only')
+  })
+
+  it('does not widen on falsey / absent metafield values', () => {
+    expect(resolveRxLabel([], { value: 'false' })).toBeNull()
+    expect(resolveRxLabel([], { value: '' })).toBeNull()
+    expect(resolveRxLabel([], null)).toBeNull()
+    expect(resolveRxLabel([], undefined)).toBeNull()
+  })
+
+  it('a client-authored label value can never manufacture RX status', () => {
+    // Only the tag and the store's own metafield are RX sources.
+    expect(resolveRxLabel(['promo:rx-only-lookalike'])).toBeNull()
+    expect(resolveRxLabel([], { value: 'RX Only' })).toBeNull()
+  })
 })
 
 describe('resolveBackorderLabel', () => {
