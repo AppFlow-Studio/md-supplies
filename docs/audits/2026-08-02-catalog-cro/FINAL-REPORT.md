@@ -3,6 +3,11 @@
 **Supersedes every prior report in this folder**, including `remediation-report.md`
 and both earlier revisions of this file.
 
+> **Picking this up as a developer?** Start with
+> [`docs/HANDOFF-catalog-cro-2026-08-03.md`](../../HANDOFF-catalog-cro-2026-08-03.md)
+> — work packages split by owner (Izzy / codebase / QA / decisions), edge cases
+> and user flows. This file is the evidence record behind it.
+
 ## 0. SHAs — and why the previous two reports got this wrong
 
 | | |
