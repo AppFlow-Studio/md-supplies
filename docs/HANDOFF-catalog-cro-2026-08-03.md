@@ -9,6 +9,12 @@ Nothing here is merged. **No Shopify writes have been performed by this work.**
 Owners: **Izzy** (Shopify Admin) · **codebase devs** (Next.js/storefront) ·
 **QA** (edge cases + user flows) · **Bilal/client** (decisions).
 
+> **Assigning work?** Use
+> [`TASK-REGISTER-2026-08-03.md`](TASK-REGISTER-2026-08-03.md) — every
+> outstanding task with a stable ID, owner, priority, blocker chain and
+> acceptance criteria, including the older `IZ-xx` items so existing tickets
+> still resolve. This document is the *context* behind it.
+
 ---
 
 ## 1. What this branch actually is
