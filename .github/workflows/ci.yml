@@ -95,6 +95,19 @@ jobs:
           fi
           npx next build
 
+  secret-scan:
+    # Its own job for the same reason the dependency audit is: it used to be the
+    # LAST step of `verify`, after Build. On any fork or environment without
+    # Shopify Actions secrets the build fails its own precondition check and
+    # this never runs at all — proven on run f39b26a, where it was SKIPPED.
+    # A secret scan that only reports when everything else is already green is
+    # not a security control. It needs no secrets and no build.
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Forbidden-content scan (no committed secrets)
         run: |
           echo "Scanning tracked files for committed secrets…"
