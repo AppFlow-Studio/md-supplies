@@ -227,6 +227,39 @@ Targeted suites: vendor input + facet leak **122** · RX union + label safety
 axe states **8/8** · contrast **10 passed, 1 skipped** · responsive sweep
 **56/56** (8 routes × 7 viewports, no horizontal overflow, exactly one h1).
 
+## 7b. Hosted CI (fork, Draft PR #1)
+
+Two runs, and the second one proves the CI split works.
+
+| Job | `f39b26a` | `8640efa` |
+|---|---|---|
+| dependency audit | **success** | **success** |
+| secret scan | *(skipped — was a step of `verify`)* | **success** |
+| launch guardrails | **success** | **success** |
+| lint · types · tests · build | failure | failure |
+| e2e (Playwright) | skipped | skipped |
+
+Inside `verify`, every step **before** Build passed on both runs — Lint,
+Typecheck, Test, the focused-test scan and the mock-data scan. The **only**
+failing step is `Build`, and it fails its own precondition check:
+
+> `SHOPIFY_STORE_DOMAIN` / `SHOPIFY_STOREFRONT_ACCESS_TOKEN` are not set in repo
+> Actions secrets.
+
+That is a **fork configuration gap, not a code defect** — the build prerenders
+ISR pages against live Shopify data. E2E is skipped because it `needs: verify`,
+and legitimately so: it needs a real build to test against.
+
+The first run also exposed a defect I had missed: the secret scan was the last
+step of `verify`, *after* Build, so it never ran at all — the same ordering flaw
+I had just fixed for the dependency audit. It is now its own job and reports
+independently, as the table shows.
+
+**To turn hosted CI green:** add `SHOPIFY_STORE_DOMAIN` and
+`SHOPIFY_STOREFRONT_ACCESS_TOKEN` to Actions secrets on `BilalA99/md-supplies`
+(Settings → Secrets and variables → Actions). That unblocks Build and E2E, and
+E2E against a shop with real catalog data is what closes most of §8.2.
+
 ## 8. Blocked — with the precise reason
 
 ### 8.1 QA fixtures, RX walkthrough, category/industry E2E
@@ -270,6 +303,7 @@ Storefront fragment is written against the documented schema and is
 
 ## 9. Shopify change package (each separate and reversible)
 
+0. **Add `SHOPIFY_STORE_DOMAIN` + `SHOPIFY_STOREFRONT_ACCESS_TOKEN` to Actions secrets** on the fork (§7b) — unblocks hosted Build and E2E. Not a Shopify write; repo settings only.
 1. **Grant QA Admin scopes** (§8.1) — unblocks fixtures, RX walkthrough, E2E.
 2. Add an **RX fixture** to the QA store so the gate is testable without touching production.
 3. Rotate the **BunnyCDN storage AccessKey** (every request 401s).
@@ -334,6 +368,15 @@ blocked production, then because the QA store lacks both the scopes and the
 fixtures. Hosted CI, which connects to a shop with real data, is the fastest way
 to close most of that gap.
 
-Recommended order: push and update Draft PR #1 → read hosted CI → grant QA
-scopes and add an RX fixture → complete the RX walkthrough and grid E2E →
-re-assess.
+Recommended order, with the first two steps now done:
+
+1. ~~Push and update Draft PR #1~~ — done; PR #1 head is `8640efa`.
+2. ~~Read hosted CI~~ — done (§7b): 3 of 5 jobs green; the only failure is Build
+   on missing fork Actions secrets.
+3. **Add the two `SHOPIFY_*` Actions secrets to the fork** — unblocks hosted
+   Build and E2E against real catalog data, which closes most of §8.2.
+4. **Grant the QA Admin scopes and add an RX fixture** — unblocks the fixture
+   package, the RX walkthrough and grid E2E.
+5. Complete the RX walkthrough and grid E2E, then re-assess.
+
+Steps 3 and 4 are both configuration, not code, and neither is a Shopify write.
