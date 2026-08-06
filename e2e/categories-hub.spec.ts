@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test'
-import { mkdirSync } from 'node:fs'
 
 /**
  * DEV-LAUNCH-03 evidence: every "Browse All Categories" card must show its
@@ -11,7 +10,6 @@ import { mkdirSync } from 'node:fs'
  */
 
 const SHOTS = 'docs/audits/2026-08-07-dev-launch-03/screenshots'
-mkdirSync(SHOTS, { recursive: true })
 
 const VIEWPORTS = [
   { w: 390, h: 844, name: '390x844' },
@@ -33,6 +31,7 @@ test.describe('categories hub — card descriptions', () => {
       const card = cards.nth(i)
       const paragraphs = card.locator('p')
       await expect(paragraphs).toHaveCount(2)
+      await expect(paragraphs.nth(1)).toBeVisible()
       const title = (await paragraphs.nth(0).textContent())?.trim() ?? ''
       const description = (await paragraphs.nth(1).textContent())?.trim() ?? ''
       expect(title.length, `card ${i} has no title`).toBeGreaterThan(0)
@@ -44,12 +43,12 @@ test.describe('categories hub — card descriptions', () => {
   })
 
   for (const vp of VIEWPORTS) {
-    test(`renders readably at ${vp.name}`, async ({ page }) => {
+    test(`renders readably at ${vp.name}`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width: vp.w, height: vp.h })
       await page.goto('/categories', { waitUntil: 'domcontentloaded' })
       await page.waitForLoadState('networkidle').catch(() => {})
       await expect(page.getByRole('heading', { name: 'Browse All Categories' })).toBeVisible()
-      await page.screenshot({ path: `${SHOTS}/categories-hub__${vp.name}.png`, fullPage: true })
+      await page.screenshot({ path: `${SHOTS}/categories-hub__${testInfo.project.name}__${vp.name}.png`, fullPage: true })
     })
   }
 })

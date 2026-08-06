@@ -52,6 +52,8 @@ export type L1CategoryDef = {
   // Approved launch copy for the /categories hub card (DEV-LAUNCH-03,
   // Appendix A) — verbatim, client-approved text. Do not rewrite, trim, or
   // auto-generate; if a category needs new copy, that's a client decision.
+  // See docs/superpowers/specs/2026-08-07-categories-shortdescription-design.md
+  // Appendix A for the source-of-truth copy table.
   shortDescription: string
 }
 
