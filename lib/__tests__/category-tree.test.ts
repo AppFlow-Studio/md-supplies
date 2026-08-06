@@ -41,6 +41,60 @@ describe('CATEGORY_TREE_L1', () => {
   })
 })
 
+describe('CATEGORY_TREE_L1 short descriptions (DEV-LAUNCH-03)', () => {
+  // Approved launch copy, verbatim, from the DEV-LAUNCH-03 ticket's Appendix A.
+  // Keyed by registry `tag` — NOT by `collectionHandle` (Testing's tag is
+  // `testing`; `testing-screening` is only the Shopify collection handle).
+  const APPROVED_SHORT_DESCRIPTIONS: Record<string, string> = {
+    'gloves': 'Exam and procedure gloves in nitrile, latex, and vinyl options for clinical, laboratory, and facility use.',
+    'wound-care': 'Dressings, gauze, bandages, tapes, irrigation supplies, and other essentials for routine wound care.',
+    'needles-syringes': 'Needles, syringes, and injection accessories in a range of gauges, sizes, and safety configurations.',
+    'surgical-sutures': 'Absorbable and non-absorbable sutures, needles, and wound-closure supplies for clinical procedures.',
+    'testing': 'Diagnostic, screening, specimen-collection, and point-of-care testing supplies for healthcare settings.',
+    'exam-room': 'Everyday exam-room equipment and supplies, including tables, stools, lighting, and patient-care essentials.',
+    'respiratory': 'Respiratory-care supplies for oxygen delivery, nebulization, airway support, and routine patient treatment.',
+    'mobility': 'Wheelchairs, walkers, canes, rollators, and mobility accessories for patient support and daily movement.',
+    'patient-therapy-rehab': 'Therapy, rehabilitation, exercise, and positioning products that support recovery and patient mobility.',
+    'surgery-procedure': 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.',
+    'apparel': 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.',
+    'hygiene': 'Personal-hygiene and patient-care products for bathing, oral care, grooming, and everyday cleanliness.',
+    'disinfectants': 'Cleaning and disinfection products for surfaces, equipment, hands, and infection-control routines.',
+    'home-care': 'Practical medical and personal-care supplies designed for patients, caregivers, and home-health use.',
+    'emergency-supplies': 'First-aid, trauma, rescue, and emergency-response supplies for clinics, facilities, and mobile teams.',
+    'incontinence': 'Briefs, underpads, liners, wipes, and related products for dependable incontinence and skin care.',
+    'iv-therapy': 'IV administration, infusion, access, and securement supplies for clinical fluid and medication delivery.',
+    'urology-ostomy': 'Catheters, drainage, ostomy, and related accessories for urological and ostomy care.',
+    'sterilization': 'Sterilization pouches, wraps, indicators, cleaners, and accessories for instrument-processing workflows.',
+    'dental': 'Dental procedure, examination, infection-control, and patient-care supplies for dental practices.',
+    'housekeeping-janitorial': 'Facility-cleaning, waste-handling, paper, and janitorial supplies for healthcare environments.',
+    'bariatric': 'Bariatric patient-care and mobility equipment designed for higher weight capacities and added support.',
+    'room-furniture': 'Seating, exam tables, cabinets, and room furnishings for treatment, consultation, and patient-care spaces.',
+    'face-masks': 'Procedure masks, respirators, and face coverings for clinical, facility, and everyday protective use.',
+    'pharmacy-products': 'Dispensing, labeling, packaging, counting, and patient-use supplies for pharmacy operations.',
+  }
+
+  it('has a nonempty, non-placeholder, HTML-free shortDescription for every one of the 25 approved categories', () => {
+    for (const l1 of CATEGORY_TREE_L1) {
+      expect(l1.shortDescription, `${l1.tag} is missing a shortDescription`).toBeTruthy()
+      expect(l1.shortDescription.trim().length, `${l1.tag} shortDescription is blank`).toBeGreaterThan(0)
+      expect(l1.shortDescription, `${l1.tag} shortDescription contains raw HTML`).not.toMatch(/[<>]/)
+    }
+  })
+
+  it('has exactly the approved verbatim copy for every tag (client-liability launch copy)', () => {
+    for (const l1 of CATEGORY_TREE_L1) {
+      const approved = APPROVED_SHORT_DESCRIPTIONS[l1.tag]
+      expect(approved, `${l1.tag} has no approved copy in the test's approved-copy table`).toBeDefined()
+      expect(l1.shortDescription).toBe(approved)
+    }
+  })
+
+  it('has no duplicated description text across categories', () => {
+    const descriptions = CATEGORY_TREE_L1.map((l1) => l1.shortDescription)
+    expect(new Set(descriptions).size).toBe(descriptions.length)
+  })
+})
+
 import { resolveCanonicalCategory, buildL1Tiles } from '../category-tree'
 
 describe('resolveCanonicalCategory', () => {
