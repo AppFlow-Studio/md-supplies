@@ -134,7 +134,6 @@ export default async function CategoriesPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
             {l1Tiles.map((tile) => {
-              const col = allCollectionsByHandle.get(tile.collectionHandle)
               const banner = getCategoryBannerConfig(tile.collectionHandle)
               return (
                 <Link
@@ -154,11 +153,9 @@ export default async function CategoriesPage() {
                     <p className="text-navy-900 text-[14px] font-semibold group-hover:underline">
                       {tile.displayName}
                     </p>
-                    {col?.description && (
-                      <p className="text-gray-500 text-[12px] mt-1 line-clamp-2">
-                        {col.description}
-                      </p>
-                    )}
+                    <p className="text-gray-500 text-[12px] mt-1 line-clamp-2">
+                      {tile.shortDescription}
+                    </p>
                   </div>
                 </Link>
               )
