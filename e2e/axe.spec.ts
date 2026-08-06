@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 
 const ROUTES: Array<{ path: string; name: string }> = [
   { path: '/', name: 'home' },
+  { path: '/categories', name: 'categories-hub' },
   { path: '/category/gloves', name: 'category' },
   { path: '/product/nitrile-exam-gloves-powder-free', name: 'pdp' },
   { path: '/solutions/occ', name: 'occ' },
