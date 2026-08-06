@@ -6,6 +6,8 @@ const REQUIRED: Record<string, string> = {
   SHOPIFY_STOREFRONT_ACCESS_TOKEN: 'sf-token',
   RESEND_API_KEY: 're_test',
   BUNNYCDN_STORAGE_ACCESS_KEY: 'bunny-key',
+  SHOPIFY_ADMIN_CLIENT_ID: 'admin-client-id',
+  SHOPIFY_ADMIN_CLIENT_SECRET: 'admin-client-secret',
 }
 
 function stubRequired(omit?: string) {
@@ -33,6 +35,8 @@ describe('serverEnv — happy path', () => {
     expect(serverEnv.shopifyStorefrontToken).toBe('sf-token')
     expect(serverEnv.resendApiKey).toBe('re_test')
     expect(serverEnv.bunnyCdnAccessKey).toBe('bunny-key')
+    expect(serverEnv.shopifyAdminClientId).toBe('admin-client-id')
+    expect(serverEnv.shopifyAdminClientSecret).toBe('admin-client-secret')
   })
 
   it('uses fallback for optional vars when not set', async () => {
@@ -65,7 +69,8 @@ describe('serverEnv — missing required vars', () => {
     SHOPIFY_STOREFRONT_ACCESS_TOKEN: (e) => e.shopifyStorefrontToken,
     RESEND_API_KEY: (e) => e.resendApiKey,
     BUNNYCDN_STORAGE_ACCESS_KEY: (e) => e.bunnyCdnAccessKey,
-    SHOPIFY_ADMIN_ACCESS_TOKEN: (e) => e.shopifyAdminToken,
+    SHOPIFY_ADMIN_CLIENT_ID: (e) => e.shopifyAdminClientId,
+    SHOPIFY_ADMIN_CLIENT_SECRET: (e) => e.shopifyAdminClientSecret,
   }
 
   it('import does not throw even when required vars are missing', async () => {

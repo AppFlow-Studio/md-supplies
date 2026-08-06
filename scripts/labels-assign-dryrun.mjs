@@ -42,9 +42,32 @@ function loadEnv() {
   }
   return out
 }
+/**
+ * Prefers a static token (SHOPIFY_ADMIN_ACCESS_TOKEN / legacy
+ * SHOPIFY_ADMIN_TOKEN) if one is configured; otherwise exchanges
+ * SHOPIFY_ADMIN_CLIENT_ID/SECRET for a short-lived token via the
+ * client_credentials grant — this store's custom app doesn't issue a static
+ * token (see lib/shopify/admin-token.ts for the app's own copy of this).
+ */
+async function resolveAdminToken(env, domain) {
+  const staticToken = env.SHOPIFY_ADMIN_ACCESS_TOKEN || env.SHOPIFY_ADMIN_TOKEN
+  if (staticToken) return staticToken
+  const clientId = env.SHOPIFY_ADMIN_CLIENT_ID
+  const clientSecret = env.SHOPIFY_ADMIN_CLIENT_SECRET
+  if (!clientId || !clientSecret || !domain) return null
+  const res = await fetch(`https://${domain}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }),
+  })
+  if (!res.ok) return null
+  const json = await res.json()
+  return json.access_token ?? null
+}
+
 const env = loadEnv()
 const domain = env.SHOPIFY_STORE_DOMAIN
-const admin = env.SHOPIFY_ADMIN_ACCESS_TOKEN || env.SHOPIFY_ADMIN_TOKEN
+const admin = await resolveAdminToken(env, domain)
 
 async function gql(query, variables = {}) {
   const res = await fetch(`https://${domain}/admin/api/2025-01/graphql.json`, {
