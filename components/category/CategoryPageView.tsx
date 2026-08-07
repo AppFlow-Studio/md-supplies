@@ -12,6 +12,7 @@ import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
 import { MAX_CATEGORY_PAGE } from '@/lib/category-utils'
+import { getShopifyHandle } from '@/lib/category-nav'
 import {
   buildL2Tree,
   getSubcategoriesForParent,
@@ -97,11 +98,17 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
   const requestedPage = parseInt(sp.page ?? '1', 10)
   const currentPage = requestedPage > MAX_CATEGORY_PAGE ? 1 : requestedPage
 
+  // `slug` is the public canonical URL segment; a handful of categories
+  // (e.g. face-masks) alias it to a differently-named live Shopify
+  // collection (face-coverings) — see lib/category-nav.ts canonicalSlug.
+  // Every Shopify-facing lookup below must use the real handle, not slug.
+  const shopifyHandle = getShopifyHandle(slug)
+
   try {
     const data = await storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
-      { handle: slug },
-      collectionFetchOptions(slug),
+      { handle: shopifyHandle },
+      collectionFetchOptions(shopifyHandle),
     )
     if (!data.collection) return buildMetadata({ pageType: 'category', title: 'Category' })
     const { title, description, seo } = data.collection
@@ -178,13 +185,19 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   if (isNaN(currentPage) || currentPage < 1) notFound()
   if (currentPage > MAX_CATEGORY_PAGE) redirect(page1RedirectUrl(slug, sp, activeFilterStrings))
 
-  const l1 = getL1ByCollectionHandle(slug)
+  // `slug` is the public canonical URL segment; a handful of categories
+  // (e.g. face-masks) alias it to a differently-named live Shopify
+  // collection (face-coverings) — see lib/category-nav.ts canonicalSlug.
+  // Every Shopify-facing lookup below must use the real handle, not slug.
+  const shopifyHandle = getShopifyHandle(slug)
+
+  const l1 = getL1ByCollectionHandle(shopifyHandle)
 
   const [data, summaries] = await Promise.all([
     storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
-      { handle: slug },
-      collectionFetchOptions(slug),
+      { handle: shopifyHandle },
+      collectionFetchOptions(shopifyHandle),
     ),
     fetchProductTagSummaries(),
   ])
@@ -200,8 +213,8 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
     .slice(0, 6)
     .map((c) => ({ label: c.displayName, slug: c.collectionHandle }))
 
-  const banner = getCategoryBannerConfig(slug)
-  const clusterLinks = getClusterLinks(slug)
+  const banner = getCategoryBannerConfig(shopifyHandle)
+  const clusterLinks = getClusterLinks(shopifyHandle)
 
   // SEO database — H1 override, answer block, and FAQ on unfiltered page 1.
   const seoData = (!isFiltered && currentPage === 1) ? getCategorySeo(slug) : undefined
@@ -272,7 +285,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         <CategoryResults
           source={{
             kind: 'collection',
-            handle: slug,
+            handle: shopifyHandle,
             // Registry-backed L1s scope text search by their category tag
             // (the same membership source the L2 pages are built on).
             searchScope: l1 ? `tag:"category:${l1.tag}"` : undefined,
