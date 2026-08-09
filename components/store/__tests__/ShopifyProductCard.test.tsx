@@ -212,4 +212,66 @@ describe('ShopifyProductCard', () => {
 
     expect(screen.queryByRole('button', { name: `Quick add ${product.title}` })).not.toBeInTheDocument()
   })
+
+  // DEV-LAUNCH-07: the two hard rules, exercised on the card itself.
+  it('shows "Contact for pricing" and disables quick add for a zero-price product', () => {
+    const product = makeProduct({
+      variants: {
+        nodes: [
+          {
+            id: 'gid://shopify/ProductVariant/1',
+            title: 'Default',
+            price: { amount: '0.00', currencyCode: 'USD' },
+            compareAtPrice: null,
+            availableForSale: true,
+            quantityAvailable: 10,
+          },
+        ],
+      },
+    })
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+      />,
+    )
+
+    expect(screen.getByText('Contact for pricing')).toBeInTheDocument()
+    const button = screen.getByRole('button', { name: `Contact for pricing — ${product.title}` })
+    expect(button).toBeDisabled()
+  })
+
+  it('never falls back to vendor when no approved brand exists', () => {
+    // vendor is the fulfilling vendor, not a customer-facing brand
+    // (lib/brand.ts) — with no custom.brand_name the line must be omitted,
+    // never filled with the vendor string.
+    const product = makeProduct({ brandName: null, vendor: 'MedPlus Fulfillment' })
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+      />,
+    )
+
+    expect(screen.queryByText('MedPlus Fulfillment')).not.toBeInTheDocument()
+  })
+
+  it('renders the approved brand line when custom.brand_name is present', () => {
+    const product = makeProduct({ brandName: { value: 'Dynarex' }, vendor: 'MedPlus Fulfillment' })
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+      />,
+    )
+
+    expect(screen.getByText('Dynarex')).toBeInTheDocument()
+    expect(screen.queryByText('MedPlus Fulfillment')).not.toBeInTheDocument()
+  })
 })

@@ -1,0 +1,692 @@
+{
+  "generatedAt": "2026-08-07T20:36:21.088Z",
+  "storeDomain": "md-supplies-qa-shipping-and-checkout.myshopify.com",
+  "l1Categories": [
+    {
+      "tag": "gloves",
+      "collectionHandle": "gloves",
+      "routeSlug": "gloves",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091159785",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "exam-glove-nitrile-medium-blue-100-bx-10-bx-cs",
+          "gid": "gid://shopify/Product/9365107572969"
+        },
+        {
+          "handle": "ammex®-nitrile-gloves-x-large-disposable-exam-grade-black-powder-free-smooth-polymer-coated-100-bx-10bx-cs-us-sales-only-products-cannot-be-sold-on-amazon-com-or-any-other-third-party-sites-to-be-discontinued",
+          "gid": "gid://shopify/Product/9365097775337"
+        },
+        {
+          "handle": "ammex®-nitrile-gloves-small-disposable-exam-grade-blue-powder-free-smooth-polymer-coated-100-bx-10bx-cs-us-sales-only-products-cannot-be-sold-on-amazon-com-or-any-other-third-party-sites-to-be-discontinued",
+          "gid": "gid://shopify/Product/9365097742569"
+        }
+      ]
+    },
+    {
+      "tag": "wound-care",
+      "collectionHandle": "wound-care",
+      "routeSlug": "wound-care",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091192553",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "sterile-soft-flexible-fabric-adhesive-bandages-1-x-3",
+          "gid": "gid://shopify/Product/9365117763817"
+        },
+        {
+          "handle": "sterile-metal-detectable-lightweight-fabric-adhesive-bandages-1-x-3-blue",
+          "gid": "gid://shopify/Product/9365117731049"
+        },
+        {
+          "handle": "sterile-lightweight-flexible-fabric-adhesive-bandages-3-4-x-3",
+          "gid": "gid://shopify/Product/9365117698281"
+        }
+      ]
+    },
+    {
+      "tag": "needles-syringes",
+      "collectionHandle": "needles-syringes",
+      "routeSlug": "needles-syringes",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091225321",
+      "productCount": 69,
+      "sampleProducts": [
+        {
+          "handle": "syringe-luer-lock-20-cc-10-50-cs",
+          "gid": "gid://shopify/Product/9365118746857"
+        },
+        {
+          "handle": "iv-administration-set-83-tcbinfsp1",
+          "gid": "gid://shopify/Product/9365111374057"
+        },
+        {
+          "handle": "iv-administration-set-60-drop-83-1-needleless-port-1-inje-50-bx",
+          "gid": "gid://shopify/Product/9365111341289"
+        }
+      ]
+    },
+    {
+      "tag": "surgical-sutures",
+      "collectionHandle": "surgical-sutures",
+      "routeSlug": "surgical-sutures",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091258089",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "unify-pga-surgical-sutures-size-5-0-18-thread-13mm-3-8-circle-r-c-needle-undyed-s-g518r13-u",
+          "gid": "gid://shopify/Product/9365119107305"
+        },
+        {
+          "handle": "unify-pga-surgical-sutures-size-4-0-30-thread-17mm-1-2-circle-taper-point-needle-undyed-m-g430t17-u",
+          "gid": "gid://shopify/Product/9365119074537"
+        },
+        {
+          "handle": "suture-removal-kit-sterile-50-cs",
+          "gid": "gid://shopify/Product/9365118681321"
+        }
+      ]
+    },
+    {
+      "tag": "testing",
+      "collectionHandle": "testing-screening",
+      "routeSlug": "testing-screening",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091290857",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "urs-reader-and-starter-kit-4-prm395",
+          "gid": "gid://shopify/Product/9365119434985"
+        },
+        {
+          "handle": "urs-10-urine-reagent-strips-ua870",
+          "gid": "gid://shopify/Product/9365119336681"
+        },
+        {
+          "handle": "accutest-splitcup-5-panel-urine-drug-test-ds02ac625",
+          "gid": "gid://shopify/Product/9365091188969"
+        }
+      ]
+    },
+    {
+      "tag": "exam-room",
+      "collectionHandle": "exam-room",
+      "routeSlug": "exam-room",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091323625",
+      "productCount": 45,
+      "sampleProducts": [
+        {
+          "handle": "sterile-alcohol-pad-2-ply-medium",
+          "gid": "gid://shopify/Product/9365117567209"
+        },
+        {
+          "handle": "phys-stool-w-bck-blk-bse-wwd-wedgewood",
+          "gid": "gid://shopify/Product/9365115207913"
+        },
+        {
+          "handle": "phys-stool-blk-bse-sgl-lever-wedgewood",
+          "gid": "gid://shopify/Product/9365115175145"
+        }
+      ]
+    },
+    {
+      "tag": "respiratory",
+      "collectionHandle": "respiratory",
+      "routeSlug": "respiratory",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091356393",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "universal-suction-machine-tubing-and-filter-replacement-kit-with-canister-pack-of-1",
+          "gid": "gid://shopify/Product/9365119140073"
+        },
+        {
+          "handle": "trim-line-cpap-tube-6",
+          "gid": "gid://shopify/Product/9365119009001"
+        },
+        {
+          "handle": "trach-plug-jackson-6-1037836-john-bunn-1037836",
+          "gid": "gid://shopify/Product/9365118976233"
+        }
+      ]
+    },
+    {
+      "tag": "mobility",
+      "collectionHandle": "mobility",
+      "routeSlug": "mobility",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091389161",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "walkabout-alluralx-rollator-black-lumex",
+          "gid": "gid://shopify/Product/9365119566057"
+        },
+        {
+          "handle": "walkabout-alluralx-rollator-apple-red-lumex",
+          "gid": "gid://shopify/Product/9365119533289"
+        },
+        {
+          "handle": "walkabout-allura-rollator-black-lumex",
+          "gid": "gid://shopify/Product/9365119500521"
+        }
+      ]
+    },
+    {
+      "tag": "patient-therapy-rehab",
+      "collectionHandle": "patient-therapy-rehab",
+      "routeSlug": "patient-therapy-rehab",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091421929",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "dynarex-actisplint-folded-flat-24-50-cs",
+          "gid": "gid://shopify/Product/9365106491625"
+        },
+        {
+          "handle": "back-support-universal-626-low-profile-sm-4x",
+          "gid": "gid://shopify/Product/9365099577577"
+        },
+        {
+          "handle": "armsling-xs",
+          "gid": "gid://shopify/Product/9365098987753"
+        }
+      ]
+    },
+    {
+      "tag": "surgery-procedure",
+      "collectionHandle": "trocars-trocar-kits",
+      "routeSlug": "trocars-trocar-kits",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091454697",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "4-5mm-premium-disposable-stainless-steel-trocar-wrap-kit-large-gloves-b9176c",
+          "gid": "gid://shopify/Product/9365088600297"
+        },
+        {
+          "handle": "4-5mm-disposable-stainless-steel-trocar-wrap-kit-b9807",
+          "gid": "gid://shopify/Product/9365088567529"
+        },
+        {
+          "handle": "4-5mm-disposable-stainless-steel-diamond-tip-trocar-tray-kit-medium-gloves-b1560",
+          "gid": "gid://shopify/Product/9365088534761"
+        }
+      ]
+    },
+    {
+      "tag": "apparel",
+      "collectionHandle": "capes-gowns",
+      "routeSlug": "capes-gowns",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091487465",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "surgical-gowns-reinforced-medium-20pouches-cs",
+          "gid": "gid://shopify/Product/9365118615785"
+        },
+        {
+          "handle": "protective-cover-gown-xl",
+          "gid": "gid://shopify/Product/9365117042921"
+        },
+        {
+          "handle": "protective-cover-gown-blue",
+          "gid": "gid://shopify/Product/9365117010153"
+        }
+      ]
+    },
+    {
+      "tag": "hygiene",
+      "collectionHandle": "hygiene",
+      "routeSlug": "hygiene",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091520233",
+      "productCount": 42,
+      "sampleProducts": [
+        {
+          "handle": "toothbrush-adult-39tuft-144-c-grafco",
+          "gid": "gid://shopify/Product/9365118845161"
+        },
+        {
+          "handle": "toothbrush-adult-32tuft-144-gr-grafco",
+          "gid": "gid://shopify/Product/9365118779625"
+        },
+        {
+          "handle": "periscent-scented-perineal-cleanser-8-oz-48-cs",
+          "gid": "gid://shopify/Product/9365114749161"
+        }
+      ]
+    },
+    {
+      "tag": "disinfectants",
+      "collectionHandle": "disinfectants",
+      "routeSlug": "disinfectants",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091553001",
+      "productCount": 36,
+      "sampleProducts": [
+        {
+          "handle": "surface-safe-2-step-applicator-kit-case-ken-ss33508",
+          "gid": "gid://shopify/Product/9365118583017"
+        },
+        {
+          "handle": "sterile-isopropyl-alcohol-wipers-tcbwalc30",
+          "gid": "gid://shopify/Product/9365117665513"
+        },
+        {
+          "handle": "soap-tincture-of-green-gal-4-c-grafco",
+          "gid": "gid://shopify/Product/9365117436137"
+        }
+      ]
+    },
+    {
+      "tag": "home-care",
+      "collectionHandle": "home-care",
+      "routeSlug": "home-care",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091585769",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "beveled-edge-floor-pad-lumex",
+          "gid": "gid://shopify/Product/9365102526697"
+        },
+        {
+          "handle": "bellavita-side-flap",
+          "gid": "gid://shopify/Product/9365102493929"
+        },
+        {
+          "handle": "bellavita-rotating-and-transfer-aid",
+          "gid": "gid://shopify/Product/9365102461161"
+        }
+      ]
+    },
+    {
+      "tag": "emergency-supplies",
+      "collectionHandle": "emergency-supplies",
+      "routeSlug": "emergency-supplies",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091618537",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "kemp-usa-polyester-fabric-green-white-6-umbrella",
+          "gid": "gid://shopify/Product/9365112291561"
+        },
+        {
+          "handle": "kemp-usa-life-jackets-4-pack-in-carry-case-2-blue-2-red-adult",
+          "gid": "gid://shopify/Product/9365112258793"
+        },
+        {
+          "handle": "kemp-usa-life-jacket-red-black-adult",
+          "gid": "gid://shopify/Product/9365112226025"
+        }
+      ]
+    },
+    {
+      "tag": "incontinence",
+      "collectionHandle": "incontinence",
+      "routeSlug": "incontinence",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091651305",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "washcloth-8-x-12",
+          "gid": "gid://shopify/Product/9365119598825"
+        },
+        {
+          "handle": "pre-moistened-washcloths-8-x-10-scented",
+          "gid": "gid://shopify/Product/9365116190953"
+        },
+        {
+          "handle": "pre-moistened-washcloths-8-x-10-fragrance-free",
+          "gid": "gid://shopify/Product/9365116158185"
+        }
+      ]
+    },
+    {
+      "tag": "iv-therapy",
+      "collectionHandle": "iv-therapy",
+      "routeSlug": "iv-therapy",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091684073",
+      "productCount": 41,
+      "sampleProducts": [
+        {
+          "handle": "iv-winged-catheter-24g-x-3-4-box-381512",
+          "gid": "gid://shopify/Product/9365111406825"
+        },
+        {
+          "handle": "iv-administration-set-83-tcbinfsp1",
+          "gid": "gid://shopify/Product/9365111374057"
+        },
+        {
+          "handle": "iv-administration-set-60-drop-83-1-needleless-port-1-inje-50-bx",
+          "gid": "gid://shopify/Product/9365111341289"
+        }
+      ]
+    },
+    {
+      "tag": "urology-ostomy",
+      "collectionHandle": "urology-ostomy",
+      "routeSlug": "urology-ostomy",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091716841",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "urinary-leg-bags-med-600ml-sterile-4-12-cs",
+          "gid": "gid://shopify/Product/9365119271145"
+        },
+        {
+          "handle": "urinary-leg-bags-lg-1000ml-sterile-4-12-cs",
+          "gid": "gid://shopify/Product/9365119238377"
+        },
+        {
+          "handle": "urinary-drainage-bags-2000ml-sterile-20-cs",
+          "gid": "gid://shopify/Product/9365119205609"
+        }
+      ]
+    },
+    {
+      "tag": "sterilization",
+      "collectionHandle": "sterilization",
+      "routeSlug": "sterilization",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091749609",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "sterilization-pouches-7-5-x-13",
+          "gid": "gid://shopify/Product/9365118419177"
+        },
+        {
+          "handle": "sterilization-pouches-7-1-2-x-13",
+          "gid": "gid://shopify/Product/9365118386409"
+        },
+        {
+          "handle": "sterilization-pouches-5-25-x-10",
+          "gid": "gid://shopify/Product/9365118353641"
+        }
+      ]
+    },
+    {
+      "tag": "dental",
+      "collectionHandle": "dental",
+      "routeSlug": "dental",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091782377",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "endodontic-irrigation-syringe-needle-luer-lock-27g-x-1-1-4-31-7mm-yellow-sterile-case-8881513850",
+          "gid": "gid://shopify/Product/9365106983145"
+        },
+        {
+          "handle": "endodontic-irrigation-syringe-needle-luer-lock-27g-x-1-1-4-31-7mm-yellow-sterile-box-8881513850",
+          "gid": "gid://shopify/Product/9365106950377"
+        },
+        {
+          "handle": "endodontic-irrigation-syringe-needle-luer-lock-23g-x-1-1-4-31-7mm-orange-sterile-case-8881513843",
+          "gid": "gid://shopify/Product/9365106917609"
+        }
+      ]
+    },
+    {
+      "tag": "housekeeping-janitorial",
+      "collectionHandle": "housekeeping-janitorial",
+      "routeSlug": "housekeeping-janitorial",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091815145",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "zipper-bags-9x12-10-100-cs",
+          "gid": "gid://shopify/Product/9365119697129"
+        },
+        {
+          "handle": "zipper-bags-4x6-10-100-cs",
+          "gid": "gid://shopify/Product/9365119664361"
+        },
+        {
+          "handle": "zipper-bags-10x13-10-100-cs",
+          "gid": "gid://shopify/Product/9365119631593"
+        }
+      ]
+    },
+    {
+      "tag": "bariatric",
+      "collectionHandle": "bariatric",
+      "routeSlug": "bariatric",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091847913",
+      "productCount": 40,
+      "sampleProducts": [
+        {
+          "handle": "bariatric-hd-headboard-footboard-for-db600-cherry-1pc-cs",
+          "gid": "gid://shopify/Product/9365100921065"
+        },
+        {
+          "handle": "bariatric-hd-full-electric-homecare-bed-54-1pc-cs",
+          "gid": "gid://shopify/Product/9365100855529"
+        },
+        {
+          "handle": "bariatric-hd-full-electric-homecare-bed-48-1pc-cs",
+          "gid": "gid://shopify/Product/9365100822761"
+        }
+      ]
+    },
+    {
+      "tag": "room-furniture",
+      "collectionHandle": "seating",
+      "routeSlug": "seating",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091913449",
+      "productCount": 8,
+      "sampleProducts": [
+        {
+          "handle": "phys-stool-w-bck-blk-bse-wwd-wedgewood",
+          "gid": "gid://shopify/Product/9365115207913"
+        },
+        {
+          "handle": "phys-stool-blk-bse-sgl-lever-wedgewood",
+          "gid": "gid://shopify/Product/9365115175145"
+        },
+        {
+          "handle": "phys-stool-blk-base-foot-ring-wedgewood",
+          "gid": "gid://shopify/Product/9365115142377"
+        }
+      ]
+    },
+    {
+      "tag": "face-masks",
+      "collectionHandle": "face-coverings",
+      "routeSlug": "face-masks",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091946217",
+      "productCount": 1,
+      "sampleProducts": [
+        {
+          "handle": "beard-covers",
+          "gid": "gid://shopify/Product/9365101871337"
+        }
+      ]
+    },
+    {
+      "tag": "pharmacy-products",
+      "collectionHandle": "pharmacy-products",
+      "routeSlug": "pharmacy-products",
+      "exists": true,
+      "gid": "gid://shopify/Collection/474091978985",
+      "productCount": 49,
+      "sampleProducts": [
+        {
+          "handle": "sunrise-phentermine-37-5mg-lue-speck-tab-civ-1000-ndc-11534-0160-03",
+          "gid": "gid://shopify/Product/9365118550249"
+        },
+        {
+          "handle": "style-ttt-laser-rx-label-8-5-x-14-w-blue-highlights-5771c-rx",
+          "gid": "gid://shopify/Product/9365118451945"
+        },
+        {
+          "handle": "somerset-cyanocobalamin-vitamin-b12-1000mcg-ml-injection-mdv-30ml-70069-0171-10",
+          "gid": "gid://shopify/Product/9365117468905"
+        }
+      ]
+    }
+  ],
+  "occ": {
+    "handle": "occ",
+    "exists": false,
+    "gid": null,
+    "productCount": 0,
+    "sampleProducts": []
+  },
+  "industries": [
+    {
+      "slug": "urgent-care",
+      "tag": "industry:urgent-care",
+      "sampleCount": 5,
+      "sampleProducts": [
+        {
+          "handle": "green-soap-1-gal-bottle-4-cs",
+          "gid": "gid://shopify/Product/9365108752617"
+        },
+        {
+          "handle": "instaclean-1000-ml-10-cs",
+          "gid": "gid://shopify/Product/9365109211369"
+        },
+        {
+          "handle": "machine-bag-5-x-5-16-500-cs",
+          "gid": "gid://shopify/Product/9365112750313"
+        },
+        {
+          "handle": "suction-connection-tubing-w-male-connector-non-conductive-1-4-x-10-tube-50-cs",
+          "gid": "gid://shopify/Product/9365118484713"
+        },
+        {
+          "handle": "silicone-foley-catheters-2-way-standard-26-fr-5-10cc-10-bx",
+          "gid": "gid://shopify/Product/9365117305065"
+        }
+      ]
+    },
+    {
+      "slug": "hrt-clinics",
+      "tag": "industry:hrt-surgery",
+      "sampleCount": 5,
+      "sampleProducts": [
+        {
+          "handle": "suture-removal-kit-sterile-50-cs",
+          "gid": "gid://shopify/Product/9365118681321"
+        },
+        {
+          "handle": "3-2mmthree-piece-surgical-titanium-trocar-set-86035-dpti",
+          "gid": "gid://shopify/Product/9365085454569"
+        },
+        {
+          "handle": "3-5mm-stainless-steel-trocar-tray-kit-with-antiseptic-large-gloves-b1352",
+          "gid": "gid://shopify/Product/9365088469225"
+        },
+        {
+          "handle": "3-5mm-stainless-steel-trocar-2cm-tray-kit-with-antiseptic-medium-gloves-b1354",
+          "gid": "gid://shopify/Product/9365088436457"
+        },
+        {
+          "handle": "3-5mm-premium-stainless-steel-trocar-pellet-insertion-wrap-kit-large-glove-b9175c",
+          "gid": "gid://shopify/Product/9365088272617"
+        }
+      ]
+    },
+    {
+      "slug": "home-health",
+      "tag": "industry:home-care",
+      "sampleCount": 5,
+      "sampleProducts": [
+        {
+          "handle": "after-shave-lotion-alcohol-free-4-oz-48-cs",
+          "gid": "gid://shopify/Product/9365094629609"
+        },
+        {
+          "handle": "d-cerin-3-75-oz-tube-24-cs",
+          "gid": "gid://shopify/Product/9365105082601"
+        },
+        {
+          "handle": "12022110-replacement-24-rear-wheel-90-011b1j",
+          "gid": "gid://shopify/Product/9365084438761"
+        },
+        {
+          "handle": "calasoothe-skin-protectant-3-5-g-packet-2-144-cs",
+          "gid": "gid://shopify/Product/9365103345897"
+        },
+        {
+          "handle": "disposable-underpads-17-x-24-22-g-3-100-cs",
+          "gid": "gid://shopify/Product/9365105737961"
+        }
+      ]
+    },
+    {
+      "slug": "clinics-doctors-offices",
+      "tag": "industry:clinic",
+      "sampleCount": 5,
+      "sampleProducts": [
+        {
+          "handle": "aspirator-tips-white-1-8-x-6-1-4",
+          "gid": "gid://shopify/Product/9365099020521"
+        },
+        {
+          "handle": "dappen-dishes-5-assorted-colors",
+          "gid": "gid://shopify/Product/9365105115369"
+        },
+        {
+          "handle": "bleach-germicidal-cleaner-32-oz-spray",
+          "gid": "gid://shopify/Product/9365102854377"
+        },
+        {
+          "handle": "digital-x-ray-sensor-sleeves-1-3-8-x-8",
+          "gid": "gid://shopify/Product/9365105508585"
+        },
+        {
+          "handle": "blu-tray-impression-trays-perforated-lg-upper-1",
+          "gid": "gid://shopify/Product/9365103018217"
+        }
+      ]
+    },
+    {
+      "slug": "pharmacies",
+      "tag": "industry:pharmacy",
+      "sampleCount": 5,
+      "sampleProducts": [
+        {
+          "handle": "accutest-mononucleosis-rapid-test-id516",
+          "gid": "gid://shopify/Product/9365091057897"
+        },
+        {
+          "handle": "narcotic-safe-hd-steel-grafco",
+          "gid": "gid://shopify/Product/9365113667817"
+        },
+        {
+          "handle": "golden-mortar-bags-flat-bottom-small-6-6-x-3-625-x-11-12607",
+          "gid": "gid://shopify/Product/9365108687081"
+        },
+        {
+          "handle": "printed-pill-envelope-1000-bx-grafco-3-5-x-2-5",
+          "gid": "gid://shopify/Product/9365116977385"
+        },
+        {
+          "handle": "clotrimazole-1-antifungal-cream-1oz-tubes-indv-boxed-72-cs",
+          "gid": "gid://shopify/Product/9365103870185"
+        }
+      ]
+    }
+  ]
+}

@@ -21,13 +21,19 @@ import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
-import { hasUsablePrice } from '@/lib/purchasability'
+import { hasUsablePrice, resolvePurchasable } from '@/lib/purchasability'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
 
+// Prefer a variant a shopper can actually buy — availableForSale alone lets
+// a $0 variant win the default slot, landing the page on a "Request pricing"
+// state when a purchasable option exists (lib/purchasability.ts).
 function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
-  return variants.find((v) => v.availableForSale) ?? variants[0]
+  const purchasable = variants.find(
+    (v) => resolvePurchasable({ price: parseFloat(v.price.amount), availableForSale: v.availableForSale }).purchasable,
+  )
+  return purchasable ?? variants.find((v) => v.availableForSale) ?? variants[0]
 }
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {

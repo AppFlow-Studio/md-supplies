@@ -118,7 +118,7 @@ Full audit:
 | **B-16** | P2 🟡 | Review **3,166 duplicate SKUs** spanning >1 product | Never usable as an identity key |
 | **B-17** | P2 🟡 | Populate `custom.brand_name` for the **41 active products** missing it | Brand line is correctly hidden meanwhile. `active-missing-public-brand.csv` |
 | **B-18** | P0 🟡 | **Rotate the BunnyCDN storage AccessKey** | Every request currently returns **401** |
-| **IZ-01** | P1 🟡 | Confirm the canonical **OCC collection** — record GID + exact product count | Handle `occ` exists live; `OCC_COLLECTION_HANDLE` can override per env |
+| **IZ-01** | P1 🟡 | Confirm the canonical **OCC collection** — record GID + exact product count | Handle `occ` exists live; `OCC_COLLECTION_HANDLE` can override per env. **QA-store check (2026-08-08)**: the `occ` handle does **not** resolve on the QA store — `app/solutions/occ/page.tsx` correctly fails safe to its "temporarily unavailable" state (verified in `e2e/occ-industry-discovery.spec.ts`), never a tag-scan fallback. This does not resolve IZ-01 — it's a QA-store observation, not the production confirmation Izzy still owns. See `docs/launch/DEV-LAUNCH-06-qa-fixtures.md`. |
 | **IZ-02** | P2 🟡 | Supply the correct **gifts/toys** handle or confirm retirement | `gifts-toys` does not exist; the 404ing link was removed |
 | **IZ-05** | P2 🟡 | Populate the per-vendor **return policy** source; give us the metafield ns/key | `resolveReturnPolicy()` already accepts approved vendor text; general fallback renders meanwhile |
 | **IZ-06** | P1 🟡 | Create the **partial-shipment fixture** — one line qty 10, fulfil 4 then 3, each with tracking | Verifies account order display: two shipment cards, Pending shows 3, refunds never shown as pending |
@@ -130,8 +130,8 @@ Full audit:
 
 | ID | P | Owner | Task | Notes |
 |---|---|---|---|---|
-| **C-01** | P0 🔴(A-01) | DEV | Re-run the full Playwright suite once secrets land | 12 tests currently fail **only** because the QA store lacks `gloves`, `testing-screening`, industry collections and `nitrile-exam-gloves-powder-free`. No CSP, contrast or axe violations among them. |
-| **C-02** | P0 🔴(C-01) | DEV | **Verify the no-document-reload guarantee on real data** | `e2e/no-reload.spec.ts` exists but has never run against a populated catalogue. This is a core CRO claim of the branch. |
+| **C-01** | ✅ DONE (2026-08-08, DEV-LAUNCH-06) | DEV | Re-run the full Playwright suite once secrets land | **Stale as of 2026-08-08**: the QA store now has `gloves`, `testing-screening`, and all 25 L1 categories live with real product data (see `docs/launch/DEV-LAUNCH-06-qa-fixtures.md`, bootstrapped read-only via `scripts/qa-catalog-fixtures.ts`). The real remaining defect was two hardcoded production-only handles inside the *tests themselves* — `/industries/pharmacy` (real slug is `pharmacies`) and `/product/nitrile-exam-gloves-powder-free` (does not exist on QA; confirmed via a direct Storefront query) — both fixed in `e2e/routes.spec.ts`, `axe.spec.ts`, `visual.spec.ts`. Remaining non-catalog failures (CSP `unsafe-eval`, homepage industry-card contrast, a PDP `scrollable-region-focusable` axe violation, 12 darwin-only visual baselines) are real but pre-existing and out of DEV-LAUNCH-06's catalog-discovery scope — tracked separately, not touched here. |
+| **C-02** | ✅ DONE (2026-08-08, DEV-LAUNCH-06) | DEV | **Verify the no-document-reload guarantee on real data** | Verified against the live QA store: `e2e/no-reload.spec.ts` extended to also exercise pagination and filter selection (previously scoped search only), plus new `e2e/category-filters.spec.ts` / `category-sort-pagination.spec.ts` / `category-search-scope.spec.ts` / `occ-industry-discovery.spec.ts`. All pass or skip with a named QA-data-gap reason — zero failures. |
 | **C-03** | P1 🟡 | DEV | **`next` 16.2.12 → 16.3.0 as its own PR** | Clears the 3 remaining high advisories (`next`, `postcss`, `sharp`) in one semver-**minor** bump. Not bundled here so a reviewer can tell a remediation regression from an upgrade regression. **Read `node_modules/next/dist/docs/` first** — per `AGENTS.md` this Next's conventions differ from what tooling assumes. Rationale: [`dependency-risk-exceptions.md`](security/dependency-risk-exceptions.md) |
 | **C-04** | P1 🟡 | DEV | **Fix the stale `env-feature-flag-register.md`** | It documents `RX_CHECKOUT_ENFORCEMENT` as **default-disabled, enabled when `"true"`**. The code is now `!== 'false'` — i.e. **default ENABLED**. A compliance reader following that doc would conclude the RX gate is off when it is on. Same staleness in IZ-09. **Safety-relevant doc bug — fix before anyone makes a compliance decision from it.** |
 | **C-05** | P2 🟡 | DEV | Generate **linux visual baselines** for `e2e/visual.spec.ts` | Snapshots are darwin-only, so CI runs `--ignore-snapshots`. Run once with `--update-snapshots` on the runner, commit, drop the flag. |
@@ -188,18 +188,28 @@ The **UX walkthrough is not**.
 > ⚠️ **Never describe the frontend gate as bypass-proof.** It is the storefront
 > UX gate. The bypass-resistant control is the companion Shopify validation app.
 
-### D2. Catalog discovery 🔴(A-01)
+### D2. Catalog discovery ✅ VERIFIED against live QA data (2026-08-08, DEV-LAUNCH-06)
 
 Run identically on **category, OCC and industry** — one shared system.
 
-| ID | Coverage |
-|---|---|
-| **D-12** | Filter selection · two rapid filters · sort · search · clear search · pagination · chip removal · clear all · Back · Forward · subcategory nav · category switching |
-| **D-13** | Prove **no new browser document request** after initial load on every one of the above |
-| **D-14** | Header, hero, subcategory navigator and toolbar stay **mounted**; current results stay visible during pending; only the results region is `aria-busy` |
-| **D-15** | URL ⇄ selections stay in sync across Back/Forward |
-| **D-16** | Search stays **scoped** to the current category/industry |
-| **D-17** | Empty-state and loading-state accuracy; visible route back to the unfiltered page |
+New e2e coverage: `e2e/category-filters.spec.ts`, `e2e/category-sort-pagination.spec.ts`,
+`e2e/category-search-scope.spec.ts`, `e2e/occ-industry-discovery.spec.ts`, and an
+extended `e2e/no-reload.spec.ts`. Fixture handles/GIDs sourced live from the QA
+store (`docs/launch/DEV-LAUNCH-06-qa-fixtures.md`), not guessed or
+production-specific.
+
+| ID | Coverage | Status |
+|---|---|---|
+| **D-12** | Filter selection · two rapid filters · sort · search · clear search · pagination · chip removal · clear all · Back · Forward · subcategory nav · category switching | ✅ Verified. "Two rapid filters" skips today — the QA store's `gloves` Availability facet only has an "In stock" value (all 40 products in stock), no "Out of stock" counterpart to combine with; re-enable automatically once QA data has a mixed-availability product. |
+| **D-13** | Prove **no new browser document request** after initial load on every one of the above | ✅ Verified — zero document navigations across search/sort/filter/pagination/Back/Forward on category, OCC (when resolvable), and industry pages. |
+| **D-14** | Header, hero, subcategory navigator and toolbar stay **mounted**; current results stay visible during pending; only the results region is `aria-busy` | ✅ Verified (pre-existing coverage in `no-reload.spec.ts`, re-confirmed). |
+| **D-15** | URL ⇄ selections stay in sync across Back/Forward | ✅ Verified, including sort+page state surviving Back. |
+| **D-16** | Search stays **scoped** to the current category/industry | ✅ Verified with a live cross-category leak test: "rollator" (mobility) returns real hits on unscoped `/search` but zero when scoped to `/category/gloves`. |
+| **D-17** | Empty-state and loading-state accuracy; visible route back to the unfiltered page | ✅ Verified — empty search state renders "No products found." + a working "Clear all filters" link. |
+
+**Also found and fixed during this pass** (not previously tracked): `lib/filter-registry.ts` keyed the `apparel`, `room-furniture`, and `surgery-procedure` registry entries by category **tag** instead of the live Shopify **collection handle** (`capes-gowns`, `seating`, `trocars-trocar-kits`) — since `getFacetRules()` is called with the route slug, which for these three *is* the collection handle, all three silently fell through to `DEFAULT_FACET_RULES` (Availability/Price only) instead of their intended registry entries. Fixed, with a matching dead link in `lib/industry-content.ts` (`ROUTES.category('surgery-procedure')` → `'trocars-trocar-kits'`).
+
+**Also added during this pass**: `/search` had no page-number pagination — only a cursor-based "Load More" button, inconsistent with category/OCC/industry's deep-linkable `?page=N`. `app/search/page.tsx` now uses the same deterministic page-N fetch and the same `CategoryPagination` component category pages use; `app/search/actions.ts` (`loadMoreSearchProducts`) deleted as dead code. See `docs/launch/DEV-LAUNCH-06-verification.md` § "Search pagination added" and `e2e/search-pagination.spec.ts`.
 
 ### D3. Product card edge cases 🔴(A-01)
 

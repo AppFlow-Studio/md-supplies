@@ -20,9 +20,24 @@ function getRedirectPath(err: unknown): string {
   return digest.split(';')[2] ?? ''
 }
 
-describe('search page bad-cursor handling (NF10)', () => {
-  it('redirects to page 1 with q/sort/filter preserved when a stale `after` cursor errors', async () => {
-    mockFetch.mockRejectedValue(new Error('Cursor is invalid'))
+describe('search page deterministic page-N pagination (DEV-LAUNCH-06)', () => {
+  it('requests first = currentPage * pageSize + 1 with no cursor, for a direct deep-page visit', async () => {
+    mockFetch.mockResolvedValue({
+      search: { totalCount: 0, productFilters: [], nodes: [] },
+    })
+
+    await SearchPage({
+      searchParams: Promise.resolve({ q: 'gloves', page: '3' }),
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ query: 'gloves', first: 37, after: null }),
+    )
+  })
+
+  it('redirects to page 1 (q/sort/filter preserved) when the Storefront fetch fails on a deep page', async () => {
+    mockFetch.mockRejectedValue(new Error('Storefront API HTTP 500'))
 
     let caught: unknown
     try {
@@ -31,7 +46,7 @@ describe('search page bad-cursor handling (NF10)', () => {
           q: 'gloves',
           sort: 'PRICE_ASC',
           filter: ['{"available":true}'],
-          after: 'stale-cursor',
+          page: '4',
         }),
       })
     } catch (err) {
@@ -41,10 +56,10 @@ describe('search page bad-cursor handling (NF10)', () => {
     const path = getRedirectPath(caught)
     expect(path).toContain('q=gloves')
     expect(path).toContain('sort=PRICE_ASC')
-    expect(path).not.toContain('after=')
+    expect(path).not.toContain('page=')
   })
 
-  it('still shows the empty state (no redirect) when there is no `after` cursor', async () => {
+  it('lets the error surface (no redirect) when the failure happens on page 1', async () => {
     mockFetch.mockRejectedValue(new Error('network down'))
 
     const result = await SearchPage({
@@ -52,5 +67,21 @@ describe('search page bad-cursor handling (NF10)', () => {
     })
 
     expect(result).toBeTruthy()
+  })
+
+  it('redirects to page 1 when the requested page exceeds MAX_SEARCH_PAGE', async () => {
+    let caught: unknown
+    try {
+      await SearchPage({
+        searchParams: Promise.resolve({ q: 'gloves', page: '999' }),
+      })
+    } catch (err) {
+      caught = err
+    }
+
+    const path = getRedirectPath(caught)
+    expect(path).toContain('q=gloves')
+    expect(path).not.toContain('page=')
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 })

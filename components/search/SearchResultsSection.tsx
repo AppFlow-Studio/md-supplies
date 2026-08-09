@@ -1,12 +1,7 @@
-'use client'
-
-import { useState, useTransition } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { ProductGrid } from '@/components/category/ProductGrid'
-import { loadMoreSearchProducts } from '@/app/search/actions'
-import type { CollectionProduct, PageInfo } from '@/lib/shopify/types'
+import type { CollectionProduct } from '@/lib/shopify/types'
 
 const SUGGESTED = [
   { label: 'Exam Gloves', href: '/category/exam-gloves' },
@@ -16,57 +11,17 @@ const SUGGESTED = [
 ]
 
 interface Props {
-  initialProducts: CollectionProduct[]
-  initialPageInfo: PageInfo
+  products: CollectionProduct[]
   q: string
-  sortKey: string
-  reverse: boolean
-  filters: Record<string, unknown>[]
   clearFiltersUrl: string
   isFiltered: boolean
 }
 
-export function SearchResultsSection({
-  initialProducts,
-  initialPageInfo,
-  q,
-  sortKey,
-  reverse,
-  filters,
-  clearFiltersUrl,
-  isFiltered,
-}: Props) {
-  const [products, setProducts] = useState(initialProducts)
-  const [pageInfo, setPageInfo] = useState(initialPageInfo)
-  const [isPending, startTransition] = useTransition()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
-  function loadMore() {
-    if (!pageInfo.endCursor) return
-    startTransition(async () => {
-      const result = await loadMoreSearchProducts({
-        q,
-        after: pageInfo.endCursor!,
-        sortKey,
-        reverse,
-        filters,
-      })
-      setProducts((prev) => [...prev, ...result.products])
-      setPageInfo(result.pageInfo)
-
-      // NF13: URL never changed on Load More, so back-navigation landed on
-      // the original unpaginated page-1 URL and lost the shopper's place.
-      // Mirror category's URL-driven pagination by reflecting the new
-      // cursor here (shallow — no scroll, no server refetch since state is
-      // already updated above).
-      const params = new URLSearchParams(searchParams)
-      if (result.pageInfo.endCursor) params.set('after', result.pageInfo.endCursor)
-      else params.delete('after')
-      router.replace(`/search?${params.toString()}`, { scroll: false })
-    })
-  }
-
+// Plain results grid + empty state. Pagination moved to page.tsx
+// (DEV-LAUNCH-06 — deterministic page-N via CategoryPagination, same model
+// as category/OCC/industry, replacing the cursor-based "Load More" this
+// component used to own), so nothing here needs client-side state anymore.
+export function SearchResultsSection({ products, q, clearFiltersUrl, isFiltered }: Props) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-6">
@@ -106,25 +61,12 @@ export function SearchResultsSection({
   }
 
   return (
-    <>
-      <ProductGrid
-        products={products}
-        emptyStateHref={clearFiltersUrl}
-        emptyStateMessage={`No results for "${q}"`}
-        itemListId="search-results"
-        itemListName={`Search results for "${q}"`}
-      />
-      {pageInfo.hasNextPage && (
-        <div className="flex items-center justify-center pt-12">
-          <button
-            onClick={loadMore}
-            disabled={isPending}
-            className="border border-navy-900 text-navy-900 text-[14px] font-semibold px-5 h-[44px] hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isPending ? 'Loading…' : 'Load More'}
-          </button>
-        </div>
-      )}
-    </>
+    <ProductGrid
+      products={products}
+      emptyStateHref={clearFiltersUrl}
+      emptyStateMessage={`No results for "${q}"`}
+      itemListId="search-results"
+      itemListName={`Search results for "${q}"`}
+    />
   )
 }

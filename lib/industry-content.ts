@@ -28,7 +28,7 @@ const CATEGORY_LINKS: Record<string, Link[]> = {
   ],
   'hrt-clinics': [
     { label: 'Needles & Syringes', href: ROUTES.category('needles-syringes') },
-    { label: 'Surgery & Procedure', href: ROUTES.category('surgery-procedure') },
+    { label: 'Surgery & Procedure', href: ROUTES.category('trocars-trocar-kits') },
     { label: 'Gloves', href: ROUTES.category('gloves') },
     { label: 'Exam Room', href: ROUTES.category('exam-room') },
     { label: 'Sterilization', href: ROUTES.category('sterilization') },

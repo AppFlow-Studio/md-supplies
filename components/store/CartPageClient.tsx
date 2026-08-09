@@ -13,6 +13,7 @@ import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
 import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
+import { resolveRxLabel } from '@/lib/labels/labels'
 import { SHIPPING_FALLBACK_MESSAGE, SHIPPING_CLASS_COPY } from '@/lib/shipping-resolver/copy'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
 
@@ -132,6 +133,20 @@ export function CartPageClient() {
                   {variantTitle !== 'Default Title' && (
                     <p className="text-gray-500 text-[12px] tracking-[0.24px]">{variantTitle}</p>
                   )}
+                  {(() => {
+                    // Same tag ∪ custom.is_rx_only union the card, PDP, and
+                    // checkout gate use — display-only, never itself a
+                    // checkout decision (DEV-LAUNCH-08).
+                    const rxLabel = resolveRxLabel(line.merchandise.product.tags, line.merchandise.product.isRxOnly)
+                    return rxLabel ? (
+                      <span
+                        aria-label={rxLabel.accessibleText}
+                        className="inline-flex items-center px-2 py-0.5 mt-1 text-[11px] font-medium rounded bg-amber-600 text-white"
+                      >
+                        {rxLabel.text}
+                      </span>
+                    ) : null
+                  })()}
                   {line.shippingDisplay && (
                     <div className="mt-1">
                       <ShippingBadge shippingDisplay={line.shippingDisplay} />

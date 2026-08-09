@@ -37,6 +37,13 @@ export type ProductLabel = {
 // RX tag and retire the other.
 const RX_LABEL_TAGS = ['rx-required', 'compliance:rx-only']
 
+// Single copy source for the RX badge — reused by resolveRxLabel and by any
+// surface (e.g. quick add) that only has the boolean `isRx` flag rather than
+// the raw tags/metafield this function reads, so the wording can never drift
+// between surfaces (DEV-LAUNCH-08).
+export const RX_ONLY_LABEL_TEXT = 'RX Only'
+export const RX_ONLY_ACCESSIBLE_TEXT = 'Prescription required'
+
 /**
  * The "RX Only" badge renders from RX POLICY, not from tags alone and never
  * from a client-authored label metaobject. `isRxOnly` is the store's own
@@ -55,8 +62,8 @@ export function resolveRxLabel(
   if (!taggedRx && !metafieldRx) return null
   return {
     type: 'rx-only',
-    text: 'RX Only',
-    accessibleText: 'Prescription required',
+    text: RX_ONLY_LABEL_TEXT,
+    accessibleText: RX_ONLY_ACCESSIBLE_TEXT,
     priority: 10,
     source: 'tag',
   }

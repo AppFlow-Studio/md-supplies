@@ -1,6 +1,7 @@
 'use client'
 
 import type { ProductOption, ProductVariant } from '@/lib/shopify/types'
+import { resolvePurchasable, hasUsablePrice } from '@/lib/purchasability'
 
 interface Props {
   options: ProductOption[]
@@ -57,13 +58,20 @@ export function VariantSelector({ options, variants, selectedVariant, onSelect }
                   ),
                 ),
               )
-              const available = variantForValue?.availableForSale ?? false
+              // A zero-price option must never be selectable into a purchase
+              // attempt, same fail-closed check as the cart gate and quick
+              // add (lib/purchasability.ts) — never a local re-implementation.
+              const variantPrice = variantForValue ? parseFloat(variantForValue.price.amount) : null
+              const purchasable = resolvePurchasable({
+                price: variantPrice,
+                availableForSale: variantForValue?.availableForSale ?? false,
+              }).purchasable
 
               return (
                 <button
                   key={value}
                   onClick={() => handleChange(option.name, value)}
-                  disabled={!available}
+                  disabled={!purchasable}
                   className={`flex flex-col items-start justify-center px-4 h-[77px] min-w-[167px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                     isSelected
                       ? 'bg-navy-900 text-white'
@@ -73,7 +81,7 @@ export function VariantSelector({ options, variants, selectedVariant, onSelect }
                   <span className="text-[14px] font-semibold tracking-[0.28px]">{value}</span>
                   {variantForValue && (
                     <span className={`text-[13px] mt-0.5 tracking-[0.26px] ${isSelected ? 'text-white/70' : 'text-gray-500'}`}>
-                      ${parseFloat(variantForValue.price.amount).toFixed(2)}
+                      {hasUsablePrice(variantPrice) ? `$${variantPrice!.toFixed(2)}` : 'Contact for pricing'}
                     </span>
                   )}
                 </button>

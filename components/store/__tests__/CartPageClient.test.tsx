@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { CartPageClient } from '../CartPageClient'
 import { useCart } from '../CartProvider'
+import { getRxGateStatus } from '@/app/actions/rx'
 import { track } from '@/lib/analytics/track'
 import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/events'
 import { SHIPPING_CLASS_COPY, SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
@@ -27,6 +28,7 @@ vi.mock('@/lib/analytics/events', () => ({
 }))
 vi.mock('@/app/actions/cart', () => ({ setCartAttribute: vi.fn() }))
 vi.mock('@/lib/analytics/clientId', () => ({ clientIdFromGaCookie: vi.fn(() => null) }))
+vi.mock('@/app/actions/rx', () => ({ getRxGateStatus: vi.fn(), prepareCheckout: vi.fn() }))
 
 afterEach(cleanup)
 beforeEach(() => vi.resetAllMocks())
@@ -261,5 +263,45 @@ describe('CartPageClient', () => {
     render(<CartPageClient />)
     fireEvent.click(screen.getByRole('link', { name: /proceed to checkout/i }))
     expect(vi.mocked(buildBeginCheckoutEvent)).toHaveBeenCalledOnce()
+  })
+
+  // DEV-LAUNCH-08: RX state must be visible on the cart page, not just
+  // inferred from the blocking panel — same union the checkout gate uses.
+  it('shows an RX Only badge on a line whose product carries the RX tag', () => {
+    vi.mocked(getRxGateStatus).mockResolvedValue({
+      cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
+    })
+    const rxLine = {
+      ...mockLine,
+      merchandise: {
+        ...mockLine.merchandise,
+        product: { ...mockLine.merchandise.product, tags: ['compliance:rx-only'] },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [rxLine] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('RX Only')).toBeInTheDocument()
+  })
+
+  it('shows an RX Only badge for a metafield-only RX product (no tag)', () => {
+    vi.mocked(getRxGateStatus).mockResolvedValue({
+      cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
+    })
+    const rxLine = {
+      ...mockLine,
+      merchandise: {
+        ...mockLine.merchandise,
+        product: { ...mockLine.merchandise.product, tags: [], isRxOnly: { value: 'true' } },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [rxLine] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('RX Only')).toBeInTheDocument()
+  })
+
+  it('shows no RX badge for a non-RX line', () => {
+    setupUseCart()
+    render(<CartPageClient />)
+    expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
   })
 })

@@ -164,6 +164,9 @@ test.describe('industry page states', () => {
     await page.goto('/industries/urgent-care', { waitUntil: 'domcontentloaded' })
     await page.waitForLoadState('networkidle').catch(() => {})
     await expect(page.getByRole('searchbox').first()).toBeVisible()
-    await expect(page.locator('body')).toContainText(/\d+\s+result/i)
+    // Unfiltered state reads "Showing N products"; only an active ?q= search
+    // switches to "N results for ..." (components/category/CategoryResults.tsx)
+    // — a real result count is either, so long as it's a real number.
+    await expect(page.locator('body')).toContainText(/\d+\s+(result|product)/i)
   })
 })
