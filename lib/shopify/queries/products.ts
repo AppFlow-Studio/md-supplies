@@ -1,3 +1,12 @@
+// DEV-LAUNCH-07: every query built on this fragment feeds ShopifyProductCard
+// (partner product listings via GET_PRODUCTS_BY_VENDOR, PDP "You May Also
+// Like"/"Frequently Bought With" via GET_PRODUCT_RECS, etc.) — the exact same
+// component GET_COLLECTION's card grid uses. Without these three fields the
+// card silently degrades: no brand line even when an approved brand_name
+// exists, no RX badge for the 40 ACTIVE metafield-only RX products, and a
+// backordered item reads as plain "Out of Stock" instead of its restock date.
+// Selected here so every ShopifyProductCard consumer agrees with the category
+// grid and the PDP, not just the ones that happened to ask.
 const PRODUCT_CARD_FRAGMENT = `#graphql
   fragment ProductCard on Product {
     id
@@ -6,6 +15,9 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
     vendor
     availableForSale
     tags
+    brandName: metafield(namespace: "custom", key: "brand_name") { value }
+    estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+    isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
     priceRange {
       minVariantPrice { amount currencyCode }
       maxVariantPrice { amount currencyCode }

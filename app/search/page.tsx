@@ -9,9 +9,11 @@ import { SearchSort } from '@/components/search/SearchSort'
 import { SearchFilterDrawer } from '@/components/search/SearchFilterDrawer'
 import { SearchBarForm } from '@/components/search/SearchBarForm'
 import { SearchResultsSection } from '@/components/search/SearchResultsSection'
-import type { CollectionProduct, CollectionFilter, PageInfo } from '@/lib/shopify/types'
-import { redirect } from 'next/navigation'
+import { CategoryPagination } from '@/components/category/CategoryPagination'
+import type { CollectionProduct, CollectionFilter } from '@/lib/shopify/types'
+import { notFound, redirect } from 'next/navigation'
 import { getSearchFacets, isAllowedFilterInput } from '@/lib/filter-registry'
+import { SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE } from '@/lib/category-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +21,7 @@ interface Props {
   searchParams: Promise<{
     q?: string
     sort?: string
-    after?: string
+    page?: string
     filter?: string | string[]
   }>
 }
@@ -28,7 +30,6 @@ interface SearchData {
   search: {
     totalCount: number
     productFilters: CollectionFilter[]
-    pageInfo: PageInfo
     nodes: CollectionProduct[]
   }
 }
@@ -84,13 +85,11 @@ export default async function SearchPage({ searchParams }: Props) {
   const { sortKey, reverse } = parseSortKey(sp.sort)
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
 
-  let products: CollectionProduct[] = []
-  let totalCount = 0
-  let productFilters: CollectionFilter[] = []
-  let pageInfo: PageInfo = { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }
+  const currentPage = parseInt(sp.page ?? '1', 10)
+  if (isNaN(currentPage) || currentPage < 1) notFound()
 
-  // Target for the bad-cursor redirect below: same q/sort/filter, no
-  // `after` — i.e. exactly what a fresh page-1 visit would build.
+  // Target for the deep-page/error redirect below: same q/sort/filter, no
+  // `page` — i.e. exactly what a fresh page-1 visit would build.
   const page1Url = (() => {
     const p = new URLSearchParams()
     if (q) p.set('q', q)
@@ -100,30 +99,46 @@ export default async function SearchPage({ searchParams }: Props) {
     return qs ? `/search?${qs}` : '/search'
   })()
 
+  // Beyond MAX_SEARCH_PAGE the deterministic per-page fetch below would need
+  // a Storefront `first` larger than the API allows — bounce to page 1
+  // instead of erroring, mirroring category pagination's own depth cap
+  // (lib/category-utils.ts MAX_CATEGORY_PAGE).
+  if (currentPage > MAX_SEARCH_PAGE) redirect(page1Url)
+
+  let products: CollectionProduct[] = []
+  let totalCount = 0
+  let productFilters: CollectionFilter[] = []
+  let hasNext = false
+
   if (q.trim()) {
     try {
+      // Deterministic page-N fetch (DEV-LAUNCH-06): always from the start, no
+      // cursor chain — same model as CategoryResults. `first` overfetches by
+      // one page so a real "Next" anchor can be told apart from a page-1
+      // duplicate without a second round-trip.
       const data = await storefrontFetch<SearchData>(SEARCH_PRODUCTS, {
         query: q,
-        first: 12,
-        after: sp.after ?? null,
+        first: currentPage * SEARCH_PAGE_SIZE + 1,
+        after: null,
         sortKey,
         reverse,
         filters: parsedFilters,
       })
-      products = data.search.nodes
+      const allNodes = data.search.nodes
+      const startIndex = (currentPage - 1) * SEARCH_PAGE_SIZE
+      products = allNodes.slice(startIndex, startIndex + SEARCH_PAGE_SIZE)
+      hasNext = allNodes.length > currentPage * SEARCH_PAGE_SIZE
       totalCount = data.search.totalCount
       // Registry gate: only sources approved anywhere in the search
       // allowlist may reach the filter rail (NF3) — the Storefront
       // `productFilters` response is untrusted input.
       productFilters = getSearchFacets(data.search.productFilters ?? [])
-      pageInfo = data.search.pageInfo
     } catch {
-      // NF10: an expired/mangled `after` cursor throws here just like any
-      // other Storefront error, but it isn't a genuinely empty result —
-      // bounce to page 1 (q/sort/filter intact) instead of rendering a
-      // false "No results". Errors with no cursor involved keep the
-      // original behavior (empty state) since there's no lower fallback.
-      if (sp.after) {
+      // A Storefront error on a deep page isn't a genuinely empty result —
+      // bounce to page 1 (q/sort/filter intact) instead of rendering a false
+      // "No results". Page-1 failures keep the original behavior (empty
+      // state) since there's no lower fallback.
+      if (currentPage > 1) {
         redirect(page1Url)
       }
     }
@@ -144,6 +159,13 @@ export default async function SearchPage({ searchParams }: Props) {
     if (q) p.set('q', q)
     return `/search?${p.toString()}`
   })()
+
+  // Carried onto every pagination link (CategoryPagination sets/removes only
+  // `page` on top of this) — mirrors CategoryResults' own persistParams.
+  const persistParams = new URLSearchParams()
+  if (q) persistParams.set('q', q)
+  if (sp.sort) persistParams.set('sort', sp.sort)
+  activeFilterStrings.forEach((f) => persistParams.append('filter', f))
 
   const filterLabelMap = new Map(
     productFilters.flatMap((g) => g.values.map((v) => [v.input, v.label] as const))
@@ -236,18 +258,24 @@ export default async function SearchPage({ searchParams }: Props) {
             />
           )}
 
-          {/* Results grid + load more — keyed so client state resets on filter/sort change */}
+          {/* Results grid */}
           {q.trim() && (
             <SearchResultsSection
-              key={`${q}|${sp.sort ?? ''}|${activeFilterStrings.join(',')}`}
-              initialProducts={products}
-              initialPageInfo={pageInfo}
+              products={products}
               q={q}
-              sortKey={sortKey}
-              reverse={reverse}
-              filters={parsedFilters}
               clearFiltersUrl={clearFiltersUrl}
               isFiltered={isFiltered}
+            />
+          )}
+
+          {/* Pagination — deterministic page-N, same component and URL model
+              as category/OCC/industry pages (DEV-LAUNCH-06). */}
+          {q.trim() && products.length > 0 && (
+            <CategoryPagination
+              currentPage={currentPage}
+              hasNext={hasNext}
+              baseUrl="/search"
+              persistParams={persistParams}
             />
           )}
 

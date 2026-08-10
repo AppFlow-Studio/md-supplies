@@ -320,10 +320,10 @@ describe('category coverage: every audited category has real facets', () => {
   // testing-screening is the collection, and non-medical / non-healthcare are
   // tag values held out of the tree with no collection to key an entry on.
   const AUDITED = [
-    'exam-room', 'wound-care', 'mobility', 'needles-syringes', 'room-furniture',
-    'gloves', 'home-care', 'respiratory', 'emergency-supplies', 'surgery-procedure',
+    'exam-room', 'wound-care', 'mobility', 'needles-syringes', 'seating',
+    'gloves', 'home-care', 'respiratory', 'emergency-supplies', 'trocars-trocar-kits',
     'patient-therapy-rehab', 'bariatric', 'hygiene', 'surgical-sutures',
-    'testing-screening', 'apparel', 'dental', 'incontinence', 'pharmacy-products',
+    'testing-screening', 'capes-gowns', 'dental', 'incontinence', 'pharmacy-products',
     'housekeeping-janitorial', 'iv-therapy', 'urology-ostomy', 'sterilization',
     'face-masks', 'disinfectants', 'office-supplies', 'occ',
   ]

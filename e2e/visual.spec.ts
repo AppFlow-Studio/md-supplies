@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test'
 const VISUAL_ROUTES: Array<{ path: string; name: string }> = [
   { path: '/', name: 'home' },
   { path: '/category/gloves', name: 'category' },
-  { path: '/product/nitrile-exam-gloves-powder-free', name: 'pdp' },
+  { path: '/product/exam-glove-nitrile-medium-blue-100-bx-10-bx-cs', name: 'pdp' },
   { path: '/solutions/occ', name: 'occ' },
-  { path: '/industries/pharmacy', name: 'industry' },
+  { path: '/industries/pharmacies', name: 'industry' },
   { path: '/blog/types-of-needles', name: 'blog' },
 ]
 

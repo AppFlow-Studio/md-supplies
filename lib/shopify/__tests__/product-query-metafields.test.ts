@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { GET_PRODUCT } from '../queries/products'
+import { GET_PRODUCT, GET_PRODUCTS_BY_VENDOR, GET_PRODUCT_RECS } from '../queries/products'
 
 /**
  * The product page maps a metafield onto every field normalizeProduct declares,
@@ -32,4 +32,29 @@ describe('GET_PRODUCT metafield selections', () => {
     expect(GET_PRODUCT).toContain('query GetProduct')
     expect(GET_PRODUCT.split('{').length).toBe(GET_PRODUCT.split('}').length)
   })
+})
+
+/**
+ * DEV-LAUNCH-07: every query built on the shared ProductCard fragment feeds
+ * ShopifyProductCard (partner listings, PDP recommendations, homepage
+ * sections) — the same component the category grid uses. GET_COLLECTION
+ * already selected brand/RX/backorder; the fragment did not, so those
+ * surfaces silently degraded to no brand line, no RX badge, and a plain
+ * "Out of Stock" instead of a restock date, even for products that carry
+ * the data.
+ */
+describe('ProductCard fragment metafield selections', () => {
+  for (const [name, query] of [
+    ['GET_PRODUCTS_BY_VENDOR', GET_PRODUCTS_BY_VENDOR],
+    ['GET_PRODUCT_RECS', GET_PRODUCT_RECS],
+  ] as const) {
+    it(`${name} requests brand, RX, and backorder metafields via the shared fragment`, () => {
+      expect(query).toMatch(/brandName:\s*metafield\(/)
+      expect(query).toContain('key: "brand_name"')
+      expect(query).toMatch(/estimatedRestockDate:\s*metafield\(/)
+      expect(query).toContain('key: "estimated_back_order_restock_date"')
+      expect(query).toMatch(/isRxOnly:\s*metafield\(/)
+      expect(query).toContain('key: "is_rx_only"')
+    })
+  }
 })

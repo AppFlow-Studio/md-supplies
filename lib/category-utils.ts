@@ -8,8 +8,17 @@ import { getAllowedHandles } from '@/lib/category-nav'
 // how deep deterministic category pagination can go before falling back to
 // page 1 instead of requesting more items than Shopify allows in one query.
 export const CATEGORY_PAGE_SIZE = 9
-const STOREFRONT_MAX_FIRST = 250
+export const STOREFRONT_MAX_FIRST = 250
 export const MAX_CATEGORY_PAGE = Math.floor((STOREFRONT_MAX_FIRST - 1) / CATEGORY_PAGE_SIZE)
+
+// Same deterministic-page-N model as categories (DEV-LAUNCH-06): /search used
+// to page via a Shopify cursor advanced through a "Load More" button, which
+// never reflected a stable, deep-linkable, Back/Forward-safe URL the way
+// category pagination does. Kept at the search page's original per-request
+// size (12) rather than aligned to CATEGORY_PAGE_SIZE — no reason to change
+// result density, just how paging through it works.
+export const SEARCH_PAGE_SIZE = 12
+export const MAX_SEARCH_PAGE = Math.floor((STOREFRONT_MAX_FIRST - 1) / SEARCH_PAGE_SIZE)
 
 type SlimCollection = { handle: string; title: string }
 

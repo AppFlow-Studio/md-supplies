@@ -70,6 +70,10 @@ docs/audits/2026-08-02-catalog-cro/screenshots/
 # Regenerate: npx playwright test e2e/categories-hub.spec.ts
 docs/audits/2026-08-07-dev-launch-03/screenshots/
 
+# DEV-LAUNCH-05 hub/category integration e2e evidence — regenerable PNGs.
+# Regenerate: E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/categories-hub-integration.spec.ts
+docs/audits/2026-08-08-dev-launch-05/screenshots/
+
 # DEV-LAUNCH-11 full route x viewport responsive sweep — regenerable PNGs.
 # Regenerate: E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/responsive.spec.ts
 docs/audits/2026-08-10-dev-launch-11/screenshots/
