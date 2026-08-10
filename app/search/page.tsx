@@ -151,9 +151,16 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
-      {/* Search bar — keyed so controlled input resets on each new query */}
+      {/* Search bar — keyed so controlled input resets on each new query.
+          A single static h1 covers both states below: the result count/query
+          text changes on every search and (unlike a category or product page)
+          this route is noindex, so there's no SEO case for folding the query
+          into the heading — a stable, predictable landmark serves screen-
+          reader users navigating by heading better than one whose text
+          changes underneath them. */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
+          <h1 className="text-navy-900 text-[20px] font-semibold mb-4">Search</h1>
           <SearchBarForm key={q} defaultQuery={q} />
         </div>
       </div>
@@ -176,11 +183,11 @@ export default async function SearchPage({ searchParams }: Props) {
           {/* Result count + sort bar */}
           {q.trim() && (
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-gray-500 text-[15px] tracking-[0.3px]">
+              <p className="text-gray-500 text-[15px] tracking-[0.3px]">
                 {totalCount > 0
                   ? `${totalCount} result${totalCount !== 1 ? 's' : ''} for "${q}"`
                   : `No results for "${q}"`}
-              </h1>
+              </p>
               {products.length > 0 && (
                 <SearchSort
                   currentSort={sp.sort}
@@ -247,9 +254,9 @@ export default async function SearchPage({ searchParams }: Props) {
           {/* No query state */}
           {!q.trim() && (
             <div className="flex flex-col items-center justify-center py-20 gap-6">
-              <h1 className="text-navy-900 text-[20px] font-semibold">
+              <p className="text-navy-900 text-[20px] font-semibold">
                 What are you looking for?
-              </h1>
+              </p>
               <p className="text-gray-500 text-[15px]">Browse popular categories:</p>
               <div className="flex flex-wrap gap-3 justify-center">
                 {SUGGESTED.map(({ label, href }) => (

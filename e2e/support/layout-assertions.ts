@@ -32,7 +32,7 @@ export async function expectNoOverlappingInteractiveElements(page: Page, label: 
       // coordinates — a false positive, since the link is not painted,
       // focusable, or clickable while the panel is closed.
       if (typeof el.checkVisibility === 'function') {
-        return el.checkVisibility({ checkVisibilityCSS: true } as CheckVisibilityOptions)
+        return el.checkVisibility({ checkVisibilityCSS: true })
       }
       const style = getComputedStyle(el)
       return style.visibility !== 'hidden' && style.display !== 'none'
@@ -94,7 +94,7 @@ export async function expectStickyDoesNotObscure(page: Page, label: string, maxR
       // check fails identically on every single page.
       if (
         typeof el.checkVisibility === 'function' &&
-        !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true } as CheckVisibilityOptions)
+        !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
       ) {
         return
       }
@@ -110,9 +110,15 @@ export async function expectStickyDoesNotObscure(page: Page, label: string, maxR
       // grid, laid out as an ordinary flex/grid sibling) tracks the user's
       // scroll within its own space but never overlays the content next to
       // it — there is nothing "underneath" it to hide, unlike a full-width
-      // sticky header/footer/CTA bar. Only elements wide enough to plausibly
-      // sit in front of the main content column count toward the ratio.
-      if (rect.width / window.innerWidth < 0.5) return
+      // sticky header/footer/CTA bar. This reasoning is specific to `sticky`:
+      // it stays in normal flow, so a narrow sticky column can only sit
+      // beside its siblings, never in front of them. `position: fixed` has
+      // no such guarantee — a fixed element is removed from flow and can
+      // legitimately overlay content at ANY width (e.g. a narrow fixed
+      // off-canvas panel stuck open over the page). So only `sticky`
+      // elements get the width exemption; `fixed` elements stay subject to
+      // the un-relaxed height-ratio check below regardless of width.
+      if (style.position === 'sticky' && rect.width / window.innerWidth < 0.5) return
       if (rect.height / window.innerHeight > ratio) {
         bad.push(`${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}.${Array.from(el.classList).slice(0, 2).join('.')} covers ${(rect.height / window.innerHeight * 100).toFixed(0)}% of viewport height`)
       }
