@@ -22,7 +22,7 @@ export async function expectNoOverlappingInteractiveElements(page: Page, label: 
     const selector = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [role="button"]'
     const els = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter((el) => {
       const style = getComputedStyle(el)
-      return style.visibility !== 'hidden' && style.display !== 'none' && el.offsetParent !== null
+      return style.visibility !== 'hidden' && style.display !== 'none'
     })
     const bad: string[] = []
     for (const el of els) {
@@ -65,15 +65,17 @@ export async function expectStickyDoesNotObscure(page: Page, label: string, maxR
 
 /** Cards in the same grid row must render at a consistent height. */
 export async function expectConsistentCardHeights(page: Page, cardSelector: string, label: string) {
-  const heights = await page.evaluate((sel) => {
-    return Array.from(document.querySelectorAll<HTMLElement>(sel)).map((el) => Math.round(el.getBoundingClientRect().height))
+  const measurements = await page.evaluate((sel) => {
+    return Array.from(document.querySelectorAll<HTMLElement>(sel)).map((el) => {
+      const rect = el.getBoundingClientRect()
+      return { height: Math.round(rect.height), top: Math.round(rect.top) }
+    })
   }, cardSelector)
-  if (heights.length < 2) return
+  if (measurements.length < 2) return
   const rows = new Map<number, number[]>()
-  const tops = await page.evaluate((sel) => Array.from(document.querySelectorAll<HTMLElement>(sel)).map((el) => Math.round(el.getBoundingClientRect().top)), cardSelector)
-  tops.forEach((top, i) => {
+  measurements.forEach(({ top, height }) => {
     const bucket = Math.round(top / 10) * 10
-    rows.set(bucket, [...(rows.get(bucket) ?? []), heights[i]])
+    rows.set(bucket, [...(rows.get(bucket) ?? []), height])
   })
   for (const [rowTop, rowHeights] of rows) {
     const min = Math.min(...rowHeights)
