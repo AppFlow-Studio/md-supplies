@@ -57,7 +57,7 @@ export default async function AccountOrdersPage() {
   }
 
   return (
-    <main className="bg-[#f9fafc] min-h-screen">
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
         <Link
           href="/account"

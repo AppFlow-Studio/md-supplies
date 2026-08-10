@@ -72,7 +72,7 @@ export default async function CategoriesPage() {
     .slice(0, 8)
 
   return (
-    <main className="bg-[#f9fafc] min-h-screen">
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       {/* Breadcrumb */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
         <Breadcrumb items={[{ label: 'All Categories' }]} />

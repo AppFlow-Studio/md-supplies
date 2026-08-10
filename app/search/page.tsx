@@ -150,7 +150,7 @@ export default async function SearchPage({ searchParams }: Props) {
   )
 
   return (
-    <main className="bg-[#f9fafc] min-h-screen">
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       {/* Search bar — keyed so controlled input resets on each new query */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">

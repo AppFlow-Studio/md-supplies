@@ -11,7 +11,7 @@ export const metadata = buildMetadata({
 
 export default function ContactPage() {
   return (
-    <main className="bg-[#f9fafc] min-h-screen">
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14">
         <div className="max-w-[640px]">
           <h1 className="text-navy-900 text-[32px] font-bold mb-2">Contact Us</h1>

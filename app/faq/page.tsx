@@ -13,7 +13,7 @@ export const metadata = buildMetadata({
 
 export default function FaqPage() {
   return (
-    <main>
+    <main id="main-content">
 
       {/* ── Hero + Accordion ── */}
       <section className="w-full bg-neutral-100 overflow-x-hidden">
