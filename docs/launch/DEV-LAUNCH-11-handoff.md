@@ -1,5 +1,20 @@
 # DEV-LAUNCH-11 — Session Handoff
 
+## 🛑 STOP — unresolved branch divergence, read this before anything else
+
+While preparing this handoff, `git push origin catalog-cro-review-sardor-dev` was **rejected**: origin has 2 commits this branch never saw (`3cd4498` "DEV-LAUNCH-05", `8521ed1` "almost completed 2 tickets" — apparently DEV-LAUNCH-05/06/07/08 work, including a real QA-fixtures registry at `e2e/helpers/qa-fixtures.ts`/`qa-fixtures.json` and `docs/launch/DEV-LAUNCH-06-qa-fixtures.md`, `DEV-LAUNCH-06/07/08-verification.md`). **The plan file's "Known blocker" section (DEV-LAUNCH-04–07 don't exist) is now known-stale for origin** — it was true of this local branch only. The user has NOT yet reviewed origin's changes and asked the controller to stop rather than merge. **The 9 local task commits below are NOT pushed and origin has diverging work not yet merged in.**
+
+**Do not merge, rebase, or push this branch until the user (or whoever resumes this) has reviewed origin's 2 commits and decided how to reconcile.** Specifically:
+
+- 4 files conflict between this branch's 9 commits and origin's 2 commits: `.gitignore`, `app/search/page.tsx`, `components/store/CartPopup.tsx`, `e2e/responsive.spec.ts` — all already implemented and task-reviewed on this branch (Tasks 3, 4). A careless merge could clobber either side's reviewed work.
+- Origin's QA-fixtures registry may make Task 8's planned `E2E_HANDLE_RX` env-var approach and Task 9's planned manual cookie-injection approach for authenticated routes **redundant or wrong** — check `e2e/helpers/qa-fixtures.ts`/`.json` and the DEV-LAUNCH-06/07/08 verification docs on origin before writing those tasks' briefs; they may already have real fixture handles/accounts to use instead.
+- To inspect origin's changes without touching this branch: `git fetch origin` (safe, read-only) then `git log --oneline origin/catalog-cro-review-sardor-dev` / `git show <sha>` / `git diff HEAD origin/catalog-cro-review-sardor-dev`.
+- `git merge-base HEAD origin/catalog-cro-review-sardor-dev` = `1d8fc89889bbccd650323db8fed6ecf1816ddd21` (both sides share this ancestor).
+
+Once the user has decided how to reconcile (merge and resolve, rebase, cherry-pick specific pieces, or something else), update this section and the "Progress" section below accordingly, then resume the SDD plan from Task 7 (or from wherever the merge lands).
+
+---
+
 **Purpose of this file:** resume the subagent-driven-development (SDD) execution of the DEV-LAUNCH-11 implementation plan in a fresh session, possibly on a different machine. Read this file fully before doing anything else.
 
 **Plan file:** `docs/superpowers/plans/2026-08-10-dev-launch-11-responsive-a11y-qa.md` — **read that first**, it's the actual spec. This handoff file is state, not spec.
@@ -10,11 +25,7 @@
 
 ## ⚠️ Things that will NOT transfer automatically to another machine/session
 
-1. **9 commits exist only on the local branch `catalog-cro-review-sardor-dev` — none are pushed to `origin`.** `git log --oneline origin/catalog-cro-review-sardor-dev -1` still shows the old tip (`1d8fc89`). If you're moving to another PC, you must either:
-   - `git push origin catalog-cro-review-sardor-dev` from this machine first, then `git pull` / `fetch` on the other machine, **or**
-   - copy the repo directory (including `.git`) directly.
-
-   Do not push without checking with the user first — pushing wasn't requested, this is just flagging what's required for the handoff to work.
+1. **9 task commits (plus this handoff commit) exist only on the local branch `catalog-cro-review-sardor-dev` — a push to `origin` was attempted and REJECTED** because origin has diverged (see the 🛑 STOP section above — this is not a simple "push it" situation, origin has real unmerged work). If you're moving to another PC before that's resolved, you must copy the repo directory (including `.git`) directly rather than relying on `git push`/`pull`.
 
 2. **The plan file itself is untracked** (`?? docs/superpowers/plans/2026-08-10-dev-launch-11-responsive-a11y-qa.md`) — it was never committed. It must travel with whatever mechanism you use above (it'll ride along with a full repo-directory copy; it will NOT ride along with just a `git push` of tracked commits, since it isn't tracked yet). Consider committing it (ask the user first, per normal commit rules) so it's not at risk of being lost.
 
