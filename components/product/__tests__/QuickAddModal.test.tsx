@@ -75,4 +75,20 @@ describe('QuickAddModal', () => {
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByLabelText('Close quick add')).toHaveAttribute('type', 'button')
   })
+
+  it('returns focus to the previously focused element on unmount', () => {
+    const trigger = document.createElement('button')
+    trigger.textContent = 'Quick add trigger'
+    document.body.appendChild(trigger)
+    trigger.focus()
+    expect(document.activeElement).toBe(trigger)
+
+    const onClose = vi.fn()
+    const { unmount } = render(<QuickAddModal product={product} onClose={onClose} />)
+    expect(document.activeElement).not.toBe(trigger) // focus moved into the dialog
+
+    unmount()
+    expect(document.activeElement).toBe(trigger)
+    document.body.removeChild(trigger)
+  })
 })

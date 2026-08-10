@@ -23,9 +23,12 @@ export function CartPopup() {
   const blockedLines = cart ? blockedCartLines(cart.lines.nodes) : []
   const checkoutBlocked = blockedLines.length > 0
   const panelRef = useRef<HTMLDivElement>(null)
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
+
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null
 
     const panel = panelRef.current
     if (!panel) return
@@ -58,7 +61,10 @@ export function CartPopup() {
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      previouslyFocusedRef.current?.focus()
+    }
   }, [isOpen, closeCart])
 
   async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {
