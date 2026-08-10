@@ -176,11 +176,11 @@ export default async function SearchPage({ searchParams }: Props) {
           {/* Result count + sort bar */}
           {q.trim() && (
             <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-500 text-[15px] tracking-[0.3px]">
+              <h1 className="text-gray-500 text-[15px] tracking-[0.3px]">
                 {totalCount > 0
                   ? `${totalCount} result${totalCount !== 1 ? 's' : ''} for "${q}"`
                   : `No results for "${q}"`}
-              </p>
+              </h1>
               {products.length > 0 && (
                 <SearchSort
                   currentSort={sp.sort}
@@ -247,9 +247,9 @@ export default async function SearchPage({ searchParams }: Props) {
           {/* No query state */}
           {!q.trim() && (
             <div className="flex flex-col items-center justify-center py-20 gap-6">
-              <p className="text-navy-900 text-[20px] font-semibold">
+              <h1 className="text-navy-900 text-[20px] font-semibold">
                 What are you looking for?
-              </p>
+              </h1>
               <p className="text-gray-500 text-[15px]">Browse popular categories:</p>
               <div className="flex flex-wrap gap-3 justify-center">
                 {SUGGESTED.map(({ label, href }) => (

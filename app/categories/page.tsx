@@ -126,7 +126,7 @@ export default async function CategoriesPage() {
       )}
 
       {/* All Categories grid */}
-      <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
+      <section id="all-categories" className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
         <h2 className="text-navy-900 text-[22px] font-semibold mb-7">Browse All Categories</h2>
 
         {l1Tiles.length === 0 ? (
