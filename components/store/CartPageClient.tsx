@@ -13,9 +13,9 @@ import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
 import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
 import { unshippableCartLines, CART_LINE_UNSHIPPABLE_MESSAGE } from '@/lib/shopify/cart-lines'
-import { resolveRxLabel } from '@/lib/labels/labels'
+import { resolveProductLabels } from '@/lib/labels/labels'
 import { SHIPPING_FALLBACK_MESSAGE, SHIPPING_CLASS_COPY } from '@/lib/shipping-resolver/copy'
-import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 
 export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
@@ -147,27 +147,21 @@ export function CartPageClient() {
                   {variantTitle !== 'Default Title' && (
                     <p className="text-gray-500 text-[12px] tracking-[0.24px]">{variantTitle}</p>
                   )}
-                  {(() => {
-                    // Same tag ∪ custom.is_rx_only union the card, PDP, and
-                    // checkout gate use — display-only, never itself a
-                    // checkout decision (DEV-LAUNCH-08).
-                    const rxLabel = resolveRxLabel(line.merchandise.product.tags, line.merchandise.product.isRxOnly)
-                    return rxLabel ? (
-                      <span
-                        aria-label={rxLabel.accessibleText}
-                        // DEV-LAUNCH-13: bg-amber-600 + white measured ~3.18:1,
-                        // below WCAG AA's 4.5:1 — same fix as ProductBadges.tsx.
-                        className="inline-flex items-center px-2 py-0.5 mt-1 text-[11px] font-medium rounded bg-amber-700 text-white"
-                      >
-                        {rxLabel.text}
-                      </span>
-                    ) : null
-                  })()}
-                  {line.shippingDisplay && (
-                    <div className="mt-1">
-                      <ShippingBadge shippingDisplay={line.shippingDisplay} />
-                    </div>
-                  )}
+                  {/* Same tag ∪ custom.is_rx_only union and custom.backorder
+                      boolean the card/PDP/checkout gate use — display-only,
+                      never itself a checkout decision (DEV-LAUNCH-08). Order
+                      (RX -> Backorder -> Free Shipping) guaranteed by
+                      ProductLabelBadges. */}
+                  <ProductLabelBadges
+                    className="mt-1"
+                    labels={resolveProductLabels({
+                      tags: line.merchandise.product.tags,
+                      isRxOnly: line.merchandise.product.isRxOnly,
+                      isBackordered: line.merchandise.product.backorder,
+                      estimatedRestockDate: line.merchandise.product.estimatedRestockDate?.value ?? null,
+                    })}
+                    shippingDisplay={line.shippingDisplay}
+                  />
                   {line.merchandise.sku && (
                     <p className="text-gray-400 text-[11px] tracking-[0.22px] mb-1">
                       SKU: {line.merchandise.sku}

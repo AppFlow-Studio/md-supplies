@@ -289,4 +289,24 @@ describe('ShopifyProductCard', () => {
     expect(screen.getByText('Dynarex')).toBeInTheDocument()
     expect(screen.queryByText('MedPlus Fulfillment')).not.toBeInTheDocument()
   })
+
+  // DEV-RX-02 / Izzy retest on 225678bc: custom.backorder was read nowhere,
+  // so no grid card ever showed a Backorder badge regardless of the metafield.
+  it('shows the Backorder badge when custom.backorder is true', () => {
+    const product = makeProduct({ backorder: { value: 'true' } })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+
+    expect(screen.getByText('Back-ordered')).toBeInTheDocument()
+  })
+
+  it('renders no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
+    const product = makeProduct({ estimatedRestockDate: { value: '2099-01-01' } })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+
+    expect(screen.queryByText(/Back-ordered/)).not.toBeInTheDocument()
+  })
 })

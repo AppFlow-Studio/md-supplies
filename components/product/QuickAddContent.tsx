@@ -6,9 +6,14 @@ import { ShieldCheck, Truck, Loader2, Minus, Plus } from 'lucide-react'
 import { useCart } from '@/components/store/CartProvider'
 import type { ProductCardData } from '@/types/product'
 import { cleanShopifyAlt } from '@/lib/alt-text'
-import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 import { resolvePurchasable, purchasabilityCta, hasUsablePrice } from '@/lib/purchasability'
-import { RX_ONLY_LABEL_TEXT, RX_ONLY_ACCESSIBLE_TEXT } from '@/lib/labels/labels'
+import {
+  RX_ONLY_LABEL_TEXT,
+  RX_ONLY_ACCESSIBLE_TEXT,
+  resolveBackorderLabel,
+  type ProductLabel,
+} from '@/lib/labels/labels'
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -57,6 +62,27 @@ export function QuickAddContent({ product, titleId }: Props) {
       ? Math.round((1 - displayPrice / compareAtPrice) * 100)
       : null
 
+  // DEV-LABEL-01: RX -> Backorder -> Free Shipping, in that fixed order,
+  // via the shared ProductLabelBadges component. RX text is static so it's
+  // built inline from the same constants every other surface uses; Backorder
+  // depends on the optional ETA so it goes through the real resolver.
+  const rxLabel: ProductLabel | null = product.isRx
+    ? {
+        type: 'rx-only',
+        text: RX_ONLY_LABEL_TEXT,
+        accessibleText: RX_ONLY_ACCESSIBLE_TEXT,
+        priority: 10,
+        source: 'tag',
+      }
+    : null
+  const backorderLabel = resolveBackorderLabel({
+    isBackordered: product.isBackordered,
+    estimatedRestockDate: product.backorderRestockDate,
+  })
+  const labels: ProductLabel[] = [rxLabel, backorderLabel].filter(
+    (l): l is ProductLabel => l !== null,
+  )
+
   function handleAdd() {
     if (!canAdd || !selectedVariantId) return
     startTransition(async () => {
@@ -79,14 +105,6 @@ export function QuickAddContent({ product, titleId }: Props) {
     <>
       {/* Left panel — image gallery */}
       <div className="relative bg-[#f9faf9] sm:w-[43%] shrink-0 flex flex-col items-center justify-center gap-3 p-6 sm:overflow-y-auto min-h-[200px]">
-        {/* Shipping claim only from the resolver — no tag fallback
-            (DEV-LABEL-01 §8.3). */}
-        {product.shippingDisplay && (
-          <div className="absolute top-4 left-4">
-            <ShippingBadge shippingDisplay={product.shippingDisplay} className="px-3 py-1.5 text-[13px] font-bold" />
-          </div>
-        )}
-
         {/* Main image */}
         <div className="relative w-full aspect-square max-w-[340px]">
           <Image
@@ -164,22 +182,21 @@ export function QuickAddContent({ product, titleId }: Props) {
           </div>
         )}
 
-        {/* RX badge — display-only, from the same tag ∪ custom.is_rx_only
-            union the card, PDP, and checkout gate use (lib/rx-gate.ts). Never
-            enforces checkout behavior itself; that is prepareCheckout()'s
-            server-side recheck (DEV-LAUNCH-08). Card and PDP already showed
-            this — quick add did not, so an RX product added here carried no
-            visible warning until the cart gate blocked checkout. */}
-        {product.isRx && (
-          <span
-            aria-label={RX_ONLY_ACCESSIBLE_TEXT}
-            // DEV-LAUNCH-13: bg-amber-600 + white measured ~3.18:1, below
-            // WCAG AA's 4.5:1 for 13px text — same fix as ProductBadges.tsx.
-            className="inline-flex items-center self-start px-3 py-1 text-[13px] font-medium rounded bg-amber-700 text-white"
-          >
-            {RX_ONLY_LABEL_TEXT}
-          </span>
-        )}
+        {/* RX/Backorder — display-only, from the same tag ∪ custom.is_rx_only
+            union and custom.backorder boolean the card, PDP, and checkout
+            gate use (lib/rx-gate.ts, lib/labels/labels.ts). Never enforces
+            checkout behavior itself; that is prepareCheckout()'s server-side
+            recheck (DEV-LAUNCH-08). Card and PDP already showed RX — quick
+            add did not, so an RX product added here carried no visible
+            warning until the cart gate blocked checkout. Shipping claim only
+            from the resolver (DEV-LABEL-01 §8.3); order (RX -> Backorder ->
+            Free Shipping) guaranteed by ProductLabelBadges. */}
+        <ProductLabelBadges
+          className="self-start"
+          labels={labels}
+          shippingDisplay={product.shippingDisplay}
+          size="md"
+        />
 
         {/* Divider */}
         <div className="h-px bg-gray-200" />

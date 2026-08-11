@@ -9,10 +9,11 @@
 //  - Rx Only: display-only label; checkout enforcement is a separate,
 //    separately-flagged concern (lib/rx-gate.ts) and is never triggered by
 //    this label.
-//  - BackOrder ETA: one authoritative source — the
-//    custom.estimated_back_order_restock_date metafield — shared by card and
-//    PDP so staff update a single place. Stale (past) parseable dates are
-//    suppressed, never shown.
+//  - Backorder: gated on the `custom.backorder` boolean — the merchant's own
+//    declaration, not an inventory inference. `custom.estimated_back_order_
+//    restock_date` is optional decoration only: when present and not stale it
+//    appends a ship date to the text, but its absence (or staleness) never
+//    suppresses the label — the boolean alone controls whether it renders.
 //
 // Fordeer: no supported headless retrieval path is proven yet (see
 // lib/labels/fordeer-provider.ts). When one is, its provider output
@@ -70,34 +71,53 @@ export function resolveRxLabel(
 }
 
 /**
- * Backorder label from the single authoritative metafield. Rules:
- *  - only for products that are not currently purchasable-as-available;
- *  - a parseable date in the past is STALE → no label (no stale promise);
- *  - a parseable future date or non-empty operational text renders as-is;
- *  - empty/missing value → no label (plain out-of-stock handling applies).
+ * Truthy Shopify boolean-metafield values ("true"/"1"/"yes"), accepting the
+ * raw `{value}` shape, a bare string, or an already-flattened boolean (e.g.
+ * from ProductCardData) — so every layer can call this without re-parsing.
+ */
+export function isBackorderedMetafield(
+  raw?: { value: string } | string | boolean | null,
+): boolean {
+  if (typeof raw === 'boolean') return raw
+  const v = typeof raw === 'string' ? raw : raw?.value
+  return ['true', '1', 'yes'].includes((v ?? '').trim().toLowerCase())
+}
+
+/** A parseable date more than 36h in the past — a stale ETA never renders. */
+function isStaleEta(value: string, now?: Date): boolean {
+  const parsed = new Date(value)
+  if (isNaN(parsed.getTime())) return false
+  // 36-hour grace past the parsed instant: covers a date-only value (which
+  // parses as UTC midnight) staying valid through that calendar day in any
+  // merchant/customer timezone, without local-timezone math.
+  const GRACE_MS = 36 * 60 * 60 * 1000
+  return parsed.getTime() + GRACE_MS < (now ?? new Date()).getTime()
+}
+
+/**
+ * Backorder label. The `custom.backorder` boolean is the SOLE gate — the
+ * merchant's own declaration, not an availability inference. The ETA
+ * (`custom.estimated_back_order_restock_date`) is optional decoration only:
+ *  - boolean false/absent → no label, regardless of ETA;
+ *  - boolean true + present, non-stale ETA → label with a ship date;
+ *  - boolean true + missing/stale ETA → label with generic text, still shown.
  */
 export function resolveBackorderLabel(input: {
-  estimatedRestockDate: string | null | undefined
-  availableForSale: boolean
+  isBackordered?: { value: string } | string | boolean | null
+  estimatedRestockDate?: string | null
   now?: Date
 }): ProductLabel | null {
-  const value = input.estimatedRestockDate?.trim()
-  if (!value || input.availableForSale) return null
+  if (!isBackorderedMetafield(input.isBackordered)) return null
 
-  const parsed = new Date(value)
-  if (!isNaN(parsed.getTime())) {
-    const now = input.now ?? new Date()
-    // 36-hour grace past the parsed instant: covers a date-only value (which
-    // parses as UTC midnight) staying valid through that calendar day in any
-    // merchant/customer timezone, without local-timezone math.
-    const GRACE_MS = 36 * 60 * 60 * 1000
-    if (parsed.getTime() + GRACE_MS < now.getTime()) return null
-  }
+  const value = input.estimatedRestockDate?.trim()
+  const eta = value && !isStaleEta(value, input.now) ? value : null
 
   return {
     type: 'backorder',
-    text: `Back-ordered – ships ${value}`,
-    accessibleText: `Back-ordered, estimated to ship ${value}`,
+    text: eta ? `Back-ordered – ships ${eta}` : 'Back-ordered',
+    accessibleText: eta
+      ? `Back-ordered, estimated to ship ${eta}`
+      : 'Back-ordered, ships when available',
     priority: 20,
     source: 'metafield',
   }
@@ -105,8 +125,8 @@ export function resolveBackorderLabel(input: {
 
 export function resolveProductLabels(input: {
   tags?: string[]
+  isBackordered?: { value: string } | string | boolean | null
   estimatedRestockDate?: string | null
-  availableForSale?: boolean
   /** `custom.is_rx_only` — union'd with the RX tag, see resolveRxLabel. */
   isRxOnly?: { value: string } | string | null
   now?: Date
@@ -115,8 +135,8 @@ export function resolveProductLabels(input: {
   const rx = resolveRxLabel(input.tags, input.isRxOnly)
   if (rx) labels.push(rx)
   const backorder = resolveBackorderLabel({
+    isBackordered: input.isBackordered,
     estimatedRestockDate: input.estimatedRestockDate,
-    availableForSale: input.availableForSale ?? true,
     now: input.now,
   })
   if (backorder) labels.push(backorder)

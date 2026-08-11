@@ -34,6 +34,9 @@ const CART_FRAGMENT = `#graphql
               # prescription products carry the metafield but no tag).
               # See lib/rx-gate.ts and the 2026-08-02 catalog audit.
               isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
+              # DEV-LABEL-01: single backorder source, shared with the card/PDP.
+              estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+              backorder: metafield(namespace: "custom", key: "backorder") { value }
               images(first: 1) {
                 nodes { id url altText width height }
               }

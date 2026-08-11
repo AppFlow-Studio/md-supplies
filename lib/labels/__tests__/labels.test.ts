@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { resolveRxLabel, resolveBackorderLabel, resolveProductLabels } from '../labels'
+import {
+  resolveRxLabel,
+  resolveBackorderLabel,
+  resolveProductLabels,
+  isBackorderedMetafield,
+} from '../labels'
 
 const NOW = new Date('2026-07-30T12:00:00Z')
 
@@ -37,60 +42,105 @@ describe('resolveRxLabel', () => {
   })
 })
 
-describe('resolveBackorderLabel', () => {
-  it('renders a future parseable ETA', () => {
-    const label = resolveBackorderLabel({
-      estimatedRestockDate: '2026-09-15',
-      availableForSale: false,
-      now: NOW,
-    })
-    expect(label?.text).toBe('Back-ordered – ships 2026-09-15')
-    expect(label?.source).toBe('metafield')
+describe('isBackorderedMetafield', () => {
+  it('recognizes truthy raw/string/boolean shapes', () => {
+    expect(isBackorderedMetafield({ value: 'true' })).toBe(true)
+    expect(isBackorderedMetafield('1')).toBe(true)
+    expect(isBackorderedMetafield('yes')).toBe(true)
+    expect(isBackorderedMetafield(true)).toBe(true)
   })
 
-  it('suppresses a stale (past) parseable ETA — no stale promise', () => {
+  it('does not widen on falsey / absent values', () => {
+    expect(isBackorderedMetafield({ value: 'false' })).toBe(false)
+    expect(isBackorderedMetafield('')).toBe(false)
+    expect(isBackorderedMetafield(null)).toBe(false)
+    expect(isBackorderedMetafield(undefined)).toBe(false)
+    expect(isBackorderedMetafield(false)).toBe(false)
+  })
+})
+
+describe('resolveBackorderLabel', () => {
+  it('is gated on the boolean — false/absent never labels, even with a future ETA', () => {
     expect(
-      resolveBackorderLabel({ estimatedRestockDate: '2026-06-01', availableForSale: false, now: NOW }),
+      resolveBackorderLabel({ isBackordered: false, estimatedRestockDate: '2026-09-15', now: NOW }),
+    ).toBeNull()
+    expect(
+      resolveBackorderLabel({ isBackordered: null, estimatedRestockDate: '2026-09-15', now: NOW }),
     ).toBeNull()
   })
 
+  it('renders generic text when the boolean is true but there is no ETA', () => {
+    const label = resolveBackorderLabel({ isBackordered: true, estimatedRestockDate: null, now: NOW })
+    expect(label?.text).toBe('Back-ordered')
+    expect(label?.accessibleText).toBe('Back-ordered, ships when available')
+    expect(label?.source).toBe('metafield')
+  })
+
+  it('appends a future parseable ETA to the text when the boolean is true', () => {
+    const label = resolveBackorderLabel({
+      isBackordered: true,
+      estimatedRestockDate: '2026-09-15',
+      now: NOW,
+    })
+    expect(label?.text).toBe('Back-ordered – ships 2026-09-15')
+  })
+
+  it('falls back to generic text (still shown) when the ETA is stale — the boolean alone keeps the label alive', () => {
+    const label = resolveBackorderLabel({
+      isBackordered: true,
+      estimatedRestockDate: '2026-06-01',
+      now: NOW,
+    })
+    expect(label?.text).toBe('Back-ordered')
+  })
+
   it('keeps a same-day ETA valid through end of day', () => {
-    expect(
-      resolveBackorderLabel({ estimatedRestockDate: '2026-07-30', availableForSale: false, now: NOW }),
-    ).not.toBeNull()
+    const label = resolveBackorderLabel({
+      isBackordered: true,
+      estimatedRestockDate: '2026-07-30',
+      now: NOW,
+    })
+    expect(label?.text).toBe('Back-ordered – ships 2026-07-30')
   })
 
   it('renders unparseable operational text as-is', () => {
     const label = resolveBackorderLabel({
+      isBackordered: true,
       estimatedRestockDate: 'late August',
-      availableForSale: false,
       now: NOW,
     })
     expect(label?.text).toBe('Back-ordered – ships late August')
   })
 
-  it('never labels an available product, and never labels without a value', () => {
-    expect(
-      resolveBackorderLabel({ estimatedRestockDate: '2026-09-15', availableForSale: true, now: NOW }),
-    ).toBeNull()
-    expect(resolveBackorderLabel({ estimatedRestockDate: null, availableForSale: false, now: NOW })).toBeNull()
-    expect(resolveBackorderLabel({ estimatedRestockDate: '   ', availableForSale: false, now: NOW })).toBeNull()
+  it('never labels on an empty/whitespace-only ETA even when the boolean is true (falls to generic text)', () => {
+    const label = resolveBackorderLabel({ isBackordered: true, estimatedRestockDate: '   ', now: NOW })
+    expect(label?.text).toBe('Back-ordered')
   })
 })
 
 describe('resolveProductLabels', () => {
   it('never produces a free-shipping label from tags (resolver-only claim)', () => {
-    const labels = resolveProductLabels({ tags: ['free-shipping'], availableForSale: true })
+    const labels = resolveProductLabels({ tags: ['free-shipping'] })
     expect(labels).toEqual([])
   })
 
   it('orders rx before backorder', () => {
     const labels = resolveProductLabels({
       tags: ['rx-required'],
+      isBackordered: true,
       estimatedRestockDate: '2099-01-01',
-      availableForSale: false,
       now: NOW,
     })
     expect(labels.map((l) => l.type)).toEqual(['rx-only', 'backorder'])
+  })
+
+  it('omits backorder when the boolean is not set, regardless of ETA', () => {
+    const labels = resolveProductLabels({
+      tags: ['rx-required'],
+      isBackordered: false,
+      estimatedRestockDate: '2099-01-01',
+      now: NOW,
+    })
+    expect(labels.map((l) => l.type)).toEqual(['rx-only'])
   })
 })

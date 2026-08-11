@@ -15,11 +15,11 @@ import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
-import { ShippingBadge } from './ShippingBadge'
 import { ShippingBlock } from './ShippingBlock'
+import { ProductLabelBadges } from './ProductLabelBadges'
 import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
-import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
+import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice, getDefaultVariant } from '@/lib/purchasability'
 
@@ -116,14 +116,17 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
   // DEV-LABEL-01 / DEV-CATALOG-01: backorder + RX come from the shared label
   // contract (single metafield source, stale ETAs suppressed) so card and PDP
   // can never disagree. availableForSale only gates purchasability — it is
-  // never presented as a real-time "In Stock" inventory claim.
-  const backorderLabel = resolveBackorderLabel({
+  // never presented as a real-time "In Stock" inventory claim. Backorder is
+  // gated on the custom.backorder boolean alone, independent of availability.
+  const labels = resolveProductLabels({
+    tags: product.tags,
+    isBackordered: product.backorder,
     estimatedRestockDate: product.estimatedRestockDate,
-    availableForSale: selectedVariant.availableForSale,
+    // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the
+    // PDP badge can never disagree with whether the cart will actually be gated.
+    isRxOnly: product.isRxOnly,
   })
-  // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the PDP
-  // badge can never disagree with whether the cart will actually be gated.
-  const rxLabel = resolveRxLabel(product.tags, product.isRxOnly)
+  const backorderLabel = labels.find((l) => l.type === 'backorder') ?? null
 
   const stockStatus: 'available' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return backorderLabel ? 'backordered' : 'out_of_stock'
@@ -266,26 +269,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
             {/* Product badges. A shipping claim may come only from the resolver,
                 never from a tag: `free-shipping` is an uncurated catalog tag and
-                is not an approved source for a customer-facing promise. The RX
-                badge is a display-only label from the shared contract
-                (lib/labels) — it never enforces checkout behavior. */}
-            {(shippingDisplay || rxLabel) && (
-              <div className="flex flex-wrap gap-2">
-                {shippingDisplay && (
-                  <ShippingBadge shippingDisplay={shippingDisplay} className="px-3 py-1 text-[13px]" />
-                )}
-                {rxLabel && (
-                  <span
-                    aria-label={rxLabel.accessibleText}
-                    // DEV-LAUNCH-13: bg-amber-600 + white measured ~3.18:1, below
-                    // WCAG AA's 4.5:1 for 13px text — same fix as ProductBadges.tsx.
-                    className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-700 text-white"
-                  >
-                    {rxLabel.text}
-                  </span>
-                )}
-              </div>
-            )}
+                is not an approved source for a customer-facing promise. RX and
+                Backorder are display-only labels from the shared contract
+                (lib/labels) — RX never enforces checkout behavior itself.
+                Order (RX -> Backorder -> Free Shipping) is guaranteed by
+                ProductLabelBadges. */}
+            <ProductLabelBadges labels={labels} shippingDisplay={shippingDisplay} size="md" />
 
             {/* Always rendered, never blank. Anything the resolver did not
                 classify for the selected variant, including every product when

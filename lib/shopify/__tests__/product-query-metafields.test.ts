@@ -26,6 +26,11 @@ describe('GET_PRODUCT metafield selections', () => {
     expect(GET_PRODUCT).toContain('key: "estimated_back_order_restock_date"')
   })
 
+  it('requests the backorder boolean, which is the sole gate for the backorder label', () => {
+    expect(GET_PRODUCT).toMatch(/backorder:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "backorder"')
+  })
+
   it('is still a single parseable template literal', () => {
     // A backtick inside a comment in this file terminated the template literal
     // once already. Cheap check that the query survived editing.
@@ -53,6 +58,8 @@ describe('ProductCard fragment metafield selections', () => {
       expect(query).toContain('key: "brand_name"')
       expect(query).toMatch(/estimatedRestockDate:\s*metafield\(/)
       expect(query).toContain('key: "estimated_back_order_restock_date"')
+      expect(query).toMatch(/backorder:\s*metafield\(/)
+      expect(query).toContain('key: "backorder"')
       expect(query).toMatch(/isRxOnly:\s*metafield\(/)
       expect(query).toContain('key: "is_rx_only"')
     })

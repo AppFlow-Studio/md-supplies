@@ -17,6 +17,7 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
     tags
     brandName: metafield(namespace: "custom", key: "brand_name") { value }
     estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+    backorder: metafield(namespace: "custom", key: "backorder") { value }
     isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
     priceRange {
       minVariantPrice { amount currencyCode }
@@ -106,6 +107,7 @@ export const GET_PRODUCT = `#graphql
       # a quiet switch-on.
       brandName: metafield(namespace: "custom", key: "brand_name") { value }
       estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+      backorder: metafield(namespace: "custom", key: "backorder") { value }
       # RX: the gate UNIONs the compliance:rx-only tag with the store's own
       # declaration. The tag set is a strict SUBSET of this metafield (40 active
       # prescription products carry the metafield and no tag), so the PDP must
@@ -228,6 +230,7 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
           # (the fulfilling vendor). See lib/brand.ts.
           brandName: metafield(namespace: "custom", key: "brand_name") { value }
           estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+          backorder: metafield(namespace: "custom", key: "backorder") { value }
           priceRange {
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }

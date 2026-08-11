@@ -9,6 +9,7 @@ import { getPartnerSeo } from '@/lib/seo/partnerSeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { FeaturedProductCard } from '@/components/b2b/FeaturedProductCard'
 import { WholesalePricing } from '@/components/home/WholesalePricing'
@@ -33,7 +34,7 @@ async function fetchFeaturedProducts(vendorName: string): Promise<CollectionProd
       sortKey: 'BEST_SELLING',
       reverse: false,
     })
-    return data.products.nodes
+    return attachCardShippingDisplay(data.products.nodes)
   } catch {
     return []
   }
@@ -245,6 +246,11 @@ export default async function PartnerDetailPage({ params }: Props) {
                           price: Math.round(
                             parseFloat(p.priceRange.minVariantPrice.amount) * 100
                           ),
+                          tags: p.tags,
+                          isRxOnly: p.isRxOnly,
+                          backorder: p.backorder,
+                          estimatedRestockDate: p.estimatedRestockDate?.value ?? null,
+                          shippingDisplay: p.shippingDisplay,
                         }}
                       />
                     ))}
