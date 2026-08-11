@@ -91,7 +91,9 @@ export const GET_ORDER_DETAILS = `#graphql
               createdAt
               status
               latestShipmentStatus
+              estimatedDeliveryAt
               isPickedUp
+              requiresShipping
               trackingInformation {
                 company
                 number

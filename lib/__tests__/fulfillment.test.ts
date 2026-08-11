@@ -24,13 +24,16 @@ function fulfillment(
   id: string,
   lines: { lineItemId: string; quantity: number | null }[],
   tracking: { company: string | null; number: string | null; url: string | null }[] = [],
+  overrides: Partial<Pick<FulfillmentInput, 'estimatedDeliveryAt' | 'requiresShipping'>> = {},
 ): FulfillmentInput {
   return {
     id,
     createdAt: '2026-07-01T00:00:00Z',
     status: 'SUCCESS',
     latestShipmentStatus: null,
+    estimatedDeliveryAt: overrides.estimatedDeliveryAt ?? null,
     isPickedUp: false,
+    requiresShipping: overrides.requiresShipping ?? true,
     trackingInformation: tracking,
     lines,
   }
@@ -165,6 +168,53 @@ describe('computeFulfillmentSummary', () => {
     )
     expect(summary.shipments[0].items).toEqual([])
     expect(summary.pending[0].remaining).toBe(2)
+  })
+
+  it('carries estimatedDeliveryAt through when Shopify provides one', () => {
+    const summary = computeFulfillmentSummary(
+      [line('L1', 1)],
+      [fulfillment('F1', [{ lineItemId: 'L1', quantity: 1 }], [], { estimatedDeliveryAt: '2026-08-15T00:00:00Z' })],
+    )
+    expect(summary.shipments[0].estimatedDeliveryAt).toBe('2026-08-15T00:00:00Z')
+  })
+
+  it('estimatedDeliveryAt is null when Shopify has none — no fabricated ETA', () => {
+    const summary = computeFulfillmentSummary(
+      [line('L1', 1)],
+      [fulfillment('F1', [{ lineItemId: 'L1', quantity: 1 }])],
+    )
+    expect(summary.shipments[0].estimatedDeliveryAt).toBeNull()
+  })
+
+  it('requiresShipping: false suppresses tracking UI even if Shopify sent tracking data', () => {
+    const summary = computeFulfillmentSummary(
+      [line('L1', 1)],
+      [
+        fulfillment(
+          'F1',
+          [{ lineItemId: 'L1', quantity: 1 }],
+          [{ company: 'UPS', number: '1Z1', url: 'https://ups.example/1Z1' }],
+          { requiresShipping: false },
+        ),
+      ],
+    )
+    expect(summary.shipments[0].requiresShipping).toBe(false)
+    expect(summary.shipments[0].trackingInformation).toEqual([])
+  })
+
+  it('requiresShipping: true preserves tracking data as before', () => {
+    const summary = computeFulfillmentSummary(
+      [line('L1', 1)],
+      [
+        fulfillment(
+          'F1',
+          [{ lineItemId: 'L1', quantity: 1 }],
+          [{ company: 'UPS', number: '1Z1', url: 'https://ups.example/1Z1' }],
+          { requiresShipping: true },
+        ),
+      ],
+    )
+    expect(summary.shipments[0].trackingInformation).toHaveLength(1)
   })
 })
 
