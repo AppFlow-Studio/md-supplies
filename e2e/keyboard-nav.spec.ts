@@ -4,8 +4,8 @@ import { VIEWPORTS } from './support/viewports'
 
 const ROUTES_WITH_SKIP_LINK = [
   '/', '/about', '/search', '/faq', '/contact', '/categories',
-  '/category/gloves', '/solutions/occ', '/industries/pharmacy',
-  '/product/nitrile-exam-gloves-powder-free', '/cart',
+  '/category/gloves', '/solutions/occ', '/industries/pharmacies',
+  '/product/exam-glove-nitrile-medium-blue-100-bx-10-bx-cs', '/cart',
 ]
 
 test.describe('skip link', () => {
@@ -26,13 +26,13 @@ test.describe('visible focus indicator', () => {
   const SAMPLE = [
     { path: '/', name: 'home' },
     { path: '/category/gloves', name: 'category' },
-    // NOTE: 'nitrile-exam-gloves-powder-free' (used by the pre-existing skip-link
-    // suite and other e2e specs) currently 404s — that handle doesn't exist in the
-    // connected Shopify store's catalog (confirmed via curl + a serial Playwright
-    // run; see task-5-report.md). Using it here would only exercise the global
-    // not-found page, not any real PDP component, so this sub-test would never
-    // catch a genuine focus-visible regression on the PDP. Using a live handle
-    // from the same category instead.
+    // NOTE: 'nitrile-exam-gloves-powder-free' (previously used by this file's own
+    // skip-link suite and other e2e specs) currently 404s — that handle doesn't
+    // exist in the connected Shopify store's catalog (confirmed via curl + a
+    // serial Playwright run; see task-5-report.md). Using it here would only
+    // exercise the global not-found page, not any real PDP component, so this
+    // sub-test would never catch a genuine focus-visible regression on the PDP.
+    // Using a live handle from the same category instead.
     { path: '/product/exam-glove-nitrile-medium-blue-100-bx-10-bx-cs', name: 'pdp' },
     { path: '/contact', name: 'contact' },
   ] as const

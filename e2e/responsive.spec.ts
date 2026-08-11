@@ -33,7 +33,7 @@ const ROUTES = [
   { path: '/industries/veterinary', name: 'industry-veterinary' },
   { path: '/search?q=gloves', name: 'search-results' },
   { path: '/search', name: 'search-empty' },
-  { path: '/product/nitrile-exam-gloves-powder-free', name: 'pdp' },
+  { path: '/product/exam-glove-nitrile-medium-blue-100-bx-10-bx-cs', name: 'pdp' },
   { path: '/cart', name: 'cart' },
   { path: '/contact', name: 'contact' },
 ] as const
@@ -67,6 +67,16 @@ test.describe('responsive sweep', () => {
         await page.waitForLoadState('networkidle').catch(() => {})
 
         const label = `${route.name} @ ${vp.name}`
+
+        // A streamed Next.js not-found page returns HTTP 200 with exactly one
+        // <h1>, so neither the status check above nor the h1-count check below
+        // catches a stale/broken fixture handle silently rendering the global
+        // 404 page instead of the intended route. Guard against that class of
+        // bug explicitly, for every route in this sweep.
+        await expect(
+          page.getByRole('heading', { name: 'Page Not Found' }),
+          `${label}: rendered the global not-found page — check the route's fixture handle/slug`,
+        ).toHaveCount(0)
         await expectNoHorizontalOverflow(page, label)
         await expectNoOverlappingInteractiveElements(page, label)
         await expectStickyDoesNotObscure(page, label)
