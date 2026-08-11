@@ -5,6 +5,7 @@ const ROUTES: Array<{ path: string; name: string }> = [
   { path: '/', name: 'home' },
   { path: '/categories', name: 'categories-hub' },
   { path: '/category/gloves', name: 'category' },
+  { path: '/category/testing-screening/tsh-controls', name: 'subcategory' },
   { path: '/product/exam-glove-nitrile-medium-blue-100-bx-10-bx-cs', name: 'pdp' },
   { path: '/solutions/occ', name: 'occ' },
   { path: '/industries/pharmacies', name: 'industry' },

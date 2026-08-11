@@ -604,7 +604,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
-            <div className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch">
+            <div
+              className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch"
+              tabIndex={0}
+              role="region"
+              aria-label="You May Also Need — scrollable product list"
+            >
               {relatedProducts.slice(4).map((item) => (
                 <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
                   <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
