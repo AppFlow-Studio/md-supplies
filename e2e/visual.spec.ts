@@ -4,7 +4,14 @@ const VISUAL_ROUTES: Array<{ path: string; name: string }> = [
   { path: '/', name: 'home' },
   { path: '/categories', name: 'categories-hub' },
   { path: '/category/gloves', name: 'category' },
-  { path: '/category/gloves/exam-gloves', name: 'subcategory' },
+  // 'subcategory' route intentionally excluded from visual-regression
+  // baselines: /category/gloves/exam-gloves uses source.kind: 'tag', which
+  // falls through to SEARCH_PRODUCTS_BY_TAG with the same RELEVANCE-sort
+  // fallback (lib/category-results-source.ts:47-50) as 'industry' above —
+  // no deterministic tie-break, so product order (and page height) shifts
+  // between requests. Reproduced: intermittent ~4% diffs vs the 2% gate.
+  // Still covered by e2e/axe.spec.ts, e2e/responsive.spec.ts, and
+  // e2e/contrast.spec.ts — just not pixel-diff visual regression.
   { path: '/product/exam-glove-nitrile-medium-blue-100-bx-10-bx-cs', name: 'pdp' },
   { path: '/solutions/occ', name: 'occ' },
   // 'industry' route intentionally excluded from visual-regression baselines:
@@ -16,7 +23,13 @@ const VISUAL_ROUTES: Array<{ path: string; name: string }> = [
   // vs the 2% gate. Still covered by e2e/axe.spec.ts, e2e/responsive.spec.ts,
   // and e2e/contrast.spec.ts — just not pixel-diff visual regression.
   // Re-include if/when the query gains a deterministic secondary sort.
-  { path: '/search?q=gloves', name: 'search' },
+  // 'search' route intentionally excluded from visual-regression baselines:
+  // /search?q=gloves calls SEARCH_PRODUCTS directly, and parseSortKey()
+  // defaults to RELEVANCE when no ?sort= param is present
+  // (app/search/page.tsx:64-69) — the same non-deterministic Storefront
+  // Search API ordering as 'industry' above. Reproduced: intermittent 3-5%
+  // diffs vs the 2% gate across repeated runs. Still covered by
+  // e2e/axe.spec.ts, e2e/responsive.spec.ts, and e2e/contrast.spec.ts.
   { path: '/cart', name: 'cart' },
   { path: '/contact', name: 'contact' },
   { path: '/blog/types-of-needles', name: 'blog' },
