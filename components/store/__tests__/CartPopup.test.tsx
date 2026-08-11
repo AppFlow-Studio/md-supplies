@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { CartPopup } from '../CartPopup'
+import { CartToast } from '../CartToast'
 import { useCart } from '../CartProvider'
 import { getRxGateStatus, prepareCheckout } from '@/app/actions/rx'
 import { track } from '@/lib/analytics/track'
@@ -203,6 +204,32 @@ describe('CartPopup', () => {
 
       expect(track).toHaveBeenCalledOnce()
       expect(prepareCheckout).toHaveBeenCalledOnce()
+    })
+
+    // DEF-08/QA-092: a cart change Shopify refuses (e.g. a quantity update
+    // rejected via userErrors) set CartProvider's `lastError`, but nothing
+    // ever rendered it outside the dedicated /cart page — CartToast lived
+    // only in CartPageClient, not alongside the globally-mounted CartPopup.
+    // Fixed by mounting CartToast in app/layout.tsx next to CartPopup. This
+    // proves the popup surface: when both share the same cart context, a
+    // refusal is visible, not silent.
+    it('surfaces a refused cart change via the shared toast while the popup is open (DEF-08/QA-092)', () => {
+      mockCart(true, {
+        cart: cartWithLines([{ id: 'v1', price: '9.99', lineTotal: '9.99' }]),
+        lastError: 'Failed to update quantity. Please try again.',
+        clearError: vi.fn(),
+      })
+      render(
+        <>
+          <CartPopup />
+          <CartToast />
+        </>,
+      )
+
+      expect(screen.getByRole('dialog', { hidden: true })).toHaveAttribute('aria-hidden', 'false')
+      const alert = screen.getByRole('alert')
+      expect(alert.className).not.toContain('opacity-0')
+      expect(screen.getByText('Failed to update quantity. Please try again.')).toBeInTheDocument()
     })
   })
 })

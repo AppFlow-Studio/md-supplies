@@ -5,7 +5,6 @@ import { type MouseEvent } from 'react'
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { useCart } from './CartProvider'
-import { CartToast } from './CartToast'
 import { track } from '@/lib/analytics/track'
 import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/events'
 import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
@@ -108,7 +107,6 @@ export function CartPageClient() {
             Continue Shopping
           </Link>
         </div>
-        <CartToast />
       </div>
     )
   }
@@ -271,7 +269,6 @@ export function CartPageClient() {
           )}
         </div>
       </div>
-      <CartToast />
     </div>
   )
 }

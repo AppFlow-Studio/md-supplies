@@ -89,8 +89,11 @@ export function PopularProducts({ products }: Props) {
             return (
               <FadeIn key={product.id} delay={i * 0.08} className="bg-white flex flex-col">
 
+                {/* DEF-02/QA-135: image-only link — the visible title sits
+                    outside it below, so it needs its own accessible name. */}
                 <Link
                   href={`/product/${product.handle}`}
+                  aria-label={product.title}
                   className="group relative overflow-hidden aspect-square bg-gray-50 block"
                 >
                   <ProductImage

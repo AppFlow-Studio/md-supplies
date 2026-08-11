@@ -52,7 +52,13 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
     <div className="group relative bg-white flex flex-col">
       {/* Image */}
       <div className="relative overflow-hidden bg-white aspect-square">
-        <Link href={href} onClick={handleSelect} className="block w-full h-full">
+        {/* DEF-02/QA-135: this link wraps only the image — the visible title
+            lives in the separate info Link below. An explicit aria-label
+            guarantees a discernible name for screen readers rather than
+            relying on the <img>'s alt text being inherited (fragile: a
+            future decorative/empty alt on ProductImage would silently strip
+            it). */}
+        <Link href={href} onClick={handleSelect} aria-label={product.title} className="block w-full h-full">
           <ProductImage
             src={image?.url}
             alt={cleanShopifyAlt(image?.altText) ?? product.title}

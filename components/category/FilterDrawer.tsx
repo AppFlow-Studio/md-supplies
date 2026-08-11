@@ -9,9 +9,10 @@ interface Props {
   filters: CollectionFilter[]
   activeFilters: string[]
   currentSort?: string
+  q?: string
 }
 
-export function FilterDrawer({ filters, activeFilters, currentSort }: Props) {
+export function FilterDrawer({ filters, activeFilters, currentSort, q }: Props) {
   const [open, setOpen] = useState(false)
   const count = activeFilters.length
   const panelRef = useRef<HTMLDivElement>(null)
@@ -112,6 +113,7 @@ export function FilterDrawer({ filters, activeFilters, currentSort }: Props) {
                 filters={filters}
                 activeFilters={activeFilters}
                 currentSort={currentSort}
+                q={q}
               />
             </div>
           </div>

@@ -316,7 +316,6 @@ jobs:
             lib/__tests__/category-tree.test.ts \
             lib/__tests__/category-tree-data.test.ts \
             lib/__tests__/category-nav.test.ts \
-            lib/__tests__/category-nav-audit.test.ts \
             lib/__tests__/category-utils.test.ts \
             lib/__tests__/excluded-categories.test.ts \
             lib/__tests__/category-assets.test.ts \

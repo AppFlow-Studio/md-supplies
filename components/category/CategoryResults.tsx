@@ -164,6 +164,7 @@ export async function CategoryResults({
             filters={filters}
             activeFilters={activeFilterStrings}
             currentSort={sortParam}
+            q={searchText}
           />
         </Suspense>
       </aside>
@@ -206,6 +207,7 @@ export async function CategoryResults({
                     filters={filters}
                     activeFilters={activeFilterStrings}
                     currentSort={sortParam}
+                    q={searchText}
                   />
                 </Suspense>
               </div>
@@ -216,6 +218,7 @@ export async function CategoryResults({
                   <CategorySort
                     currentSort={sortParam}
                     activeFilters={activeFilterStrings}
+                    q={searchText}
                     limitedSortOptions={source.kind === 'tag' || Boolean(searchText)}
                   />
                 </Suspense>

@@ -63,6 +63,19 @@ describe('CategorySort tracking-param preservation', () => {
   })
 })
 
+describe('CategorySort search query preservation (DEF-07/QA-038)', () => {
+  it('keeps ?q= from an active collection-scoped search through a sort change', () => {
+    render(<CategorySort activeFilters={[]} q="rollator" />)
+
+    selectSort('Price: Low to High')
+
+    const url = push.mock.calls[0][0] as string
+    const params = new URLSearchParams(url.split('?')[1])
+    expect(params.get('q')).toBe('rollator')
+    expect(params.get('sort')).toBe('PRICE_ASC')
+  })
+})
+
 describe('CategorySort limitedSortOptions', () => {
   it('renders all 5 options when limitedSortOptions is unset (no regression)', () => {
     render(<CategorySort activeFilters={[]} />)

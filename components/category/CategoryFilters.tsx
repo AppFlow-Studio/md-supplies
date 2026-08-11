@@ -12,14 +12,16 @@ interface Props {
   filters: CollectionFilter[]
   activeFilters: string[]
   currentSort?: string
+  q?: string
 }
 
-export function CategoryFilters({ filters, activeFilters, currentSort }: Props) {
+export function CategoryFilters({ filters, activeFilters, currentSort, q }: Props) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const buildUrl = (nextFilters: string[]) => {
     const params = new URLSearchParams()
+    if (q) params.set('q', q)
     if (currentSort) params.set('sort', currentSort)
     nextFilters.forEach((f) => params.append('filter', f))
     withTrackingParams(params, searchParams)
