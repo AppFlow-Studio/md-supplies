@@ -27,7 +27,7 @@ const ROUTES = [
   { path: '/solutions/occ', name: 'occ' },
   { path: '/category/gloves', name: 'gloves' },
   { path: '/category/testing-screening', name: 'testing-screening' },
-  { path: '/category/testing-screening/tsh-controls', name: 'tsh-controls' },
+  { path: '/category/gloves/exam-gloves', name: 'exam-gloves' },
   { path: '/industries', name: 'industries-index' },
   { path: '/industries/urgent-care', name: 'industry-urgent-care' },
   { path: '/industries/veterinary', name: 'industry-veterinary' },
