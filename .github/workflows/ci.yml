@@ -255,12 +255,7 @@ jobs:
         run: npm run build
 
       - name: Run E2E tests
-        # --ignore-snapshots: visual baselines are darwin-only so far (they
-        # are platform-suffixed); every functional/axe assertion still runs.
-        # TODO: generate linux baselines (run once with --update-snapshots on
-        # this runner, commit e2e/visual.spec.ts-snapshots/*-linux.png), then
-        # drop the flag so the visual gate enforces in CI too.
-        run: npx playwright test --ignore-snapshots
+        run: npx playwright test
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
