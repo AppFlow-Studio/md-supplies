@@ -253,7 +253,9 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {stockStatus === 'backordered' && backorderLabel && (
                   <>
                     <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
-                    <span className="text-orange-600 text-[13px] font-semibold tracking-[0.26px]">
+                    {/* orange-600 measured 3.56:1 on white — below the 4.5:1 AA minimum,
+                        flagged [serious] by axe. orange-700 measures ~5.18:1. */}
+                    <span className="text-orange-700 text-[13px] font-semibold tracking-[0.26px]">
                       {backorderLabel.text}
                     </span>
                   </>
