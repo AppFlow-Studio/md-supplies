@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T20:36:21.088Z",
+  "generatedAt": "2026-08-11T17:47:50.950Z",
   "storeDomain": "md-supplies-qa-shipping-and-checkout.myshopify.com",
   "l1Categories": [
     {
@@ -8,19 +8,19 @@
       "routeSlug": "gloves",
       "exists": true,
       "gid": "gid://shopify/Collection/474091159785",
-      "productCount": 40,
+      "productCount": 42,
       "sampleProducts": [
+        {
+          "handle": "surgical-gloves-size-5-50-pr-bx-4-bx-cs-us-only",
+          "gid": "gid://shopify/Product/9368798265577"
+        },
+        {
+          "handle": "exam-glove-nitrile-x-small-powder-free-textured-finger-cobalt-blue-non-sterile-250-bx-10-bx-cs",
+          "gid": "gid://shopify/Product/9368796791017"
+        },
         {
           "handle": "exam-glove-nitrile-medium-blue-100-bx-10-bx-cs",
           "gid": "gid://shopify/Product/9365107572969"
-        },
-        {
-          "handle": "ammex®-nitrile-gloves-x-large-disposable-exam-grade-black-powder-free-smooth-polymer-coated-100-bx-10bx-cs-us-sales-only-products-cannot-be-sold-on-amazon-com-or-any-other-third-party-sites-to-be-discontinued",
-          "gid": "gid://shopify/Product/9365097775337"
-        },
-        {
-          "handle": "ammex®-nitrile-gloves-small-disposable-exam-grade-blue-powder-free-smooth-polymer-coated-100-bx-10bx-cs-us-sales-only-products-cannot-be-sold-on-amazon-com-or-any-other-third-party-sites-to-be-discontinued",
-          "gid": "gid://shopify/Product/9365097742569"
         }
       ]
     },
@@ -30,19 +30,19 @@
       "routeSlug": "wound-care",
       "exists": true,
       "gid": "gid://shopify/Collection/474091192553",
-      "productCount": 40,
+      "productCount": 55,
       "sampleProducts": [
         {
-          "handle": "sterile-soft-flexible-fabric-adhesive-bandages-1-x-3",
-          "gid": "gid://shopify/Product/9365117763817"
+          "handle": "tonka-stat-strip-adhesive-bandages-3-4-x-3",
+          "gid": "gid://shopify/Product/9368798331113"
         },
         {
-          "handle": "sterile-metal-detectable-lightweight-fabric-adhesive-bandages-1-x-3-blue",
-          "gid": "gid://shopify/Product/9365117731049"
+          "handle": "sterile-my-little-pony-stat-strip-adhesive-bandages-3-4-x-3",
+          "gid": "gid://shopify/Product/9368798232809"
         },
         {
-          "handle": "sterile-lightweight-flexible-fabric-adhesive-bandages-3-4-x-3",
-          "gid": "gid://shopify/Product/9365117698281"
+          "handle": "design-series-planet-and-stars-adhesive-bandages-with-stat-strip-technology-x-3",
+          "gid": "gid://shopify/Product/9368796627177"
         }
       ]
     },
@@ -52,19 +52,19 @@
       "routeSlug": "needles-syringes",
       "exists": true,
       "gid": "gid://shopify/Collection/474091225321",
-      "productCount": 69,
+      "productCount": 75,
       "sampleProducts": [
         {
-          "handle": "syringe-luer-lock-20-cc-10-50-cs",
-          "gid": "gid://shopify/Product/9365118746857"
+          "handle": "tb-syringe-1ml-25g-x-5-8-det-needle-box-1180125058",
+          "gid": "gid://shopify/Product/9368798298345"
         },
         {
-          "handle": "iv-administration-set-83-tcbinfsp1",
-          "gid": "gid://shopify/Product/9365111374057"
+          "handle": "spinal-needle-25g-x-3-1-2-high-flow-box-405138",
+          "gid": "gid://shopify/Product/9368798134505"
         },
         {
-          "handle": "iv-administration-set-60-drop-83-1-needleless-port-1-inje-50-bx",
-          "gid": "gid://shopify/Product/9365111341289"
+          "handle": "r-needle-30g-x-1-2-box-nn3013r",
+          "gid": "gid://shopify/Product/9368797839593"
         }
       ]
     },
@@ -250,19 +250,19 @@
       "routeSlug": "hygiene",
       "exists": true,
       "gid": "gid://shopify/Collection/474091520233",
-      "productCount": 42,
+      "productCount": 87,
       "sampleProducts": [
         {
-          "handle": "toothbrush-adult-39tuft-144-c-grafco",
-          "gid": "gid://shopify/Product/9365118845161"
+          "handle": "toothbrushes-soft-nylon-bristles-46-tuft-teal-10-144-cs",
+          "gid": "gid://shopify/Product/9368799117545"
         },
         {
-          "handle": "toothbrush-adult-32tuft-144-gr-grafco",
-          "gid": "gid://shopify/Product/9365118779625"
+          "handle": "toothbrushes-30-tuft-adult-ivory-10-144-cs",
+          "gid": "gid://shopify/Product/9368799084777"
         },
         {
-          "handle": "periscent-scented-perineal-cleanser-8-oz-48-cs",
-          "gid": "gid://shopify/Product/9365114749161"
+          "handle": "toothbrush-white",
+          "gid": "gid://shopify/Product/9368799019241"
         }
       ]
     },
@@ -294,8 +294,12 @@
       "routeSlug": "home-care",
       "exists": true,
       "gid": "gid://shopify/Collection/474091585769",
-      "productCount": 40,
+      "productCount": 41,
       "sampleProducts": [
+        {
+          "handle": "reusable-eating-utensils-2354397",
+          "gid": "gid://shopify/Product/9368797937897"
+        },
         {
           "handle": "beveled-edge-floor-pad-lumex",
           "gid": "gid://shopify/Product/9365102526697"
@@ -303,10 +307,6 @@
         {
           "handle": "bellavita-side-flap",
           "gid": "gid://shopify/Product/9365102493929"
-        },
-        {
-          "handle": "bellavita-rotating-and-transfer-aid",
-          "gid": "gid://shopify/Product/9365102461161"
         }
       ]
     },
@@ -338,8 +338,12 @@
       "routeSlug": "incontinence",
       "exists": true,
       "gid": "gid://shopify/Collection/474091651305",
-      "productCount": 40,
+      "productCount": 41,
       "sampleProducts": [
+        {
+          "handle": "washcloths-white-12-x-12-case-of-312-2375266",
+          "gid": "gid://shopify/Product/9368799215849"
+        },
         {
           "handle": "washcloth-8-x-12",
           "gid": "gid://shopify/Product/9365119598825"
@@ -347,10 +351,6 @@
         {
           "handle": "pre-moistened-washcloths-8-x-10-scented",
           "gid": "gid://shopify/Product/9365116190953"
-        },
-        {
-          "handle": "pre-moistened-washcloths-8-x-10-fragrance-free",
-          "gid": "gid://shopify/Product/9365116158185"
         }
       ]
     },
@@ -404,19 +404,19 @@
       "routeSlug": "sterilization",
       "exists": true,
       "gid": "gid://shopify/Collection/474091749609",
-      "productCount": 40,
+      "productCount": 50,
       "sampleProducts": [
         {
-          "handle": "sterilization-pouches-7-5-x-13",
-          "gid": "gid://shopify/Product/9365118419177"
+          "handle": "qa-label-all-three",
+          "gid": "gid://shopify/Product/9370527760617"
         },
         {
-          "handle": "sterilization-pouches-7-1-2-x-13",
-          "gid": "gid://shopify/Product/9365118386409"
+          "handle": "qa-label-rx-freeship",
+          "gid": "gid://shopify/Product/9370527662313"
         },
         {
-          "handle": "sterilization-pouches-5-25-x-10",
-          "gid": "gid://shopify/Product/9365118353641"
+          "handle": "qa-label-backorder-freeship",
+          "gid": "gid://shopify/Product/9370527564009"
         }
       ]
     },
@@ -448,19 +448,19 @@
       "routeSlug": "housekeeping-janitorial",
       "exists": true,
       "gid": "gid://shopify/Collection/474091815145",
-      "productCount": 40,
+      "productCount": 47,
       "sampleProducts": [
         {
-          "handle": "zipper-bags-9x12-10-100-cs",
-          "gid": "gid://shopify/Product/9365119697129"
+          "handle": "zip-bag-6-x-9-clear-zip69",
+          "gid": "gid://shopify/Product/9368799445225"
         },
         {
-          "handle": "zipper-bags-4x6-10-100-cs",
-          "gid": "gid://shopify/Product/9365119664361"
+          "handle": "zip-bag-4-x-6-clear-464m",
+          "gid": "gid://shopify/Product/9368799412457"
         },
         {
-          "handle": "zipper-bags-10x13-10-100-cs",
-          "gid": "gid://shopify/Product/9365119631593"
+          "handle": "zip-bag-4-x-4-clear-zip44",
+          "gid": "gid://shopify/Product/9368799379689"
         }
       ]
     },
@@ -470,8 +470,12 @@
       "routeSlug": "bariatric",
       "exists": true,
       "gid": "gid://shopify/Collection/474091847913",
-      "productCount": 40,
+      "productCount": 41,
       "sampleProducts": [
+        {
+          "handle": "w-c-reclining-22w18d-dsk-elr-gendron-bariatric-700lbs-capacity",
+          "gid": "gid://shopify/Product/9368799183081"
+        },
         {
           "handle": "bariatric-hd-headboard-footboard-for-db600-cherry-1pc-cs",
           "gid": "gid://shopify/Product/9365100921065"
@@ -479,10 +483,6 @@
         {
           "handle": "bariatric-hd-full-electric-homecare-bed-54-1pc-cs",
           "gid": "gid://shopify/Product/9365100855529"
-        },
-        {
-          "handle": "bariatric-hd-full-electric-homecare-bed-48-1pc-cs",
-          "gid": "gid://shopify/Product/9365100822761"
         }
       ]
     },
@@ -547,10 +547,23 @@
   ],
   "occ": {
     "handle": "occ",
-    "exists": false,
-    "gid": null,
-    "productCount": 0,
-    "sampleProducts": []
+    "exists": true,
+    "gid": "gid://shopify/Collection/474143654121",
+    "productCount": 130,
+    "sampleProducts": [
+      {
+        "handle": "14-drawstring-backpacks-assorted-neon-288-case-2269204",
+        "gid": "gid://shopify/Product/9368794824937"
+      },
+      {
+        "handle": "15-character-backpacks-assorted-prints-24-case-2378131",
+        "gid": "gid://shopify/Product/9368794857705"
+      },
+      {
+        "handle": "17-backpacks-with-elementary-school-kits-clear-24-packs-2365794",
+        "gid": "gid://shopify/Product/9368794890473"
+      }
+    ]
   },
   "industries": [
     {
@@ -559,16 +572,16 @@
       "sampleCount": 5,
       "sampleProducts": [
         {
-          "handle": "green-soap-1-gal-bottle-4-cs",
-          "gid": "gid://shopify/Product/9365108752617"
-        },
-        {
           "handle": "instaclean-1000-ml-10-cs",
           "gid": "gid://shopify/Product/9365109211369"
         },
         {
-          "handle": "machine-bag-5-x-5-16-500-cs",
-          "gid": "gid://shopify/Product/9365112750313"
+          "handle": "green-soap-1-gal-bottle-4-cs",
+          "gid": "gid://shopify/Product/9365108752617"
+        },
+        {
+          "handle": "metricide-28-qt-each-10-2805",
+          "gid": "gid://shopify/Product/9365113012457"
         },
         {
           "handle": "suction-connection-tubing-w-male-connector-non-conductive-1-4-x-10-tube-50-cs",
@@ -640,10 +653,6 @@
       "sampleCount": 5,
       "sampleProducts": [
         {
-          "handle": "aspirator-tips-white-1-8-x-6-1-4",
-          "gid": "gid://shopify/Product/9365099020521"
-        },
-        {
           "handle": "dappen-dishes-5-assorted-colors",
           "gid": "gid://shopify/Product/9365105115369"
         },
@@ -652,12 +661,16 @@
           "gid": "gid://shopify/Product/9365102854377"
         },
         {
-          "handle": "digital-x-ray-sensor-sleeves-1-3-8-x-8",
-          "gid": "gid://shopify/Product/9365105508585"
+          "handle": "cleansing-towelettes-5-x-7-10-100-cs",
+          "gid": "gid://shopify/Product/9365103739113"
         },
         {
-          "handle": "blu-tray-impression-trays-perforated-lg-upper-1",
-          "gid": "gid://shopify/Product/9365103018217"
+          "handle": "castile-soap-towelettes-5-x-7-10-100-cs",
+          "gid": "gid://shopify/Product/9365103444201"
+        },
+        {
+          "handle": "blu-tray-impression-trays-perforated-md-lower-4",
+          "gid": "gid://shopify/Product/9365103050985"
         }
       ]
     },
@@ -667,24 +680,24 @@
       "sampleCount": 5,
       "sampleProducts": [
         {
-          "handle": "accutest-mononucleosis-rapid-test-id516",
-          "gid": "gid://shopify/Product/9365091057897"
-        },
-        {
-          "handle": "narcotic-safe-hd-steel-grafco",
-          "gid": "gid://shopify/Product/9365113667817"
-        },
-        {
-          "handle": "golden-mortar-bags-flat-bottom-small-6-6-x-3-625-x-11-12607",
-          "gid": "gid://shopify/Product/9365108687081"
-        },
-        {
           "handle": "printed-pill-envelope-1000-bx-grafco-3-5-x-2-5",
           "gid": "gid://shopify/Product/9365116977385"
         },
         {
           "handle": "clotrimazole-1-antifungal-cream-1oz-tubes-indv-boxed-72-cs",
           "gid": "gid://shopify/Product/9365103870185"
+        },
+        {
+          "handle": "accutest-mononucleosis-rapid-test-id516",
+          "gid": "gid://shopify/Product/9365091057897"
+        },
+        {
+          "handle": "p-series-vials-11-dram-with-attached-cr-screw-caps-blue-rxpb11",
+          "gid": "gid://shopify/Product/9365114061033"
+        },
+        {
+          "handle": "pill-crusher-metal-grafco",
+          "gid": "gid://shopify/Product/9365115666665"
         }
       ]
     }

@@ -28,7 +28,10 @@ export async function submitForm(opts: {
       body: JSON.stringify(opts.payload),
     })
   } catch {
-    return { ok: false, error: 'network' }
+    // `error` is shown to the user as-is by both callers (ContactForm,
+    // WholesalePricing) — must be human-readable, not a sentinel (DEV-LAUNCH-12:
+    // this used to be the bare string 'network', which the UI displayed verbatim).
+    return { ok: false, error: 'Network error. Please check your connection and try again.' }
   }
 
   if (!res.ok) {

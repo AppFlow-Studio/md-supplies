@@ -20,7 +20,7 @@ beforeEach(() => {
 })
 
 function fillRequiredFields() {
-  fireEvent.change(screen.getByLabelText(/Faculty Name/i), { target: { value: 'Dr. Jane Smith' } })
+  fireEvent.change(screen.getByLabelText(/Your Name/i), { target: { value: 'Dr. Jane Smith' } })
   fireEvent.change(screen.getByLabelText(/Your Email/i), { target: { value: 'jane@clinic.com' } })
   fireEvent.change(screen.getByLabelText(/Select Faculty Type/i), {
     target: { value: FACILITY_TYPES[0] },

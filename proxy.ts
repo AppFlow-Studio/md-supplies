@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import productRedirects from './docs/redirects-ready.json'
 import { buildCsp, generateNonce } from '@/lib/csp'
+import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE_SECONDS, serializeAttribution } from '@/lib/analytics/attribution'
 
 type Redirect301 = { from: string; to: string; status: 301 }
 type Gone410    = { from: string; status: 410 }
@@ -129,6 +130,23 @@ const REDIRECT_ENTRIES: RedirectEntry[] = [
 // staging step here (we're already enforcing), it's an ongoing regression
 // canary that keeps reporting violations independently of what enforcing
 // already blocked.
+// First-touch capture of gclid/utm_* into a durable cookie (DEV-LAUNCH-12,
+// see lib/analytics/attribution.ts for why this exists). Only applied on the
+// pass-through path — ad traffic lands on live canonical URLs, not legacy
+// redirect/410 paths, so scoping it there covers the real case without
+// touching every response branch. Never overwrites an existing capture.
+function captureAttribution(request: NextRequest, response: NextResponse): void {
+  if (request.cookies.has(ATTRIBUTION_COOKIE)) return
+  const value = serializeAttribution(request.nextUrl.searchParams)
+  if (!value) return
+  response.cookies.set(ATTRIBUTION_COOKIE, value, {
+    maxAge: ATTRIBUTION_MAX_AGE_SECONDS,
+    path: '/',
+    sameSite: 'lax',
+    httpOnly: true,
+  })
+}
+
 function withCsp(response: Response, nonce: string): Response {
   const isDev = process.env.NODE_ENV === 'development'
   const csp = buildCsp(nonce, isDev)
@@ -144,8 +162,15 @@ export function proxy(request: NextRequest): Response {
   const nonce = generateNonce()
 
   const raw = request.nextUrl.pathname
-  // Normalize encoded paths (+, %20) to match old Magento/WooCommerce-style URLs
-  const pathname = raw.replace(/\+/g, ' ')
+  // Normalize encoded paths (+, %20) to match old Magento/WooCommerce-style URLs,
+  // and strip a single trailing slash (but not the root "/") so a legacy link
+  // hit with an extra trailing slash still matches the exact `from` strings
+  // below instead of falling through to a 404 (DEV-LAUNCH-12). Deliberately NOT
+  // lower-cased: the 1,285-entry bulk table (docs/redirects-ready.json) and the
+  // hand-written entries below preserve the legacy CMS's exact mixed-case path
+  // segments, and normalizing case here risks silently merging two originally-
+  // distinct paths that differed only by case.
+  const pathname = raw.replace(/\+/g, ' ').replace(/^(.+)\/$/, '$1')
 
   // Definitive removal first: permanently-gone categories (§4.3).
   if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), nonce)
@@ -232,7 +257,9 @@ export function proxy(request: NextRequest): Response {
   // nonce is in force.
   requestHeaders.set('Content-Security-Policy', buildCsp(nonce, process.env.NODE_ENV === 'development'))
 
-  return withCsp(NextResponse.next({ request: { headers: requestHeaders } }), nonce)
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
+  captureAttribution(request, response)
+  return withCsp(response, nonce)
 }
 
 export const config = {

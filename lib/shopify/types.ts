@@ -164,6 +164,10 @@ export type CartLine = {
     id: string;
     title: string;
     sku: string | null;
+    /** The variant's own unit price -- distinct from `cost.totalAmount`
+     * below, which a no-rate-for-destination line zeroes out while this
+     * stays positive. See lib/shopify/cart-lines.ts. */
+    price: Money;
     selectedOptions: SelectedOption[];
     product: {
       id: string;

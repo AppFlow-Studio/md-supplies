@@ -141,6 +141,49 @@ credentials for. Logic is covered by the automated suite
 (`rx-compliance-regression.test.ts`, `app/actions/__tests__/rx.test.ts`);
 the live walkthrough of those specific states remains open.
 
+### 2026-08-09 update — Izzy's fixture set landed, tag-only/dual-signal/exemption closed live
+
+Izzy added the full RX fixture set to the QA store: `qa-rx-tag-only`
+(`compliance:rx-only` tag, metafield not asserted), `qa-rx-legacy-tag-only`
+(`rx-required` tag), `qa-rx-metafield-only`, `qa-rx-both` (dual-signal),
+and `qa-rx-exempt-dynarex` (Dynarex vendor + RX tag + metafield — the
+documented exemption). Re-ran the dev server against `.env.local` and drove
+it with browser automation:
+
+| Fixture | Route | Observed |
+|---|---|---|
+| `qa-rx-tag-only` | `/product/qa-rx-tag-only` | Amber "RX Only" badge on PDP |
+| `qa-rx-legacy-tag-only` (`rx-required` tag) | quick add from `/search?q=qa-rx` | "RX Only" badge renders in the quick-add modal — confirms the DEV-LAUNCH-08 quick-add fix (defect #1) against a real legacy-tag fixture, not just the unit suite |
+| `qa-rx-tag-only` added to a cart already holding `qa-rx-exempt-dynarex` + one non-RX line | cart popup | "Prescription required" panel blocks checkout; both RX lines carry their own badge, the non-RX line does not — live confirmation of mixed-cart gating (D-07) and per-line badge agreement (defect #2) with two different real RX fixtures in the same cart |
+| `qa-rx-exempt-dynarex` **alone** in the cart | `/cart` | "PROCEED TO CHECKOUT" enabled, no gate panel — confirms `isGatedRxProduct`'s exemption live for the first time (previously only unit-tested, no exemption fixture existed on the QA store) |
+
+**Observation, not a defect**: `qa-rx-exempt-dynarex`'s line still shows the
+"RX Only" badge even when it's the only line and checkout proceeds
+ungated. Checked this against the existing design rather than assuming a
+bug: `isRxProduct()` in `lib/rx-gate.ts` is explicitly documented as
+"RX-flagged per the canonical sources, **before exemptions**", and
+`rx-compliance-regression.test.ts` already asserts
+`isRxProduct(exempt) === true` / `isGatedRxProduct(exempt) === false` as
+intended behavior — the badge reflects the raw compliance classification,
+only the gate reads the exemption. This is now live-verified as working
+exactly to that existing spec, not a new gap.
+
+Full test suite re-run after this pass: `npx tsc --noEmit` clean,
+`npx eslint . --max-warnings 0` clean, `npx vitest run` 124 files / 1191
+tests passed, `npm run build` exit 0, 67/67 pages. No code changes were
+needed — every surface already wired through the shared `lib/rx-gate.ts` /
+`lib/labels/labels.ts` modules behaved correctly against the new real
+fixtures on the first try.
+
+**Still not verified live**: signed-in states (D-04, D-05) — no QA customer
+account credentials available in this pass either. `DEV-RX-02` (validation
+app selection) status could not be confirmed from this repo: the Admin API
+token in `.env.local` only reports `currentAppInstallation` (this app
+itself), not other installed apps, so whether a checkout-validation
+Shopify Function has been selected/deployed remains unverifiable from code
+— confirm directly with Izzy rather than inferring it from the fixture
+work being done.
+
 ## Decision not made: wiring the metafield check into app startup
 
 The ticket asks to "add a startup assertion that fails loudly if the
@@ -165,8 +208,8 @@ on it. Open to reconsidering if the team wants boot-time enforcement anyway.
 
 | Criterion | Status |
 |---|---|
-| Tag-only, metafield-only, dual-signal behave identically | ✅ unit-verified (all three); ✅ metafield-only additionally live-verified; ⚠️ tag-only and dual-signal not live-verified — no such fixture exists on the QA store |
-| Non-RX and approved exemption products are not incorrectly blocked | ✅ unit-verified; exemption (Dynarex) not live-verified — no exempt fixture on QA store |
+| Tag-only, metafield-only, dual-signal behave identically | ✅ unit-verified (all three); ✅ live-verified 2026-08-09 for all three (`qa-rx-tag-only`, `qa-rx-metafield-only` [pre-existing 20-product set], `qa-rx-both`) |
+| Non-RX and approved exemption products are not incorrectly blocked | ✅ unit-verified; ✅ live-verified 2026-08-09 — `qa-rx-exempt-dynarex` alone in cart does not block checkout |
 | Frontend gate never claims to be the Shopify validation control | ✅ — `RxGatePanel` copy makes no legal/compliance claim; code comments corrected this pass (defect #3) to stop overstating the frontend's role in the other direction (silently *understating* enforcement is also a misstatement, just a different one) |
 | Mixed RX/non-RX carts follow the RX-required path | ✅ unit-verified + ✅ live-verified this pass |
 | Direct checkout cannot bypass the required Shopify validation behavior | ⚠️ our own server code re-checks and refuses a checkout URL for a blocked cart (✅ unit-verified, `app/actions/__tests__/rx.test.ts`) — but the bypass-resistant control for someone who already has a raw Shopify checkout URL is the companion validation app, which does not exist yet (blocked on DEV-RX-02) |
@@ -191,9 +234,16 @@ on it. Open to reconsidering if the team wants boot-time enforcement anyway.
   procedure (unchecked in that doc's own checklist). Worth confirming with
   Munis which of these three is the actual open item before treating this
   as blocked on a decision that may already exist.
-- **Needs from Izzy — the five RX fixture classes:** partially satisfied,
-  newly discovered this pass. Metafield-only exists (20 products, real).
-  Tag-only, dual-signal, and a documented exemption fixture do not appear to
-  exist on the QA store as of this pass (a tag search for
-  `compliance:rx-only` / `rx-required` returned zero products). Non-RX is
+- **Needs from Izzy — the five RX fixture classes:** ✅ fully satisfied as of
+  2026-08-09. Metafield-only (20 real production-tagged products, pre-
+  existing), tag-only (`qa-rx-tag-only`, `qa-rx-legacy-tag-only`), dual-signal
+  (`qa-rx-both`), and the documented exemption (`qa-rx-exempt-dynarex`) all
+  now exist on the QA store and were live-verified this pass. Non-RX is
   trivially satisfied by any ordinary product.
+- **Blocked on Izzy — validation app selection (DEV-RX-02)**: status
+  unchanged by this pass. Could not be confirmed or denied from this repo —
+  the read-only Admin token available here only reports the app installation
+  for this integration itself, not the shop's other installed apps. This is
+  the one item in both tickets that genuinely cannot be closed from the
+  codebase; needs a direct answer from Izzy, not an inference from the
+  fixture work.

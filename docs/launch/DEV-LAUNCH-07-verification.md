@@ -156,6 +156,25 @@ browser automation:
 | Category grid (`gloves`) | `/category/gloves` | Cards show the approved brand line, real price, quick-add "+" |
 | Quick add → Add to Cart | same page | Modal opens with correct product/price; clicking Add to Cart shows the pending state, then opens the cart popup with the correct line and subtotal; button reverts to "Add to Cart" after the confirmation window — full round trip against the live Storefront API |
 
+### 2026-08-09 update — Izzy's fixture set landed, previously-open gaps closed live
+
+Izzy added a full fixture set to the QA store (`qa-missing-image`, `qa-missing-brand`,
+a genuinely-backordered `qa-backorder`, plus the DEV-LAUNCH-08 RX set below). Re-ran
+the dev server against `.env.local` and drove it with browser automation:
+
+| Fixture | Route | Observed |
+|---|---|---|
+| `qa-backorder` (now `availableForSale: false`, restock metafield `2027-03-01`) | `/product/qa-backorder` | Exercises the real backordered branch for the first time: price still shown (`$12.50`), amber "Back-ordered – ships 2027-03-01" label, disabled grey "OUT OF STOCK" button — price and backorder state kept as distinct signals, per `lib/labels/labels.ts`'s single-metafield-source contract |
+| `qa-missing-image` (brand `Dynarex` present, zero product images) | `/product/qa-missing-image` | PDP falls through the image chain to the neutral placeholder div — no broken-image icon, no layout collapse, brand line ("DYNAREX") and price/Add-to-Cart render normally. Card view (`/search?q=qa-missing`) falls to the illustrated category placeholder instead of the neutral div (same fallback chain, different tier — both are "visually complete", neither is a broken-image icon) |
+| `qa-missing-brand` (real image, no `custom.brand_name`) | `/product/qa-missing-brand` | No brand line renders at all (not "undefined", not empty gap) — title sits directly under the breadcrumb, price/Add-to-Cart unaffected. Same on the card |
+
+Full test suite re-run after this pass: `npx tsc --noEmit` clean, `npx eslint . --max-warnings 0` clean, `npx vitest run` 124 files / 1191 tests passed, `npm run build` exit 0, 67/67 pages.
+
+Not re-run this pass: the `axe-states.spec.ts` live QA run (no code changed in the
+render path; the fixtures now exist but that spec's own fixture handles/assertions
+weren't touched). Recommend re-running it now that `qa-missing-image`/`qa-missing-brand`
+exist, as a follow-up, since it was written before those fixtures did.
+
 Ran `e2e/axe-states.spec.ts` (the existing product-state a11y spec, which
 already targets these same three QA fixture handles) against the live QA
 store:
@@ -198,18 +217,18 @@ dependencies.
 | No Shopify Vendor is shown as Brand | ✅ verified live + unit tests |
 | Zero-price products cannot be added or checked out | ✅ fixed (defect #1) + verified live + unit tests; structured data no longer disagrees (defect #3) |
 | Unavailable variants cannot be submitted | ✅ (pre-existing, `resolvePurchasable` checked on every surface) |
-| Backorder state uses the configured source and does not masquerade as in stock | ✅ code path verified (`lib/labels/labels.ts`, single metafield source); ⚠️ not exercised end-to-end live — the only QA fixture with "backorder" in its name is not actually in a backordered state on the QA store today |
-| Missing image and missing Brand states remain visually complete | ✅ unit-verified (fallback chain, brand omission); ⚠️ no live QA fixture to screenshot — Izzy dependency, unresolved |
+| Backorder state uses the configured source and does not masquerade as in stock | ✅ live-verified 2026-08-09 — `qa-backorder` now genuinely backordered on the QA store, renders price + amber backorder label + disabled button, never "in stock" |
+| Missing image and missing Brand states remain visually complete | ✅ live-verified 2026-08-09 — `qa-missing-image` and `qa-missing-brand` fixtures now exist on the QA store; both render complete, no broken-image icon, no layout gap |
 | Quick add is keyboard operable and returns focus correctly | ✅ pre-existing (`QuickAddModal.test.tsx`), unchanged |
 
 ## Dependencies status
 
 - **DEV-LAUNCH-02**: done (see `DEV-LAUNCH-02-config.md`).
 - **Needs from Izzy — QA fixtures for zero-price, OOS, backorder,
-  missing-image, missing-Brand**: partially satisfied. Zero-price and OOS
-  fixtures exist and behave correctly live. The named "backorder" fixture
-  exists but is not currently in a backordered state. Missing-image and
-  missing-Brand fixtures do not exist on the QA store — still open.
+  missing-image, missing-Brand**: ✅ fully satisfied as of 2026-08-09. Zero-price
+  and OOS fixtures already existed and behave correctly live. `qa-backorder`
+  is now genuinely backordered. `qa-missing-image` and `qa-missing-brand`
+  now exist and both render visually-complete states, live-verified.
 - **DEV-LAUNCH-08 (RX state on the same surfaces)**: unaffected by this
   pass; RX detection/badging is unchanged (still the shared
   `lib/rx-gate.ts` union), and the fragment fix in defect #4 makes RX data

@@ -22,7 +22,7 @@ const H = {
   zeroPrice: process.env.E2E_HANDLE_ZERO_PRICE ?? 'qa-no-rate',
   outOfStock: process.env.E2E_HANDLE_OOS ?? 'qa-out-of-stock',
   backorder: process.env.E2E_HANDLE_BACKORDER ?? 'qa-backorder',
-  rx: process.env.E2E_HANDLE_RX ?? 'qa-rx-product',
+  rx: process.env.E2E_HANDLE_RX ?? 'qa-rx-both',
 }
 const ROUTES = [
   { path: '/', name: 'home', fixture: false },

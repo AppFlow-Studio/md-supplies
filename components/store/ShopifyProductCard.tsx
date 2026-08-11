@@ -113,8 +113,13 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
                 <span
                   key={label.type}
                   aria-label={label.accessibleText}
+                  // DEV-LAUNCH-13: bg-amber-600 (~3.18:1) and bg-orange-500
+                  // (~2.80:1) with white 11px text both measured below WCAG
+                  // AA's 4.5:1. amber-700 (~5.03:1) and orange-700 (~5.18:1)
+                  // pass — same fix shape as ProductBadges.tsx / the
+                  // DEV-LAUNCH-11 backorder-label precedent.
                   className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded text-white ${
-                    label.type === 'rx-only' ? 'bg-amber-600' : 'bg-orange-500'
+                    label.type === 'rx-only' ? 'bg-amber-700' : 'bg-orange-700'
                   }`}
                 >
                   {label.text}

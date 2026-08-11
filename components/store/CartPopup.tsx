@@ -12,6 +12,7 @@ import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
 import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
+import { unshippableCartLines, CART_LINE_UNSHIPPABLE_MESSAGE } from '@/lib/shopify/cart-lines'
 import { resolveRxLabel } from '@/lib/labels/labels'
 import { ShippingBadge } from '@/components/product/ShippingBadge'
 
@@ -19,12 +20,17 @@ export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
   const rxGate = useRxGate(cart)
-  // Phase 11: a line with no usable total would transact at $0 or be silently
+  // Phase 11: a line with no usable price would transact at $0 or be silently
   // dropped at checkout. Block the handoff and name the offending items.
   const blockedLines = cart ? blockedCartLines(cart.lines.nodes) : []
-  const checkoutBlocked = blockedLines.length > 0
+  // DEV-LAUNCH-09: a line Shopify can't ship to the destination is a
+  // separate, differently-caused block from a price-unavailable one — both
+  // must stop checkout, but neither message may stand in for the other.
+  const unshippableLines = cart ? unshippableCartLines(cart) : []
+  const checkoutBlocked = blockedLines.length > 0 || unshippableLines.length > 0
   const panelRef = useRef<HTMLDivElement>(null)
   const previouslyFocusedRef = useRef<HTMLElement | null>(null)
+  const checkoutInFlightRef = useRef(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -71,33 +77,39 @@ export function CartPopup() {
   async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {
     if (!cart) return
     e.preventDefault()
+    if (checkoutInFlightRef.current) return
+    checkoutInFlightRef.current = true
 
-    track(
-      {
-        ...buildBeginCheckoutEvent({
-          currency: cart.cost.subtotalAmount.currencyCode,
-          items: lines.map((line) => ({
-            item_id: line.merchandise.id,
-            item_name: line.merchandise.product.title,
-            price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-            quantity: line.quantity,
-          })),
-        }),
-      },
-    )
-
-    // Bridge the storefront GA client_id into Shopify checkout for the pixel.
-    // Best-effort: never block the handoff on analytics.
     try {
-      const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
-      const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
-      if (clientId) await setCartAttribute('ga_client_id', clientId)
-    } catch (err) {
-      console.error('[CartPopup] failed to stamp ga_client_id:', err)
-    }
+      track(
+        {
+          ...buildBeginCheckoutEvent({
+            currency: cart.cost.subtotalAmount.currencyCode,
+            items: lines.map((line) => ({
+              item_id: line.merchandise.id,
+              item_name: line.merchandise.product.title,
+              price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
+              quantity: line.quantity,
+            })),
+          }),
+        },
+      )
 
-    // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
-    await rxGate.proceedToCheckout()
+      // Bridge the storefront GA client_id into Shopify checkout for the pixel.
+      // Best-effort: never block the handoff on analytics.
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
+        const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
+        if (clientId) await setCartAttribute('ga_client_id', clientId)
+      } catch (err) {
+        console.error('[CartPopup] failed to stamp ga_client_id:', err)
+      }
+
+      // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
+      await rxGate.proceedToCheckout()
+    } finally {
+      checkoutInFlightRef.current = false
+    }
   }
 
   return (
@@ -195,7 +207,9 @@ export function CartPopup() {
                         return rxLabel ? (
                           <span
                             aria-label={rxLabel.accessibleText}
-                            className="inline-flex items-center px-2 py-0.5 mb-2 text-[11px] font-medium rounded bg-amber-600 text-white"
+                            // DEV-LAUNCH-13: bg-amber-600 + white measured ~3.18:1,
+                            // below WCAG AA's 4.5:1 — same fix as ProductBadges.tsx.
+                            className="inline-flex items-center px-2 py-0.5 mb-2 text-[11px] font-medium rounded bg-amber-700 text-white"
                           >
                             {rxLabel.text}
                           </span>
@@ -269,10 +283,23 @@ export function CartPopup() {
             </p>
             {checkoutBlocked ? (
               <div className="border border-amber-300 bg-amber-50 p-4 flex flex-col gap-2">
-                <p className="text-navy-900 text-[14px] font-semibold">Pricing needed before checkout</p>
-                <p className="text-gray-600 text-[13px] leading-relaxed">
-                  {blockedCheckoutMessage(blockedLines)}
+                <p className="text-navy-900 text-[14px] font-semibold">
+                  {blockedLines.length > 0 && unshippableLines.length > 0
+                    ? 'Action needed before checkout'
+                    : blockedLines.length > 0
+                      ? 'Pricing needed before checkout'
+                      : 'Shipping unavailable for one or more items'}
                 </p>
+                {blockedLines.length > 0 && (
+                  <p className="text-gray-600 text-[13px] leading-relaxed">
+                    {blockedCheckoutMessage(blockedLines)}
+                  </p>
+                )}
+                {unshippableLines.length > 0 && (
+                  <p className="text-gray-600 text-[13px] leading-relaxed">
+                    {CART_LINE_UNSHIPPABLE_MESSAGE}
+                  </p>
+                )}
                 <span
                   aria-disabled="true"
                   className="bg-gray-200 text-gray-500 h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase cursor-not-allowed"

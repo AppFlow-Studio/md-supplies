@@ -23,6 +23,7 @@ function stubCart(productId: string, variantId: string): Cart {
             id: variantId,
             title: 'Default Title',
             sku: 'SKU',
+            price: { amount: '1.00', currencyCode: 'USD' },
             selectedOptions: [],
             product: {
               id: productId,

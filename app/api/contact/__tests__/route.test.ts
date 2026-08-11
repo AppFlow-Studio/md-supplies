@@ -18,6 +18,13 @@ vi.mock('node:dns/promises', () => ({
   resolve6: (...args: unknown[]) => resolve6(...args),
 }))
 
+// readStoredAttribution() (DEV-LAUNCH-12) reads next/headers' cookies(),
+// which throws outside a real request scope.
+const { mockCookies } = vi.hoisted(() => ({
+  mockCookies: vi.fn(async () => ({ get: () => undefined })),
+}))
+vi.mock('next/headers', () => ({ cookies: mockCookies }))
+
 import { POST } from '@/app/api/contact/route'
 import { SUBJECTS } from '@/lib/forms/schema'
 
@@ -62,6 +69,20 @@ describe('POST /api/contact', () => {
   it('delivers to the contact inbox', async () => {
     await POST(post(valid))
     expect(send.mock.calls[0][0].to).toBe('team@test.com')
+  })
+
+  it('includes captured gclid/utm attribution in the email body when present (DEV-LAUNCH-12)', async () => {
+    mockCookies.mockResolvedValueOnce({
+      get: () => ({ value: JSON.stringify({ gclid: 'abc123', utm_source: 'google' }) }),
+    } as never)
+    await POST(post(valid))
+    expect(send.mock.calls[0][0].text).toContain('gclid=abc123')
+    expect(send.mock.calls[0][0].text).toContain('utm_source=google')
+  })
+
+  it('omits the attribution line entirely when nothing was captured', async () => {
+    await POST(post(valid))
+    expect(send.mock.calls[0][0].text).not.toContain('Attribution:')
   })
 
   it('returns 502 when Resend responds with an error object (no swallowing)', async () => {

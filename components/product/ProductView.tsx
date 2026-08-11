@@ -21,20 +21,10 @@ import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
-import { hasUsablePrice, resolvePurchasable } from '@/lib/purchasability'
+import { hasUsablePrice, getDefaultVariant } from '@/lib/purchasability'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
-
-// Prefer a variant a shopper can actually buy — availableForSale alone lets
-// a $0 variant win the default slot, landing the page on a "Request pricing"
-// state when a purchasable option exists (lib/purchasability.ts).
-function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
-  const purchasable = variants.find(
-    (v) => resolvePurchasable({ price: parseFloat(v.price.amount), availableForSale: v.availableForSale }).purchasable,
-  )
-  return purchasable ?? variants.find((v) => v.availableForSale) ?? variants[0]
-}
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const price = parseFloat(
@@ -287,7 +277,9 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {rxLabel && (
                   <span
                     aria-label={rxLabel.accessibleText}
-                    className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white"
+                    // DEV-LAUNCH-13: bg-amber-600 + white measured ~3.18:1, below
+                    // WCAG AA's 4.5:1 for 13px text — same fix as ProductBadges.tsx.
+                    className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-700 text-white"
                   >
                     {rxLabel.text}
                   </span>

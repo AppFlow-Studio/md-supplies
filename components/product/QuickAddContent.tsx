@@ -173,7 +173,9 @@ export function QuickAddContent({ product, titleId }: Props) {
         {product.isRx && (
           <span
             aria-label={RX_ONLY_ACCESSIBLE_TEXT}
-            className="inline-flex items-center self-start px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white"
+            // DEV-LAUNCH-13: bg-amber-600 + white measured ~3.18:1, below
+            // WCAG AA's 4.5:1 for 13px text — same fix as ProductBadges.tsx.
+            className="inline-flex items-center self-start px-3 py-1 text-[13px] font-medium rounded bg-amber-700 text-white"
           >
             {RX_ONLY_LABEL_TEXT}
           </span>

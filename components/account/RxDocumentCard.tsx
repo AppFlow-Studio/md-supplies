@@ -52,8 +52,11 @@ export function RxDocumentCard({ hasDocument: initialHasDocument, verified }: Pr
           </span>
         )}
         {state === 'uploaded' && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[12px] font-semibold tracking-[0.3px] uppercase">
-            <FileClock size={13} />
+          // DEV-LAUNCH-13: text-amber-600 on bg-amber-50 measured ~3.18:1,
+          // below WCAG AA's 4.5:1 for this 12px text (the icon alone is fine —
+          // non-text UI only needs 3:1). amber-700 measures ~4.84:1.
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[12px] font-semibold tracking-[0.3px] uppercase">
+            <FileClock size={13} className="text-amber-600" />
             Pending Review
           </span>
         )}

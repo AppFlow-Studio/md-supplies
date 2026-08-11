@@ -4,10 +4,14 @@ import { test, expect } from '@playwright/test'
  * RX states (P0 RX-gate ticket, DEV-LAUNCH-11 route list item "RX states").
  * Needs a QA-store product tagged `compliance:rx-only` or `rx-required`
  * (lib/rx-gate.ts RX_TAG/RX_LEGACY_TAG) with vendor != Dynarex (exempt).
- * Set E2E_HANDLE_RX to that product's handle; skips with a reason when unset
- * rather than silently passing against a 404, matching e2e/axe-states.spec.ts.
+ * Defaults to `qa-rx-both` (compliance:rx-only + rx-required, vendor
+ * MDSupplies, live on the QA store as of DEV-LAUNCH-13 — the prior default,
+ * `qa-rx-product`, no longer resolves). Override with E2E_HANDLE_RX for a
+ * different shop; skips with a reason when the resolved handle 404s rather
+ * than silently passing against a missing fixture, matching
+ * e2e/axe-states.spec.ts.
  */
-const RX_HANDLE = process.env.E2E_HANDLE_RX
+const RX_HANDLE = process.env.E2E_HANDLE_RX ?? 'qa-rx-both'
 
 test.describe('RX states', () => {
   test('PDP shows the "RX Only" badge', async ({ page }) => {

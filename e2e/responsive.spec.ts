@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { VIEWPORTS } from './support/viewports'
 import {
@@ -130,7 +130,12 @@ test.describe('discovery controls', () => {
     await expect(search).toBeVisible()
 
     const searchBox = await search.boundingBox()
-    const firstCard = page.locator('a[href*="/category/gloves/"]').first()
+    // Scoped to the product grid, not `a[href*="/category/gloves/"]` — that
+    // substring also matches SubcategoryNavigator's chip/overflow links,
+    // which sit earlier in DOM order and are CSS-hidden at this exact
+    // breakpoint (`hidden lg:flex`), so .first() picked an invisible nav
+    // link and boundingBox() came back null instead of a real card.
+    const firstCard = page.getByTestId('product-grid').locator('a[href*="/category/gloves/"]').first()
     const cardBox = await firstCard.boundingBox()
 
     expect(searchBox, 'search box missing').not.toBeNull()

@@ -16,6 +16,12 @@ const CART_FRAGMENT = `#graphql
             id
             title
             sku
+            # The variant's own unit price, distinct from this line's cost
+            # below: a no-rate-for-destination line still carries a positive
+            # price here even though its cost.totalAmount is zeroed out. This
+            # is what lets the cart tell a genuinely unpriced product apart
+            # from a priced one Shopify simply can't ship (DEV-LAUNCH-09).
+            price { amount currencyCode }
             selectedOptions { name value }
             product {
               id
