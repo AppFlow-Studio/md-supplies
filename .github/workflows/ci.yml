@@ -226,6 +226,8 @@ jobs:
     env:
       SHOPIFY_STORE_DOMAIN: ${{ secrets.SHOPIFY_STORE_DOMAIN }}
       SHOPIFY_STOREFRONT_ACCESS_TOKEN: ${{ secrets.SHOPIFY_STOREFRONT_ACCESS_TOKEN }}
+      SHOPIFY_CUSTOMER_ACCOUNT_URL: ${{ secrets.SHOPIFY_CUSTOMER_ACCOUNT_URL }}
+      SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID: ${{ secrets.SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -241,10 +243,12 @@ jobs:
 
       - name: Require Shopify secrets
         # E2E is a required launch gate — a missing secret must fail loudly,
-        # not silently skip the whole suite (CI quality-gate ticket).
+        # not silently skip the whole suite (CI quality-gate ticket). instrumentation.ts
+        # throws on server boot without the customer-account vars, which otherwise
+        # only surfaces as a 180s webServer timeout with no indication why.
         run: |
-          if [ -z "$SHOPIFY_STORE_DOMAIN" ] || [ -z "$SHOPIFY_STOREFRONT_ACCESS_TOKEN" ]; then
-            echo "::error::SHOPIFY_STORE_DOMAIN / SHOPIFY_STOREFRONT_ACCESS_TOKEN are not set in repo Actions secrets — E2E cannot run and is a required check (Settings → Secrets and variables → Actions)."
+          if [ -z "$SHOPIFY_STORE_DOMAIN" ] || [ -z "$SHOPIFY_STOREFRONT_ACCESS_TOKEN" ] || [ -z "$SHOPIFY_CUSTOMER_ACCOUNT_URL" ] || [ -z "$SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID" ]; then
+            echo "::error::SHOPIFY_STORE_DOMAIN / SHOPIFY_STOREFRONT_ACCESS_TOKEN / SHOPIFY_CUSTOMER_ACCOUNT_URL / SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID are not set in repo Actions secrets — E2E cannot run and is a required check (Settings → Secrets and variables → Actions)."
             exit 1
           fi
 
