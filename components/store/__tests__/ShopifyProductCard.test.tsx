@@ -298,7 +298,7 @@ describe('ShopifyProductCard', () => {
       <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
     )
 
-    expect(screen.getByText('Back-ordered')).toBeInTheDocument()
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
   })
 
   it('renders no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
@@ -307,6 +307,6 @@ describe('ShopifyProductCard', () => {
       <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
     )
 
-    expect(screen.queryByText(/Back-ordered/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
 })

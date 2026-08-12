@@ -114,10 +114,12 @@ export function resolveBackorderLabel(input: {
 
   return {
     type: 'backorder',
-    text: eta ? `Back-ordered – ships ${eta}` : 'Back-ordered',
+    // "Backorder", not "Back-ordered" (Bilal's spec / Juliette's guide), and
+    // no en dash (house copy rule) — plain comma, matching accessibleText.
+    text: eta ? `Backorder, ships ${eta}` : 'Backorder',
     accessibleText: eta
-      ? `Back-ordered, estimated to ship ${eta}`
-      : 'Back-ordered, ships when available',
+      ? `Backorder, estimated to ship ${eta}`
+      : 'Backorder, ships when available',
     priority: 20,
     source: 'metafield',
   }

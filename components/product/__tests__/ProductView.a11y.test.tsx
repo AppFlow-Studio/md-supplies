@@ -119,7 +119,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
         complementaryProducts={[]}
       />,
     )
-    expect(screen.getByText('Back-ordered')).toBeInTheDocument()
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
   })
 
   it('renders no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
@@ -130,6 +130,6 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
         complementaryProducts={[]}
       />,
     )
-    expect(screen.queryByText(/Back-ordered/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
 })

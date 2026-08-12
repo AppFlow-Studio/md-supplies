@@ -52,12 +52,12 @@ describe('FeaturedProductCard — label badges (DEV-RX-02)', () => {
         product={{ ...baseProduct, backorder: { value: 'true' } }}
       />,
     )
-    expect(screen.getByText('Back-ordered')).toBeInTheDocument()
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
   })
 
   it('renders no badges for a plain in-stock, non-RX product', () => {
     render(<FeaturedProductCard product={baseProduct} />)
     expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
-    expect(screen.queryByText(/Back-ordered/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
 })

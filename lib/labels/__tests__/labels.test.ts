@@ -71,8 +71,8 @@ describe('resolveBackorderLabel', () => {
 
   it('renders generic text when the boolean is true but there is no ETA', () => {
     const label = resolveBackorderLabel({ isBackordered: true, estimatedRestockDate: null, now: NOW })
-    expect(label?.text).toBe('Back-ordered')
-    expect(label?.accessibleText).toBe('Back-ordered, ships when available')
+    expect(label?.text).toBe('Backorder')
+    expect(label?.accessibleText).toBe('Backorder, ships when available')
     expect(label?.source).toBe('metafield')
   })
 
@@ -82,7 +82,7 @@ describe('resolveBackorderLabel', () => {
       estimatedRestockDate: '2026-09-15',
       now: NOW,
     })
-    expect(label?.text).toBe('Back-ordered – ships 2026-09-15')
+    expect(label?.text).toBe('Backorder, ships 2026-09-15')
   })
 
   it('falls back to generic text (still shown) when the ETA is stale — the boolean alone keeps the label alive', () => {
@@ -91,7 +91,7 @@ describe('resolveBackorderLabel', () => {
       estimatedRestockDate: '2026-06-01',
       now: NOW,
     })
-    expect(label?.text).toBe('Back-ordered')
+    expect(label?.text).toBe('Backorder')
   })
 
   it('keeps a same-day ETA valid through end of day', () => {
@@ -100,7 +100,7 @@ describe('resolveBackorderLabel', () => {
       estimatedRestockDate: '2026-07-30',
       now: NOW,
     })
-    expect(label?.text).toBe('Back-ordered – ships 2026-07-30')
+    expect(label?.text).toBe('Backorder, ships 2026-07-30')
   })
 
   it('renders unparseable operational text as-is', () => {
@@ -109,12 +109,12 @@ describe('resolveBackorderLabel', () => {
       estimatedRestockDate: 'late August',
       now: NOW,
     })
-    expect(label?.text).toBe('Back-ordered – ships late August')
+    expect(label?.text).toBe('Backorder, ships late August')
   })
 
   it('never labels on an empty/whitespace-only ETA even when the boolean is true (falls to generic text)', () => {
     const label = resolveBackorderLabel({ isBackordered: true, estimatedRestockDate: '   ', now: NOW })
-    expect(label?.text).toBe('Back-ordered')
+    expect(label?.text).toBe('Backorder')
   })
 })
 
