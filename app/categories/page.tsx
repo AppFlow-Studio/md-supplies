@@ -72,7 +72,7 @@ export default async function CategoriesPage() {
     .slice(0, 8)
 
   return (
-    <main className="bg-[#f9fafc] min-h-screen">
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       {/* Breadcrumb */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
         <Breadcrumb items={[{ label: 'All Categories' }]} />
@@ -126,7 +126,7 @@ export default async function CategoriesPage() {
       )}
 
       {/* All Categories grid */}
-      <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
+      <section id="all-categories" className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12">
         <h2 className="text-navy-900 text-[22px] font-semibold mb-7">Browse All Categories</h2>
 
         {l1Tiles.length === 0 ? (
@@ -134,7 +134,6 @@ export default async function CategoriesPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
             {l1Tiles.map((tile) => {
-              const col = allCollectionsByHandle.get(tile.collectionHandle)
               const banner = getCategoryBannerConfig(tile.collectionHandle)
               return (
                 <Link
@@ -154,11 +153,9 @@ export default async function CategoriesPage() {
                     <p className="text-navy-900 text-[14px] font-semibold group-hover:underline">
                       {tile.displayName}
                     </p>
-                    {col?.description && (
-                      <p className="text-gray-500 text-[12px] mt-1 line-clamp-2">
-                        {col.description}
-                      </p>
-                    )}
+                    <p className="text-gray-500 text-[12px] mt-1 line-clamp-2">
+                      {tile.shortDescription}
+                    </p>
                   </div>
                 </Link>
               )

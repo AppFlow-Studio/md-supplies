@@ -10,6 +10,8 @@ import type { CollectionProduct } from '@/lib/shopify/types'
 import type { ProductCardData } from '@/types/product'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { publicBrand } from '@/lib/brand'
+import { isBackorderedMetafield, resolveProductLabels } from '@/lib/labels/labels'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 
 interface Props {
   products: CollectionProduct[]
@@ -48,6 +50,8 @@ function toCardData(product: CollectionProduct): ProductCardData {
     sku: '',
     available: product.availableForSale,
     shippingDisplay: product.shippingDisplay ?? null,
+    isBackordered: isBackorderedMetafield(product.backorder),
+    backorderRestockDate: product.estimatedRestockDate?.value ?? null,
     isRx: product.tags.some((t) => t === 'rx-required' || t === 'compliance:rx-only'),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
@@ -89,8 +93,11 @@ export function PopularProducts({ products }: Props) {
             return (
               <FadeIn key={product.id} delay={i * 0.08} className="bg-white flex flex-col">
 
+                {/* DEF-02/QA-135: image-only link — the visible title sits
+                    outside it below, so it needs its own accessible name. */}
                 <Link
                   href={`/product/${product.handle}`}
+                  aria-label={product.title}
                   className="group relative overflow-hidden aspect-square bg-gray-50 block"
                 >
                   <ProductImage
@@ -116,6 +123,18 @@ export function PopularProducts({ products }: Props) {
                       </span>
                     )}
                   </div>
+
+                  {/* Order (RX -> Backorder -> Free Shipping) guaranteed by
+                      ProductLabelBadges. */}
+                  <ProductLabelBadges
+                    labels={resolveProductLabels({
+                      tags: product.tags,
+                      isRxOnly: product.isRxOnly,
+                      isBackordered: product.backorder,
+                      estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
+                    })}
+                    shippingDisplay={product.shippingDisplay}
+                  />
 
                   <p className="text-[14px] font-semibold text-black leading-snug line-clamp-3">
                     {product.title}

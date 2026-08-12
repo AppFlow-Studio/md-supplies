@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { type MouseEvent } from 'react'
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { useCart } from './CartProvider'
-import { CartToast } from './CartToast'
 import { track } from '@/lib/analytics/track'
 import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/events'
 import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
@@ -13,17 +12,27 @@ import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
 import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
+import { unshippableCartLines, CART_LINE_UNSHIPPABLE_MESSAGE } from '@/lib/shopify/cart-lines'
+import { resolveProductLabels } from '@/lib/labels/labels'
 import { SHIPPING_FALLBACK_MESSAGE, SHIPPING_CLASS_COPY } from '@/lib/shipping-resolver/copy'
-import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 
 export function CartPageClient() {
   const { cart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
   const rxGate = useRxGate(cart)
-  // Phase 11: a line with no usable total would transact at $0 or be silently
+  // Phase 11: a line with no usable price would transact at $0 or be silently
   // dropped at checkout. Block the handoff and name the offending items.
   const blockedLines = cart ? blockedCartLines(cart.lines.nodes) : []
-  const checkoutBlocked = blockedLines.length > 0
+  // DEV-LAUNCH-09: a line Shopify can't ship to the destination is a
+  // separate, differently-caused block from a price-unavailable one — both
+  // must stop checkout, but neither message may stand in for the other.
+  const unshippableLines = cart ? unshippableCartLines(cart) : []
+  const checkoutBlocked = blockedLines.length > 0 || unshippableLines.length > 0
+  // DEV-LAUNCH-12: a rapid double-click fired begin_checkout twice — this
+  // async handler had no in-flight guard between the click and the
+  // rxGate/navigation await below.
+  const checkoutInFlightRef = useRef(false)
 
   // Whole-cart summary, resolved per line from the selected variant's class.
   // Claiming free shipping for the cart requires every line to be classified
@@ -58,26 +67,33 @@ export function CartPageClient() {
   async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {
     if (!cart) return
     e.preventDefault()
-    track(
-      buildBeginCheckoutEvent({
-        currency: cart.cost.subtotalAmount.currencyCode,
-        items: lines.map((line) => ({
-          item_id: line.merchandise.id,
-          item_name: line.merchandise.product.title,
-          price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-          quantity: line.quantity,
-        })),
-      }),
-    )
+    if (checkoutInFlightRef.current) return
+    checkoutInFlightRef.current = true
+
     try {
-      const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
-      const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
-      if (clientId) await setCartAttribute('ga_client_id', clientId)
-    } catch (err) {
-      console.error('[CartPageClient] failed to stamp ga_client_id:', err)
+      track(
+        buildBeginCheckoutEvent({
+          currency: cart.cost.subtotalAmount.currencyCode,
+          items: lines.map((line) => ({
+            item_id: line.merchandise.id,
+            item_name: line.merchandise.product.title,
+            price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
+            quantity: line.quantity,
+          })),
+        }),
+      )
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
+        const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
+        if (clientId) await setCartAttribute('ga_client_id', clientId)
+      } catch (err) {
+        console.error('[CartPageClient] failed to stamp ga_client_id:', err)
+      }
+      // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
+      await rxGate.proceedToCheckout()
+    } finally {
+      checkoutInFlightRef.current = false
     }
-    // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
-    await rxGate.proceedToCheckout()
   }
 
   if (lines.length === 0 || !cart) {
@@ -91,7 +107,6 @@ export function CartPageClient() {
             Continue Shopping
           </Link>
         </div>
-        <CartToast />
       </div>
     )
   }
@@ -132,11 +147,21 @@ export function CartPageClient() {
                   {variantTitle !== 'Default Title' && (
                     <p className="text-gray-500 text-[12px] tracking-[0.24px]">{variantTitle}</p>
                   )}
-                  {line.shippingDisplay && (
-                    <div className="mt-1">
-                      <ShippingBadge shippingDisplay={line.shippingDisplay} />
-                    </div>
-                  )}
+                  {/* Same tag ∪ custom.is_rx_only union and custom.backorder
+                      boolean the card/PDP/checkout gate use — display-only,
+                      never itself a checkout decision (DEV-LAUNCH-08). Order
+                      (RX -> Backorder -> Free Shipping) guaranteed by
+                      ProductLabelBadges. */}
+                  <ProductLabelBadges
+                    className="mt-1"
+                    labels={resolveProductLabels({
+                      tags: line.merchandise.product.tags,
+                      isRxOnly: line.merchandise.product.isRxOnly,
+                      isBackordered: line.merchandise.product.backorder,
+                      estimatedRestockDate: line.merchandise.product.estimatedRestockDate?.value ?? null,
+                    })}
+                    shippingDisplay={line.shippingDisplay}
+                  />
                   {line.merchandise.sku && (
                     <p className="text-gray-400 text-[11px] tracking-[0.22px] mb-1">
                       SKU: {line.merchandise.sku}
@@ -201,10 +226,23 @@ export function CartPageClient() {
           </p>
           {checkoutBlocked ? (
             <div className="border border-amber-300 bg-amber-50 p-4 flex flex-col gap-2">
-              <p className="text-navy-900 text-[14px] font-semibold">Pricing needed before checkout</p>
-              <p className="text-gray-600 text-[13px] leading-relaxed">
-                {blockedCheckoutMessage(blockedLines)}
+              <p className="text-navy-900 text-[14px] font-semibold">
+                {blockedLines.length > 0 && unshippableLines.length > 0
+                  ? 'Action needed before checkout'
+                  : blockedLines.length > 0
+                    ? 'Pricing needed before checkout'
+                    : 'Shipping unavailable for one or more items'}
               </p>
+              {blockedLines.length > 0 && (
+                <p className="text-gray-600 text-[13px] leading-relaxed">
+                  {blockedCheckoutMessage(blockedLines)}
+                </p>
+              )}
+              {unshippableLines.length > 0 && (
+                <p className="text-gray-600 text-[13px] leading-relaxed">
+                  {CART_LINE_UNSHIPPABLE_MESSAGE}
+                </p>
+              )}
               <span
                 aria-disabled="true"
                 className="bg-gray-200 text-gray-500 h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase cursor-not-allowed"
@@ -225,7 +263,6 @@ export function CartPageClient() {
           )}
         </div>
       </div>
-      <CartToast />
     </div>
   )
 }

@@ -22,6 +22,8 @@ export function QuickAddModal({ product, onClose }: Props) {
     const modal = modalRef.current
     if (!modal) return
 
+    const previouslyFocused = document.activeElement as HTMLElement | null
+
     const focusable = modal.querySelectorAll<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])',
     )
@@ -40,7 +42,10 @@ export function QuickAddModal({ product, onClose }: Props) {
       }
     }
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      previouslyFocused?.focus()
+    }
   }, [onClose])
 
   return (

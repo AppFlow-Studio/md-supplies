@@ -61,7 +61,9 @@ type DetailOrder = {
       createdAt: string | null
       status: string | null
       latestShipmentStatus: string | null
+      estimatedDeliveryAt: string | null
       isPickedUp: boolean
+      requiresShipping: boolean
       trackingInformation: { company: string | null; number: string | null; url: string | null }[]
       fulfillmentLineItems: { nodes: { quantity: number | null; lineItem: { id: string } | null }[] }
     }[]
@@ -136,7 +138,9 @@ export default async function OrderDetailPage({ params }: Props) {
       createdAt: f.createdAt,
       status: f.status,
       latestShipmentStatus: f.latestShipmentStatus,
+      estimatedDeliveryAt: f.estimatedDeliveryAt,
       isPickedUp: f.isPickedUp,
+      requiresShipping: f.requiresShipping,
       trackingInformation: f.trackingInformation,
       lines: f.fulfillmentLineItems.nodes
         .filter((fl) => fl.lineItem != null)
@@ -145,7 +149,7 @@ export default async function OrderDetailPage({ params }: Props) {
   )
 
   return (
-    <main className="bg-[#f9fafc] min-h-screen">
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
         <Link
           href="/account/orders"
@@ -283,11 +287,18 @@ export default async function OrderDetailPage({ params }: Props) {
                   {shipment.createdAt && (
                     <span className="text-gray-500 text-[13px]">{formatDate(shipment.createdAt)}</span>
                   )}
+                  {/* Nullable — never render an empty ETA slot. */}
+                  {shipment.estimatedDeliveryAt && (
+                    <span className="text-gray-500 text-[13px]">
+                      Est. delivery {formatDate(shipment.estimatedDeliveryAt)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Every tracking number for this fulfillment; number renders
                     as text when Shopify provides no URL — never a fabricated
-                    carrier link. */}
+                    carrier link. computeFulfillmentSummary already empties
+                    this array when requiresShipping is false. */}
                 {shipment.trackingInformation.length > 0 && (
                   <div className="flex flex-col gap-2 px-6 py-4 border-b border-gray-100">
                     {shipment.trackingInformation.map((t, i) => {

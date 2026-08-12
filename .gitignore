@@ -35,8 +35,12 @@ yarn-error.log*
 # …but DO commit the template (no secrets in it)
 !.env.example
 
-# shipping-facts data (17MB, testing-only per DEV-SHIP-01 — not committed)
-/data/shipping-facts-v3.json
+# shipping-facts data: the production registry (data/shipping-facts-v3.json)
+# now ships with the build (launch approval landed) so it is intentionally
+# NOT ignored — scripts/verify-shipping-registry.mjs fails the build loudly
+# if SHIPPING_RESOLVER_ENABLED=true and the file is missing or fails its
+# checksum, rather than silently shipping a build where Free Shipping can
+# never render.
 
 # vercel
 .vercel
@@ -65,6 +69,18 @@ next-env.d.ts
 # Phase 13 responsive capture output — 14MB of regenerable PNGs.
 # Regenerate: E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/responsive.spec.ts
 docs/audits/2026-08-02-catalog-cro/screenshots/
+
+# DEV-LAUNCH-03 categories-hub e2e evidence — regenerable PNGs.
+# Regenerate: npx playwright test e2e/categories-hub.spec.ts
+docs/audits/2026-08-07-dev-launch-03/screenshots/
+
+# DEV-LAUNCH-05 hub/category integration e2e evidence — regenerable PNGs.
+# Regenerate: E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/categories-hub-integration.spec.ts
+docs/audits/2026-08-08-dev-launch-05/screenshots/
+
+# DEV-LAUNCH-11 full route x viewport responsive sweep — regenerable PNGs.
+# Regenerate: E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/responsive.spec.ts
+docs/audits/2026-08-10-dev-launch-11/screenshots/
 
 # Phase 8 bulk migration evidence — ~81k lines, regenerable from
 # scripts/industries-mapping-dryrun.mjs + the dated catalog export.

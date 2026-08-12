@@ -45,6 +45,25 @@ export function resolvePurchasable(input: PurchasabilityInput): PurchasableState
   return { purchasable: true }
 }
 
+export type VariantForDefault = {
+  price: { amount: string }
+  availableForSale: boolean
+}
+
+/**
+ * Prefer a variant a shopper can actually buy — availableForSale alone lets a
+ * $0/quote-only variant win the default slot (DEV-LAUNCH-12: this must be the
+ * single source both the rendered PDP and its Product structured data build
+ * from, or the two can show a different price/SKU/availability for the same
+ * page — see app/product/[slug]/page.tsx and components/product/ProductView.tsx).
+ */
+export function getDefaultVariant<T extends VariantForDefault>(variants: T[]): T {
+  const purchasable = variants.find(
+    (v) => resolvePurchasable({ price: parseFloat(v.price.amount), availableForSale: v.availableForSale }).purchasable,
+  )
+  return purchasable ?? variants.find((v) => v.availableForSale) ?? variants[0]
+}
+
 /** Customer-facing label for a non-purchasable state. */
 export function purchasabilityLabel(reason: 'price-unavailable' | 'out-of-stock'): string {
   return reason === 'price-unavailable' ? 'Contact for pricing' : 'Out of Stock'
@@ -59,25 +78,34 @@ export function purchasabilityCta(reason: 'price-unavailable' | 'out-of-stock'):
 
 export type CartLineLike = {
   quantity: number
-  cost?: { totalAmount?: { amount?: string } | null } | null
-  merchandise: { id: string; title?: string | null; product: { title: string } }
+  merchandise: {
+    id: string
+    title?: string | null
+    price?: { amount?: string } | null
+    product: { title: string }
+  }
 }
 
 export type BlockedCartLine = { id: string; title: string; reason: 'price-unavailable' }
 
 /**
- * Lines that must not reach checkout: a zero/missing line total would either
+ * Lines that must not reach checkout: a zero/missing unit price would either
  * transact at $0 or be silently omitted from the order. Returns the offenders
  * so the cart UI can name them instead of failing mutely.
  *
- * Deliberately narrow — it does NOT judge stock or shipping. Those are
- * separate states owned elsewhere.
+ * Reads the variant's own `price`, NOT the line's `cost.totalAmount` — a line
+ * Shopify simply can't ship to the destination also zeroes out its total
+ * while the underlying variant is priced normally, and that is a distinct,
+ * fixable-by-address-change problem owned by
+ * lib/shopify/cart-lines.ts#unshippableCartLines, not this one (DEV-LAUNCH-09).
+ * Collapsing the two here would tell a shopper stuck on a no-rate line to
+ * "contact us for pricing," which is not what's wrong.
  */
 export function blockedCartLines(lines: CartLineLike[]): BlockedCartLine[] {
   return lines.flatMap((line) => {
-    const raw = line.cost?.totalAmount?.amount
-    const total = raw == null ? null : Number.parseFloat(raw)
-    if (hasUsablePrice(total)) return []
+    const raw = line.merchandise.price?.amount
+    const price = raw == null ? null : Number.parseFloat(raw)
+    if (hasUsablePrice(price)) return []
     return [{
       id: line.merchandise.id,
       title: line.merchandise.product.title,

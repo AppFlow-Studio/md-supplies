@@ -19,6 +19,11 @@ vi.mock('@/lib/shopify/storefront', () => ({
   storefrontFetch: vi.fn(),
 }))
 
+// CategoryResults now stamps a CSP nonce on its ItemList <script> (DEV-LAUNCH-12,
+// consistency with every other JSON-LD emitter) — getNonce() reads next/headers'
+// headers(), which throws outside a real request scope.
+vi.mock('@/lib/csp-nonce', () => ({ getNonce: async () => undefined }))
+
 // Isolate this suite from ShopifyProductCard/ShopifyQuickAddButton/cart
 // context — CategoryResults' own slicing/fetch logic is what's under test.
 vi.mock('@/components/category/ProductGrid', () => ({

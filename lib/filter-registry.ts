@@ -206,11 +206,21 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   // Each previously fell through to Availability/Price/Vendor only.
   'exam-room': OCC_RULES,                                     // 845 products
   'wound-care': withUniversal(APPROVED_METAFIELDS.size),      // 723, size 66%
-  'room-furniture': OCC_RULES,                                // 512
+  // Keyed 'seating': that's the live collection handle (lib/category-tree.ts
+  // collectionHandle for the room-furniture tag) and the getFacetRules()
+  // call site (CategoryPageView facetKey={slug}) passes the route slug, which
+  // for this category is the collection handle, not the tag — the same
+  // distinction the testing-screening comment below calls out. Keying this on
+  // 'room-furniture' (the tag) meant the entry could never match and the
+  // category silently fell through to DEFAULT_FACET_RULES.
+  seating: OCC_RULES,                                         // 512
   'home-care': OCC_RULES,                                     // 423
   respiratory: OCC_RULES,                                     // 408
   'emergency-supplies': OCC_RULES,                            // 355
-  'surgery-procedure': OCC_RULES,                             // 319
+  // Keyed 'trocars-trocar-kits' for the same reason 'seating' is above: it's
+  // the live collection handle for the surgery-procedure tag, not the tag
+  // itself.
+  'trocars-trocar-kits': OCC_RULES,                           // 319
   'patient-therapy-rehab': OCC_RULES,                         // 299
   bariatric: OCC_RULES,                                       // 258
   hygiene: OCC_RULES,                                         // 256
@@ -219,7 +229,10 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   // tag value and is not a collection. Verified live: 12 facets, 52 category
   // values.
   'testing-screening': withUniversal(APPROVED_METAFIELDS.testsFor), // 173
-  apparel: OCC_RULES,                                         // 152
+  // Keyed 'capes-gowns' for the same tag-vs-collection-handle reason as
+  // 'seating' and 'trocars-trocar-kits' above: it's the live collection
+  // handle for the apparel tag.
+  'capes-gowns': OCC_RULES,                                   // 152
   incontinence: OCC_RULES,                                    // 114
   'pharmacy-products': OCC_RULES,                             // 101
   'housekeeping-janitorial': OCC_RULES,                       // 85

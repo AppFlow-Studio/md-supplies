@@ -6,7 +6,14 @@ import { ShieldCheck, Truck, Loader2, Minus, Plus } from 'lucide-react'
 import { useCart } from '@/components/store/CartProvider'
 import type { ProductCardData } from '@/types/product'
 import { cleanShopifyAlt } from '@/lib/alt-text'
-import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
+import { resolvePurchasable, purchasabilityCta, hasUsablePrice } from '@/lib/purchasability'
+import {
+  RX_ONLY_LABEL_TEXT,
+  RX_ONLY_ACCESSIBLE_TEXT,
+  resolveBackorderLabel,
+  type ProductLabel,
+} from '@/lib/labels/labels'
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -25,10 +32,15 @@ export function QuickAddContent({ product, titleId }: Props) {
     ? product.images
     : [product.image]
 
-  const availableVariants = product.variants.filter((v) => v.available)
+  // Prefer a variant that is actually purchasable — availableForSale alone
+  // is not enough, a $0 variant would still pass that check (Phase 11 /
+  // DEV-LAUNCH-07: a zero-price line must never be reachable via quick add).
+  const purchasableVariants = product.variants.filter((v) =>
+    resolvePurchasable({ price: v.price / 100, availableForSale: v.available }).purchasable,
+  )
   const [activeImg, setActiveImg] = useState(0)
   const [selectedVariantId, setSelectedVariantId] = useState(
-    availableVariants[0]?.id ?? product.variants[0]?.id ?? '',
+    purchasableVariants[0]?.id ?? product.variants[0]?.id ?? '',
   )
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
@@ -36,16 +48,49 @@ export function QuickAddContent({ product, titleId }: Props) {
   const selectedVariant = product.variants.find((v) => v.id === selectedVariantId) ?? null
   const displayPrice = selectedVariant?.price ?? product.price
   const compareAtPrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice
-  const canAdd = (selectedVariant?.available ?? false) && !isPending
+  const priceUsable = hasUsablePrice(displayPrice / 100)
+  // Same fail-closed check the card, PDP and cart gate use — never a local
+  // re-implementation, so switching variants inside the modal can't reach a
+  // state the trigger button itself would have blocked.
+  const variantPurchasable = resolvePurchasable({
+    price: selectedVariant ? selectedVariant.price / 100 : null,
+    availableForSale: selectedVariant?.available ?? false,
+  })
+  const canAdd = variantPurchasable.purchasable && !isPending
   const savePct =
-    compareAtPrice && compareAtPrice > displayPrice
+    priceUsable && compareAtPrice && compareAtPrice > displayPrice
       ? Math.round((1 - displayPrice / compareAtPrice) * 100)
       : null
+
+  // DEV-LABEL-01: RX -> Backorder -> Free Shipping, in that fixed order,
+  // via the shared ProductLabelBadges component. RX text is static so it's
+  // built inline from the same constants every other surface uses; Backorder
+  // depends on the optional ETA so it goes through the real resolver.
+  const rxLabel: ProductLabel | null = product.isRx
+    ? {
+        type: 'rx-only',
+        text: RX_ONLY_LABEL_TEXT,
+        accessibleText: RX_ONLY_ACCESSIBLE_TEXT,
+        priority: 10,
+        source: 'tag',
+      }
+    : null
+  const backorderLabel = resolveBackorderLabel({
+    isBackordered: product.isBackordered,
+    estimatedRestockDate: product.backorderRestockDate,
+  })
+  const labels: ProductLabel[] = [rxLabel, backorderLabel].filter(
+    (l): l is ProductLabel => l !== null,
+  )
 
   function handleAdd() {
     if (!canAdd || !selectedVariantId) return
     startTransition(async () => {
-      await addItem(selectedVariantId, qty)
+      // Only celebrate when Shopify actually added the line — never show
+      // "Added" for a line Shopify silently dropped (Phase 11), matching
+      // AddToCartButton's PDP behavior.
+      const ok = await addItem(selectedVariantId, qty)
+      if (!ok) return
       setAdded(true)
       setTimeout(() => setAdded(false), 2500)
     })
@@ -60,14 +105,6 @@ export function QuickAddContent({ product, titleId }: Props) {
     <>
       {/* Left panel — image gallery */}
       <div className="relative bg-[#f9faf9] sm:w-[43%] shrink-0 flex flex-col items-center justify-center gap-3 p-6 sm:overflow-y-auto min-h-[200px]">
-        {/* Shipping claim only from the resolver — no tag fallback
-            (DEV-LABEL-01 §8.3). */}
-        {product.shippingDisplay && (
-          <div className="absolute top-4 left-4">
-            <ShippingBadge shippingDisplay={product.shippingDisplay} className="px-3 py-1.5 text-[13px] font-bold" />
-          </div>
-        )}
-
         {/* Main image */}
         <div className="relative w-full aspect-square max-w-[340px]">
           <Image
@@ -145,6 +182,22 @@ export function QuickAddContent({ product, titleId }: Props) {
           </div>
         )}
 
+        {/* RX/Backorder — display-only, from the same tag ∪ custom.is_rx_only
+            union and custom.backorder boolean the card, PDP, and checkout
+            gate use (lib/rx-gate.ts, lib/labels/labels.ts). Never enforces
+            checkout behavior itself; that is prepareCheckout()'s server-side
+            recheck (DEV-LAUNCH-08). Card and PDP already showed RX — quick
+            add did not, so an RX product added here carried no visible
+            warning until the cart gate blocked checkout. Shipping claim only
+            from the resolver (DEV-LABEL-01 §8.3); order (RX -> Backorder ->
+            Free Shipping) guaranteed by ProductLabelBadges. */}
+        <ProductLabelBadges
+          className="self-start"
+          labels={labels}
+          shippingDisplay={product.shippingDisplay}
+          size="md"
+        />
+
         {/* Divider */}
         <div className="h-px bg-gray-200" />
 
@@ -157,16 +210,17 @@ export function QuickAddContent({ product, titleId }: Props) {
             <div className="flex flex-wrap gap-2">
               {product.variants.map((v) => {
                 const isSelected = v.id === selectedVariantId
+                const vPurchasable = resolvePurchasable({ price: v.price / 100, availableForSale: v.available }).purchasable
                 return (
                   <button
                     key={v.id}
                     type="button"
                     onClick={() => handleSelectVariant(v.id)}
-                    disabled={!v.available}
+                    disabled={!vPurchasable}
                     className={`flex flex-col items-center justify-center h-[58px] px-3 min-w-[90px] border transition-colors ${
                       isSelected
                         ? 'bg-[rgba(102,102,100,0.1)] border-[#0b172b]'
-                        : v.available
+                        : vPurchasable
                           ? 'border-[rgba(102,102,100,0.5)] hover:border-[#0b172b]'
                           : 'border-[rgba(102,102,100,0.3)] opacity-50 cursor-not-allowed'
                     }`}
@@ -175,7 +229,7 @@ export function QuickAddContent({ product, titleId }: Props) {
                       {v.title}
                     </span>
                     <span className="text-[#666664] text-[13px] font-medium leading-[28px] tracking-[0.26px]">
-                      {formatCents(v.price)}
+                      {hasUsablePrice(v.price / 100) ? formatCents(v.price) : 'Contact for pricing'}
                     </span>
                   </button>
                 )
@@ -184,12 +238,20 @@ export function QuickAddContent({ product, titleId }: Props) {
           </div>
         )}
 
-        {/* Price row */}
+        {/* Price row. A zero/missing price is a quote-only item, never a $0
+            product (lib/purchasability.ts) — it must read "Contact for
+            pricing", the same as the card and PDP. */}
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-black text-[35px] font-extrabold leading-none tracking-[0.7px]">
-            {formatCents(displayPrice)}
-          </span>
-          {compareAtPrice && compareAtPrice > displayPrice && (
+          {priceUsable ? (
+            <span className="text-black text-[35px] font-extrabold leading-none tracking-[0.7px]">
+              {formatCents(displayPrice)}
+            </span>
+          ) : (
+            <span className="text-navy-900 text-[24px] font-semibold leading-none tracking-[0.4px]">
+              Contact for pricing
+            </span>
+          )}
+          {priceUsable && compareAtPrice && compareAtPrice > displayPrice && (
             <>
               <span className="text-gray-500 text-[15px] line-through tracking-[0.3px]">
                 {formatCents(compareAtPrice)}
@@ -240,7 +302,13 @@ export function QuickAddContent({ product, titleId }: Props) {
             }`}
           >
             {isPending && <Loader2 size={16} className="animate-spin" />}
-            {added ? '✓ Added to Cart' : isPending ? 'Adding…' : canAdd ? 'Add to Cart' : 'Unavailable'}
+            {added
+              ? '✓ Added to Cart'
+              : isPending
+                ? 'Adding…'
+                : variantPurchasable.purchasable
+                  ? 'Add to Cart'
+                  : purchasabilityCta(variantPurchasable.reason)}
           </button>
         </div>
 

@@ -18,6 +18,7 @@ import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { ROUTES } from '@/lib/routes'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
+import { getDefaultVariant } from '@/lib/purchasability'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -102,23 +103,27 @@ export default async function ProductPage({ params }: Props) {
   const relatedProducts = recsData.related
   const complementaryProducts = recsData.complementary
 
-  const firstVariant = product.variants.nodes[0]
-  const isAvailable = firstVariant?.availableForSale ?? product.availableForSale
+  // Same default-variant selection ProductView renders (lib/purchasability.ts)
+  // so the Product schema can never disagree with the visibly-selected price/
+  // SKU/availability, or drop the Offer for a product that has a purchasable
+  // variant just because variants.nodes[0] happened to be a $0/quote-only one.
+  const defaultVariant = getDefaultVariant(product.variants.nodes)
+  const isAvailable = defaultVariant?.availableForSale ?? product.availableForSale
   const productUrl = `${SITE_URL}/product/${slug}`
 
   const schemaProps = {
     name: product.title,
     description: product.description,
     image: product.images.nodes[0]?.url ?? '',
-    sku: firstVariant?.sku || slug,
+    sku: defaultVariant?.sku || slug,
     // gtin only when the Shopify barcode is a checksum-valid GTIN — most
     // barcodes in this catalog are SKU copies and must not be emitted (M5).
-    gtin: normalizeGtin(firstVariant?.barcode),
+    gtin: normalizeGtin(defaultVariant?.barcode),
     // Product structured data: omit brand entirely rather than emit the
     // fulfilling vendor as a consumer brand (lib/brand.ts).
     brand: publicBrand(product) ?? undefined,
-    price: parseFloat(firstVariant?.price?.amount ?? '0'),
-    priceCurrency: firstVariant?.price?.currencyCode ?? 'USD',
+    price: parseFloat(defaultVariant?.price?.amount ?? '0'),
+    priceCurrency: defaultVariant?.price?.currencyCode ?? 'USD',
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',

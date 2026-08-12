@@ -108,10 +108,10 @@ export function WholesalePricing() {
           {/* FadeIn lives INSIDE the positioned panel: .fade-in animates
               transform, which would clobber lg:-translate-y-1/2 on this div. */}
           <FadeIn from="right" delay={0.2}>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="sourcing-name" className="text-[15px] font-medium text-gray-500 tracking-[0.06em] uppercase">
-                Faculty Name
+                Your Name
               </label>
               <input
                 id="sourcing-name"

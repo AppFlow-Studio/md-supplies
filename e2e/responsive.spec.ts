@@ -1,53 +1,60 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
+import { VIEWPORTS } from './support/viewports'
+import {
+  expectNoHorizontalOverflow,
+  expectNoOverlappingInteractiveElements,
+  expectStickyDoesNotObscure,
+  expectConsistentCardHeights,
+} from './support/layout-assertions'
 
 /**
- * Phase 13 — responsive + accessibility QA sweep.
+ * Phase 13 — responsive + accessibility QA sweep (DEV-LAUNCH-11).
  *
- * Captures the required page list at the seven mandated viewports and asserts
- * the properties that the screenshots are meant to evidence, so this is a
- * REGRESSION suite rather than a pile of images someone has to eyeball. The
- * images are still written, because the mandate asks for visual QA and an
- * assertion cannot prove "an older shopper can understand this control".
+ * Captures the required page list at the seven mandated viewports and
+ * asserts the properties the screenshots are meant to evidence.
  *
  * Run against an already-built server:
  *   E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/responsive.spec.ts
  */
 
-const SHOTS = 'docs/audits/2026-08-02-catalog-cro/screenshots'
+const SHOTS = 'docs/audits/2026-08-10-dev-launch-11/screenshots'
 mkdirSync(SHOTS, { recursive: true })
-
-const VIEWPORTS = [
-  { w: 375, h: 812, name: '375x812' },
-  { w: 390, h: 844, name: '390x844' },
-  { w: 768, h: 1024, name: '768x1024' },
-  { w: 1024, h: 768, name: '1024x768' },
-  { w: 1280, h: 800, name: '1280x800' },
-  { w: 1440, h: 900, name: '1440x900' },
-  { w: 1920, h: 1080, name: '1920x1080' },
-] as const
 
 const ROUTES = [
   { path: '/', name: 'home' },
+  { path: '/categories', name: 'categories-hub' },
   { path: '/solutions/occ', name: 'occ' },
   { path: '/category/gloves', name: 'gloves' },
   { path: '/category/testing-screening', name: 'testing-screening' },
-  { path: '/category/testing-screening/tsh-controls', name: 'tsh-controls' },
+  { path: '/category/gloves/exam-gloves', name: 'exam-gloves' },
   { path: '/industries', name: 'industries-index' },
   { path: '/industries/urgent-care', name: 'industry-urgent-care' },
   { path: '/industries/veterinary', name: 'industry-veterinary' },
+  { path: '/search?q=gloves', name: 'search-results' },
+  { path: '/search', name: 'search-empty' },
+  { path: '/product/exam-glove-nitrile-medium-blue-100-bx-10-bx-cs', name: 'pdp' },
+  { path: '/cart', name: 'cart' },
+  { path: '/contact', name: 'contact' },
 ] as const
 
-/** A page must never scroll horizontally at any supported width. */
-async function expectNoHorizontalOverflow(page: Page, label: string) {
-  const overflow = await page.evaluate(() => {
-    const d = document.documentElement
-    return { scrollW: d.scrollWidth, clientW: d.clientWidth }
-  })
-  expect(
-    overflow.scrollW,
-    `${label}: document scrolls horizontally (${overflow.scrollW}px content in ${overflow.clientW}px viewport)`,
-  ).toBeLessThanOrEqual(overflow.clientW + 1)
+// Routes with a card grid worth checking for row-height consistency, and
+// the selector for one card. Only routes that actually render a grid.
+//
+// The categories-hub selector below is `#all-categories a` rather than the
+// `:has()`/`:text()` form, because `expectConsistentCardHeights` runs the
+// selector through the page's native `document.querySelectorAll` (inside
+// `page.evaluate`), not Playwright's locator engine — `:has()` and `:text()`
+// are Playwright-only pseudo-classes and throw a DOMException there. `#all-
+// categories` is a stable id added to the "Browse All Categories" <section>
+// in app/categories/page.tsx specifically so this selector can target it
+// without ambiguity (the page has an earlier "Popular Categories" grid that
+// also links to `/category/*`).
+const CARD_GRID_ROUTES: Partial<Record<(typeof ROUTES)[number]['name'], string>> = {
+  'categories-hub': '#all-categories a',
+  gloves: 'a[href*="/category/gloves/"]',
+  'testing-screening': 'a[href*="/category/testing-screening/"]',
+  'search-results': '[data-testid="search-result-card"], a[href^="/product/"]',
 }
 
 test.describe('responsive sweep', () => {
@@ -59,7 +66,23 @@ test.describe('responsive sweep', () => {
         expect(res?.status(), `${route.path} status`).toBeLessThan(400)
         await page.waitForLoadState('networkidle').catch(() => {})
 
-        await expectNoHorizontalOverflow(page, `${route.name} @ ${vp.name}`)
+        const label = `${route.name} @ ${vp.name}`
+
+        // A streamed Next.js not-found page returns HTTP 200 with exactly one
+        // <h1>, so neither the status check above nor the h1-count check below
+        // catches a stale/broken fixture handle silently rendering the global
+        // 404 page instead of the intended route. Guard against that class of
+        // bug explicitly, for every route in this sweep.
+        await expect(
+          page.getByRole('heading', { name: 'Page Not Found' }),
+          `${label}: rendered the global not-found page — check the route's fixture handle/slug`,
+        ).toHaveCount(0)
+        await expectNoHorizontalOverflow(page, label)
+        await expectNoOverlappingInteractiveElements(page, label)
+        await expectStickyDoesNotObscure(page, label)
+
+        const cardSelector = CARD_GRID_ROUTES[route.name]
+        if (cardSelector) await expectConsistentCardHeights(page, cardSelector, label)
 
         // Exactly one h1 — a landing page with zero or two is an SEO defect
         // that only shows up at some breakpoints (responsive duplicate heroes).
@@ -107,7 +130,12 @@ test.describe('discovery controls', () => {
     await expect(search).toBeVisible()
 
     const searchBox = await search.boundingBox()
-    const firstCard = page.locator('a[href*="/category/gloves/"]').first()
+    // Scoped to the product grid, not `a[href*="/category/gloves/"]` — that
+    // substring also matches SubcategoryNavigator's chip/overflow links,
+    // which sit earlier in DOM order and are CSS-hidden at this exact
+    // breakpoint (`hidden lg:flex`), so .first() picked an invisible nav
+    // link and boundingBox() came back null instead of a real card.
+    const firstCard = page.getByTestId('product-grid').locator('a[href*="/category/gloves/"]').first()
     const cardBox = await firstCard.boundingBox()
 
     expect(searchBox, 'search box missing').not.toBeNull()
@@ -164,6 +192,9 @@ test.describe('industry page states', () => {
     await page.goto('/industries/urgent-care', { waitUntil: 'domcontentloaded' })
     await page.waitForLoadState('networkidle').catch(() => {})
     await expect(page.getByRole('searchbox').first()).toBeVisible()
-    await expect(page.locator('body')).toContainText(/\d+\s+result/i)
+    // Unfiltered state reads "Showing N products"; only an active ?q= search
+    // switches to "N results for ..." (components/category/CategoryResults.tsx)
+    // — a real result count is either, so long as it's a real number.
+    await expect(page.locator('body')).toContainText(/\d+\s+(result|product)/i)
   })
 })

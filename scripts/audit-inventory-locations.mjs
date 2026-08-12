@@ -37,10 +37,33 @@ function loadEnv(p) {
   }
   return out
 }
+/**
+ * Prefers a static token (SHOPIFY_ADMIN_ACCESS_TOKEN / legacy
+ * SHOPIFY_ADMIN_TOKEN) if one is configured; otherwise exchanges
+ * SHOPIFY_ADMIN_CLIENT_ID/SECRET for a short-lived token via the
+ * client_credentials grant — this store's custom app doesn't issue a static
+ * token (see lib/shopify/admin-token.ts for the app's own copy of this).
+ */
+async function resolveAdminToken(env, domain) {
+  const staticToken = env.SHOPIFY_ADMIN_ACCESS_TOKEN || env.SHOPIFY_ADMIN_TOKEN
+  if (staticToken) return staticToken
+  const clientId = env.SHOPIFY_ADMIN_CLIENT_ID
+  const clientSecret = env.SHOPIFY_ADMIN_CLIENT_SECRET
+  if (!clientId || !clientSecret || !domain) return null
+  const res = await fetch(`https://${domain}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }),
+  })
+  if (!res.ok) return null
+  const json = await res.json()
+  return json.access_token ?? null
+}
+
 const env = loadEnv(process.env.ENV_FILE || '.env.local')
 const domain = (env.SHOPIFY_STORE_DOMAIN || '').replace(/^https?:\/\//, '').replace(/\/$/, '')
-const token = env.SHOPIFY_ADMIN_ACCESS_TOKEN || env.SHOPIFY_ADMIN_TOKEN
-if (!domain || !token) { console.error('Missing shop domain or Admin token.'); process.exit(2) }
+const token = await resolveAdminToken(env, domain)
+if (!domain || !token) { console.error('Missing shop domain or Admin token/credentials.'); process.exit(2) }
 
 let calls = 0
 async function admin(query, variables = {}) {

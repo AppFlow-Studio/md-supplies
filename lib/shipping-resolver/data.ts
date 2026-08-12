@@ -5,14 +5,20 @@ import { shippingFactsSchema, type ProductRecord } from './schema'
 import { assertShopDomainAllowed, normalizeShopDomain } from '@/lib/shopify/shop-guard'
 
 // SHA-256 of the shipping-facts-v3.json bytes actually integrated against
-// (pinned 2026-07-24). The file's own self-declared
+// (re-pinned 2026-08-12, first commit of the real file — see .gitattributes:
+// `data/shipping-facts-*.json` is normalized to `eol=lf` on checkout, so this
+// is the hash of the file AS GIT CHECKS IT OUT, not of the raw source export,
+// which carried CRLF line endings and hashed to a different value. Pinning
+// the pre-normalization hash here would make the checksum check fail on
+// every real checkout — the file's own self-declared
 // `_meta.checksum_sha256_of_payload` does not reproduce against any tried
-// canonicalization of these bytes, so this is the hash of the artifact we
-// tested against, not a recomputation of the generator's internal hash.
+// canonicalization of these bytes either, so this is the hash of the
+// artifact we tested against, not a recomputation of the generator's
+// internal hash.
 // Override via SHIPPING_FACTS_CHECKSUM_SHA256 when the data file is
 // intentionally replaced, or in tests pointed at a small fixture payload.
 const DEFAULT_PINNED_PAYLOAD_SHA256 =
-  '431fdd1960d77514e3fec79dfbb9403b8f735e22a690c28f2c2781a656f4d324'
+  '91bee79cb48d29e027606e90b1e291ca5c0dc5ff6665c1327e709f924951d552'
 
 export interface ShippingFactsData {
   ok: boolean

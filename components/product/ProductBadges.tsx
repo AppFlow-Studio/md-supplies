@@ -18,7 +18,12 @@ export function ProductBadges({ isOCC, isRx, available }: Props) {
         </span>
       )}
       {isRx && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-amber-600 text-white">
+        // DEV-LAUNCH-13: bg-amber-600 + white text measured ~3.18:1 (WCAG AA
+        // needs 4.5:1 for this 12px text) — first caught when a live QA RX
+        // fixture made e2e/axe-states.spec.ts's pdp-rx case actually run
+        // instead of skip. amber-700 measures ~5.03:1, same fix shape as the
+        // backorder-label precedent (text-orange-600 -> text-orange-700).
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-amber-700 text-white">
           RX Only
         </span>
       )}

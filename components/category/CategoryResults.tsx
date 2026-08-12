@@ -20,6 +20,7 @@ import { ScrollToResults } from '@/components/category/ScrollToResults'
 import { CatalogTransitionProvider } from '@/components/category/CatalogTransition'
 import { CatalogResultsState } from '@/components/category/CatalogResultsState'
 import { ROUTES } from '@/lib/routes'
+import { getNonce } from '@/lib/csp-nonce'
 
 function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
   return filterStrings.flatMap((f) => {
@@ -61,6 +62,7 @@ export async function CategoryResults({
   searchQuery,
   searchScopeTitle,
 }: Props) {
+  const nonce = await getNonce()
   const searchText = searchQuery?.trim() || undefined
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sortParam) || Boolean(searchText)
 
@@ -139,6 +141,7 @@ export async function CategoryResults({
       {!isFiltered && products.length > 0 && (
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: jsonLdSafe(
               buildCollectionItemListSchema(
@@ -161,6 +164,7 @@ export async function CategoryResults({
             filters={filters}
             activeFilters={activeFilterStrings}
             currentSort={sortParam}
+            q={searchText}
           />
         </Suspense>
       </aside>
@@ -203,6 +207,7 @@ export async function CategoryResults({
                     filters={filters}
                     activeFilters={activeFilterStrings}
                     currentSort={sortParam}
+                    q={searchText}
                   />
                 </Suspense>
               </div>
@@ -213,6 +218,7 @@ export async function CategoryResults({
                   <CategorySort
                     currentSort={sortParam}
                     activeFilters={activeFilterStrings}
+                    q={searchText}
                     limitedSortOptions={source.kind === 'tag' || Boolean(searchText)}
                   />
                 </Suspense>

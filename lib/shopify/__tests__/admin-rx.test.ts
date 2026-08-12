@@ -3,11 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('@/lib/env.server', () => ({
   serverEnv: {
     shopifyStoreDomain: 'test.myshopify.com',
-    shopifyAdminToken: 'test-admin-token',
+    shopifyAdminClientId: 'test-client-id',
+    shopifyAdminClientSecret: 'test-client-secret',
   },
 }))
 
 import { setCustomerRxDocument, __resetShopIdentityCacheForTests } from '../admin'
+import { __resetAdminTokenCacheForTests } from '../admin-token'
 
 const CUSTOMER = 'gid://shopify/Customer/7412345'
 
@@ -18,10 +20,21 @@ function adminResponse(data: unknown) {
   }
 }
 
+function tokenExchangeResponse(accessToken = 'test-admin-token') {
+  return {
+    ok: true,
+    text: async () => '',
+    json: async () => ({ access_token: accessToken, expires_in: 3600 }),
+  }
+}
+
 /**
- * Call order for a mutation: ShopIdentity, then GetCustomerRxState, then
- * metafieldsSet. The identity call comes first because every Admin write now
- * confirms which shop the token authenticates against before touching data.
+ * Call order for a mutation: token exchange, ShopIdentity, then
+ * GetCustomerRxState, then metafieldsSet. The token exchange comes first
+ * because the QA custom app issues short-lived tokens via client_credentials
+ * rather than a static access token (see lib/shopify/admin-token.ts). The
+ * identity call comes next because every Admin write confirms which shop the
+ * token authenticates against before touching data.
  *
  * @param shop the shop Shopify reports back, defaulting to the one this suite
  *             stands in for. Pass another to exercise the refusal path.
@@ -32,6 +45,7 @@ function mockAdmin(
 ) {
   const fetchMock = vi
     .fn()
+    .mockResolvedValueOnce(tokenExchangeResponse())
     .mockResolvedValueOnce(adminResponse({ shop: { myshopifyDomain: shop } }))
     .mockResolvedValueOnce(
       adminResponse({
@@ -47,15 +61,17 @@ function mockAdmin(
 }
 
 function sentMetafields(fetchMock: ReturnType<typeof vi.fn>) {
-  const body = JSON.parse(fetchMock.mock.calls[2][1].body)
+  const body = JSON.parse(fetchMock.mock.calls[3][1].body)
   return body.variables.metafields as Array<{ key: string; value: string }>
 }
 
 beforeEach(() => {
   vi.unstubAllGlobals()
   vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', 'test.myshopify.com')
-  // The identity result is held for the process, so clear it between cases.
+  // The identity result and the admin token are both held for the process,
+  // so clear them between cases.
   __resetShopIdentityCacheForTests()
+  __resetAdminTokenCacheForTests()
 })
 
 afterEach(() => vi.unstubAllEnvs())
@@ -82,12 +98,30 @@ describe('setCustomerRxDocument — replaced-document threat', () => {
   })
 })
 
+describe('setCustomerRxDocument — admin token exchange', () => {
+  it('exchanges client credentials for an access token before the first Admin call', async () => {
+    const fetchMock = mockAdmin({ document: null, verified: null })
+    await setCustomerRxDocument(CUSTOMER, 'rx-documents/7412345/new.pdf')
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://test.myshopify.com/admin/oauth/access_token')
+    const body = new URLSearchParams(init.body as string)
+    expect(body.get('grant_type')).toBe('client_credentials')
+  })
+
+  it('sends the exchanged token as X-Shopify-Access-Token on the identity check', async () => {
+    const fetchMock = mockAdmin({ document: null, verified: null })
+    await setCustomerRxDocument(CUSTOMER, 'rx-documents/7412345/new.pdf')
+    const identityHeaders = fetchMock.mock.calls[1][1].headers
+    expect(identityHeaders['X-Shopify-Access-Token']).toBe('test-admin-token')
+  })
+})
+
 describe('setCustomerRxDocument — shop-identity gate', () => {
   it('verifies the authenticated shop before reading or writing anything', async () => {
     const fetchMock = mockAdmin({ document: null, verified: null })
     await setCustomerRxDocument(CUSTOMER, 'rx-documents/7412345/new.pdf')
-    const firstQuery = JSON.parse(fetchMock.mock.calls[0][1].body).query
-    expect(firstQuery).toContain('myshopifyDomain')
+    const identityQuery = JSON.parse(fetchMock.mock.calls[1][1].body).query
+    expect(identityQuery).toContain('myshopifyDomain')
   })
 
   it('refuses the write when the token authenticates against another shop', async () => {
@@ -97,26 +131,41 @@ describe('setCustomerRxDocument — shop-identity gate', () => {
     await expect(
       setCustomerRxDocument(CUSTOMER, 'rx-documents/7412345/new.pdf'),
     ).rejects.toThrow(/PRODUCTION store/)
-    // Identity was asked, and nothing else was sent.
-    expect(fetchMock).toHaveBeenCalledOnce()
+    // Token exchange + identity check were sent, and nothing else was.
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('refuses the write when Shopify reports no shop identity', async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(adminResponse({ shop: null }))
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(tokenExchangeResponse())
+      .mockResolvedValueOnce(adminResponse({ shop: null }))
     vi.stubGlobal('fetch', fetchMock)
     await expect(
       setCustomerRxDocument(CUSTOMER, 'rx-documents/7412345/new.pdf'),
     ).rejects.toThrow(/did not report a shop identity/)
-    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('does not cache a failed verification, so a transient error is recoverable', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new Error('network down')))
+    // Token exchange succeeds (and is cached) on the first attempt; the
+    // ShopIdentity call itself fails. The retry must not re-request a token
+    // — the cached one is reused — and must succeed once ShopIdentity does.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(tokenExchangeResponse())
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValueOnce(adminResponse({ shop: { myshopifyDomain: 'test.myshopify.com' } }))
+      .mockResolvedValueOnce(adminResponse({ customer: { document: null, verified: null } }))
+      .mockResolvedValueOnce(adminResponse({ metafieldsSet: { metafields: [], userErrors: [] } }))
+    vi.stubGlobal('fetch', fetchMock)
+
     await expect(setCustomerRxDocument(CUSTOMER, 'a.pdf')).rejects.toThrow(/could not verify/)
 
     // Same process, no reset: a healthy retry must now succeed.
-    const fetchMock = mockAdmin({ document: null, verified: null })
     await expect(setCustomerRxDocument(CUSTOMER, 'a.pdf')).resolves.toBeUndefined()
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    // 1 token exchange + 1 failed identity check + 3 successful retry calls —
+    // the token is NOT re-fetched on retry.
+    expect(fetchMock).toHaveBeenCalledTimes(5)
   })
 })

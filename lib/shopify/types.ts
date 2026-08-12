@@ -69,6 +69,8 @@ export type ProductMetafields = {
   needleLength: string | null;
   sizeLength: string | null;
   estimatedRestockDate: string | null;
+  /** Raw `custom.backorder`; boolean gate for the backorder label (ETA above is optional decoration only). */
+  backorder?: { value: string } | null;
   /** Raw `custom.is_rx_only`; union'd with the RX tag by lib/rx-gate.ts. */
   isRxOnly?: { value: string } | null;
   testsFor: string | null;
@@ -116,6 +118,8 @@ export type CollectionProduct = {
   /** Raw backorder metafield (DEV-LABEL-01 single source); flattened by the
       label contract, may be absent on queries that don't request it. */
   estimatedRestockDate?: { value: string } | null;
+  /** Raw `custom.backorder`; boolean gate for the backorder label — the ETA above is optional decoration only. */
+  backorder?: { value: string } | null;
   /** Raw `custom.is_rx_only`. Union'd with the RX tag by lib/rx-gate.ts so a
       grid card's RX badge matches the PDP and the checkout gate. Optional:
       queries that don't select it degrade to tag-only detection. */
@@ -164,6 +168,10 @@ export type CartLine = {
     id: string;
     title: string;
     sku: string | null;
+    /** The variant's own unit price -- distinct from `cost.totalAmount`
+     * below, which a no-rate-for-destination line zeroes out while this
+     * stays positive. See lib/shopify/cart-lines.ts. */
+    price: Money;
     selectedOptions: SelectedOption[];
     product: {
       id: string;
@@ -173,6 +181,10 @@ export type CartLine = {
       tags: string[];
       /** `custom.is_rx_only` — second RX signal, union'd with the tag. */
       isRxOnly?: { value: string } | null;
+      /** `custom.estimated_back_order_restock_date` — optional decoration only, see `backorder`. */
+      estimatedRestockDate?: { value: string } | null;
+      /** Raw `custom.backorder`; boolean gate for the backorder label. */
+      backorder?: { value: string } | null;
       images: { nodes: ProductImage[] };
     };
   };

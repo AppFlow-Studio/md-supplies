@@ -26,7 +26,11 @@ export type FulfillmentInput = {
   createdAt: string | null
   status: string | null
   latestShipmentStatus: string | null
+  /** Nullable DateTime — render only when present, never an empty ETA slot. */
+  estimatedDeliveryAt: string | null
   isPickedUp: boolean
+  /** Drives whether tracking UI renders at all (false for digital/no-ship fulfillments). */
+  requiresShipping: boolean
   trackingInformation: { company: string | null; number: string | null; url: string | null }[]
   lines: { lineItemId: string; quantity: number | null }[]
 }
@@ -45,7 +49,10 @@ export type ShipmentCard = {
   createdAt: string | null
   status: string | null
   latestShipmentStatus: string | null
+  estimatedDeliveryAt: string | null
   isPickedUp: boolean
+  requiresShipping: boolean
+  /** Empty when requiresShipping is false — tracking UI must not render regardless of raw data. */
   trackingInformation: { company: string | null; number: string | null; url: string | null }[]
   items: ShipmentItem[]
 }
@@ -92,7 +99,8 @@ function toShipmentItem(line: OrderLineInput | undefined, lineItemId: string, qu
  *  - each fulfillment lists only its own items and quantities;
  *  - a fulfillment line that references an unknown order line renders
  *    defensively instead of crashing;
- *  - no fulfillments → every non-refunded line is pending ("Not yet shipped").
+ *  - no fulfillments → every non-refunded line is pending ("Not yet shipped");
+ *  - requiresShipping: false never shows tracking UI, regardless of raw data.
  */
 export function computeFulfillmentSummary(
   orderLines: OrderLineInput[],
@@ -105,8 +113,12 @@ export function computeFulfillmentSummary(
     createdAt: f.createdAt,
     status: f.status,
     latestShipmentStatus: f.latestShipmentStatus,
+    estimatedDeliveryAt: f.estimatedDeliveryAt,
     isPickedUp: f.isPickedUp,
-    trackingInformation: f.trackingInformation,
+    requiresShipping: f.requiresShipping,
+    // No-ship fulfillments (digital, pickup handled separately via isPickedUp)
+    // never show tracking UI, even if Shopify happens to carry stray data.
+    trackingInformation: f.requiresShipping ? f.trackingInformation : [],
     items: f.lines
       .filter((fl) => (fl.quantity ?? 0) > 0)
       .map((fl) => toShipmentItem(lineById.get(fl.lineItemId), fl.lineItemId, fl.quantity ?? 0)),

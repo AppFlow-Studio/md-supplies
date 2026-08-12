@@ -10,13 +10,27 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# DEV-LAUNCH-13: every required check below is its own job with its own
+# `npm ci`, and no job `needs:` another (the one exception, `e2e`, needed
+# `verify` only because `verify` used to be the single monolithic job — now
+# that lint/typecheck/test/build/static-checks are split apart, e2e runs
+# unconditionally too, since it builds and boots the app itself). A failure
+# in any one check must never hide, skip, or block the verdict of another —
+# "a skipped job is not a pass."
+
 jobs:
-  verify:
-    name: lint · types · tests · build
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,17 +44,77 @@ jobs:
       - name: Lint (0 errors, 0 warnings)
         # --max-warnings 0: any new warning must be fixed or carry an
         # individually-reviewed eslint-disable, never silently accumulate.
-        run: npx eslint --max-warnings 0
+        run: npx eslint . --max-warnings 0
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Typecheck
         run: npx tsc --noEmit
 
+  unit-tests:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Test
         # vitest.config.ts sets allowOnly:false and playwright.config.ts sets
         # forbidOnly:true, so a stray .only fails here and locally alike.
-        run: npx vitest run
+        run: npm test
 
-      - name: No skipped or focused tests
+  static-checks:
+    # Content-only guardrails that need no install beyond git itself — kept
+    # as their own job (like secret-scan) so a lint/typecheck/build/test
+    # failure elsewhere can never suppress this signal, and vice versa.
+    name: static checks (no skipped tests · no mock-data fallback)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
+
+      - name: No skipped, focused, or todo tests
         run: |
           echo "Scanning for skipped/focused tests…"
           # `.only(` and `.todo` are always wrong in a committed test.
@@ -73,18 +147,36 @@ jobs:
           fi
           echo "None found."
 
-      # NOTE: the dependency audit deliberately does NOT live in this job.
-      # It used to sit right here, ahead of Build and the secret scan — so the
-      # moment it went red on a transitive advisory with no in-range fix, it
-      # took both of them down with it and the checks that actually gate a
-      # release stopped reporting at all. It is now the separate
-      # `dependency-audit` job below, which no other job depends on.
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build
         # Since the ISR restore (H1), static pages (home, categories, blog…)
         # prerender at build time and fetch live Shopify data — the build now
         # needs Storefront credentials, exactly like on Vercel. Other secrets
         # (Resend, Bunny, webhook) stay lazy and are NOT needed to build.
+        #
+        # Fails loudly on a missing precondition rather than being skipped —
+        # a skipped build is not a passing build.
         env:
           SHOPIFY_STORE_DOMAIN: ${{ secrets.SHOPIFY_STORE_DOMAIN }}
           SHOPIFY_STOREFRONT_ACCESS_TOKEN: ${{ secrets.SHOPIFY_STOREFRONT_ACCESS_TOKEN }}
@@ -93,20 +185,25 @@ jobs:
             echo "::error::SHOPIFY_STORE_DOMAIN / SHOPIFY_STOREFRONT_ACCESS_TOKEN are not set in repo Actions secrets. The build prerenders ISR pages with live Shopify data and cannot run without them (Settings → Secrets and variables → Actions)."
             exit 1
           fi
-          npx next build
+          npm run build
 
   secret-scan:
-    # Its own job for the same reason the dependency audit is: it used to be the
-    # LAST step of `verify`, after Build. On any fork or environment without
-    # Shopify Actions secrets the build fails its own precondition check and
-    # this never runs at all — proven on run f39b26a, where it was SKIPPED.
-    # A secret scan that only reports when everything else is already green is
-    # not a security control. It needs no secrets and no build.
+    # Its own job so an unrelated failure elsewhere (lint, build, whatever)
+    # can never suppress this signal — proven on run f39b26a, where a chained
+    # dependency made it SKIPPED. A secret scan that only reports when
+    # everything else is already green is not a security control. It needs
+    # no secrets and no build.
     name: secret scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
 
       - name: Forbidden-content scan (no committed secrets)
         run: |
@@ -130,7 +227,7 @@ jobs:
           # Sensitive env vars must never be assigned a real-looking value in a
           # tracked file (short test fixtures like 'test-key' are fine).
           if git grep -nIE \
-            '(BUNNYCDN_STORAGE_ACCESS_KEY|RESEND_API_KEY|SHOPIFY_STOREFRONT_ACCESS_TOKEN|SHOPIFY_ADMIN_ACCESS_TOKEN|SHOPIFY_WEBHOOK_SECRET|SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID)\s*=\s*["'"'"']?[A-Za-z0-9][A-Za-z0-9-]{15,}' \
+            '(BUNNYCDN_STORAGE_ACCESS_KEY|RESEND_API_KEY|SHOPIFY_STOREFRONT_ACCESS_TOKEN|SHOPIFY_ADMIN_CLIENT_ID|SHOPIFY_ADMIN_CLIENT_SECRET|SHOPIFY_WEBHOOK_SECRET|SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID)\s*=\s*["'"'"']?[A-Za-z0-9][A-Za-z0-9-]{15,}' \
             -- ':!.github/workflows/*'; then
             echo "::error::A sensitive env var is assigned a real-looking value in a tracked file."
             exit 1
@@ -154,6 +251,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -168,22 +271,32 @@ jobs:
         # anything not in docs/security/dependency-risk-exceptions.md fails.
         # A permanently-red required check trains people to ignore it, which is
         # worse than no check at all — this keeps the signal meaningful.
+        #
+        # Equivalent in intent to the ticket's literal `npm audit
+        # --audit-level=high` gate, but doesn't go permanently red on a
+        # transitive advisory with no in-range fix (see script header).
         run: node scripts/audit-with-exceptions.mjs --level high
 
-      - name: Full audit report (informational, never fails the job)
+      - name: Full audit report incl. npm audit --audit-level=high (informational, never fails the job)
         if: always()
-        run: npm audit || true
+        run: npm audit --audit-level=high || true
 
   launch-guardrails:
     # Launch-blocking invariants re-run as named, individually-required
     # steps so a red area is visible at a glance (they also run inside the
-    # full `verify` vitest pass — this job exists for required-check
+    # full unit-tests vitest pass — this job exists for required-check
     # granularity, per the CI quality-gate ticket).
     name: launch guardrails (redirects · registry · seo · rx · graphql · forms)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -203,9 +316,10 @@ jobs:
             lib/__tests__/category-tree.test.ts \
             lib/__tests__/category-tree-data.test.ts \
             lib/__tests__/category-nav.test.ts \
-            lib/__tests__/category-nav-audit.test.ts \
             lib/__tests__/category-utils.test.ts \
-            lib/__tests__/excluded-categories.test.ts
+            lib/__tests__/excluded-categories.test.ts \
+            lib/__tests__/category-assets.test.ts \
+            lib/__tests__/bunnycdn.test.ts
 
       - name: Sitemap, canonical & route guardrails
         run: npx vitest run lib/seo/__tests__ __tests__/route-revalidate.test.ts
@@ -222,13 +336,20 @@ jobs:
   e2e:
     name: e2e (Playwright)
     runs-on: ubuntu-latest
-    needs: verify
     env:
       SHOPIFY_STORE_DOMAIN: ${{ secrets.SHOPIFY_STORE_DOMAIN }}
       SHOPIFY_STOREFRONT_ACCESS_TOKEN: ${{ secrets.SHOPIFY_STOREFRONT_ACCESS_TOKEN }}
+      SHOPIFY_CUSTOMER_ACCOUNT_URL: ${{ secrets.SHOPIFY_CUSTOMER_ACCOUNT_URL }}
+      SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID: ${{ secrets.SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Record run metadata
+        run: |
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Runner OS: ${{ runner.os }}"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -241,10 +362,12 @@ jobs:
 
       - name: Require Shopify secrets
         # E2E is a required launch gate — a missing secret must fail loudly,
-        # not silently skip the whole suite (CI quality-gate ticket).
+        # not silently skip the whole suite (CI quality-gate ticket). instrumentation.ts
+        # throws on server boot without the customer-account vars, which otherwise
+        # only surfaces as a 180s webServer timeout with no indication why.
         run: |
-          if [ -z "$SHOPIFY_STORE_DOMAIN" ] || [ -z "$SHOPIFY_STOREFRONT_ACCESS_TOKEN" ]; then
-            echo "::error::SHOPIFY_STORE_DOMAIN / SHOPIFY_STOREFRONT_ACCESS_TOKEN are not set in repo Actions secrets — E2E cannot run and is a required check (Settings → Secrets and variables → Actions)."
+          if [ -z "$SHOPIFY_STORE_DOMAIN" ] || [ -z "$SHOPIFY_STOREFRONT_ACCESS_TOKEN" ] || [ -z "$SHOPIFY_CUSTOMER_ACCOUNT_URL" ] || [ -z "$SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID" ]; then
+            echo "::error::SHOPIFY_STORE_DOMAIN / SHOPIFY_STOREFRONT_ACCESS_TOKEN / SHOPIFY_CUSTOMER_ACCOUNT_URL / SHOPIFY_CUSTOMER_ACCOUNT_CLIENT_ID are not set in repo Actions secrets — E2E cannot run and is a required check (Settings → Secrets and variables → Actions)."
             exit 1
           fi
 
@@ -255,16 +378,11 @@ jobs:
         run: npm run build
 
       - name: Run E2E tests
-        # --ignore-snapshots: visual baselines are darwin-only so far (they
-        # are platform-suffixed); every functional/axe assertion still runs.
-        # TODO: generate linux baselines (run once with --update-snapshots on
-        # this runner, commit e2e/visual.spec.ts-snapshots/*-linux.png), then
-        # drop the flag so the visual gate enforces in CI too.
-        run: npx playwright test --ignore-snapshots
+        run: npx playwright test
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-report
           path: playwright-report/

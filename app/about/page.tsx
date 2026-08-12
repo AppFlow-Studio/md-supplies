@@ -24,7 +24,7 @@ export const metadata = buildMetadata({
 
 export default function AboutPage() {
   return (
-    <main>
+    <main id="main-content">
 
       {/* ── Hero ── */}
       <section className="w-full bg-white overflow-hidden">

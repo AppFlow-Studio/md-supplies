@@ -81,8 +81,12 @@ export default function IndustriesPage() {
             </div>
           </div>
 
-          {/* Right hero image */}
-          <div className="hidden lg:block absolute right-0 top-0 w-[743px] h-[744px]">
+          {/* Right hero image. Fixed 743px width: at the `lg` breakpoint
+              (1024px) the container is too narrow for it, and it overlaps
+              the "Contact Us"/"Shop OCC" CTAs in the left column (confirmed
+              at 1024x768: image left edge at x=281 vs. CTA text starting at
+              x=289). `xl` (1280px) is the first width where it clears them. */}
+          <div className="hidden xl:block absolute right-0 top-0 w-[743px] h-[744px]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={HERO_IMAGE}

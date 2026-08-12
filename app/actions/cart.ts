@@ -98,32 +98,42 @@ export async function addToCart(variantId: string, quantity: number): Promise<Ad
 
   if (!cartId) return createCart(variantId, quantity)
 
-  try {
-    const data = await storefrontFetch<{ cartLinesAdd: { cart: Cart; userErrors: UserError[] } }>(
-      ADD_CART_LINES,
-      { cartId, lines: [{ merchandiseId: variantId, quantity }] },
-      NO_STORE,
-    )
-    assertNoUserErrors(data.cartLinesAdd.userErrors, 'cartLinesAdd')
-    const cart = data.cartLinesAdd.cart
-    // A missing line is a real answer about this cart, not a sign the cart is
-    // gone, so it is reported rather than retried. Rebuilding the cart here
-    // would discard everything the customer already had and still not add the
-    // item.
-    const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartLinesAdd')
-    const unshippable = findUnshippableLines(cart, 'cartLinesAdd')
-    return {
-      cart: attachCartShippingDisplay(cart),
-      warning: missing.length
-        ? CART_LINE_MISSING_MESSAGE
-        : unshippable.length
-          ? CART_LINE_UNSHIPPABLE_MESSAGE
-          : null,
-    }
-  } catch {
-    // The cart may be expired: clear the stale cookie and start over.
+  // Deliberately not wrapped in a catch-all: a thrown error here (network
+  // failure, non-2xx response, a GraphQL-level error) is not proof the cart
+  // is gone, only that this one request failed. Treating every exception as
+  // "must be expired" and silently recreating the cart would discard every
+  // existing line the customer already had, for what could be a transient
+  // blip. Let it propagate so the caller's existing cart stays displayed
+  // (CartProvider.addItem catches this without touching cart state).
+  const data = await storefrontFetch<{ cartLinesAdd: { cart: Cart | null; userErrors: UserError[] } }>(
+    ADD_CART_LINES,
+    { cartId, lines: [{ merchandiseId: variantId, quantity }] },
+    NO_STORE,
+  )
+  assertNoUserErrors(data.cartLinesAdd.userErrors, 'cartLinesAdd')
+  const cart = data.cartLinesAdd.cart
+
+  if (!cart) {
+    // Shopify's actual signal for an unresolvable cart id: a null cart with
+    // no userErrors, not a thrown error. There is genuinely nothing left to
+    // preserve here, so starting fresh is correct rather than a data-loss risk.
     jar.delete(CART_COOKIE)
     return createCart(variantId, quantity)
+  }
+
+  // A missing line is a real answer about this cart, not a sign the cart is
+  // gone, so it is reported rather than retried. Rebuilding the cart here
+  // would discard everything the customer already had and still not add the
+  // item.
+  const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartLinesAdd')
+  const unshippable = findUnshippableLines(cart, 'cartLinesAdd')
+  return {
+    cart: attachCartShippingDisplay(cart),
+    warning: missing.length
+      ? CART_LINE_MISSING_MESSAGE
+      : unshippable.length
+        ? CART_LINE_UNSHIPPABLE_MESSAGE
+        : null,
   }
 }
 

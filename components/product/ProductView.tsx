@@ -15,20 +15,16 @@ import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
-import { ShippingBadge } from './ShippingBadge'
 import { ShippingBlock } from './ShippingBlock'
+import { ProductLabelBadges } from './ProductLabelBadges'
 import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
-import { resolveBackorderLabel, resolveRxLabel } from '@/lib/labels/labels'
+import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
-import { hasUsablePrice } from '@/lib/purchasability'
+import { hasUsablePrice, getDefaultVariant } from '@/lib/purchasability'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
-
-function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
-  return variants.find((v) => v.availableForSale) ?? variants[0]
-}
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const price = parseFloat(
@@ -120,14 +116,17 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
   // DEV-LABEL-01 / DEV-CATALOG-01: backorder + RX come from the shared label
   // contract (single metafield source, stale ETAs suppressed) so card and PDP
   // can never disagree. availableForSale only gates purchasability — it is
-  // never presented as a real-time "In Stock" inventory claim.
-  const backorderLabel = resolveBackorderLabel({
+  // never presented as a real-time "In Stock" inventory claim. Backorder is
+  // gated on the custom.backorder boolean alone, independent of availability.
+  const labels = resolveProductLabels({
+    tags: product.tags,
+    isBackordered: product.backorder,
     estimatedRestockDate: product.estimatedRestockDate,
-    availableForSale: selectedVariant.availableForSale,
+    // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the
+    // PDP badge can never disagree with whether the cart will actually be gated.
+    isRxOnly: product.isRxOnly,
   })
-  // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the PDP
-  // badge can never disagree with whether the cart will actually be gated.
-  const rxLabel = resolveRxLabel(product.tags, product.isRxOnly)
+  const backorderLabel = labels.find((l) => l.type === 'backorder') ?? null
 
   const stockStatus: 'available' | 'out_of_stock' | 'backordered' = (() => {
     if (!selectedVariant.availableForSale) return backorderLabel ? 'backordered' : 'out_of_stock'
@@ -247,7 +246,9 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 {stockStatus === 'backordered' && backorderLabel && (
                   <>
                     <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
-                    <span className="text-orange-600 text-[13px] font-semibold tracking-[0.26px]">
+                    {/* orange-600 measured 3.56:1 on white — below the 4.5:1 AA minimum,
+                        flagged [serious] by axe. orange-700 measures ~5.18:1. */}
+                    <span className="text-orange-700 text-[13px] font-semibold tracking-[0.26px]">
                       {backorderLabel.text}
                     </span>
                   </>
@@ -268,24 +269,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
             {/* Product badges. A shipping claim may come only from the resolver,
                 never from a tag: `free-shipping` is an uncurated catalog tag and
-                is not an approved source for a customer-facing promise. The RX
-                badge is a display-only label from the shared contract
-                (lib/labels) — it never enforces checkout behavior. */}
-            {(shippingDisplay || rxLabel) && (
-              <div className="flex flex-wrap gap-2">
-                {shippingDisplay && (
-                  <ShippingBadge shippingDisplay={shippingDisplay} className="px-3 py-1 text-[13px]" />
-                )}
-                {rxLabel && (
-                  <span
-                    aria-label={rxLabel.accessibleText}
-                    className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white"
-                  >
-                    {rxLabel.text}
-                  </span>
-                )}
-              </div>
-            )}
+                is not an approved source for a customer-facing promise. RX and
+                Backorder are display-only labels from the shared contract
+                (lib/labels) — RX never enforces checkout behavior itself.
+                Order (RX -> Backorder -> Free Shipping) is guaranteed by
+                ProductLabelBadges. */}
+            <ProductLabelBadges labels={labels} shippingDisplay={shippingDisplay} size="md" />
 
             {/* Always rendered, never blank. Anything the resolver did not
                 classify for the selected variant, including every product when
@@ -598,7 +587,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
-            <div className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch">
+            <div
+              className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch"
+              tabIndex={0}
+              role="region"
+              aria-label="You May Also Need — scrollable product list"
+            >
               {relatedProducts.slice(4).map((item) => (
                 <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
                   <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
