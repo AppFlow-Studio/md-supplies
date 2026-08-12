@@ -44,7 +44,7 @@ export type ProductConnectionResult = {
 // field. COLLECTION_DEFAULT and BEST_SELLING (no relevance-ranked equivalent
 // on this endpoint) and CREATED (no created-date sort on this endpoint) all
 // fall back to RELEVANCE; PRICE passes through unchanged.
-function mapSortKeyForSearchQuery(sortKey: string): string {
+export function mapSortKeyForSearchQuery(sortKey: string): string {
   if (sortKey === 'PRICE') return 'PRICE'
   return 'RELEVANCE'
 }
@@ -81,6 +81,13 @@ type FetchOpts = {
   filters: Record<string, unknown>[]
   /** Raw ?q= text; sanitized here before it reaches the Storefront API. */
   text?: string
+  /**
+   * Storefront cursor to start the page at (from lib/catalog/product-index).
+   * With this set, `first` is exactly one page's worth instead of every item up
+   * to the requested page — which is what lets page size go to 100 and pages go
+   * deeper than the old 250-item `first:` ceiling allowed.
+   */
+  after?: string | null
 }
 
 async function fetchSearchConnection(
@@ -93,7 +100,7 @@ async function fetchSearchConnection(
     {
       query,
       first: opts.first,
-      after: null,
+      after: opts.after ?? null,
       sortKey: mapSortKeyForSearchQuery(opts.sortKey),
       reverse: opts.reverse,
       filters: opts.filters,
@@ -204,7 +211,7 @@ export async function fetchProductConnection(
       {
         handle: source.handle,
         first: opts.first,
-        after: null,
+        after: opts.after ?? null,
         sortKey: opts.sortKey,
         reverse: opts.reverse,
         filters: opts.filters,

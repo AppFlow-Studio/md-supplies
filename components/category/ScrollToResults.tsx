@@ -57,7 +57,7 @@ export function ScrollToResults({ resultsKey, children }: Props) {
   }, [resultsKey])
 
   return (
-    <div ref={ref} className="scroll-mt-[140px] lg:scroll-mt-[168px] flex-1 min-w-0">
+    <div ref={ref} className="scroll-mt-[88px] lg:scroll-mt-[168px] flex-1 min-w-0">
       {children}
     </div>
   )

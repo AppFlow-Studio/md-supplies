@@ -4,12 +4,25 @@ import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
 import { getAllowedHandles } from '@/lib/category-nav'
 
-// Page size and the Storefront API `first` argument ceiling (250) that bounds
-// how deep deterministic category pagination can go before falling back to
-// page 1 instead of requesting more items than Shopify allows in one query.
-export const CATEGORY_PAGE_SIZE = 9
 export const STOREFRONT_MAX_FIRST = 250
-export const MAX_CATEGORY_PAGE = Math.floor((STOREFRONT_MAX_FIRST - 1) / CATEGORY_PAGE_SIZE)
+
+// Historical category page size. Category and industry routes now read their
+// size from ?per_page= (lib/catalog/page-size.ts, default 20); this constant
+// survives only for the e2e fixture helper that sizes its seed data.
+export const CATEGORY_PAGE_SIZE = 9
+
+/**
+ * Absolute page ceiling for category/industry routes.
+ *
+ * This used to be `(250 - 1) / 9 = 27`, forced by the old fetch strategy asking
+ * for every product up to the requested page in one `first:` argument. Cursor
+ * paging removed that ceiling; what remains is the product index's own cap
+ * (5,000 items — see lib/catalog/product-index.ts), which at the smallest
+ * offered page size of 10 lands at page 500. A request beyond it is a crawler
+ * or a hand-edited URL, and bounces to page 1 rather than walking the index
+ * without limit.
+ */
+export const MAX_CATEGORY_PAGE = 500
 
 // Same deterministic-page-N model as categories (DEV-LAUNCH-06): /search used
 // to page via a Shopify cursor advanced through a "Load More" button, which

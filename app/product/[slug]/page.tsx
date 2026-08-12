@@ -13,7 +13,9 @@ import { normalizeGtin } from '@/lib/gtin'
 import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag } from '@/lib/category-tree'
+import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag,
+  getCategorySlug,
+} from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { ROUTES } from '@/lib/routes'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
@@ -144,7 +146,7 @@ export default async function ProductPage({ params }: Props) {
   const categoryPath = getProductCategoryPath({ handle: product.handle, categories, subcategories }, l2Nodes)
   const categoryCrumbs = categoryPath
     ? [
-        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        { label: categoryPath.category.displayName, href: ROUTES.category(getCategorySlug(categoryPath.category)) },
         ...(categoryPath.subcategory
           ? [{
               label: humanizeTag(categoryPath.subcategory.tag),

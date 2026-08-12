@@ -36,7 +36,16 @@ export function PopularCategories() {
             <FadeIn key={handle} delay={i * 0.06} className="h-full">
               <Link
                 href={ROUTES.category(handle)}
-                className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-10 px-4 h-full"
+                /* Hover/focus treatment (spec §9). `hover:bg-neutral-50` was
+                   effectively invisible — neutral-50 is #f9faf9, within 2% of
+                   the white tile it sits on. surface-hover is a real step
+                   darker while staying restrained: no layout shift, no icon
+                   resize, and neighbouring tiles cannot move because the grid
+                   separates them with a 1px gap of border colour rather than
+                   margins. focus-visible gets the same fill plus an inset ring
+                   so keyboard users get an equally clear affordance, and
+                   motion-reduce drops the 150ms transition entirely. */
+                className="group bg-white transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy-900 flex flex-col items-center justify-center gap-4 py-10 px-4 h-full"
               >
                 <div className="w-14 h-14 flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

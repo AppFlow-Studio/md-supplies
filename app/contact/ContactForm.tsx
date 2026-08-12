@@ -56,7 +56,7 @@ export function ContactForm() {
   if (status === 'success') {
     return (
       <div className="bg-teal-50 border border-teal-300 text-teal-800 text-[15px] font-medium py-6 px-8">
-        Message received — we&apos;ll be in touch within one business day.
+        Message received — our team will be in touch as soon as possible.
       </div>
     )
   }

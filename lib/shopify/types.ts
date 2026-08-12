@@ -130,11 +130,18 @@ export type CollectionProduct = {
   shippingDisplay?: ShippingDisplay | null;
 };
 
+export type CollectionFilterValue = {
+  id: string;
+  label: string;
+  count: number;
+  input: string;
+};
+
 export type CollectionFilter = {
   id: string;
   label: string;
   type: string;
-  values: { id: string; label: string; count: number; input: string }[];
+  values: CollectionFilterValue[];
 };
 
 export type PageInfo = {

@@ -55,6 +55,29 @@ export type L1CategoryDef = {
   // See docs/superpowers/specs/2026-08-07-categories-shortdescription-design.md
   // Appendix A for the source-of-truth copy table.
   shortDescription: string
+  /**
+   * Where the page's PRODUCTS come from — distinct from `collectionHandle`,
+   * which also supplies the route slug, hero artwork and title.
+   *
+   * 'collection' (default): the Shopify collection IS the category.
+   *
+   * 'tag': the collection is a narrow, representative sub-collection chosen for
+   * its artwork, and browsing it would show a fraction of what the tile
+   * promises. Products come from `category:<tag>` instead — the same membership
+   * source the L2 subcategory pages and the /categories tile counts already
+   * use, so the page finally agrees with its own count.
+   *
+   * The four 'tag' entries below are the Phase 2 fix this file's comment
+   * deferred. Measured live 2026-08-12 (audit/live/tag-vs-collection.json),
+   * tag total vs collection total:
+   *   surgery-procedure 319 vs  41 (trocars-trocar-kits)
+   *   room-furniture    512 vs   8 (seating)
+   *   apparel           152 vs  34 (capes-gowns)
+   *   face-masks         35 vs   1 (face-coverings)
+   * The other 21 agree within normal drift and stay on their collection, which
+   * keeps their richer sort keys (Query.search accepts only RELEVANCE/PRICE).
+   */
+  productSet?: 'collection' | 'tag'
 }
 
 // The 25 approved category: tag values, confirmed against the live catalog
@@ -70,8 +93,8 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'respiratory', displayName: 'Respiratory', collectionHandle: 'respiratory', navGroup: 'primary', shortDescription: 'Respiratory-care supplies for oxygen delivery, nebulization, airway support, and routine patient treatment.' },
   { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility', navGroup: 'primary', shortDescription: 'Wheelchairs, walkers, canes, rollators, and mobility accessories for patient support and daily movement.' },
   { tag: 'patient-therapy-rehab', displayName: 'Patient Therapy & Rehab', collectionHandle: 'patient-therapy-rehab', navGroup: 'primary', shortDescription: 'Therapy, rehabilitation, exercise, and positioning products that support recovery and patient mobility.' },
-  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
-  { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', navGroup: 'primary', shortDescription: 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.' },
+  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', productSet: 'tag', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
+  { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', productSet: 'tag', navGroup: 'primary', shortDescription: 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.' },
   { tag: 'hygiene', displayName: 'Hygiene', collectionHandle: 'hygiene', navGroup: 'primary', shortDescription: 'Personal-hygiene and patient-care products for bathing, oral care, grooming, and everyday cleanliness.' },
   { tag: 'disinfectants', displayName: 'Disinfectants', collectionHandle: 'disinfectants', navGroup: 'primary', shortDescription: 'Cleaning and disinfection products for surfaces, equipment, hands, and infection-control routines.' },
   { tag: 'home-care', displayName: 'Home Care', collectionHandle: 'home-care', navGroup: 'more', shortDescription: 'Practical medical and personal-care supplies designed for patients, caregivers, and home-health use.' },
@@ -83,8 +106,8 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'dental', displayName: 'Dental', collectionHandle: 'dental', navGroup: 'more', shortDescription: 'Dental procedure, examination, infection-control, and patient-care supplies for dental practices.' },
   { tag: 'housekeeping-janitorial', displayName: 'Housekeeping & Janitorial', collectionHandle: 'housekeeping-janitorial', navGroup: 'more', shortDescription: 'Facility-cleaning, waste-handling, paper, and janitorial supplies for healthcare environments.' },
   { tag: 'bariatric', displayName: 'Bariatric', collectionHandle: 'bariatric', navGroup: 'more', shortDescription: 'Bariatric patient-care and mobility equipment designed for higher weight capacities and added support.' },
-  { tag: 'room-furniture', displayName: 'Room Furniture', collectionHandle: 'seating', navGroup: 'more', shortDescription: 'Seating, exam tables, cabinets, and room furnishings for treatment, consultation, and patient-care spaces.' },
-  { tag: 'face-masks', displayName: 'Face Masks', collectionHandle: 'face-coverings', navGroup: 'more', shortDescription: 'Procedure masks, respirators, and face coverings for clinical, facility, and everyday protective use.' },
+  { tag: 'room-furniture', displayName: 'Room Furniture', collectionHandle: 'seating', productSet: 'tag', navGroup: 'more', shortDescription: 'Seating, exam tables, cabinets, and room furnishings for treatment, consultation, and patient-care spaces.' },
+  { tag: 'face-masks', displayName: 'Face Masks', collectionHandle: 'face-coverings', productSet: 'tag', navGroup: 'more', shortDescription: 'Procedure masks, respirators, and face coverings for clinical, facility, and everyday protective use.' },
   { tag: 'pharmacy-products', displayName: 'Pharmacy Products', collectionHandle: 'pharmacy-products', navGroup: 'more', shortDescription: 'Dispensing, labeling, packaging, counting, and patient-use supplies for pharmacy operations.' },
 ] as const
 
@@ -198,6 +221,29 @@ export function getL1ByCollectionHandle(handle: string): L1CategoryDef | undefin
   return CATEGORY_TREE_L1.find((c) => c.collectionHandle === handle)
 }
 
+/**
+ * The PUBLIC URL slug for a category — which is not always its Shopify handle.
+ *
+ * Face Masks is the one live divergence: the Shopify collection is
+ * `face-coverings`, but the repository already carries an explicit canonical
+ * migration to `/category/face-masks` (lib/category-nav.ts `canonicalSlug`,
+ * plus a subtree 301 in proxy.ts and the legacy .html redirects that target it).
+ *
+ * Everything that MINTS a public category URL must go through this, or it
+ * emits the redirecting handle. Before this existed, buildCategoryTreeNav and
+ * the sitemap both linked to `/category/face-coverings` — a sitewide internal
+ * link into a 301 and a redirecting URL listed in the XML sitemap — while
+ * lib/seo/categorySeo.ts, the /search category links and the legacy redirect
+ * targets all used `/category/face-masks`. Two indexable addresses for one page.
+ */
+export function getCategorySlug(l1: Pick<L1CategoryDef, 'collectionHandle'>): string {
+  return CANONICAL_SLUG_BY_HANDLE[l1.collectionHandle] ?? l1.collectionHandle
+}
+
+const CANONICAL_SLUG_BY_HANDLE: Record<string, string> = {
+  'face-coverings': 'face-masks',
+}
+
 export function humanizeTag(tag: string): string {
   return tag
     .split('-')
@@ -224,7 +270,8 @@ export function buildCategoryTreeNav(
 
   for (const l1 of CATEGORY_TREE_L1) {
     if (!liveHandles.has(l1.collectionHandle)) continue
-    const entry: CategoryNavEntry = { displayName: l1.displayName, href: ROUTES.category(l1.collectionHandle) }
+    // Canonical public slug, not the raw handle — see getCategorySlug.
+    const entry: CategoryNavEntry = { displayName: l1.displayName, href: ROUTES.category(getCategorySlug(l1)) }
     if (l1.navGroup === 'primary') primary.push(entry)
     else more.push(entry)
   }

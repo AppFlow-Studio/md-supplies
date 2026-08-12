@@ -1,12 +1,13 @@
 import Link from 'next/link'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
+import { CatalogHero } from '@/components/category/CatalogHero'
+import { DEFAULT_HERO_FOCAL } from '@/lib/category-images'
 import { CategoryResults } from '@/components/category/CategoryResults'
-import { SubcategoryNavigator } from '@/components/category/SubcategoryNavigator'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { ROUTES } from '@/lib/routes'
 import type { Industry } from '@/lib/industries'
 import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
 import type { CategorySearchParams } from '@/components/category/CategoryPageView'
+import type { PageSize } from '@/lib/catalog/page-size'
 
 /**
  * Industry landing page — an ecommerce/Google-Ads destination, not a brochure.
@@ -40,6 +41,10 @@ export type IndustryLandingProps = {
   categoryLinks: { label: string; href: string }[]
   /** Longer-form guide rendered below the grid. */
   buyingGuide?: { heading: string; body: string }[]
+  /** Validated ?per_page= value. */
+  pageSize: PageSize
+  /** Answer-first SEO copy from the industry SEO database. */
+  seoAnswer?: string
 }
 
 export function IndustryLandingPage({
@@ -53,72 +58,58 @@ export function IndustryLandingPage({
   currentPage,
   categoryLinks,
   buyingGuide = [],
+  pageSize,
+  seoAnswer,
 }: IndustryLandingProps) {
   const industryUrl = `/industries/${industry.slug}`
   const related = SUPPORTED_INDUSTRIES.filter((i) => i.slug !== industry.slug).slice(0, 4)
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
-        <Breadcrumb
-          items={[{ label: 'Industries', href: '/industries' }, { label: industry.name }]}
-        />
-      </div>
-
-      {/* Compact, intent-matched hero. No oversized image panel, no unsupported
-          numbers — the H1 mirrors the ad-group intent and the CTAs are the
-          first thing a paid visitor sees. */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-4">
-        <h1 className="text-navy-900 text-[28px] sm:text-[34px] lg:text-[40px] font-semibold leading-[1.15] tracking-[-0.01em] mb-2">
-          {industry.name} Supplies
-        </h1>
-        <p className="text-gray-600 text-[16px] leading-[1.6] max-w-[720px]">
-          {industry.description}
-        </p>
-        <div className="flex flex-wrap gap-3 mt-4">
-          <a
-            href="#industry-products"
-            className="inline-flex items-center min-h-[48px] px-6 bg-navy-900 text-white text-[16px] font-semibold hover:bg-navy-950 transition-colors"
-          >
-            Shop {industry.name} Supplies
-          </a>
+      {/* Same hero as the 25 category pages. The industry hero previously had
+          NO image at all, even though every industry card already ships one
+          (lib/industries.ts `image`), and no breadcrumb/description/artwork
+          consistency with the category routes. CTAs stay — they are the point
+          of a paid-traffic landing page. */}
+      <CatalogHero
+        breadcrumb={[{ label: 'Industries', href: '/industries' }, { label: industry.name }]}
+        title={industry.h1}
+        description={industry.description}
+        // Answer-first SEO copy in the hero itself. This is where the
+        // "Shop {industry} Supplies" button used to sit — an anchor to
+        // #industry-products, i.e. a jump to the grid further down the SAME
+        // page, which gave a visitor nothing they could not get by scrolling
+        // and gave a crawler a self-referential link. Real copy earns the space.
+        answer={seoAnswer}
+        // Industry heroes lead with photography of the setting, so the artwork
+        // gets a wider column than the product-shot category heroes.
+        image={{ path: industry.image, alt: `${industry.name} supplies`, focalPosition: DEFAULT_HERO_FOCAL }}
+        imageEmphasis
+        actions={
           <Link
             href="/contact"
-            className="inline-flex items-center min-h-[48px] px-6 border border-navy-900 text-navy-900 text-[16px] font-semibold hover:bg-white transition-colors"
+            className="inline-flex items-center min-h-[48px] px-6 bg-navy-900 text-white text-[16px] font-semibold hover:bg-navy-950 transition-colors"
           >
             Request a Quote
           </Link>
-        </div>
-      </div>
-
-      {/* Procurement points. Verified capabilities only — no shipping-speed,
-          inventory or facility-count claims (lib/claims.ts governs those). */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-4">
-        <ul className="flex flex-wrap gap-x-6 gap-y-2 list-none m-0 p-0 text-[14px] text-gray-600">
-          <li>Account support for {industry.buyerType.toLowerCase()}</li>
-          <li>Bulk and repeat ordering</li>
-          <li>Secure online checkout</li>
-        </ul>
-      </div>
-
-      {/* Curated category links — crawlable anchors, only categories that
-          actually carry products for this industry. */}
-      {categoryLinks.length > 0 && (
-        <SubcategoryNavigator
-          items={categoryLinks}
-          allHref={industryUrl}
-          allLabel={`All ${industry.name}`}
-          allActive
-          ariaLabel={`${industry.name} product categories`}
-        />
-      )}
+        }
+      />
 
       {/* Full scoped catalogue — the same engine as category and OCC pages. */}
-      <div id="industry-products" className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4 flex gap-0 items-start scroll-mt-[140px]">
+      <div id="industry-products" className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4 scroll-mt-[88px] lg:scroll-mt-[168px]">
         <CategoryResults
           source={{ kind: 'tag', query: `tag:"${tag}"`, title: industry.name, slug: industry.slug }}
           baseUrl={industryUrl}
-          facetKey={industry.collectionHandle}
+          // Industry SLUG against the INDUSTRY registry. This used to pass
+          // `industry.collectionHandle` into the category registry, where four
+          // of the five slugs have no entry at all (urgent-care, hrt-clinics,
+          // home-health, clinics-doctors-offices, pharmacies are not collection
+          // handles) — so those pages silently fell through to the bare default
+          // set and showed almost no filters.
+          facetKey={industry.slug}
+          facetKind="industry"
+          pageSize={pageSize}
+          cacheTags={['shopify', 'products', 'category-tree', tag]}
           sortKey={sortKey}
           reverse={reverse}
           sortParam={sp.sort}
@@ -127,8 +118,34 @@ export function IndustryLandingPage({
           trackingParamsSource={sp}
           searchQuery={searchQuery}
           searchScopeTitle={`${industry.name} Supplies`}
+          tabsAllLabel={`All ${industry.name}`}
         />
       </div>
+
+      {/* Curated category links — crawlable anchors to the category hubs this
+          industry draws from. The in-page subcategory control is now the
+          Category-facet tab row above the grid, which filters this industry's
+          product set in place; these links go to the category pages themselves,
+          which is a different job, so both are kept. */}
+      {categoryLinks.length > 0 && (
+        <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
+          <h2 className="text-navy-900 text-[18px] font-semibold mb-4">
+            Categories for {industry.name}
+          </h2>
+          <ul className="flex flex-wrap gap-2 list-none m-0 p-0">
+            {categoryLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="inline-flex items-center min-h-[44px] border border-gray-200 bg-white text-navy-900 text-[14px] px-4 hover:border-navy-900 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Buying guide BELOW the products (CRO): depth for organic without
           pushing merchandise down for paid. */}

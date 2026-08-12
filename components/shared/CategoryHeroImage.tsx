@@ -17,11 +17,14 @@ export function CategoryHeroImage({
   alt,
   className = 'hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]',
   sizes = '55vw',
+  objectPosition,
 }: {
   bannerPath: string
   alt: string
   className?: string
   sizes?: string
+  /** Per-route focal point for the object-cover crop. */
+  objectPosition?: string
 }) {
   const [unavailable, setUnavailable] = useState(false)
   if (unavailable) return null
@@ -32,6 +35,7 @@ export function CategoryHeroImage({
         bannerPath={bannerPath}
         alt={alt}
         sizes={sizes}
+        objectPosition={objectPosition}
         onUnavailable={() => setUnavailable(true)}
       />
     </div>

@@ -12,7 +12,7 @@ const INDUSTRY_SEO_DB: Record<string, IndustrySeoOverride> = {
   'urgent-care': {
     title: 'Urgent Care Medical Supplies | Bulk Ordering | MDSupplies',
     metaDescription:
-      'Wholesale medical supplies for urgent care centers — exam gloves, wound care, rapid diagnostic tests, and IV supplies with bulk ordering and B2B account options.',
+      'Wholesale medical supplies for urgent care centers — exam gloves, wound care, rapid diagnostic tests, and IV supplies with bulk ordering and B2B accounts.',
     answerBlock:
       'MDSupplies supplies urgent care centers with exam gloves, wound care dressings, rapid test kits, and IV supplies at wholesale prices with bulk ordering and dedicated B2B account support.',
   },
@@ -20,7 +20,7 @@ const INDUSTRY_SEO_DB: Record<string, IndustrySeoOverride> = {
   'pharmacies': {
     title: 'Pharmacy Medical Supplies | Wholesale Pricing | MDSupplies',
     metaDescription:
-      'Wholesale pharmacy supplies for retail and compounding pharmacies — prescription vials, diabetic care, incontinence products, and front-end medical supply inventory.',
+      'Wholesale pharmacy supplies for retail and compounding pharmacies — prescription vials, diabetic care, incontinence, and front-end medical inventory.',
     answerBlock:
       'MDSupplies helps pharmacies stock front-end medical supply inventory including diabetic care supplies, incontinence products, wound care, and dispensing accessories at wholesale pricing.',
   },
@@ -36,7 +36,7 @@ const INDUSTRY_SEO_DB: Record<string, IndustrySeoOverride> = {
   'home-health': {
     title: 'Home Health Medical Supplies | Agency Pricing | MDSupplies',
     metaDescription:
-      'Wholesale home health supplies for agencies and visiting nurses — wound care dressings, incontinence products, gloves, and mobility aids with agency-level purchasing.',
+      'Wholesale home health supplies for agencies and visiting nurses — wound care, incontinence products, gloves, and mobility aids at agency pricing.',
     answerBlock:
       'MDSupplies supports home health agencies with wound care, incontinence supplies, gloves, and mobility aids at wholesale prices with agency-level purchasing and account management.',
   },
@@ -44,7 +44,7 @@ const INDUSTRY_SEO_DB: Record<string, IndustrySeoOverride> = {
   'clinics-doctors-offices': {
     title: 'Clinic & Doctor Office Supplies | Wholesale | MDSupplies',
     metaDescription:
-      'Wholesale medical supplies for clinics and private practices — exam room essentials, gloves, diagnostic supplies, and consumables with bulk pricing and recurring order options.',
+      'Wholesale supplies for clinics and private practices — exam room essentials, gloves, diagnostic supplies, and consumables with bulk and recurring orders.',
     answerBlock:
       'MDSupplies supplies clinics and physician offices with exam room consumables, diagnostic supplies, gloves, and wound care materials at wholesale prices with bulk and recurring order options.',
   },

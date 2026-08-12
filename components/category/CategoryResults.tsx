@@ -4,11 +4,14 @@ import { notFound, redirect } from 'next/navigation'
 import { X } from 'lucide-react'
 import { buildCollectionItemListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { fetchProductConnection, type ProductSource } from '@/lib/category-results-source'
+import { type ProductSource } from '@/lib/category-results-source'
+import { fetchCatalogPage } from '@/lib/catalog/fetch-page'
 import { getVisibleFilters } from '@/lib/shopify/filters'
-import { getAllowedFacets } from '@/lib/filter-registry'
+import { getAllowedFacets, type FacetRouteKind } from '@/lib/filter-registry'
 import { withTrackingParams, type TrackingParamSource } from '@/lib/analytics/tracking-params'
-import { CATEGORY_PAGE_SIZE } from '@/lib/category-utils'
+import { formatResultCount, DEFAULT_PAGE_SIZE, type PageSize } from '@/lib/catalog/page-size'
+import { PerPageSelect } from '@/components/category/PerPageSelect'
+import { CategoryTabs } from '@/components/category/CategoryTabs'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { CategoryFilters } from '@/components/category/CategoryFilters'
 import { CategorySearch } from '@/components/category/CategorySearch'
@@ -47,6 +50,14 @@ interface Props {
   searchQuery?: string
   /** Display title for the search field label ("Search within {title}"). */
   searchScopeTitle?: string
+  /** Which facet registry `facetKey` resolves against. */
+  facetKind?: FacetRouteKind
+  /** Validated ?per_page= value. */
+  pageSize?: PageSize
+  /** Next data-cache tags for this product set. */
+  cacheTags?: string[]
+  /** "All Gloves" — when set, the Category-facet tab row renders above results. */
+  tabsAllLabel?: string
 }
 
 export async function CategoryResults({
@@ -61,6 +72,10 @@ export async function CategoryResults({
   trackingParamsSource,
   searchQuery,
   searchScopeTitle,
+  facetKind = 'category',
+  pageSize = DEFAULT_PAGE_SIZE,
+  cacheTags = ['shopify', 'products'],
+  tabsAllLabel,
 }: Props) {
   const nonce = await getNonce()
   const searchText = searchQuery?.trim() || undefined
@@ -70,20 +85,21 @@ export async function CategoryResults({
   if (sortParam) persistParams.set('sort', sortParam)
   activeFilterStrings.forEach((f) => persistParams.append('filter', f))
   if (searchText) persistParams.set('q', searchText)
+  if (pageSize !== DEFAULT_PAGE_SIZE) persistParams.set('per_page', String(pageSize))
   withTrackingParams(persistParams, trackingParamsSource)
   const page1Qs = persistParams.toString()
   const page1Url = page1Qs ? `${baseUrl}?${page1Qs}` : baseUrl
 
-  const first = currentPage * CATEGORY_PAGE_SIZE + 1
-
-  let result: Awaited<ReturnType<typeof fetchProductConnection>>
+  let result: Awaited<ReturnType<typeof fetchCatalogPage>>
   try {
-    result = await fetchProductConnection(source, {
-      first,
+    result = await fetchCatalogPage(source, {
       sortKey,
       reverse,
       filters: parseFilters(activeFilterStrings),
       text: searchText,
+      page: currentPage,
+      pageSize,
+      cacheTags,
     })
   } catch (err) {
     if (currentPage > 1) {
@@ -94,15 +110,14 @@ export async function CategoryResults({
 
   if (!result) notFound()
 
-  const { products: connection, title, handle } = result
-  const allNodes = connection.nodes
-  const startIndex = (currentPage - 1) * CATEGORY_PAGE_SIZE
-  const products = attachCardShippingDisplay(allNodes.slice(startIndex, startIndex + CATEGORY_PAGE_SIZE))
-  const hasNext = allNodes.length > currentPage * CATEGORY_PAGE_SIZE
+  const { title, handle, total: matchingTotal } = result
+  const startIndex = (currentPage - 1) * pageSize
+  const products = attachCardShippingDisplay(result.products)
+  const hasNext = result.hasNext
 
   if (!isFiltered && currentPage > 1 && products.length === 0) notFound()
 
-  const allowedFacets = getAllowedFacets(facetKey, connection.filters ?? [])
+  const allowedFacets = getAllowedFacets(facetKey, result.facets, facetKind, activeFilterStrings)
   const filters = getVisibleFilters(allowedFacets, activeFilterStrings)
 
   const removeFilterUrl = (filterToRemove: string) => {
@@ -111,6 +126,7 @@ export async function CategoryResults({
     if (sortParam) p.set('sort', sortParam)
     next.forEach((f) => p.append('filter', f))
     if (searchText) p.set('q', searchText)
+    if (pageSize !== DEFAULT_PAGE_SIZE) p.set('per_page', String(pageSize))
     withTrackingParams(p, trackingParamsSource)
     const qs = p.toString()
     return qs ? `${baseUrl}?${qs}` : baseUrl
@@ -121,10 +137,31 @@ export async function CategoryResults({
     const p = new URLSearchParams()
     if (sortParam) p.set('sort', sortParam)
     activeFilterStrings.forEach((f) => p.append('filter', f))
+    if (pageSize !== DEFAULT_PAGE_SIZE) p.set('per_page', String(pageSize))
     withTrackingParams(p, trackingParamsSource)
     const qs = p.toString()
     return qs ? `${baseUrl}?${qs}` : baseUrl
   })()
+
+  // Clearing every filter keeps sort, search and page size — only the facet
+  // selections go, and pagination resets to page 1.
+  const clearAllUrl = (() => {
+    const p = new URLSearchParams()
+    if (sortParam) p.set('sort', sortParam)
+    if (searchText) p.set('q', searchText)
+    if (pageSize !== DEFAULT_PAGE_SIZE) p.set('per_page', String(pageSize))
+    withTrackingParams(p, trackingParamsSource)
+    const qs = p.toString()
+    return qs ? `${baseUrl}?${qs}` : baseUrl
+  })()
+
+  // The tab row and the rail's Category group are two views over ONE object.
+  // Taking it from `filters` (post-gate, post-order, post-visibility) rather
+  // than re-deriving it is what makes label, value, count and selected state
+  // identical by construction.
+  const categoryFacet = filters.find(
+    (f) => /(^|\.)customer_filter_category$/.test(f.id) || f.label.trim().toLowerCase() === 'category',
+  )
 
   const filterLabelMap = new Map(
     allowedFacets.flatMap((g) => g.values.map((v) => [v.input, v.label] as const)),
@@ -132,7 +169,7 @@ export async function CategoryResults({
 
   // Complete results state — any change here is a new result set (drives the
   // scroll anchor). Includes filters, sort, search and page.
-  const resultsKey = JSON.stringify([activeFilterStrings, sortParam ?? '', searchText ?? '', currentPage])
+  const resultsKey = JSON.stringify([activeFilterStrings, sortParam ?? '', searchText ?? '', currentPage, pageSize])
 
   return (
     <CatalogTransitionProvider>
@@ -153,12 +190,33 @@ export async function CategoryResults({
           }}
         />
       )}
+      {/* Category tab row — full width, above the two-column body, so it sits
+          directly beneath the hero as specified rather than inside the results
+          column. Same facet object as the rail's Category group. */}
+      {tabsAllLabel && (
+        <Suspense fallback={null}>
+          <CategoryTabs
+            facet={categoryFacet}
+            activeFilters={activeFilterStrings}
+            allLabel={tabsAllLabel}
+            ariaLabel={`${searchScopeTitle ?? title} categories`}
+            currentSort={sortParam}
+            q={searchText}
+            pageSize={pageSize}
+          />
+        </Suspense>
+      )}
+
+      <div className="flex items-start lg:gap-10">
       {/* Desktop filter sidebar. Suspense boundary: CategoryFilters reads
           useSearchParams(), which on the statically-generated category route
           would otherwise bail the WHOLE page out to client rendering and cache
           an empty shell (audit H1). The boundary confines the client-side
           render to the filter rail. */}
-      <aside className="hidden lg:block w-[280px] shrink-0 pr-10 sticky top-[140px] max-h-[calc(100vh-160px)] overflow-y-auto">
+      {/* pr-4 + the row's lg:gap-10 leaves a clear channel between the rail's
+          scrollbar and the results column. It was pr-10 with no row gap, which
+          put the search field flush against the scrollbar. */}
+      <aside className="hidden lg:block w-[280px] shrink-0 pr-4 sticky top-[140px] max-h-[calc(100vh-160px)] overflow-y-auto">
         <Suspense fallback={null}>
           <CategoryFilters
             filters={filters}
@@ -190,39 +248,56 @@ export async function CategoryResults({
               the active chips. Products follow immediately.
               Mobile/tablet: full-width search, then Filters + Sort as equal
               48px controls. */}
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            {/* aria-live: announces updated counts after async filter/search
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+            {/* Exact wording: "Showing {rendered} products of {matching total}".
+                `products.length` is what is actually on screen (the last page of
+                307 at 20 per page shows 7, not 20); `matchingTotal` is the
+                authoritative count for the current filters/search from the
+                product index, never a per-page figure or a DOM count.
+                aria-live announces the updated count after async filter/search
                 navigations without moving focus. */}
             <p className="text-gray-600 text-[16px]" aria-live="polite" role="status">
-              {searchText
-                ? `${products.length} result${products.length === 1 ? '' : 's'} for “${searchText}”`
-                : `Showing ${products.length} product${products.length === 1 ? '' : 's'}`}
+              {formatResultCount(products.length, matchingTotal)}
+              {searchText ? <> for “{searchText}”</> : null}
             </p>
 
-            <div className="flex items-stretch gap-2">
-              {/* Mobile filter trigger sits in the toolbar beside Sort. */}
-              <div className="lg:hidden flex-1">
-                <Suspense fallback={null}>
-                  <FilterDrawer
-                    filters={filters}
-                    activeFilters={activeFilterStrings}
-                    currentSort={sortParam}
-                    q={searchText}
-                  />
-                </Suspense>
+            {/* Mobile/tablet: Filters + Sort as two equal 48px controls, then
+                the per-page control on its own row so nothing is squeezed
+                below 44px or pushed off-screen at 320px.
+                Desktop: per-page then Sort, right-aligned. */}
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+              <div className="flex items-stretch gap-2">
+                <div className="lg:hidden flex-1">
+                  <Suspense fallback={null}>
+                    <FilterDrawer
+                      filters={filters}
+                      activeFilters={activeFilterStrings}
+                      currentSort={sortParam}
+                      q={searchText}
+                    />
+                  </Suspense>
+                </div>
+                <div className="flex-1 lg:flex-none">
+                  {/* Suspense: CategorySort reads useSearchParams() — see the
+                      sidebar boundary note above. */}
+                  <Suspense fallback={null}>
+                    <CategorySort
+                      currentSort={sortParam}
+                      activeFilters={activeFilterStrings}
+                      q={searchText}
+                      limitedSortOptions={source.kind === 'tag' || Boolean(searchText)}
+                    />
+                  </Suspense>
+                </div>
               </div>
-              <div className="flex-1 sm:flex-none sm:ml-auto sm:pl-6">
-                {/* Suspense: CategorySort reads useSearchParams() — see the
-                    sidebar boundary note above. */}
-                <Suspense fallback={null}>
-                  <CategorySort
-                    currentSort={sortParam}
-                    activeFilters={activeFilterStrings}
-                    q={searchText}
-                    limitedSortOptions={source.kind === 'tag' || Boolean(searchText)}
-                  />
-                </Suspense>
-              </div>
+              <Suspense fallback={null}>
+                <PerPageSelect
+                  value={pageSize}
+                  currentSort={sortParam}
+                  activeFilters={activeFilterStrings}
+                  q={searchText}
+                />
+              </Suspense>
             </div>
           </div>
 
@@ -264,6 +339,15 @@ export async function CategoryResults({
                   </Link>
                 )
               })}
+              {/* Clear-all lives with the chips rather than only inside the
+                  desktop rail and the mobile drawer, so it is reachable at
+                  every breakpoint without opening anything. */}
+              <Link
+                href={clearAllUrl}
+                className="flex items-center min-h-[28px] border border-navy-900 text-navy-900 text-[12px] font-semibold px-3 hover:bg-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
+              >
+                Clear all
+              </Link>
             </div>
           )}
 
@@ -290,6 +374,7 @@ export async function CategoryResults({
           />
         </div>
       </ScrollToResults>
+      </div>
     </CatalogTransitionProvider>
   )
 }
