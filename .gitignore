@@ -35,8 +35,12 @@ yarn-error.log*
 # …but DO commit the template (no secrets in it)
 !.env.example
 
-# shipping-facts data (17MB, testing-only per DEV-SHIP-01 — not committed)
-/data/shipping-facts-v3.json
+# shipping-facts data: the production registry (data/shipping-facts-v3.json)
+# now ships with the build (launch approval landed) so it is intentionally
+# NOT ignored — scripts/verify-shipping-registry.mjs fails the build loudly
+# if SHIPPING_RESOLVER_ENABLED=true and the file is missing or fails its
+# checksum, rather than silently shipping a build where Free Shipping can
+# never render.
 
 # vercel
 .vercel

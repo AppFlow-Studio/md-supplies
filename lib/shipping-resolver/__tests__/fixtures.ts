@@ -32,3 +32,7 @@ export const VALID = describeFixture('valid-payload.json')
 
 /** Synthetic QA-store payload carrying a variant GID on two products. */
 export const DUPLICATE = describeFixture('duplicate-variant-payload.json')
+
+/** Synthetic QA-store payload for RATES_ONLY_SHOWS_CLAIM: standard-free
+ *  classes whose effective_rate_class disagrees (curation drift). */
+export const RATES_ONLY = describeFixture('rates-only-payload.json')

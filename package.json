@@ -9,6 +9,7 @@
   "packageManager": "npm@10.9.3",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/verify-shipping-registry.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

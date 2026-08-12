@@ -6,12 +6,14 @@ import {
   resolveVariantsForProduct,
 } from '../resolve'
 import { SHIPPING_FALLBACK_MESSAGE } from '../copy'
-import { VALID, DUPLICATE } from './fixtures'
+import { VALID, DUPLICATE, RATES_ONLY } from './fixtures'
 
 const VALID_FIXTURE = VALID.path
 const VALID_CHECKSUM = VALID.checksum
 const DUPLICATE_FIXTURE = DUPLICATE.path
 const DUPLICATE_CHECKSUM = DUPLICATE.checksum
+const RATES_ONLY_FIXTURE = RATES_ONLY.path
+const RATES_ONLY_CHECKSUM = RATES_ONLY.checksum
 
 const FALLBACK = { class: 'unknown', message: SHIPPING_FALLBACK_MESSAGE, displayCopy: null }
 
@@ -214,4 +216,47 @@ describe('duplicate-variant-GID handling', () => {
     const resultB = resolveVariantsForProduct('gid://shopify/Product/TEST-dup-b')
     expect(resultB['gid://shopify/ProductVariant/TEST-dup-variant']).toEqual(FALLBACK)
   })
+})
+
+describe('RATES_ONLY_SHOWS_CLAIM gate', () => {
+  beforeEach(() => {
+    vi.stubEnv('SHIPPING_FACTS_PATH', RATES_ONLY_FIXTURE)
+    vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', RATES_ONLY_CHECKSUM)
+    vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', RATES_ONLY.store)
+    __resetShippingFactsCacheForTests()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    __resetShippingFactsCacheForTests()
+  })
+
+  it('defaults to gated (unset RATES_ONLY_SHOWS_CLAIM): a standard-free variant whose effective_rate_class disagrees falls back', () => {
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/TEST-drift-single',
+      'gid://shopify/ProductVariant/TEST-drift-single-v1',
+    )
+    expect(result).toEqual(FALLBACK)
+  })
+
+  it('gates the card-level claim too when any variant\'s effective_rate_class disagrees', () => {
+    const result = resolveCardShippingDisplay('gid://shopify/Product/TEST-drift-multi')
+    expect(result).toEqual(FALLBACK)
+  })
+
+  it('gates resolveVariantsForProduct per-variant', () => {
+    const result = resolveVariantsForProduct('gid://shopify/Product/TEST-drift-multi')
+    expect(result['gid://shopify/ProductVariant/TEST-drift-multi-v1'].class).toBe('standard-free')
+    expect(result['gid://shopify/ProductVariant/TEST-drift-multi-v2']).toEqual(FALLBACK)
+  })
+
+  it('only the exact string "false" relaxes the gate, letting the drifted claim through', () => {
+    vi.stubEnv('RATES_ONLY_SHOWS_CLAIM', 'false')
+    const result = resolveVariantShippingDisplay(
+      'gid://shopify/Product/TEST-drift-single',
+      'gid://shopify/ProductVariant/TEST-drift-single-v1',
+    )
+    expect(result.class).toBe('standard-free')
+  })
+
 })
