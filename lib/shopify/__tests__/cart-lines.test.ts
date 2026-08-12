@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   findMissingMerchandise,
   findUnshippableLines,
+  unshippableCartLines,
   CART_LINE_MISSING_MESSAGE,
   CART_LINE_UNSHIPPABLE_MESSAGE,
 } from '../cart-lines'
@@ -135,11 +136,14 @@ describe('CART_LINE_MISSING_MESSAGE', () => {
 })
 
 /**
- * Same shape, but each line carries its own cost, which is what distinguishes a
- * priced line from one Shopify could not price for the destination.
+ * Same shape, but each line carries its own cost AND its own unit price —
+ * the two that together distinguish a line Shopify could not price for the
+ * destination (priced normally, zero cost) from a genuinely zero-price
+ * product (zero either way). Defaults `unitPrice` to a normal positive price
+ * so callers only need to override it for the price-unavailable case.
  */
 function cartWithCosts(
-  lines: Array<{ id: string; quantity: number; lineTotal: string }>,
+  lines: Array<{ id: string; quantity: number; lineTotal: string; unitPrice?: string }>,
   subtotal: string,
 ): Cart {
   return {
@@ -160,6 +164,7 @@ function cartWithCosts(
           id: l.id,
           title: 'Default Title',
           sku: 'SKU',
+          price: { amount: l.unitPrice ?? '9.99', currencyCode: 'USD' },
           selectedOptions: [],
           product: {
             id: 'gid://shopify/Product/1',
@@ -207,10 +212,34 @@ describe('findUnshippableLines', () => {
     expect(findUnshippableLines(cart, 't')).toEqual([])
   })
 
+  // DEV-LAUNCH-09: a genuinely zero-price product also has a zero line cost,
+  // but it is NOT a shipping problem — that's lib/purchasability.ts's job to
+  // report. Collapsing the two would tell a shopper stuck on a $0 product
+  // to change their address, which would not fix anything.
+  it('does not report a zero-price line as unshippable', () => {
+    const cart = cartWithCosts([{ id: VARIANT_A, quantity: 1, lineTotal: '0.0', unitPrice: '0.00' }], '0.0')
+    expect(findUnshippableLines(cart, 't')).toEqual([])
+  })
+
   it('has a message that names the address, not stock', () => {
     // Shopify says "already sold out" for in-stock items. Repeating that would
     // send the customer to look for a restock that is not the problem.
     expect(CART_LINE_UNSHIPPABLE_MESSAGE).toMatch(/address/i)
     expect(CART_LINE_UNSHIPPABLE_MESSAGE).not.toMatch(/sold out|stock/i)
+  })
+})
+
+describe('unshippableCartLines', () => {
+  it('is the same detection as findUnshippableLines but silent and named', () => {
+    const cart = cartWithCosts(
+      [
+        { id: VARIANT_A, quantity: 1, lineTotal: '0.0' },
+        { id: VARIANT_B, quantity: 1, lineTotal: '6.30' },
+      ],
+      '6.30',
+    )
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(unshippableCartLines(cart)).toEqual([{ id: VARIANT_A, title: 'Test' }])
+    expect(spy).not.toHaveBeenCalled()
   })
 })

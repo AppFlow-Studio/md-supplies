@@ -102,6 +102,21 @@ describe('ShopifyProductCard', () => {
     })
   })
 
+  // DEF-02/QA-135: the image link carries no visible text of its own (the
+  // title lives in the separate info link) — it needs its own accessible
+  // name rather than relying on the <img> alt text being inherited.
+  it('gives the image-only link an accessible name via aria-label, not just inherited alt text', () => {
+    const product = makeProduct()
+    render(<ShopifyProductCard product={product} />)
+
+    const links = screen.getAllByRole('link')
+    const imageLink = links.find((link) => link.querySelector('img'))
+    expect(imageLink).toHaveAttribute('aria-label', product.title)
+    // The accessible-name computation resolves to the explicit aria-label,
+    // not an empty/ambiguous name.
+    expect(imageLink).toHaveAccessibleName(product.title)
+  })
+
   it('clicking the quick-add button does not fire the card select-item tracking', () => {
     const product = makeProduct()
     render(
@@ -273,5 +288,25 @@ describe('ShopifyProductCard', () => {
 
     expect(screen.getByText('Dynarex')).toBeInTheDocument()
     expect(screen.queryByText('MedPlus Fulfillment')).not.toBeInTheDocument()
+  })
+
+  // DEV-RX-02 / Izzy retest on 225678bc: custom.backorder was read nowhere,
+  // so no grid card ever showed a Backorder badge regardless of the metafield.
+  it('shows the Backorder badge when custom.backorder is true', () => {
+    const product = makeProduct({ backorder: { value: 'true' } })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('renders no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
+    const product = makeProduct({ estimatedRestockDate: { value: '2099-01-01' } })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
 })

@@ -40,6 +40,7 @@ const mockLine = {
     id: 'variant-1',
     title: 'Size: M',
     sku: 'SKU-001',
+    price: { amount: '14.99', currencyCode: 'USD' },
     selectedOptions: [{ name: 'Size', value: 'M' }],
     product: {
       id: 'prod-1',
@@ -303,5 +304,68 @@ describe('CartPageClient', () => {
     setupUseCart()
     render(<CartPageClient />)
     expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
+  })
+
+  // DEV-LAUNCH-09: a line Shopify can't ship to the destination must block
+  // checkout with its own accurate message, distinct from (and possibly
+  // alongside) a price-unavailable line.
+  describe('checkout blocking', () => {
+    function cartWithLines(lines: Array<{ id: string; price: string; lineTotal: string; title?: string }>) {
+      return {
+        ...mockCart,
+        totalQuantity: lines.length,
+        lines: {
+          nodes: lines.map((l, i) => ({
+            ...mockLine,
+            id: `line-${i + 1}`,
+            merchandise: {
+              ...mockLine.merchandise,
+              id: l.id,
+              price: { amount: l.price, currencyCode: 'USD' },
+              product: { ...mockLine.merchandise.product, title: l.title ?? `Item ${i + 1}` },
+            },
+            cost: { totalAmount: { amount: l.lineTotal, currencyCode: 'USD' } },
+          })),
+        },
+      }
+    }
+
+    it('blocks checkout with the shipping message for an unshippable (priced, zero-cost) line, not a pricing message', () => {
+      setupUseCart({ cart: cartWithLines([{ id: 'v1', price: '9.99', lineTotal: '0.00', title: 'No Rate' }]) })
+      render(<CartPageClient />)
+      expect(screen.getByText('Shipping unavailable for one or more items')).toBeInTheDocument()
+      expect(screen.getByText(/cannot be shipped to your address/i)).toBeInTheDocument()
+      expect(screen.queryByText(/priced on request/i)).not.toBeInTheDocument()
+      expect(screen.getByText('Proceed to Checkout')).toHaveAttribute('aria-disabled', 'true')
+    })
+
+    it('blocks checkout with the pricing message for a genuinely zero-price line, not a shipping message', () => {
+      setupUseCart({ cart: cartWithLines([{ id: 'v1', price: '0.00', lineTotal: '0.00', title: 'Xylocaine' }]) })
+      render(<CartPageClient />)
+      expect(screen.getByText('Pricing needed before checkout')).toBeInTheDocument()
+      expect(screen.getByText(/priced on request/i)).toBeInTheDocument()
+      expect(screen.queryByText(/cannot be shipped to your address/i)).not.toBeInTheDocument()
+    })
+
+    it('shows both messages for a mixed cart holding one of each', () => {
+      setupUseCart({
+        cart: cartWithLines([
+          { id: 'v1', price: '0.00', lineTotal: '0.00', title: 'Xylocaine' },
+          { id: 'v2', price: '9.99', lineTotal: '0.00', title: 'No Rate' },
+        ]),
+      })
+      render(<CartPageClient />)
+      expect(screen.getByText('Action needed before checkout')).toBeInTheDocument()
+      expect(screen.getByText(/priced on request/i)).toBeInTheDocument()
+      expect(screen.getByText(/cannot be shipped to your address/i)).toBeInTheDocument()
+    })
+
+    it('does not block checkout for a normally priced, normally shippable cart', () => {
+      setupUseCart()
+      render(<CartPageClient />)
+      expect(screen.queryByText('Pricing needed before checkout')).not.toBeInTheDocument()
+      expect(screen.queryByText('Shipping unavailable for one or more items')).not.toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /proceed to checkout/i })).toBeInTheDocument()
+    })
   })
 })

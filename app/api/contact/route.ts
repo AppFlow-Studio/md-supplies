@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { TO_EMAIL } from '@/lib/resend'
 import { contactSchema } from '@/lib/forms/schema'
 import { sendFormEmail } from '@/lib/forms/email'
+import { readStoredAttribution, formatAttributionLine } from '@/lib/analytics/attribution'
 import {
   assertAllowedOrigin,
   assertAllowedCountry,
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
   }
 
   const { name, email, subject, message } = parsed.data
+  const attributionLine = formatAttributionLine(await readStoredAttribution())
 
   const sent = await sendFormEmail({
     to: TO_EMAIL,
@@ -59,6 +61,7 @@ export async function POST(req: Request) {
       `Name:    ${name}`,
       `Email:   ${email}`,
       `Subject: ${subject || '—'}`,
+      ...(attributionLine ? [attributionLine] : []),
       '',
       message,
     ].join('\n'),

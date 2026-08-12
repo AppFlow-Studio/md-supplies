@@ -7,7 +7,7 @@ import { ProductImage } from '@/components/shared/ProductImage'
 import { track } from '@/lib/analytics/track'
 import { buildSelectItemEvent, toGA4Item, currencyOf } from '@/lib/analytics/events'
 import { cleanShopifyAlt } from '@/lib/alt-text'
-import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
@@ -52,7 +52,13 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
     <div className="group relative bg-white flex flex-col">
       {/* Image */}
       <div className="relative overflow-hidden bg-white aspect-square">
-        <Link href={href} onClick={handleSelect} className="block w-full h-full">
+        {/* DEF-02/QA-135: this link wraps only the image — the visible title
+            lives in the separate info Link below. An explicit aria-label
+            guarantees a discernible name for screen readers rather than
+            relying on the <img>'s alt text being inherited (fragile: a
+            future decorative/empty alt on ProductImage would silently strip
+            it). */}
+        <Link href={href} onClick={handleSelect} aria-label={product.title} className="block w-full h-full">
           <ProductImage
             src={image?.url}
             alt={cleanShopifyAlt(image?.altText) ?? product.title}
@@ -92,37 +98,22 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
         {/* DEV-LABEL-01: a shipping claim comes ONLY from the resolver-backed
             ShippingBadge — the raw `free-shipping` tag fallback is gone (an
             uncurated tag must never create a shipping promise). RX/backorder
-            come from the shared label contract, so card and PDP agree. */}
-        {(() => {
-          const labels = resolveProductLabels({
+            come from the shared label contract, so card and PDP agree. Order
+            (RX -> Backorder -> Free Shipping) is guaranteed by
+            ProductLabelBadges, not by call-site markup order. */}
+        <ProductLabelBadges
+          className="mb-3"
+          labels={resolveProductLabels({
             tags: product.tags,
+            isBackordered: product.backorder ?? null,
             estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
-            availableForSale: product.availableForSale,
             // Same tag ∪ custom.is_rx_only union as the PDP and the cart gate:
             // without it the 40 ACTIVE metafield-only RX products carry no
             // "RX Only" badge on any grid.
             isRxOnly: product.isRxOnly ?? null,
-          })
-          if (!product.shippingDisplay && labels.length === 0) return null
-          return (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {product.shippingDisplay && (
-                <ShippingBadge shippingDisplay={product.shippingDisplay} />
-              )}
-              {labels.map((label) => (
-                <span
-                  key={label.type}
-                  aria-label={label.accessibleText}
-                  className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded text-white ${
-                    label.type === 'rx-only' ? 'bg-amber-600' : 'bg-orange-500'
-                  }`}
-                >
-                  {label.text}
-                </span>
-              ))}
-            </div>
-          )
-        })()}
+          })}
+          shippingDisplay={product.shippingDisplay}
+        />
         {/* Price sits at the bottom of the body (mt-auto) so every card in a
             row lines its footer up regardless of title length or label count. */}
         <div className="flex items-baseline gap-2 mt-auto">

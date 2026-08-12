@@ -22,7 +22,10 @@ export function SearchBarForm({ defaultQuery }: Props) {
             onChange={(e) => setValue(e.target.value)}
             placeholder="Search medical supplies…"
             className="flex-1 h-[48px] text-[15px] text-navy-900 placeholder:text-gray-500 outline-none bg-transparent"
-            autoFocus
+            // DEV-LAUNCH-13: autoFocus stole initial focus from the page's
+            // skip link, which every other route relies on being the first
+            // Tab stop (WCAG 2.4.1 Bypass Blocks) — see
+            // e2e/keyboard-nav.spec.ts's skip-link suite.
           />
         </div>
         <button

@@ -9,6 +9,7 @@ import { cleanShopifyAlt } from '@/lib/alt-text'
 import { publicBrand } from '@/lib/brand'
 import { resolvePurchasable, purchasabilityLabel } from '@/lib/purchasability'
 import { isRxProduct } from '@/lib/rx-gate'
+import { isBackorderedMetafield } from '@/lib/labels/labels'
 
 function toCardData(product: CollectionProduct): ProductCardData {
   const image = product.images.nodes[0]
@@ -37,6 +38,8 @@ function toCardData(product: CollectionProduct): ProductCardData {
     sku: '',
     available: product.availableForSale,
     shippingDisplay: product.shippingDisplay ?? null,
+    isBackordered: isBackorderedMetafield(product.backorder),
+    backorderRestockDate: product.estimatedRestockDate?.value ?? null,
     // Shared union (tag ∪ custom.is_rx_only), never a local re-implementation:
     // this used to hand-roll a tag-only check, which silently NARROWED RX
     // detection on grid cards versus the PDP and cart. Detection lives in one

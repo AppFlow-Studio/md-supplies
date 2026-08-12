@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { CartProvider } from '@/components/store/CartProvider'
 import { CartPopup } from '@/components/store/CartPopup'
+import { CartToast } from '@/components/store/CartToast'
 import { SkipLink } from '@/components/a11y/SkipLink'
 import { Suspense } from 'react'
 import { GoogleTagManager } from '@next/third-parties/google'
@@ -94,6 +95,10 @@ export default async function RootLayout({
             availableCountries={availableCountries}
           />
           <CartPopup />
+          {/* Global: surfaces a refused cart change (DEF-08/QA-092) no matter
+              which surface triggered it — popup, quick-add, or the /cart
+              page — instead of only the /cart page hearing about it. */}
+          <CartToast />
         </CartProvider>
       </body>
     </html>

@@ -16,6 +16,12 @@ const CART_FRAGMENT = `#graphql
             id
             title
             sku
+            # The variant's own unit price, distinct from this line's cost
+            # below: a no-rate-for-destination line still carries a positive
+            # price here even though its cost.totalAmount is zeroed out. This
+            # is what lets the cart tell a genuinely unpriced product apart
+            # from a priced one Shopify simply can't ship (DEV-LAUNCH-09).
+            price { amount currencyCode }
             selectedOptions { name value }
             product {
               id
@@ -28,6 +34,9 @@ const CART_FRAGMENT = `#graphql
               # prescription products carry the metafield but no tag).
               # See lib/rx-gate.ts and the 2026-08-02 catalog audit.
               isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
+              # DEV-LABEL-01: single backorder source, shared with the card/PDP.
+              estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+              backorder: metafield(namespace: "custom", key: "backorder") { value }
               images(first: 1) {
                 nodes { id url altText width height }
               }

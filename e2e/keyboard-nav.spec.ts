@@ -1,6 +1,5 @@
 // e2e/keyboard-nav.spec.ts
 import { test, expect } from '@playwright/test'
-import { VIEWPORTS } from './support/viewports'
 
 const ROUTES_WITH_SKIP_LINK = [
   '/', '/about', '/search', '/faq', '/contact', '/categories',

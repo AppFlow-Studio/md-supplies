@@ -7,9 +7,20 @@ vi.mock('next/server', () => ({
     rewrite: (url: URL) =>
       new Response(null, { status: 200, headers: { 'x-middleware-rewrite': url.toString() } }),
     next: (init?: { request?: { headers?: Headers } }) => {
-      const res = new Response(null, { status: 200 })
+      const res = new Response(null, { status: 200 }) as Response & {
+        cookies: { set: (name: string, value: string, opts?: Record<string, unknown>) => void }
+      }
       if (init?.request?.headers) {
         res.headers.set('x-nonce-forwarded', init.request.headers.get('x-nonce') ?? '')
+      }
+      // Minimal stand-in for NextResponse's cookie jar — real enough to assert
+      // Set-Cookie was (or wasn't) written, without pulling in the actual
+      // next/server implementation this suite deliberately mocks around.
+      res.cookies = {
+        set: (name, value, opts) => {
+          const maxAge = opts?.maxAge ? `; Max-Age=${opts.maxAge}` : ''
+          res.headers.append('Set-Cookie', `${name}=${value}${maxAge}`)
+        },
       }
       return res
     },
@@ -31,7 +42,7 @@ function expectPassThrough(res: Response): void {
   expect(res.headers.get('x-middleware-rewrite')).toBeNull()
 }
 
-function req(pathname: string, search = ''): NextRequest {
+function req(pathname: string, search = '', existingCookies: string[] = []): NextRequest {
   const base = 'https://mdsupplies.com'
   const url = new URL(`${base}${pathname}${search}`)
   return {
@@ -42,6 +53,7 @@ function req(pathname: string, search = ''): NextRequest {
       clone: () => new URL(url.toString()),
     },
     url: `${base}${pathname}${search}`,
+    cookies: { has: (name: string) => existingCookies.includes(name) },
   } as unknown as NextRequest
 }
 
@@ -180,6 +192,31 @@ describe('proxy — item-level 410 Gone entries', () => {
     // Inbound URL has + signs; proxy normalizes to spaces before matching
     const res = proxy(req('/medical-supplies-Thorne+Research-VeganPro+Complex+Vanilla-WQEMF6Q8IH.html'))
     expect(res?.status).toBe(410)
+  })
+
+  it('trailing-slash normalization: item-level 410 still matches with a trailing slash', () => {
+    const res = proxy(req('/medical-supply-store/Pharmaceuticals/Injectables-U1GD8BVMR5.html/'))
+    expect(res?.status).toBe(410)
+  })
+})
+
+describe('proxy — trailing-slash normalization (DEV-LAUNCH-12)', () => {
+  it('static 301 entry still matches with a trailing slash', () => {
+    const res = proxy(req('/Medical-Supply-Store.html/'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/categories')
+  })
+
+  it('bulk product redirect still matches with a trailing slash', () => {
+    const withSlash = proxy(req(`${PRODUCT_ROWS[0].from}/`))
+    const withoutSlash = proxy(req(PRODUCT_ROWS[0].from))
+    expect(withSlash?.status).toBe(301)
+    expect(withSlash?.headers.get('Location')).toBe(withoutSlash?.headers.get('Location'))
+  })
+
+  it('root "/" is never stripped down to an empty pathname', () => {
+    const res = proxy(req('/'))
+    expectPassThrough(res)
   })
 })
 
@@ -445,5 +482,25 @@ describe('proxy — CSP + nonce (M10)', () => {
   it('rewrites still carry the CSP headers', () => {
     const res = proxy(req('/category/gloves', '?page=2'))
     expect(res.headers.get('Content-Security-Policy')).toBeTruthy()
+  })
+})
+
+describe('proxy — first-touch gclid/utm attribution capture (DEV-LAUNCH-12)', () => {
+  it('captures gclid + utm_* into a durable cookie on a pass-through request', () => {
+    const res = proxy(req('/category/gloves', '?gclid=abc123&utm_source=google&utm_medium=cpc'))
+    const setCookie = res.headers.get('Set-Cookie')
+    expect(setCookie).toContain('md_attr=')
+    const value = decodeURIComponent(setCookie!.split('md_attr=')[1].split(';')[0])
+    expect(JSON.parse(value)).toEqual({ gclid: 'abc123', utm_source: 'google', utm_medium: 'cpc' })
+  })
+
+  it('does not write a cookie when the request carries no tracking params', () => {
+    const res = proxy(req('/category/gloves'))
+    expect(res.headers.get('Set-Cookie')).toBeNull()
+  })
+
+  it('does not overwrite an existing capture (first-touch, not last-touch)', () => {
+    const res = proxy(req('/category/gloves', '?gclid=second-click', ['md_attr']))
+    expect(res.headers.get('Set-Cookie')).toBeNull()
   })
 })

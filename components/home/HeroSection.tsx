@@ -5,6 +5,8 @@ import type { CollectionProduct } from "@/lib/shopify/types";
 import { Van } from "lucide-react";
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { OCC_PANEL_HEADING, OCC_PANEL_SUBHEAD, OCC_PANEL_CTA } from '@/lib/occ-copy'
+import { resolveProductLabels } from '@/lib/labels/labels'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 
 interface Props {
   products: CollectionProduct[];
@@ -37,7 +39,19 @@ function ProductCard({ product, priority = false }: { product: CollectionProduct
       </div>
       <div className="p-3 flex flex-col gap-0.5">
         <p className="text-[14px] font-semibold text-navy-900 leading-snug line-clamp-2">{product.title}</p>
-        {/* No vendor: it is the fulfilling vendor, not a brand (lib/brand.ts). */}
+        {/* No vendor: it is the fulfilling vendor, not a brand (lib/brand.ts).
+            Order (RX -> Backorder -> Free Shipping) guaranteed by
+            ProductLabelBadges. */}
+        <ProductLabelBadges
+          className="mt-1 mb-0.5"
+          labels={resolveProductLabels({
+            tags: product.tags,
+            isRxOnly: product.isRxOnly,
+            isBackordered: product.backorder,
+            estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
+          })}
+          shippingDisplay={product.shippingDisplay}
+        />
         <p className="text-[12px] text-gray-500">From ${price.toFixed(2)}</p>
       </div>
     </Link>

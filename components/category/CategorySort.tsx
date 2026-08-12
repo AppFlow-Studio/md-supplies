@@ -17,6 +17,7 @@ const SORT_OPTIONS = [
 interface Props {
   currentSort?: string
   activeFilters: string[]
+  q?: string
   // Tag-sourced (L2) pages run on Shopify's search() field, whose
   // SearchSortKeys only supports RELEVANCE/PRICE — BEST_SELLING and CREATED
   // silently degrade to Featured-identical results (see
@@ -26,7 +27,7 @@ interface Props {
   limitedSortOptions?: boolean
 }
 
-export function CategorySort({ currentSort, activeFilters, limitedSortOptions }: Props) {
+export function CategorySort({ currentSort, activeFilters, q, limitedSortOptions }: Props) {
   const { navigate } = useCatalogTransition()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -40,6 +41,7 @@ export function CategorySort({ currentSort, activeFilters, limitedSortOptions }:
 
   const handleSelect = (value: string) => {
     const params = new URLSearchParams()
+    if (q) params.set('q', q)
     if (value !== 'COLLECTION_DEFAULT') params.set('sort', value)
     activeFilters.forEach((f) => params.append('filter', f))
     withTrackingParams(params, searchParams)

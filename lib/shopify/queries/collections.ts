@@ -79,6 +79,7 @@ export const GET_COLLECTION = `#graphql
           # field (the fulfilling vendor) — see lib/brand.ts.
           brandName: metafield(namespace: "custom", key: "brand_name") { value }
           estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+          backorder: metafield(namespace: "custom", key: "backorder") { value }
           # The store's own RX declaration. Selected here so grid cards can
           # evaluate the SAME tag∪metafield union as the PDP and the cart
           # (lib/rx-gate.ts). Without it the 40 ACTIVE metafield-only RX

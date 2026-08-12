@@ -41,7 +41,7 @@ export function ProductGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[23px]">
+    <div data-testid="product-grid" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[23px]">
       <ViewItemListTracker products={products} itemListId={itemListId} itemListName={itemListName} />
       {products.map((product, index) => (
         <ShopifyProductCard

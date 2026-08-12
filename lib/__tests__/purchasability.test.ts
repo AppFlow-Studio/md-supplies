@@ -6,7 +6,9 @@ import {
   purchasabilityCta,
   blockedCartLines,
   blockedCheckoutMessage,
+  getDefaultVariant,
   type CartLineLike,
+  type VariantForDefault,
 } from '../purchasability'
 
 /**
@@ -67,15 +69,19 @@ describe('labels keep the states distinct', () => {
 describe('blockedCartLines', () => {
   const line = (amount: string | null | undefined, title = 'Item'): CartLineLike => ({
     quantity: 1,
-    cost: amount === undefined ? undefined : { totalAmount: amount === null ? null : { amount } },
-    merchandise: { id: `gid://v/${title}`, title, product: { title } },
+    merchandise: {
+      id: `gid://v/${title}`,
+      title,
+      price: amount === undefined ? undefined : amount === null ? null : { amount },
+      product: { title },
+    },
   })
 
   it('passes a normally priced cart', () => {
     expect(blockedCartLines([line('19.99'), line('5.00')])).toEqual([])
   })
 
-  it('blocks zero-total and missing-total lines and names them', () => {
+  it('blocks zero-price and missing-price lines and names them', () => {
     const blocked = blockedCartLines([line('19.99', 'Gloves'), line('0.00', 'Xylocaine'), line(null, 'Mystery')])
     expect(blocked.map((b) => b.title)).toEqual(['Xylocaine', 'Mystery'])
     expect(blocked.every((b) => b.reason === 'price-unavailable')).toBe(true)
@@ -85,8 +91,20 @@ describe('blockedCartLines', () => {
     expect(blockedCartLines([line('not-a-number')])).toHaveLength(1)
   })
 
-  it('handles a completely absent cost object', () => {
+  it('handles a completely absent price object', () => {
     expect(blockedCartLines([line(undefined)])).toHaveLength(1)
+  })
+
+  // DEV-LAUNCH-09: a line Shopify can't ship to the destination also zeroes
+  // out its cost.totalAmount while the variant's own price stays positive.
+  // blockedCartLines must not catch that case and mislabel it a pricing
+  // problem — that's lib/shopify/cart-lines.ts#unshippableCartLines' job.
+  it('does not block a priced line whose cost happens to be zero (that is a shipping problem, not a pricing one)', () => {
+    const priced: CartLineLike = {
+      quantity: 1,
+      merchandise: { id: 'gid://v/NoRate', title: 'No Rate', price: { amount: '9.99' }, product: { title: 'No Rate' } },
+    }
+    expect(blockedCartLines([priced])).toEqual([])
   })
 })
 
@@ -111,5 +129,44 @@ describe('blockedCheckoutMessage', () => {
     ])
     expect(msg).toContain('Xylocaine')
     expect(msg).toContain('Bupivacaine')
+  })
+})
+
+describe('getDefaultVariant', () => {
+  // DEV-LAUNCH-12: this is the single source both the rendered PDP
+  // (ProductView) and its Product structured data (app/product/[slug]/page.tsx)
+  // must build from, or the two can disagree on price/SKU/availability for
+  // the same page.
+  function variant(overrides: Partial<VariantForDefault> = {}): VariantForDefault {
+    return { price: { amount: '19.99' }, availableForSale: true, ...overrides }
+  }
+
+  it('skips a leading $0/quote-only variant in favor of a purchasable one', () => {
+    const zero = variant({ price: { amount: '0' } })
+    const purchasable = variant({ price: { amount: '25' } })
+    expect(getDefaultVariant([zero, purchasable])).toBe(purchasable)
+  })
+
+  it('skips a leading out-of-stock variant in favor of a purchasable one', () => {
+    const oos = variant({ availableForSale: false })
+    const purchasable = variant()
+    expect(getDefaultVariant([oos, purchasable])).toBe(purchasable)
+  })
+
+  it('falls back to the first available (but unpurchasable) variant when none is purchasable', () => {
+    const unpricedAndOos = variant({ price: { amount: '0' }, availableForSale: false })
+    const unpricedButAvailable = variant({ price: { amount: '0' }, availableForSale: true })
+    expect(getDefaultVariant([unpricedAndOos, unpricedButAvailable])).toBe(unpricedButAvailable)
+  })
+
+  it('falls back to variants[0] when nothing is purchasable or available', () => {
+    const first = variant({ price: { amount: '0' }, availableForSale: false })
+    const second = variant({ price: { amount: '0' }, availableForSale: false })
+    expect(getDefaultVariant([first, second])).toBe(first)
+  })
+
+  it('returns the sole variant unchanged when it is already purchasable', () => {
+    const only = variant()
+    expect(getDefaultVariant([only])).toBe(only)
   })
 })
