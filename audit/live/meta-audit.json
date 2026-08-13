@@ -1,0 +1,245 @@
+{
+  "rows": [
+    {
+      "kind": "category",
+      "route": "/category/gloves",
+      "title": "Exam Gloves | Nitrile, Latex & Vinyl | MDSupplies",
+      "description": "Shop gloves at wholesale prices — nitrile, latex, and vinyl, exam and surgical, powder-free options in all sizes. Bulk case pricing for facilities.",
+      "h1": "Medical Gloves",
+      "ogDescription": "Shop gloves at wholesale prices — nitrile, latex, and vinyl, exam and surgical, powder-free options in all sizes. Bulk case pricing for facilities."
+    },
+    {
+      "kind": "category",
+      "route": "/category/wound-care",
+      "title": "Wound Care Supplies for Healthcare | MDSupplies",
+      "description": "Shop wound care supplies at wholesale prices — gauze, dressings, bandages, and irrigation kits for clinics, urgent care, and home health agencies.",
+      "h1": "Wound Care Supplies",
+      "ogDescription": "Shop wound care supplies at wholesale prices — gauze, dressings, bandages, and irrigation kits for clinics, urgent care, and home health agencies."
+    },
+    {
+      "kind": "category",
+      "route": "/category/needles-syringes",
+      "title": "Needles & Syringes | All Gauges & Sizes | MDSupplies",
+      "description": "Shop needles and syringes at wholesale prices — hypodermic needles in all gauges, insulin syringes, and safety-engineered options. Bulk case pricing.",
+      "h1": "Needles & Syringes",
+      "ogDescription": "Shop needles and syringes at wholesale prices — hypodermic needles in all gauges, insulin syringes, and safety-engineered options. Bulk case pricing."
+    },
+    {
+      "kind": "category",
+      "route": "/category/surgical-sutures",
+      "title": "Surgical Sutures | All Types & Sizes | MDSupplies",
+      "description": "Shop surgical sutures at wholesale prices — absorbable, non-absorbable, monofilament, and braided sutures in all clinical sizes. Bulk ordering available.",
+      "h1": "Surgical Sutures",
+      "ogDescription": "Shop surgical sutures at wholesale prices — absorbable, non-absorbable, monofilament, and braided sutures in all clinical sizes. Bulk ordering available."
+    },
+    {
+      "kind": "category",
+      "route": "/category/testing-screening",
+      "title": "Testing — MDSupplies",
+      "description": "Explore a wide range of testing & screening products: rapid drug tests, COVID-19 kits, flu A&B tests, STD screenings, and women's health diagnostics.",
+      "h1": "Testing",
+      "ogDescription": "Explore a wide range of testing & screening products: rapid drug tests, COVID-19 kits, flu A&B tests, STD screenings, and women's health diagnostics."
+    },
+    {
+      "kind": "category",
+      "route": "/category/exam-room",
+      "title": "Exam Room — MDSupplies",
+      "description": "Exam room supplies are essential for doctor visits, including items like cotton balls, alcohol prep pads, table paper, skin prep, tourniquets, and tray",
+      "h1": "Exam Room",
+      "ogDescription": "Exam room supplies are essential for doctor visits, including items like cotton balls, alcohol prep pads, table paper, skin prep, tourniquets, and tray"
+    },
+    {
+      "kind": "category",
+      "route": "/category/respiratory",
+      "title": "Respiratory — MDSupplies",
+      "description": "Our Respiratory collection offers a comprehensive range of high-quality products designed to support effective respiratory care across various medical",
+      "h1": "Respiratory",
+      "ogDescription": "Our Respiratory collection offers a comprehensive range of high-quality products designed to support effective respiratory care across various medical"
+    },
+    {
+      "kind": "category",
+      "route": "/category/mobility",
+      "title": "Mobility Supplies & DME | Wholesale | MDSupplies",
+      "description": "Shop mobility supplies at wholesale prices — wheelchairs, walkers, rollators, canes, and mobility aids for home health, long-term care, and PT practices.",
+      "h1": "Mobility Supplies & Equipment",
+      "ogDescription": "Shop mobility supplies at wholesale prices — wheelchairs, walkers, rollators, canes, and mobility aids for home health, long-term care, and PT practices."
+    },
+    {
+      "kind": "category",
+      "route": "/category/patient-therapy-rehab",
+      "title": "Patient Therapy & Rehab — MDSupplies",
+      "description": "Explore MDSupplies' comprehensive Patient Therapy & Rehab collection, featuring top-quality products designed to support physical therapy, rehabilitation,",
+      "h1": "Patient Therapy & Rehab",
+      "ogDescription": "Explore MDSupplies' comprehensive Patient Therapy & Rehab collection, featuring top-quality products designed to support physical therapy, rehabilitation,"
+    },
+    {
+      "kind": "category",
+      "route": "/category/trocars-trocar-kits",
+      "title": "Surgery & Procedure — MDSupplies",
+      "description": "Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.",
+      "h1": "Surgery & Procedure",
+      "ogDescription": "Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures."
+    },
+    {
+      "kind": "category",
+      "route": "/category/capes-gowns",
+      "title": "Apparel — MDSupplies",
+      "description": "Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.",
+      "h1": "Apparel",
+      "ogDescription": "Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients."
+    },
+    {
+      "kind": "category",
+      "route": "/category/hygiene",
+      "title": "Hygiene — MDSupplies",
+      "description": "Hygiene products are vital medical supplies, including soap, cleansers, deodorant, razors, nail care tools, and ear cleaning items. Lotions, rinse-free",
+      "h1": "Hygiene",
+      "ogDescription": "Hygiene products are vital medical supplies, including soap, cleansers, deodorant, razors, nail care tools, and ear cleaning items. Lotions, rinse-free"
+    },
+    {
+      "kind": "category",
+      "route": "/category/disinfectants",
+      "title": "Disinfectants — MDSupplies",
+      "description": "Maintain a safe and hygienic environment with our comprehensive Disinfectants collection, featuring top-quality products from trusted brands. Our",
+      "h1": "Disinfectants",
+      "ogDescription": "Maintain a safe and hygienic environment with our comprehensive Disinfectants collection, featuring top-quality products from trusted brands. Our"
+    },
+    {
+      "kind": "category",
+      "route": "/category/home-care",
+      "title": "Home Care — MDSupplies",
+      "description": "Home Care products are essential to daily living for those who are injured or ill. Whether it be short-term or long-term, home care products such as Fully",
+      "h1": "Home Care",
+      "ogDescription": "Home Care products are essential to daily living for those who are injured or ill. Whether it be short-term or long-term, home care products such as Fully"
+    },
+    {
+      "kind": "category",
+      "route": "/category/emergency-supplies",
+      "title": "Emergency Supplies — MDSupplies",
+      "description": "Be ready for any critical situation with our emergency supplies collection, featuring over 180 essential products from trusted brands. Our selection",
+      "h1": "Emergency Supplies",
+      "ogDescription": "Be ready for any critical situation with our emergency supplies collection, featuring over 180 essential products from trusted brands. Our selection"
+    },
+    {
+      "kind": "category",
+      "route": "/category/incontinence",
+      "title": "Incontinence Products | MDSupplies — MDSupplies",
+      "description": "Shop incontinence supplies: briefs, underpads, wipes, feminine hygiene, perineal care & skin protectants at MDSupplies. Affordable, bulk, and fast",
+      "h1": "Incontinence",
+      "ogDescription": "Shop incontinence supplies: briefs, underpads, wipes, feminine hygiene, perineal care & skin protectants at MDSupplies. Affordable, bulk, and fast"
+    },
+    {
+      "kind": "category",
+      "route": "/category/iv-therapy",
+      "title": "IV Therapy — MDSupplies",
+      "description": "Our IV Therapy collection offers a comprehensive range of high-quality supplies essential for effective intravenous treatments. From IV administration",
+      "h1": "IV Therapy",
+      "ogDescription": "Our IV Therapy collection offers a comprehensive range of high-quality supplies essential for effective intravenous treatments. From IV administration"
+    },
+    {
+      "kind": "category",
+      "route": "/category/urology-ostomy",
+      "title": "Urology & Ostomy — MDSupplies",
+      "description": "Our Urology & Ostomy collection offers a comprehensive range of high-quality medical supplies essential for effective urological and ostomy care.",
+      "h1": "Urology & Ostomy",
+      "ogDescription": "Our Urology & Ostomy collection offers a comprehensive range of high-quality medical supplies essential for effective urological and ostomy care."
+    },
+    {
+      "kind": "category",
+      "route": "/category/sterilization",
+      "title": "Sterilization — MDSupplies",
+      "description": "Our Sterilization collection offers a comprehensive selection of high-quality products designed to ensure the safe and effective sterilization of medical",
+      "h1": "Sterilization",
+      "ogDescription": "Our Sterilization collection offers a comprehensive selection of high-quality products designed to ensure the safe and effective sterilization of medical"
+    },
+    {
+      "kind": "category",
+      "route": "/category/dental",
+      "title": "Dental — MDSupplies",
+      "description": "Browse a wide selection of premium dental supplies featuring trusted brands, all at affordable prices. From dental needles and fluoride trays to",
+      "h1": "Dental",
+      "ogDescription": "Browse a wide selection of premium dental supplies featuring trusted brands, all at affordable prices. From dental needles and fluoride trays to"
+    },
+    {
+      "kind": "category",
+      "route": "/category/housekeeping-janitorial",
+      "title": "Housekeeping & Janitorial — MDSupplies",
+      "description": "Housekeeping and janitorial supplies are essential for homes, hospitality, and healthcare, including items like zip lock bags, air fresheners, paper",
+      "h1": "Housekeeping & Janitorial",
+      "ogDescription": "Housekeeping and janitorial supplies are essential for homes, hospitality, and healthcare, including items like zip lock bags, air fresheners, paper"
+    },
+    {
+      "kind": "category",
+      "route": "/category/bariatric",
+      "title": "Bariatric — MDSupplies",
+      "description": "A bariatric individual is someone who carries excess body fat, which can impact their health and daily life. When a person's body mass index (BMI) equals",
+      "h1": "Bariatric",
+      "ogDescription": "A bariatric individual is someone who carries excess body fat, which can impact their health and daily life. When a person's body mass index (BMI) equals"
+    },
+    {
+      "kind": "category",
+      "route": "/category/seating",
+      "title": "Room Furniture — MDSupplies",
+      "description": "Seating, exam tables, cabinets, and room furnishings for treatment, consultation, and patient-care spaces.",
+      "h1": "Room Furniture",
+      "ogDescription": "Seating, exam tables, cabinets, and room furnishings for treatment, consultation, and patient-care spaces."
+    },
+    {
+      "kind": "category",
+      "route": "/category/face-masks",
+      "title": "Medical Face Masks | Surgical & Disposable | MDSupplies",
+      "description": "Shop medical face masks at wholesale prices — surgical, procedure, and N95 masks for clinics, urgent care, and healthcare facilities. Bulk case ordering.",
+      "h1": "Medical Face Masks",
+      "ogDescription": "Shop medical face masks at wholesale prices — surgical, procedure, and N95 masks for clinics, urgent care, and healthcare facilities. Bulk case ordering."
+    },
+    {
+      "kind": "category",
+      "route": "/category/pharmacy-products",
+      "title": "Pharmacy Supplies & Dispensing Products | MDSupplies",
+      "description": "Shop pharmacy supplies at wholesale prices — prescription vials, labels, oral syringes, and dispensing accessories for retail and compounding pharmacies.",
+      "h1": "Pharmacy Supplies",
+      "ogDescription": "Shop pharmacy supplies at wholesale prices — prescription vials, labels, oral syringes, and dispensing accessories for retail and compounding pharmacies."
+    },
+    {
+      "kind": "industry",
+      "route": "/industries/urgent-care",
+      "title": "Urgent Care Medical Supplies | Bulk Ordering | MDSupplies",
+      "description": "Wholesale medical supplies for urgent care centers — exam gloves, wound care, rapid diagnostic tests, and IV supplies with bulk ordering and B2B accounts.",
+      "h1": "Urgent Care Supplies",
+      "ogDescription": "Wholesale medical supplies for urgent care centers — exam gloves, wound care, rapid diagnostic tests, and IV supplies with bulk ordering and B2B accounts."
+    },
+    {
+      "kind": "industry",
+      "route": "/industries/hrt-clinics",
+      "title": "HRT Clinic Medical Supplies | Trocars & Syringes | MDSupplies",
+      "description": "Wholesale supplies for HRT clinics — trocar kits, needles, syringes, and specialized injection supplies for pellet insertion and hormone therapy procedures.",
+      "h1": "HRT Clinic Supplies",
+      "ogDescription": "Wholesale supplies for HRT clinics — trocar kits, needles, syringes, and specialized injection supplies for pellet insertion and hormone therapy procedures."
+    },
+    {
+      "kind": "industry",
+      "route": "/industries/home-health",
+      "title": "Home Health Medical Supplies | Agency Pricing | MDSupplies",
+      "description": "Wholesale home health supplies for agencies and visiting nurses — wound care, incontinence products, gloves, and mobility aids at agency pricing.",
+      "h1": "Home Health Supplies",
+      "ogDescription": "Wholesale home health supplies for agencies and visiting nurses — wound care, incontinence products, gloves, and mobility aids at agency pricing."
+    },
+    {
+      "kind": "industry",
+      "route": "/industries/clinics-doctors-offices",
+      "title": "Clinic & Doctor Office Supplies | Wholesale | MDSupplies",
+      "description": "Wholesale supplies for clinics and private practices — exam room essentials, gloves, diagnostic supplies, and consumables with bulk and recurring orders.",
+      "h1": "Supplies for Clinics & Doctor's Offices",
+      "ogDescription": "Wholesale supplies for clinics and private practices — exam room essentials, gloves, diagnostic supplies, and consumables with bulk and recurring orders."
+    },
+    {
+      "kind": "industry",
+      "route": "/industries/pharmacies",
+      "title": "Pharmacy Medical Supplies | Wholesale Pricing | MDSupplies",
+      "description": "Wholesale pharmacy supplies for retail and compounding pharmacies — prescription vials, diabetic care, incontinence, and front-end medical inventory.",
+      "h1": "Supplies for Pharmacies",
+      "ogDescription": "Wholesale pharmacy supplies for retail and compounding pharmacies — prescription vials, diabetic care, incontinence, and front-end medical inventory."
+    }
+  ],
+  "problems": []
+}

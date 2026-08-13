@@ -17,7 +17,7 @@ export default function ContactPage() {
           <h1 className="text-navy-900 text-[32px] font-bold mb-2">Contact Us</h1>
           <p className="text-gray-500 text-[15px] leading-[1.75] mb-6">
             Have a question about an order or product availability?
-            Fill out the form and our team will get back to you within one business day.
+            Fill out the form and our team will get back to you as soon as possible.
           </p>
 
           {/* Visible NAP (M12): same source as the footer and the

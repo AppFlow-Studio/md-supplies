@@ -1,0 +1,1614 @@
+[
+  {
+    "route": "/category/gloves",
+    "source": "collection:gloves",
+    "total": 445,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 10
+      },
+      {
+        "label": "Type",
+        "values": 8
+      },
+      {
+        "label": "Material",
+        "values": 6
+      },
+      {
+        "label": "Glove Size",
+        "values": 6
+      },
+      {
+        "label": "Size",
+        "values": 10
+      },
+      {
+        "label": "Thickness",
+        "values": 10
+      },
+      {
+        "label": "Other Features",
+        "values": 17
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Color",
+        "values": 13
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 26
+      },
+      {
+        "label": "Price",
+        "values": null
+      },
+      {
+        "label": "Certification",
+        "values": 2
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "features",
+      "use"
+    ]
+  },
+  {
+    "route": "/category/wound-care",
+    "source": "collection:wound-care",
+    "total": 724,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 64
+      },
+      {
+        "label": "Type",
+        "values": 18
+      },
+      {
+        "label": "Size",
+        "values": 100
+      },
+      {
+        "label": "Other Features",
+        "values": 21
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Color",
+        "values": 9
+      },
+      {
+        "label": "Order Size",
+        "values": 5
+      },
+      {
+        "label": "Brand Name",
+        "values": 17
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/needles-syringes",
+    "source": "collection:needles-syringes",
+    "total": 628,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 62
+      },
+      {
+        "label": "Type",
+        "values": 16
+      },
+      {
+        "label": "Needle Gauge",
+        "values": 18
+      },
+      {
+        "label": "Needle Length",
+        "values": 29
+      },
+      {
+        "label": "Size",
+        "values": 16
+      },
+      {
+        "label": "Features",
+        "values": 4
+      },
+      {
+        "label": "Other Features",
+        "values": 63
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 24
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/surgical-sutures",
+    "source": "collection:surgical-sutures",
+    "total": 192,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 13
+      },
+      {
+        "label": "Type",
+        "values": 2
+      },
+      {
+        "label": "Material",
+        "values": 12
+      },
+      {
+        "label": "Other Features",
+        "values": 21
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 8
+      },
+      {
+        "label": "Order Size",
+        "values": 2
+      },
+      {
+        "label": "Brand Name",
+        "values": 5
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "size_length_",
+      "needle_length",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/testing-screening",
+    "source": "collection:testing-screening",
+    "total": 175,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 52
+      },
+      {
+        "label": "Type",
+        "values": 16
+      },
+      {
+        "label": "Tests For",
+        "values": 32
+      },
+      {
+        "label": "Detectable Drugs",
+        "values": 30
+      },
+      {
+        "label": "Size",
+        "values": 1
+      },
+      {
+        "label": "Features",
+        "values": 1
+      },
+      {
+        "label": "Other Features",
+        "values": 4
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 5
+      },
+      {
+        "label": "Brand Name",
+        "values": 43
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "adulterants",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/exam-room",
+    "source": "collection:exam-room",
+    "total": 845,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 100
+      },
+      {
+        "label": "Type",
+        "values": 6
+      },
+      {
+        "label": "Material",
+        "values": 1
+      },
+      {
+        "label": "Size",
+        "values": 32
+      },
+      {
+        "label": "Features",
+        "values": 1
+      },
+      {
+        "label": "Other Features",
+        "values": 5
+      },
+      {
+        "label": "Use",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 10
+      },
+      {
+        "label": "Order Size",
+        "values": 4
+      },
+      {
+        "label": "Brand Name",
+        "values": 21
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Sterility"
+    ],
+    "registeredNotLive": [
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/respiratory",
+    "source": "collection:respiratory",
+    "total": 408,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 38
+      },
+      {
+        "label": "Type",
+        "values": 1
+      },
+      {
+        "label": "Size",
+        "values": 9
+      },
+      {
+        "label": "Other Features",
+        "values": 16
+      },
+      {
+        "label": "Order Size",
+        "values": 5
+      },
+      {
+        "label": "Brand Name",
+        "values": 15
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "features",
+      "sterility",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/mobility",
+    "source": "collection:mobility",
+    "total": 646,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 45
+      },
+      {
+        "label": "Type",
+        "values": 7
+      },
+      {
+        "label": "Size",
+        "values": 12
+      },
+      {
+        "label": "Other Features",
+        "values": 23
+      },
+      {
+        "label": "Color",
+        "values": 11
+      },
+      {
+        "label": "Order Size",
+        "values": 5
+      },
+      {
+        "label": "Brand Name",
+        "values": 12
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/patient-therapy-rehab",
+    "source": "collection:patient-therapy-rehab",
+    "total": 299,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 49
+      },
+      {
+        "label": "Size",
+        "values": 37
+      },
+      {
+        "label": "Use",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 4
+      },
+      {
+        "label": "Brand Name",
+        "values": 19
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "type",
+      "material",
+      "features",
+      "other_features",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/trocars-trocar-kits",
+    "source": "tag:category:surgery-procedure",
+    "total": 319,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 43
+      },
+      {
+        "label": "Type",
+        "values": 4
+      },
+      {
+        "label": "Material",
+        "values": 6
+      },
+      {
+        "label": "Size",
+        "values": 42
+      },
+      {
+        "label": "Features",
+        "values": 1
+      },
+      {
+        "label": "Other Features",
+        "values": 14
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Use",
+        "values": 2
+      },
+      {
+        "label": "Color",
+        "values": 2
+      },
+      {
+        "label": "Order Size",
+        "values": 5
+      },
+      {
+        "label": "Brand Name",
+        "values": 24
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Glove Size"
+    ],
+    "registeredNotLive": [
+      "needle_gauge",
+      "needle_length",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/capes-gowns",
+    "source": "tag:category:apparel",
+    "total": 152,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 31
+      },
+      {
+        "label": "Type",
+        "values": 6
+      },
+      {
+        "label": "Material",
+        "values": 1
+      },
+      {
+        "label": "Size",
+        "values": 16
+      },
+      {
+        "label": "Other Features",
+        "values": 7
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Use",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 8
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 11
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "features",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/hygiene",
+    "source": "collection:hygiene",
+    "total": 256,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 69
+      },
+      {
+        "label": "Type",
+        "values": 3
+      },
+      {
+        "label": "Size",
+        "values": 26
+      },
+      {
+        "label": "Features",
+        "values": 3
+      },
+      {
+        "label": "Other Features",
+        "values": 14
+      },
+      {
+        "label": "Use",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 6
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 18
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Sterility"
+    ],
+    "registeredNotLive": [
+      "material",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/disinfectants",
+    "source": "collection:disinfectants",
+    "total": 35,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 6
+      },
+      {
+        "label": "Type",
+        "values": 1
+      },
+      {
+        "label": "Size",
+        "values": 5
+      },
+      {
+        "label": "Other Features",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 2
+      },
+      {
+        "label": "Brand Name",
+        "values": 13
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Sterility"
+    ],
+    "registeredNotLive": [
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/home-care",
+    "source": "collection:home-care",
+    "total": 429,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 76
+      },
+      {
+        "label": "Type",
+        "values": 2
+      },
+      {
+        "label": "Size",
+        "values": 2
+      },
+      {
+        "label": "Other Features",
+        "values": 6
+      },
+      {
+        "label": "Color",
+        "values": 5
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 17
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/emergency-supplies",
+    "source": "collection:emergency-supplies",
+    "total": 359,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 38
+      },
+      {
+        "label": "Type",
+        "values": 4
+      },
+      {
+        "label": "Material",
+        "values": 2
+      },
+      {
+        "label": "Size",
+        "values": 7
+      },
+      {
+        "label": "Other Features",
+        "values": 36
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 8
+      },
+      {
+        "label": "Order Size",
+        "values": 2
+      },
+      {
+        "label": "Brand Name",
+        "values": 15
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/incontinence",
+    "source": "collection:incontinence",
+    "total": 121,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 16
+      },
+      {
+        "label": "Type",
+        "values": 3
+      },
+      {
+        "label": "Size",
+        "values": 24
+      },
+      {
+        "label": "Other Features",
+        "values": 3
+      },
+      {
+        "label": "Use",
+        "values": 2
+      },
+      {
+        "label": "Color",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 2
+      },
+      {
+        "label": "Brand Name",
+        "values": 15
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Sterility"
+    ],
+    "registeredNotLive": [
+      "material",
+      "features",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/iv-therapy",
+    "source": "collection:iv-therapy",
+    "total": 78,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 10
+      },
+      {
+        "label": "Type",
+        "values": 3
+      },
+      {
+        "label": "Needle Gauge",
+        "values": 4
+      },
+      {
+        "label": "Needle Length",
+        "values": 3
+      },
+      {
+        "label": "Size",
+        "values": 4
+      },
+      {
+        "label": "Other Features",
+        "values": 43
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 15
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/urology-ostomy",
+    "source": "collection:urology-ostomy",
+    "total": 52,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 6
+      },
+      {
+        "label": "Size",
+        "values": 13
+      },
+      {
+        "label": "Other Features",
+        "values": 4
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 2
+      },
+      {
+        "label": "Brand Name",
+        "values": 6
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "type",
+      "material",
+      "features",
+      "use",
+      "color",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/sterilization",
+    "source": "collection:sterilization",
+    "total": 51,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 6
+      },
+      {
+        "label": "Size",
+        "values": 30
+      },
+      {
+        "label": "Other Features",
+        "values": 1
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 5
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "type",
+      "material",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/dental",
+    "source": "collection:dental",
+    "total": 149,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 33
+      },
+      {
+        "label": "Type",
+        "values": 5
+      },
+      {
+        "label": "Size",
+        "values": 3
+      },
+      {
+        "label": "Needle Gauge",
+        "values": 4
+      },
+      {
+        "label": "Needle Length",
+        "values": 7
+      },
+      {
+        "label": "Features",
+        "values": 1
+      },
+      {
+        "label": "Other Features",
+        "values": 1
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 4
+      },
+      {
+        "label": "Brand Name",
+        "values": 10
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/housekeeping-janitorial",
+    "source": "collection:housekeeping-janitorial",
+    "total": 85,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 14
+      },
+      {
+        "label": "Size",
+        "values": 32
+      },
+      {
+        "label": "Color",
+        "values": 4
+      },
+      {
+        "label": "Order Size",
+        "values": 4
+      },
+      {
+        "label": "Brand Name",
+        "values": 12
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Thickness"
+    ],
+    "registeredNotLive": [
+      "type",
+      "material",
+      "features",
+      "other_features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/bariatric",
+    "source": "collection:bariatric",
+    "total": 259,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 42
+      },
+      {
+        "label": "Type",
+        "values": 3
+      },
+      {
+        "label": "Size",
+        "values": 4
+      },
+      {
+        "label": "Other Features",
+        "values": 8
+      },
+      {
+        "label": "Color",
+        "values": 4
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 10
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/seating",
+    "source": "tag:category:room-furniture",
+    "total": 512,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 25
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 10
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "type",
+      "material",
+      "size_length_",
+      "features",
+      "other_features",
+      "use",
+      "color",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/face-masks",
+    "source": "tag:category:face-masks",
+    "total": 35,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 10
+      },
+      {
+        "label": "Type",
+        "values": 7
+      },
+      {
+        "label": "Other Features",
+        "values": 10
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 6
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 8
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "size_length_",
+      "thickness",
+      "features",
+      "use",
+      "certification"
+    ]
+  },
+  {
+    "route": "/category/pharmacy-products",
+    "source": "collection:pharmacy-products",
+    "total": 115,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 14
+      },
+      {
+        "label": "Type",
+        "values": 4
+      },
+      {
+        "label": "Size",
+        "values": 8
+      },
+      {
+        "label": "Other Features",
+        "values": 25
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Use",
+        "values": 1
+      },
+      {
+        "label": "Order Size",
+        "values": 3
+      },
+      {
+        "label": "Brand Name",
+        "values": 33
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [],
+    "registeredNotLive": [
+      "material",
+      "tests_for",
+      "features",
+      "color",
+      "certification"
+    ]
+  },
+  {
+    "route": "/industries/urgent-care",
+    "source": "tag:industry:urgent-care",
+    "total": 4343,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 100
+      },
+      {
+        "label": "Type",
+        "values": 85
+      },
+      {
+        "label": "Tests For",
+        "values": 32
+      },
+      {
+        "label": "Needle Gauge",
+        "values": 19
+      },
+      {
+        "label": "Needle Length",
+        "values": 29
+      },
+      {
+        "label": "Material",
+        "values": 28
+      },
+      {
+        "label": "Glove Size",
+        "values": 6
+      },
+      {
+        "label": "Size",
+        "values": 100
+      },
+      {
+        "label": "Thickness",
+        "values": 10
+      },
+      {
+        "label": "Features",
+        "values": 7
+      },
+      {
+        "label": "Other Features",
+        "values": 100
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Use",
+        "values": 2
+      },
+      {
+        "label": "Color",
+        "values": 27
+      },
+      {
+        "label": "Order Size",
+        "values": 7
+      },
+      {
+        "label": "Brand Name",
+        "values": 100
+      },
+      {
+        "label": "Price",
+        "values": null
+      },
+      {
+        "label": "Certification",
+        "values": 2
+      }
+    ],
+    "droppedByRegistry": [
+      "Detectable Drugs"
+    ],
+    "registeredNotLive": []
+  },
+  {
+    "route": "/industries/hrt-clinics",
+    "source": "tag:industry:hrt-surgery",
+    "total": 531,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 61
+      },
+      {
+        "label": "Type",
+        "values": 8
+      },
+      {
+        "label": "Size",
+        "values": 42
+      },
+      {
+        "label": "Material",
+        "values": 18
+      },
+      {
+        "label": "Features",
+        "values": 1
+      },
+      {
+        "label": "Other Features",
+        "values": 35
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Use",
+        "values": 2
+      },
+      {
+        "label": "Order Size",
+        "values": 5
+      },
+      {
+        "label": "Brand Name",
+        "values": 37
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Glove Size",
+      "Color"
+    ],
+    "registeredNotLive": [
+      "needle_gauge",
+      "needle_length",
+      "certification"
+    ]
+  },
+  {
+    "route": "/industries/home-health",
+    "source": "tag:industry:home-care",
+    "total": 3090,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 100
+      },
+      {
+        "label": "Type",
+        "values": 37
+      },
+      {
+        "label": "Size",
+        "values": 100
+      },
+      {
+        "label": "Features",
+        "values": 3
+      },
+      {
+        "label": "Other Features",
+        "values": 79
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Use",
+        "values": 2
+      },
+      {
+        "label": "Color",
+        "values": 18
+      },
+      {
+        "label": "Order Size",
+        "values": 7
+      },
+      {
+        "label": "Brand Name",
+        "values": 68
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Needle Gauge",
+      "Needle Length"
+    ],
+    "registeredNotLive": [
+      "material",
+      "glove_size",
+      "certification"
+    ]
+  },
+  {
+    "route": "/industries/clinics-doctors-offices",
+    "source": "tag:industry:clinic",
+    "total": 6388,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 100
+      },
+      {
+        "label": "Type",
+        "values": 100
+      },
+      {
+        "label": "Tests For",
+        "values": 32
+      },
+      {
+        "label": "Needle Gauge",
+        "values": 19
+      },
+      {
+        "label": "Needle Length",
+        "values": 32
+      },
+      {
+        "label": "Material",
+        "values": 28
+      },
+      {
+        "label": "Glove Size",
+        "values": 6
+      },
+      {
+        "label": "Size",
+        "values": 100
+      },
+      {
+        "label": "Thickness",
+        "values": 10
+      },
+      {
+        "label": "Features",
+        "values": 10
+      },
+      {
+        "label": "Other Features",
+        "values": 100
+      },
+      {
+        "label": "Sterility",
+        "values": 2
+      },
+      {
+        "label": "Use",
+        "values": 2
+      },
+      {
+        "label": "Color",
+        "values": 34
+      },
+      {
+        "label": "Order Size",
+        "values": 8
+      },
+      {
+        "label": "Brand Name",
+        "values": 100
+      },
+      {
+        "label": "Price",
+        "values": null
+      },
+      {
+        "label": "Certification",
+        "values": 2
+      }
+    ],
+    "droppedByRegistry": [
+      "Detectable Drugs"
+    ],
+    "registeredNotLive": []
+  },
+  {
+    "route": "/industries/pharmacies",
+    "source": "tag:industry:pharmacy",
+    "total": 282,
+    "rendered": [
+      {
+        "label": "Category",
+        "values": 100
+      },
+      {
+        "label": "Type",
+        "values": 25
+      },
+      {
+        "label": "Tests For",
+        "values": 31
+      },
+      {
+        "label": "Detectable Drugs",
+        "values": 30
+      },
+      {
+        "label": "Material",
+        "values": 2
+      },
+      {
+        "label": "Size",
+        "values": 15
+      },
+      {
+        "label": "Features",
+        "values": 3
+      },
+      {
+        "label": "Other Features",
+        "values": 15
+      },
+      {
+        "label": "Sterility",
+        "values": 1
+      },
+      {
+        "label": "Color",
+        "values": 3
+      },
+      {
+        "label": "Order Size",
+        "values": 4
+      },
+      {
+        "label": "Brand Name",
+        "values": 75
+      },
+      {
+        "label": "Price",
+        "values": null
+      }
+    ],
+    "droppedByRegistry": [
+      "Glove Size",
+      "Needle Gauge",
+      "Needle Length"
+    ],
+    "registeredNotLive": [
+      "adulterants",
+      "use",
+      "certification"
+    ]
+  }
+]

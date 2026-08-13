@@ -12,6 +12,7 @@ import {
   parseSearchParam,
   type CategorySearchParams,
 } from '@/components/category/CategoryPageView'
+import { parsePageSize, DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
 import { getSubcategories } from '@/lib/category-utils'
@@ -43,7 +44,10 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     parseFilterParam(sp.filter).length > 0 ||
     Boolean(sp.sort) ||
     Boolean(parseSearchParam(sp.q)) ||
-    Boolean(sp.page)
+    Boolean(sp.page) ||
+    // Same reason as the category route: ?per_page= is the same content in a
+    // different quantity, not a distinct indexable page.
+    parsePageSize(sp.per_page) !== DEFAULT_PAGE_SIZE
 
   const base = buildMetadata({
     pageType: 'industry',
@@ -98,6 +102,8 @@ export default async function IndustryDetailPage({ params, searchParams }: Props
         currentPage={currentPage}
         categoryLinks={getIndustryCategoryLinks(industryStatic.slug)}
         buyingGuide={getIndustryBuyingGuide(industryStatic.slug)}
+        pageSize={parsePageSize(sp.per_page)}
+        seoAnswer={getIndustrySeo(slug)?.answerBlock}
       />
     )
   }

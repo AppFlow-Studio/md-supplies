@@ -26,6 +26,16 @@ export function FilterDrawer({ filters, activeFilters, currentSort, q }: Props) 
     wasOpen.current = open
   }, [open])
 
+  // Scroll containment: without this the page behind the drawer scrolls under
+  // the shopper's finger while they drag through a long facet list, and the
+  // scroll position is lost when the drawer closes.
+  useEffect(() => {
+    if (!open) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previous }
+  }, [open])
+
   useEffect(() => {
     if (!open) return
 

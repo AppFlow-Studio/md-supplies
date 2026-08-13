@@ -1,0 +1,1777 @@
+{
+  "gloves": {
+    "title": "Gloves",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 10,
+        "sum": 445
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 8,
+        "sum": 442
+      },
+      {
+        "id": "filter.p.m.custom.material",
+        "label": "Material",
+        "type": "LIST",
+        "n": 6,
+        "sum": 317
+      },
+      {
+        "id": "filter.p.m.custom.glove_size",
+        "label": "Glove Size",
+        "type": "LIST",
+        "n": 6,
+        "sum": 175
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 10,
+        "sum": 61
+      },
+      {
+        "id": "filter.p.m.custom.thickness",
+        "label": "Thickness",
+        "type": "LIST",
+        "n": 10,
+        "sum": 40
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 17,
+        "sum": 92
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 2,
+        "sum": 166
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 13,
+        "sum": 233
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 445
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 26,
+        "sum": 444
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      },
+      {
+        "id": "filter.p.m.custom.certification",
+        "label": "Certification",
+        "type": "LIST",
+        "n": 2,
+        "sum": 50
+      }
+    ]
+  },
+  "wound-care": {
+    "title": "Wound Care",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 64,
+        "sum": 732
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 18,
+        "sum": 92
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 100,
+        "sum": 474
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 21,
+        "sum": 144
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 2,
+        "sum": 318
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 9,
+        "sum": 117
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 5,
+        "sum": 724
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 17,
+        "sum": 724
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "needles-syringes": {
+    "title": "Needles & Syringes",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 62,
+        "sum": 673
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 16,
+        "sum": 289
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 16,
+        "sum": 287
+      },
+      {
+        "id": "filter.p.m.custom.needle_gauge",
+        "label": "Needle Gauge",
+        "type": "LIST",
+        "n": 18,
+        "sum": 474
+      },
+      {
+        "id": "filter.p.m.custom.needle_length",
+        "label": "Needle Length",
+        "type": "LIST",
+        "n": 29,
+        "sum": 463
+      },
+      {
+        "id": "filter.p.m.custom.features",
+        "label": "Features",
+        "type": "LIST",
+        "n": 4,
+        "sum": 172
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 63,
+        "sum": 265
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 2,
+        "sum": 29
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 628
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 24,
+        "sum": 628
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "surgical-sutures": {
+    "title": "Surgical Sutures",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 13,
+        "sum": 213
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 2,
+        "sum": 185
+      },
+      {
+        "id": "filter.p.m.custom.material",
+        "label": "Material",
+        "type": "LIST",
+        "n": 12,
+        "sum": 185
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 21,
+        "sum": 506
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 8,
+        "sum": 181
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 191
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 5,
+        "sum": 192
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "testing-screening": {
+    "title": "Testing",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 52,
+        "sum": 192
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 16,
+        "sum": 49
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.detectable_drugs",
+        "label": "Detectable Drugs",
+        "type": "LIST",
+        "n": 30,
+        "sum": 246
+      },
+      {
+        "id": "filter.p.m.custom.tests_for",
+        "label": "Tests For",
+        "type": "LIST",
+        "n": 32,
+        "sum": 111
+      },
+      {
+        "id": "filter.p.m.custom.features",
+        "label": "Features",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 4,
+        "sum": 4
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 5,
+        "sum": 171
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 43,
+        "sum": 170
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "exam-room": {
+    "title": "Exam Room",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 100,
+        "sum": 854
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 6,
+        "sum": 18
+      },
+      {
+        "id": "filter.p.m.custom.material",
+        "label": "Material",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 32,
+        "sum": 77
+      },
+      {
+        "id": "filter.p.m.custom.features",
+        "label": "Features",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 5,
+        "sum": 17
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 2,
+        "sum": 44
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 1,
+        "sum": 3
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 10,
+        "sum": 30
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 4,
+        "sum": 845
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 21,
+        "sum": 845
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "respiratory": {
+    "title": "Respiratory",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 38,
+        "sum": 409
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 1,
+        "sum": 5
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 9,
+        "sum": 23
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 16,
+        "sum": 80
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 5,
+        "sum": 408
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 15,
+        "sum": 408
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "mobility": {
+    "title": "Mobility",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 45,
+        "sum": 679
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 7,
+        "sum": 13
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 12,
+        "sum": 30
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 23,
+        "sum": 97
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 11,
+        "sum": 66
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 5,
+        "sum": 645
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 12,
+        "sum": 645
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "patient-therapy-rehab": {
+    "title": "Patient Therapy & Rehab",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 49,
+        "sum": 300
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 37,
+        "sum": 79
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 4,
+        "sum": 210
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 19,
+        "sum": 299
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "trocars-trocar-kits": {
+    "title": "Trocars & Trocar Kits",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 7,
+        "sum": 45
+      },
+      {
+        "id": "filter.p.m.custom.material",
+        "label": "Material",
+        "type": "LIST",
+        "n": 5,
+        "sum": 37
+      },
+      {
+        "id": "filter.p.m.custom.glove_size",
+        "label": "Glove Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 27
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 36
+      },
+      {
+        "id": "filter.p.m.custom.features",
+        "label": "Features",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 6,
+        "sum": 29
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 2,
+        "sum": 40
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 41
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 2,
+        "sum": 41
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "capes-gowns": {
+    "title": "Capes & Gowns",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 5,
+        "sum": 34
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 5,
+        "sum": 7
+      },
+      {
+        "id": "filter.p.m.custom.material",
+        "label": "Material",
+        "type": "LIST",
+        "n": 2,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 7,
+        "sum": 21
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 4,
+        "sum": 11
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 4
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 4,
+        "sum": 20
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 1,
+        "sum": 34
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 4,
+        "sum": 34
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "hygiene": {
+    "title": "Hygiene",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 69,
+        "sum": 265
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 3,
+        "sum": 5
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 26,
+        "sum": 48
+      },
+      {
+        "id": "filter.p.m.custom.features",
+        "label": "Features",
+        "type": "LIST",
+        "n": 3,
+        "sum": 3
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 14,
+        "sum": 26
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 5
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 6,
+        "sum": 17
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 256
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 18,
+        "sum": 252
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "disinfectants": {
+    "title": "Disinfectants",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 6,
+        "sum": 39
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 5,
+        "sum": 8
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 1,
+        "sum": 4
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 4
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 35
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 13,
+        "sum": 35
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "home-care": {
+    "title": "Home Care",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 76,
+        "sum": 435
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 2,
+        "sum": 5
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 6
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 6,
+        "sum": 8
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 5,
+        "sum": 6
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 429
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 17,
+        "sum": 428
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "emergency-supplies": {
+    "title": "Emergency Supplies",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 38,
+        "sum": 366
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 4,
+        "sum": 10
+      },
+      {
+        "id": "filter.p.m.custom.material",
+        "label": "Material",
+        "type": "LIST",
+        "n": 2,
+        "sum": 6
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 7,
+        "sum": 16
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 36,
+        "sum": 59
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 8,
+        "sum": 43
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 359
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 15,
+        "sum": 359
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "incontinence": {
+    "title": "Incontinence",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 16,
+        "sum": 123
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 3,
+        "sum": 15
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 24,
+        "sum": 52
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 3,
+        "sum": 6
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 3
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 2,
+        "sum": 27
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 1,
+        "sum": 13
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 121
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 15,
+        "sum": 119
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "iv-therapy": {
+    "title": "IV Therapy",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 10,
+        "sum": 91
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 3,
+        "sum": 15
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 4,
+        "sum": 4
+      },
+      {
+        "id": "filter.p.m.custom.needle_gauge",
+        "label": "Needle Gauge",
+        "type": "LIST",
+        "n": 4,
+        "sum": 12
+      },
+      {
+        "id": "filter.p.m.custom.needle_length",
+        "label": "Needle Length",
+        "type": "LIST",
+        "n": 3,
+        "sum": 12
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 43,
+        "sum": 120
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 78
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 15,
+        "sum": 78
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "urology-ostomy": {
+    "title": "Urology & Ostomy",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 6,
+        "sum": 52
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 13,
+        "sum": 28
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 4,
+        "sum": 4
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 3
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 52
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 6,
+        "sum": 52
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "sterilization": {
+    "title": "Sterilization",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 6,
+        "sum": 51
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 30,
+        "sum": 41
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 51
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 5,
+        "sum": 51
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "dental": {
+    "title": "Dental",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 33,
+        "sum": 160
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 5,
+        "sum": 31
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 8
+      },
+      {
+        "id": "filter.p.m.custom.needle_gauge",
+        "label": "Needle Gauge",
+        "type": "LIST",
+        "n": 4,
+        "sum": 27
+      },
+      {
+        "id": "filter.p.m.custom.needle_length",
+        "label": "Needle Length",
+        "type": "LIST",
+        "n": 7,
+        "sum": 26
+      },
+      {
+        "id": "filter.p.m.custom.features",
+        "label": "Features",
+        "type": "LIST",
+        "n": 1,
+        "sum": 4
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 15
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 1,
+        "sum": 2
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 4,
+        "sum": 148
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 10,
+        "sum": 149
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "housekeeping-janitorial": {
+    "title": "Housekeeping & Janitorial",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 14,
+        "sum": 85
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 32,
+        "sum": 44
+      },
+      {
+        "id": "filter.p.m.custom.thickness",
+        "label": "Thickness",
+        "type": "LIST",
+        "n": 2,
+        "sum": 6
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 4,
+        "sum": 8
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 4,
+        "sum": 85
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 12,
+        "sum": 83
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "bariatric": {
+    "title": "Bariatric",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 42,
+        "sum": 262
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 3,
+        "sum": 5
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 4,
+        "sum": 9
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 8,
+        "sum": 24
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 4,
+        "sum": 11
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 259
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 10,
+        "sum": 259
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "seating": {
+    "title": "Stools & Seating",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 2,
+        "sum": 8
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 8
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 3,
+        "sum": 8
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "face-coverings": {
+    "title": "Face Coverings",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "pharmacy-products": {
+    "title": "Pharmacy Products",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 14,
+        "sum": 192
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 4,
+        "sum": 20
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 8,
+        "sum": 12
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 25,
+        "sum": 67
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 1,
+        "sum": 7
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 3,
+        "sum": 105
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 33,
+        "sum": 114
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  },
+  "occ": {
+    "title": "OCC",
+    "facets": [
+      {
+        "id": "filter.p.m.custom.customer_filter_category",
+        "label": "Category",
+        "type": "LIST",
+        "n": 40,
+        "sum": 121
+      },
+      {
+        "id": "filter.p.m.custom.type",
+        "label": "Type",
+        "type": "LIST",
+        "n": 4,
+        "sum": 18
+      },
+      {
+        "id": "filter.p.m.custom.size_length_",
+        "label": "Size",
+        "type": "LIST",
+        "n": 18,
+        "sum": 34
+      },
+      {
+        "id": "filter.p.m.custom.thickness",
+        "label": "Thickness",
+        "type": "LIST",
+        "n": 2,
+        "sum": 6
+      },
+      {
+        "id": "filter.p.m.custom.other_features",
+        "label": "Other Features",
+        "type": "LIST",
+        "n": 10,
+        "sum": 19
+      },
+      {
+        "id": "filter.p.m.custom.sterility",
+        "label": "Sterility",
+        "type": "LIST",
+        "n": 2,
+        "sum": 17
+      },
+      {
+        "id": "filter.p.m.custom.use",
+        "label": "Use",
+        "type": "LIST",
+        "n": 1,
+        "sum": 1
+      },
+      {
+        "id": "filter.p.m.custom.color",
+        "label": "Color",
+        "type": "LIST",
+        "n": 7,
+        "sum": 33
+      },
+      {
+        "id": "filter.p.m.custom.order_size",
+        "label": "Order Size",
+        "type": "LIST",
+        "n": 2,
+        "sum": 113
+      },
+      {
+        "id": "filter.p.m.custom.brand_name",
+        "label": "Brand Name",
+        "type": "LIST",
+        "n": 17,
+        "sum": 89
+      },
+      {
+        "id": "filter.v.price",
+        "label": "Price",
+        "type": "PRICE_RANGE",
+        "n": 1,
+        "sum": 0
+      }
+    ]
+  }
+}

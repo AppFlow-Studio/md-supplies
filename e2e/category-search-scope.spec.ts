@@ -32,7 +32,9 @@ test.describe('category-scoped search does not leak across categories (DEV-LAUNC
     await page.goto(`/category/${gloves.routeSlug}?q=rollator`, { waitUntil: 'domcontentloaded' })
     const scopedStatus = resultStatus(page)
     await expect(scopedStatus).toBeVisible()
-    await expect(scopedStatus).toContainText('0 results')
+    // The count label reports zero results in words now — "Showing 0 products
+    // of 0" was flagged as misleading feedback (lib/catalog/page-size.ts).
+    await expect(scopedStatus).toContainText('No products found')
 
     // No rollator/mobility product card leaked into the gloves-scoped page
     // (the result count and "Search: rollator" chip legitimately echo the
@@ -55,6 +57,8 @@ test.describe('category-scoped search does not leak across categories (DEV-LAUNC
 
     await expect(page).not.toHaveURL(/[?&]q=/)
     const status = resultStatus(page)
-    await expect(status).not.toContainText('0 results')
+    await expect(status).not.toContainText('No products found')
+    // ...and reports a real count with an authoritative denominator.
+    await expect(status).toContainText(/Showing \d+ products? of \d+/)
   })
 })
