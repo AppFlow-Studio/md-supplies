@@ -38,6 +38,7 @@ import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
+import { compareFacetValues } from '@/lib/catalog/facet-order'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -186,7 +187,10 @@ async function renderSubcategoryPage(
       </div>
 
       {/* Sibling subcategories (Phase 7): the current one is marked active
-          inside the navigator rather than appended as a dead chip. */}
+          inside the navigator rather than appended as a dead chip. H-03:
+          shares the filter rail's natural numeric-then-alphabetic comparator
+          — plain localeCompare put numeric-prefixed medical subcategories
+          (e.g. suture sizes) out of order the same way facet values were. */}
       <SubcategoryNavigator
         items={[
           ...siblings.map((sib) => ({
@@ -194,7 +198,7 @@ async function renderSubcategoryPage(
             href: ROUTES.subcategory(slug, sib.tag),
           })),
           { label: title, href: ROUTES.subcategory(slug, handle), active: true },
-        ].sort((a, b) => a.label.localeCompare(b.label))}
+        ].sort(compareFacetValues)}
         allHref={ROUTES.category(slug)}
         allLabel={`All ${l1.displayName}`}
         ariaLabel={`${l1.displayName} subcategories`}
