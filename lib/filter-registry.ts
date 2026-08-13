@@ -262,6 +262,38 @@ export const filterRegistry: Record<string, FacetRule[]> = {
     APPROVED_METAFIELDS.length,
     APPROVED_METAFIELDS.size,
   ),
+
+  // ── Industry pages (facetKey = Industry.collectionHandle, lib/industries.ts) ──
+  // Before this entry, none of these five handles existed in the registry, so
+  // every industry page fell through to DEFAULT_FACET_RULES (Availability +
+  // Price) — the exact gap the category coverage audit above was built to
+  // close, just never extended to /industries.
+  //
+  // Facet-coverage audit (scripts/audit-industry-facet-coverage.ts, live
+  // Storefront API, 2026-08-12) against each industry's actual
+  // `tag:"industry:*"` scope, using the same 60%-population / 2-40-distinct-
+  // value bar as the category audit and the same APPROVED_METAFIELDS
+  // vocabulary (no new metafield sources added):
+  //   urgent-care              4,343 products (industry:urgent-care)
+  //   hrt-clinics                531 products (industry:hrt-surgery)
+  //   home-health               3,090 products (industry:home-care)
+  //   clinics-doctors-offices  6,388 products (industry:clinic)
+  //   pharmacies                  282 products (industry:pharmacy)
+  // In every case the best category-specific candidate (material, glove
+  // size, needle gauge/length, size, tests-for) landed well under 60% —
+  // expected, since an industry tag spans many product categories at once,
+  // the same reason broad multi-category collections above (occ, exam-room,
+  // home-care, …) get no category-specific facets either. Only the
+  // universal facets clear the bar (order_size ~96-99%, brand_name ~98-100%
+  // on every one of the five). So each gets the same broad-collection
+  // treatment as OCC_RULES: category picker, brand, order size, price —
+  // real filters instead of the two-facet fallback, without fabricating
+  // narrow facets the data does not support.
+  'urgent-care': OCC_RULES,
+  'hrt-clinics': OCC_RULES,
+  'home-health': OCC_RULES,
+  'clinics-doctors-offices': OCC_RULES,
+  pharmacies: OCC_RULES,
 }
 
 // Safe default for any collection without an explicit registry entry.

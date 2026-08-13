@@ -9,7 +9,9 @@ export interface ShippingDisplay {
   displayCopy: string | null
 }
 
-const FALLBACK: ShippingDisplay = {
+// Exported so free-shipping-gate.ts (and any other narrowing layer) returns
+// the exact same fallback shape rather than reconstructing a parallel copy.
+export const FALLBACK: ShippingDisplay = {
   class: 'unknown',
   message: SHIPPING_FALLBACK_MESSAGE,
   displayCopy: null,
@@ -27,7 +29,8 @@ function buildDisplay(publicDisplayClass: PublicDisplayClass, displayCopy: strin
 // a Free Shipping claim when the underlying rate math independently confirms
 // it. `effective_rate_class` is read here ONLY to gate the claim — it never
 // crosses into ShippingDisplay, the type exposed to the UI (see module-level
-// comment: "unsafe" fields are deliberately never exposed).
+// comment: "unsafe" fields are deliberately never exposed). isRatesOnlyClaimEnabled()
+// is hardcoded true (see flag.ts, DEV-SHIP-03) — this check is unconditional now.
 function ratesConfirmFree(variant: VariantRecord): boolean {
   return variant.effective_rate_class === 'FREE'
 }

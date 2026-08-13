@@ -45,6 +45,22 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
           </span>
         )}
         <p className="text-black text-[13px] font-semibold leading-5 line-clamp-2">{product.title}</p>
+        {/* DEV-SHIP-04: recommendation cards previously hardcoded labels={[]}
+            (RX/Backorder never shown here, even though GET_PRODUCT_RECS
+            already selects both via the shared PRODUCT_CARD_FRAGMENT) — only
+            the Free Shipping claim was wired up. Same resolveProductLabels
+            contract every other card grid uses, so recs can't disagree with
+            the PDP/category card for the same product. shippingDisplay is
+            the same resolver-and-metafield-gated claim the grid cards show —
+            never a locally-inferred one. */}
+        <ProductLabelBadges
+          labels={resolveProductLabels({
+            tags: product.tags,
+            isBackordered: product.backorder,
+            isRxOnly: product.isRxOnly,
+          })}
+          shippingDisplay={product.shippingDisplay ?? null}
+        />
         <span className="text-black text-[16px] font-bold">
           {hasUsablePrice(price) ? `$${price.toFixed(2)}` : 'Contact for pricing'}
         </span>
@@ -240,30 +256,22 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             {/* Availability — negative states only. No "In stock" claim:
                 vendor inventory is not real time (DEV-CATALOG-01), so an
                 available product simply shows no availability text and the
-                add-to-cart control does the talking. */}
-            {stockStatus !== 'available' && (
-              <div className="flex items-center gap-2">
-                {stockStatus === 'backordered' && backorderLabel && (
-                  <>
-                    <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
-                    {/* orange-600 measured 3.56:1 on white — below the 4.5:1 AA minimum,
-                        flagged [serious] by axe. orange-700 measures ~5.18:1. */}
-                    <span className="text-orange-700 text-[13px] font-semibold tracking-[0.26px]">
-                      {backorderLabel.text}
-                    </span>
-                  </>
-                )}
-                {stockStatus === 'out_of_stock' && (
-                  <>
-                    <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
-                    {/* Semantic status token (--color-ink-danger, 6.42:1).
-                        red-500 was 3.81:1 at 13px — below the 4.5:1 AA
-                        minimum and flagged serious by axe. */}
-                    <span className="text-ink-danger text-[13px] font-semibold tracking-[0.26px]">
-                      Out of Stock
-                    </span>
-                  </>
-                )}
+                add-to-cart control does the talking.
+                DEV-SHIP-04: this row is Out-of-Stock ONLY. ProductLabelBadges
+                below is the single customer-facing Backorder rendering path —
+                this row must never also render "Backorder", or the product
+                shows the label twice. An unavailable, backordered variant
+                therefore shows no text here at all (Backorder alone, from
+                ProductLabelBadges) rather than a conflicting "Out of Stock". */}
+            {stockStatus === 'out_of_stock' && (
+              <div className="flex items-center gap-2" data-testid="availability-status">
+                <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
+                {/* Semantic status token (--color-ink-danger, 6.42:1).
+                    red-500 was 3.81:1 at 13px — below the 4.5:1 AA
+                    minimum and flagged serious by axe. */}
+                <span className="text-ink-danger text-[13px] font-semibold tracking-[0.26px]">
+                  Out of Stock
+                </span>
               </div>
             )}
 

@@ -32,6 +32,8 @@ import { getSubcategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
+import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-gate'
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
@@ -288,8 +290,10 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     complementary: [] as CollectionProduct[],
   }))
 
+  // DEV-SHIP-02: same AND-gate as /product/[slug] — see
+  // lib/shipping-resolver/free-shipping-gate.ts.
   const variantShippingDisplays = isShippingResolverEnabled()
-    ? resolveVariantsForProduct(productData.product.id)
+    ? gateFreeShippingClaims(resolveVariantsForProduct(productData.product.id), productData.product.freeShipping)
     : {}
 
   const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
@@ -322,8 +326,8 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
       />
       <ProductView
         product={productData.product}
-        relatedProducts={recsData.related}
-        complementaryProducts={recsData.complementary}
+        relatedProducts={attachCardShippingDisplay(recsData.related)}
+        complementaryProducts={attachCardShippingDisplay(recsData.complementary)}
         breadcrumbs={breadcrumbs}
         partnerSlug={partner?.slug ?? null}
         variantShippingDisplays={variantShippingDisplays}

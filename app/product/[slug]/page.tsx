@@ -18,6 +18,8 @@ import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { ROUTES } from '@/lib/routes'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
+import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-gate'
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { getDefaultVariant } from '@/lib/purchasability'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
@@ -96,12 +98,19 @@ export default async function ProductPage({ params }: Props) {
     productFetchOptions(slug),
   ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
+  // DEV-SHIP-02: custom.free_shipping ANDs with the resolver's per-variant
+  // confirmation — see lib/shipping-resolver/free-shipping-gate.ts. The
+  // metafield is product-level (like custom.backorder), so the same raw
+  // value gates every variant's entry in this map.
   const variantShippingDisplays = isShippingResolverEnabled()
-    ? resolveVariantsForProduct(product.id)
+    ? gateFreeShippingClaims(resolveVariantsForProduct(product.id), product.freeShipping)
     : {}
 
-  const relatedProducts = recsData.related
-  const complementaryProducts = recsData.complementary
+  // Recommendations previously got no shippingDisplay at all (RelatedProductCard
+  // rendered no badges), so "You May Also Like"/"Frequently Bought With" could
+  // never show a Free Shipping claim even when the product itself qualifies.
+  const relatedProducts = attachCardShippingDisplay(recsData.related)
+  const complementaryProducts = attachCardShippingDisplay(recsData.complementary)
 
   // Same default-variant selection ProductView renders (lib/purchasability.ts)
   // so the Product schema can never disagree with the visibly-selected price/

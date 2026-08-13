@@ -68,11 +68,27 @@ export type ProductMetafields = {
   needleGauge: string | null;
   needleLength: string | null;
   sizeLength: string | null;
+  /** `custom.estimated_back_order_restock_date`. DEV-SHIP-04: queried and
+      normalized for compatibility/live-theme use only — the custom storefront
+      never displays, announces, or infers Backorder status from this. */
   estimatedRestockDate: string | null;
-  /** Raw `custom.backorder`; boolean gate for the backorder label (ETA above is optional decoration only). */
+  /** `custom.backorder_restock_eta`. Same compatibility-only status as
+      estimatedRestockDate above — never displayed by the custom storefront. */
+  backorderRestockEta: string | null;
+  /** Raw `custom.backorder`; the SOLE gate for the backorder label (DEV-SHIP-04
+      final business rule — neither ETA field above ever affects this). */
   backorder?: { value: string } | null;
   /** Raw `custom.is_rx_only`; union'd with the RX tag by lib/rx-gate.ts. */
   isRxOnly?: { value: string } | null;
+  /**
+   * Raw `custom.free_shipping`. Merchant-controlled gate for the Free
+   * Shipping badge, ANDed with the shipping resolver's own confirmation
+   * (public_display_class=standard-free + effective_rate_class=FREE) by
+   * lib/shipping-resolver/free-shipping-gate.ts. Never exposed past that
+   * gate — like effective_rate_class, it is read only to narrow the claim
+   * and must never itself appear in the ShippingDisplay type components render.
+   */
+  freeShipping?: { value: string } | null;
   testsFor: string | null;
   detectableDrugs: string | null;
   adulterants: string | null;
@@ -115,15 +131,24 @@ export type CollectionProduct = {
   /** Raw `custom.brand_name`. The ONLY approved public brand source —
       resolve via lib/brand.ts, never fall back to `vendor`. */
   brandName?: { value: string } | null;
-  /** Raw backorder metafield (DEV-LABEL-01 single source); flattened by the
-      label contract, may be absent on queries that don't request it. */
+  /** Raw `custom.estimated_back_order_restock_date`. DEV-SHIP-04: compatibility/
+      live-theme use only — never displayed, announced, or inferred from by the
+      custom storefront. May be absent on queries that don't request it. */
   estimatedRestockDate?: { value: string } | null;
-  /** Raw `custom.backorder`; boolean gate for the backorder label — the ETA above is optional decoration only. */
+  /** Raw `custom.backorder_restock_eta`. Same compatibility-only status as
+      estimatedRestockDate above — never displayed by the custom storefront. */
+  backorderRestockEta?: { value: string } | null;
+  /** Raw `custom.backorder`; the SOLE gate for the backorder label (DEV-SHIP-04
+      final business rule — neither ETA field above ever affects this). */
   backorder?: { value: string } | null;
   /** Raw `custom.is_rx_only`. Union'd with the RX tag by lib/rx-gate.ts so a
       grid card's RX badge matches the PDP and the checkout gate. Optional:
       queries that don't select it degrade to tag-only detection. */
   isRxOnly?: { value: string } | null;
+  /** Raw `custom.free_shipping`. Consumed ONLY by attachCardShippingDisplay
+      to gate `shippingDisplay` below before it reaches this object — never
+      read by any component. See ProductMetafields.freeShipping. */
+  freeShipping?: { value: string } | null;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
   variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
@@ -181,10 +206,16 @@ export type CartLine = {
       tags: string[];
       /** `custom.is_rx_only` — second RX signal, union'd with the tag. */
       isRxOnly?: { value: string } | null;
-      /** `custom.estimated_back_order_restock_date` — optional decoration only, see `backorder`. */
+      /** `custom.estimated_back_order_restock_date`. DEV-SHIP-04: compatibility/
+          live-theme use only — never displayed by the custom storefront. */
       estimatedRestockDate?: { value: string } | null;
-      /** Raw `custom.backorder`; boolean gate for the backorder label. */
+      /** `custom.backorder_restock_eta`. Same compatibility-only status. */
+      backorderRestockEta?: { value: string } | null;
+      /** Raw `custom.backorder`; the SOLE gate for the backorder label. */
       backorder?: { value: string } | null;
+      /** Raw `custom.free_shipping`. Consumed only by attachCartShippingDisplay
+          to gate `shippingDisplay` below before it reaches this line. */
+      freeShipping?: { value: string } | null;
       images: { nodes: ProductImage[] };
     };
   };

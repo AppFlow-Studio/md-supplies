@@ -16,9 +16,18 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
     availableForSale
     tags
     brandName: metafield(namespace: "custom", key: "brand_name") { value }
+    # DEV-SHIP-04: both ETA fields are queried for compatibility/live-theme use
+    # only — the custom storefront never displays, announces, or infers
+    # Backorder status from either. custom.backorder alone is the sole trigger.
     estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+    backorderRestockEta: metafield(namespace: "custom", key: "backorder_restock_eta") { value }
     backorder: metafield(namespace: "custom", key: "backorder") { value }
     isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
+    # DEV-SHIP-02: merchant-controlled gate for the Free Shipping badge,
+    # ANDed with the shipping resolver's own confirmation — see
+    # lib/shipping-resolver/free-shipping-gate.ts. Selected here so every
+    # ShopifyProductCard consumer (cards, recs, Quick Add) can evaluate it.
+    freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
     priceRange {
       minVariantPrice { amount currencyCode }
       maxVariantPrice { amount currencyCode }
@@ -97,22 +106,28 @@ export const GET_PRODUCT = `#graphql
       # FULFILLER and disagrees with brand on 51% of active products, so the
       # fallback was wrong for about half the catalogue.
       #
-      # estimatedRestockDate: without it an out-of-stock product with a real ETA
-      # renders as a plain "out of stock" and the back-ordered branch in
-      # ProductView is unreachable. 105 active products carry a date.
-      #
       # Both definitions are storefront-readable (PUBLIC_READ), verified live.
       # The remaining metafields normalizeProduct maps are still unfetched: adding
       # them changes what the spec sections render, which needs review rather than
       # a quiet switch-on.
       brandName: metafield(namespace: "custom", key: "brand_name") { value }
+      # DEV-SHIP-04 (final business rule): both ETA fields below are queried
+      # and normalized for compatibility/live-theme use only. custom.backorder
+      # is the SOLE trigger for the Backorder label — the PDP never displays,
+      # announces, or infers anything from either ETA field.
       estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+      backorderRestockEta: metafield(namespace: "custom", key: "backorder_restock_eta") { value }
       backorder: metafield(namespace: "custom", key: "backorder") { value }
       # RX: the gate UNIONs the compliance:rx-only tag with the store's own
       # declaration. The tag set is a strict SUBSET of this metafield (40 active
       # prescription products carry the metafield and no tag), so the PDP must
       # read both or its badge disagrees with the cart gate.
       isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
+      # DEV-SHIP-02: merchant-controlled gate for the Free Shipping badge.
+      # Never trusted alone — ANDed with the shipping resolver's own
+      # standard-free + effective_rate_class=FREE confirmation before the
+      # PDP renders a claim (lib/shipping-resolver/free-shipping-gate.ts).
+      freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
     }
   }
 `;
@@ -229,8 +244,12 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
           # Public brand — never fall back to the Shopify vendor field
           # (the fulfilling vendor). See lib/brand.ts.
           brandName: metafield(namespace: "custom", key: "brand_name") { value }
+          # DEV-SHIP-04: ETA fields are compatibility/live-theme only — never
+          # displayed. custom.backorder alone triggers the Backorder label.
           estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+          backorderRestockEta: metafield(namespace: "custom", key: "backorder_restock_eta") { value }
           backorder: metafield(namespace: "custom", key: "backorder") { value }
+          freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
           priceRange {
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }
