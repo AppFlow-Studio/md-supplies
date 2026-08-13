@@ -36,6 +36,8 @@ import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
 import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-gate'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
+import { resolveInitialVariant } from '@/lib/product/resolve-variant'
+import { buildCanonical } from '@/lib/seo/canonical'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -50,7 +52,10 @@ function productFetchOptions(handle: string) {
 
 interface Props {
   params: Promise<{ slug: string; product: string }>
-  searchParams: Promise<CategorySearchParams>
+  // LG-03: `variant` is only meaningful on the product-detail fallback below,
+  // not the L2 category-grid render — kept as an intersection rather than
+  // widening the shared CategorySearchParams type category pages also use.
+  searchParams: Promise<CategorySearchParams & { variant?: string }>
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -297,6 +302,16 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     ? gateFreeShippingClaims(resolveVariantsForProduct(productData.product.id), productData.product.freeShipping)
     : {}
 
+  // LG-03: same `?variant=` resolution as /product/[slug] — see
+  // lib/product/resolve-variant.ts — so this route can't drift from it.
+  const resolvedVariant = resolveInitialVariant(productData.product.variants.nodes, sp.variant)
+  // Neutral, query-free URL regardless of the selected variant.
+  const productUrl = buildCanonical({
+    path: `/category/${slug}/${handle}`,
+    strategy: 'base-product',
+    basePath: `/category/${slug}/${handle}`,
+  })
+
   const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
   const { categories, subcategories } = parseProductTags(productData.product.tags)
   const categoryPath = getProductCategoryPath(
@@ -323,10 +338,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
       <meta property="og:type" content="product" />
       <BreadcrumbSchema
         items={[...breadcrumbs, { label: productData.product.title }]}
-        currentUrl={`${SITE_URL}/category/${slug}/${handle}`}
+        currentUrl={productUrl}
       />
       <ProductView
         product={productData.product}
+        initialVariant={resolvedVariant}
         relatedProducts={attachCardShippingDisplay(recsData.related)}
         complementaryProducts={attachCardShippingDisplay(recsData.complementary)}
         breadcrumbs={breadcrumbs}

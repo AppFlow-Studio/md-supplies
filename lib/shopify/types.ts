@@ -51,6 +51,12 @@ export type ProductVariant = {
   selectedOptions: SelectedOption[];
   price: Money;
   compareAtPrice: Money | null;
+  /** Shopify's own variant-media assignment (native field, not a metafield).
+      Null/absent when the variant has no assigned image — callers fall back
+      to the product's shared gallery rather than inferring color from
+      filename/text. Optional so existing variant fixtures/queries that don't
+      select it still type-check. */
+  image?: ProductImage | null;
 };
 
 export type ProductMetafields = {

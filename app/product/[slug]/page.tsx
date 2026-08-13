@@ -12,7 +12,6 @@ import { ProductSchema } from '@/components/schema/ProductSchema'
 import { normalizeGtin } from '@/lib/gtin'
 import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
-import { SITE_URL } from '@/lib/seo/constants'
 import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag,
   getCategorySlug,
 } from '@/lib/category-tree'
@@ -22,7 +21,8 @@ import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
 import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-gate'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
-import { getDefaultVariant } from '@/lib/purchasability'
+import { resolveInitialVariant } from '@/lib/product/resolve-variant'
+import { buildCanonical } from '@/lib/seo/canonical'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -32,6 +32,7 @@ import { getDefaultVariant } from '@/lib/purchasability'
 
 interface Props {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ variant?: string }>
 }
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
@@ -78,8 +79,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params
+  const sp = await searchParams
 
   const rawData = await storefrontFetch<{ product: RawProduct | null }>(
     GET_PRODUCT,
@@ -114,27 +116,30 @@ export default async function ProductPage({ params }: Props) {
   const relatedProducts = attachCardShippingDisplay(recsData.related)
   const complementaryProducts = attachCardShippingDisplay(recsData.complementary)
 
-  // Same default-variant selection ProductView renders (lib/purchasability.ts)
-  // so the Product schema can never disagree with the visibly-selected price/
-  // SKU/availability, or drop the Offer for a product that has a purchasable
-  // variant just because variants.nodes[0] happened to be a $0/quote-only one.
-  const defaultVariant = getDefaultVariant(product.variants.nodes)
-  const isAvailable = defaultVariant?.availableForSale ?? product.availableForSale
-  const productUrl = `${SITE_URL}/product/${slug}`
+  // LG-03: resolved from `?variant=` when present and valid, otherwise the
+  // same default-variant selection ProductView seeds from (lib/purchasability.ts
+  // via resolveInitialVariant) — so the Product schema can never disagree with
+  // the visibly-selected price/SKU/availability, whichever variant that is.
+  const resolvedVariant = resolveInitialVariant(product.variants.nodes, sp.variant)
+  const isAvailable = resolvedVariant?.availableForSale ?? product.availableForSale
+  // Structured data and BreadcrumbSchema always point at the neutral,
+  // query-free product URL — a selected variant is never canonicalized to a
+  // variant-specific URL (LG-03 acceptance: "canonical remains neutral").
+  const productUrl = buildCanonical({ path: `/product/${slug}`, strategy: 'base-product', basePath: `/product/${slug}` })
 
   const schemaProps = {
     name: product.title,
     description: product.description,
     image: product.images.nodes[0]?.url ?? '',
-    sku: defaultVariant?.sku || slug,
+    sku: resolvedVariant?.sku || slug,
     // gtin only when the Shopify barcode is a checksum-valid GTIN — most
     // barcodes in this catalog are SKU copies and must not be emitted (M5).
-    gtin: normalizeGtin(defaultVariant?.barcode),
+    gtin: normalizeGtin(resolvedVariant?.barcode),
     // Product structured data: omit brand entirely rather than emit the
     // fulfilling vendor as a consumer brand (lib/brand.ts).
     brand: publicBrand(product) ?? undefined,
-    price: parseFloat(defaultVariant?.price?.amount ?? '0'),
-    priceCurrency: defaultVariant?.price?.currencyCode ?? 'USD',
+    price: parseFloat(resolvedVariant?.price?.amount ?? '0'),
+    priceCurrency: resolvedVariant?.price?.currencyCode ?? 'USD',
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
@@ -177,6 +182,7 @@ export default async function ProductPage({ params }: Props) {
       />
       <ProductView
         product={product}
+        initialVariant={resolvedVariant}
         relatedProducts={relatedProducts}
         complementaryProducts={complementaryProducts}
         breadcrumbs={categoryCrumbs}

@@ -1,9 +1,17 @@
-import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup, within } from '@testing-library/react'
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
+import { render, screen, cleanup, within, fireEvent } from '@testing-library/react'
 import { ProductView } from '../ProductView'
 import type { Product, CollectionProduct } from '@/lib/shopify/types'
 
 afterEach(cleanup)
+
+const replace = vi.fn()
+beforeEach(() => replace.mockReset())
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace }),
+  usePathname: () => '/product/flame-blue-glove',
+}))
 
 vi.mock('next/image', () => ({
   default: (props: React.ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean; sizes?: string; priority?: boolean }) => {
@@ -90,7 +98,7 @@ const product: Product = {
 
 describe('ProductView PDP semantic markup (Audit M13)', () => {
   it('exposes Item Number, Brand Name, Description, and Specifications as headings', () => {
-    render(<ProductView product={product} relatedProducts={[]} complementaryProducts={[]} />)
+    render(<ProductView product={product} initialVariant={product.variants.nodes[0]} relatedProducts={[]} complementaryProducts={[]} />)
 
     expect(screen.getByRole('heading', { name: 'Item Number' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Brand Name' })).toBeInTheDocument()
@@ -99,7 +107,7 @@ describe('ProductView PDP semantic markup (Audit M13)', () => {
   })
 
   it('exposes spec-table label cells as row headers', () => {
-    render(<ProductView product={product} relatedProducts={[]} complementaryProducts={[]} />)
+    render(<ProductView product={product} initialVariant={product.variants.nodes[0]} relatedProducts={[]} complementaryProducts={[]} />)
 
     const table = screen.getByRole('table')
     const rowHeader = within(table).getByRole('rowheader', { name: 'Material' })
@@ -116,6 +124,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
     render(
       <ProductView
         product={{ ...product, backorder: { value: 'true' } }}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[]}
         complementaryProducts={[]}
       />,
@@ -127,6 +136,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
     render(
       <ProductView
         product={{ ...product, estimatedRestockDate: '2099-01-01' }}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[]}
         complementaryProducts={[]}
       />,
@@ -147,6 +157,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
           backorder: { value: 'true' },
           estimatedRestockDate: '2026-03-26',
         }}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[]}
         complementaryProducts={[]}
       />,
@@ -167,6 +178,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
           backorder: { value: 'true' },
           estimatedRestockDate: '2099-01-01',
         }}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[]}
         complementaryProducts={[]}
       />,
@@ -192,6 +204,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
             nodes: [{ ...product.variants.nodes[0], availableForSale: false }],
           },
         }}
+        initialVariant={{ ...product.variants.nodes[0], availableForSale: false }}
         relatedProducts={[]}
         complementaryProducts={[]}
       />,
@@ -218,6 +231,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
             nodes: [{ ...product.variants.nodes[0], availableForSale: false }],
           },
         }}
+        initialVariant={{ ...product.variants.nodes[0], availableForSale: false }}
         relatedProducts={[]}
         complementaryProducts={[]}
       />,
@@ -253,6 +267,7 @@ describe('ProductView — recommendation cards Free Shipping badge (DEV-SHIP-02)
     render(
       <ProductView
         product={product}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[relatedProduct({ class: 'standard-free', message: 'Free shipping', displayCopy: null })]}
         complementaryProducts={[]}
       />,
@@ -264,6 +279,7 @@ describe('ProductView — recommendation cards Free Shipping badge (DEV-SHIP-02)
     render(
       <ProductView
         product={product}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[]}
         complementaryProducts={[relatedProduct({ class: 'standard-free', message: 'Free shipping', displayCopy: null })]}
       />,
@@ -275,6 +291,7 @@ describe('ProductView — recommendation cards Free Shipping badge (DEV-SHIP-02)
     render(
       <ProductView
         product={product}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[relatedProduct({ class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null })]}
         complementaryProducts={[]}
       />,
@@ -286,6 +303,7 @@ describe('ProductView — recommendation cards Free Shipping badge (DEV-SHIP-02)
     render(
       <ProductView
         product={product}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[relatedProduct(undefined)]}
         complementaryProducts={[]}
       />,
@@ -317,6 +335,7 @@ describe('ProductView — recommendation cards Backorder label (DEV-SHIP-04)', (
     render(
       <ProductView
         product={product}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[relatedProductWithBackorder({ value: 'true' })]}
         complementaryProducts={[]}
       />,
@@ -329,6 +348,7 @@ describe('ProductView — recommendation cards Backorder label (DEV-SHIP-04)', (
     render(
       <ProductView
         product={product}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[]}
         complementaryProducts={[relatedProductWithBackorder({ value: 'true' })]}
       />,
@@ -340,10 +360,84 @@ describe('ProductView — recommendation cards Backorder label (DEV-SHIP-04)', (
     render(
       <ProductView
         product={product}
+        initialVariant={product.variants.nodes[0]}
         relatedProducts={[relatedProductWithBackorder(null)]}
         complementaryProducts={[]}
       />,
     )
     expect(screen.queryByText('Backorder')).not.toBeInTheDocument()
+  })
+})
+
+// LG-03: selecting a different variant must update SKU, image, H1 and the
+// selector's pressed state together — not just price/SKU as before.
+describe('ProductView — selected-variant identity sync (LG-03)', () => {
+  const blueVariant = {
+    id: 'gid://shopify/ProductVariant/1',
+    title: 'Blue',
+    sku: 'SKU-BLUE',
+    availableForSale: true,
+    quantityAvailable: 10,
+    selectedOptions: [{ name: 'Color', value: 'Blue' }],
+    price: { amount: '9.99', currencyCode: 'USD' },
+    compareAtPrice: null,
+    image: { id: 'img-blue', url: '/blue.jpg', altText: 'Blue glove', width: 800, height: 800 },
+  }
+  const redVariant = {
+    ...blueVariant,
+    id: 'gid://shopify/ProductVariant/2',
+    title: 'Red',
+    sku: 'SKU-RED',
+    selectedOptions: [{ name: 'Color', value: 'Red' }],
+    image: { id: 'img-red', url: '/red.jpg', altText: 'Red glove', width: 800, height: 800 },
+  }
+  const multiColorProduct: Product = {
+    ...product,
+    title: 'Flame Glove',
+    options: [{ id: 'opt1', name: 'Color', values: ['Blue', 'Red'] }],
+    variants: { nodes: [blueVariant, redVariant] },
+  }
+
+  it('renders the deep-linked variant (Red) on initial load, not the first/default variant', () => {
+    render(
+      <ProductView
+        product={multiColorProduct}
+        initialVariant={redVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Flame Glove — Red' })).toBeInTheDocument()
+    expect(screen.getByText('SKU: SKU-RED')).toBeInTheDocument()
+    expect(screen.getAllByRole('img', { name: 'Red glove' }).length).toBeGreaterThan(0)
+  })
+
+  it('selecting Red updates the H1, SKU, main image, selector aria-pressed state, and the URL — without leaving a stale identity', () => {
+    render(
+      <ProductView
+        product={multiColorProduct}
+        initialVariant={blueVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Flame Glove — Blue' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Color: Red' }))
+
+    expect(screen.getByRole('heading', { name: 'Flame Glove — Red' })).toBeInTheDocument()
+    expect(screen.getByText('SKU: SKU-RED')).toBeInTheDocument()
+    expect(screen.getAllByRole('img', { name: 'Red glove' }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Color: Red' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Color: Blue' })).toHaveAttribute('aria-pressed', 'false')
+    expect(replace).toHaveBeenCalledWith(
+      '/product/flame-blue-glove?variant=gid%3A%2F%2Fshopify%2FProductVariant%2F2',
+      { scroll: false },
+    )
+  })
+
+  it('does not append a color suffix for a single-color product', () => {
+    render(<ProductView product={product} initialVariant={product.variants.nodes[0]} relatedProducts={[]} complementaryProducts={[]} />)
+    expect(screen.getByRole('heading', { name: 'Nitrile Exam Gloves' })).toBeInTheDocument()
   })
 })

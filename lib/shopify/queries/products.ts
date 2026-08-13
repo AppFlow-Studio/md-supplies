@@ -78,6 +78,10 @@ export const GET_PRODUCT = `#graphql
           sku
           barcode
           availableForSale
+          # Shopify's own variant-media assignment (LG-03) — never inferred
+          # from filename/option text. Falls back to the shared product
+          # gallery client-side when a variant has no assigned image.
+          image { id url altText width height }
 
           selectedOptions { name value }
           price { amount currencyCode }

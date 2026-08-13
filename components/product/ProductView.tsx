@@ -21,7 +21,8 @@ import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
-import { hasUsablePrice, getDefaultVariant } from '@/lib/purchasability'
+import { hasUsablePrice } from '@/lib/purchasability'
+import { useSelectedVariant } from './useSelectedVariant'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
@@ -76,6 +77,10 @@ interface BreadcrumbItem {
 
 interface Props {
   product: Product
+  /** Server-resolved from `?variant=` (or the default) — see
+      lib/product/resolve-variant.ts — so the initial render, ProductSchema
+      and this component's client state can never disagree (LG-03). */
+  initialVariant: ProductVariant
   relatedProducts: CollectionProduct[]
   complementaryProducts: CollectionProduct[]
   breadcrumbs?: BreadcrumbItem[]
@@ -83,19 +88,17 @@ interface Props {
   variantShippingDisplays?: Record<string, ShippingDisplay>
 }
 
-export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
+export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
   // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
   // Medchain, …) and must never be presented as a brand — when brand_name is
   // absent the brand line, spec row, and analytics item_brand are all omitted.
   // Declared before the analytics effect that reads it.
   const brandDisplay = publicBrand(product)
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
-    () => getDefaultVariant(product.variants.nodes),
-  )
+  const { selectedVariant, select: selectVariant, galleryImages, activeImg, setActiveImg } =
+    useSelectedVariant(product, initialVariant)
   const shippingDisplay = variantShippingDisplays[selectedVariant.id] ?? null
   const [orderQty, setOrderQty] = useState(1)
-  const [activeImg, setActiveImg] = useState(0)
   const [activeTab, setActiveTab] = useState<Tab>('SPECIFICATIONS')
 
   useEffect(() => {
@@ -123,7 +126,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
   const compareAt = selectedVariant.compareAtPrice
     ? parseFloat(selectedVariant.compareAtPrice.amount)
     : null
-  const images = product.images.nodes
+  const images = galleryImages
   const savePct =
     compareAt && compareAt > price
       ? Math.round(((compareAt - price) / compareAt) * 100)
@@ -150,6 +153,19 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
   })()
 
   const variantSku = selectedVariant.sku || (selectedVariant.id.split('/').pop() ?? '')
+
+  // LG-03: a color-neutral parent title must still show which color is
+  // selected, so the H1/breadcrumb can't contradict the SKU/image the
+  // shopper just picked. Only a genuine multi-value color dimension carries
+  // this identity risk — a single-color product or an Each/Case selection
+  // doesn't rename the product, so those get no suffix.
+  const isMultiColor = product.options.some(
+    (o) => o.name.toLowerCase() === 'color' && o.values.length > 1,
+  )
+  const selectedColor = isMultiColor
+    ? selectedVariant.selectedOptions.find((o) => o.name.toLowerCase() === 'color')?.value
+    : undefined
+  const displayTitle = selectedColor ? `${product.title} — ${selectedColor}` : product.title
 
   const SPEC_ROWS: { label: string; value: string | null }[] = [
     { label: 'Material',         value: product.material },
@@ -180,7 +196,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
         <Breadcrumb
           items={[
             ...(breadcrumbs ?? []),
-            { label: product.title },
+            { label: displayTitle },
           ]}
         />
       </div>
@@ -195,7 +211,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               <ProductImage
                 key={images[activeImg]?.id ?? activeImg}
                 src={images[activeImg]?.url}
-                alt={cleanShopifyAlt(images[activeImg]?.altText) ?? product.title}
+                alt={cleanShopifyAlt(images[activeImg]?.altText) ?? displayTitle}
                 sizes="(max-width: 1024px) 100vw, 52vw"
                 priority
               />
@@ -245,7 +261,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
             {/* Title */}
             <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
-              {product.title}
+              {displayTitle}
             </h1>
 
             {/* SKU */}
@@ -299,7 +315,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 options={product.options}
                 variants={product.variants.nodes}
                 selectedVariant={selectedVariant}
-                onSelect={setSelectedVariant}
+                onSelect={selectVariant}
               />
             )}
 

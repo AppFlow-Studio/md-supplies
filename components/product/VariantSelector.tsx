@@ -70,8 +70,11 @@ export function VariantSelector({ options, variants, selectedVariant, onSelect }
               return (
                 <button
                   key={value}
+                  type="button"
                   onClick={() => handleChange(option.name, value)}
                   disabled={!purchasable}
+                  aria-pressed={isSelected}
+                  aria-label={`${option.name}: ${value}`}
                   className={`flex flex-col items-start justify-center px-4 h-[77px] min-w-[167px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                     isSelected
                       ? 'bg-navy-900 text-white'
