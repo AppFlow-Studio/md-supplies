@@ -14,11 +14,11 @@ import { test, expect } from '@playwright/test'
 const RX_HANDLE = process.env.E2E_HANDLE_RX ?? 'qa-rx-both'
 
 test.describe('RX states', () => {
-  test('PDP shows the "RX Only" badge', async ({ page }) => {
+  test('PDP shows the "Rx Only" badge', async ({ page }) => {
     test.skip(!RX_HANDLE, 'set E2E_HANDLE_RX to a QA-store product tagged compliance:rx-only')
     const res = await page.goto(`/product/${RX_HANDLE}`, { waitUntil: 'domcontentloaded' })
     if ((res?.status() ?? 0) >= 400) test.skip(true, `${RX_HANDLE} not present on this shop`)
-    await expect(page.getByText('RX Only')).toBeVisible()
+    await expect(page.getByText('Rx Only')).toBeVisible()
   })
 
   test('guest with an RX item in cart sees the sign-in gate, not a bare checkout link', async ({ page }) => {

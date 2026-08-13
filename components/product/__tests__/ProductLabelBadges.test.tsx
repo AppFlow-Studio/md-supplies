@@ -23,8 +23,8 @@ describe('ProductLabelBadges — RX + Backorder + Free Shipping order', () => {
       />,
     )
 
-    const badges = screen.getAllByText(/^(RX Only|Backorder|Free Shipping)$/)
-    expect(badges.map((el) => el.textContent)).toEqual(['RX Only', 'Backorder', 'Free Shipping'])
+    const badges = screen.getAllByText(/^(Rx Only|Backorder|Free Shipping)$/)
+    expect(badges.map((el) => el.textContent)).toEqual(['Rx Only', 'Backorder', 'Free Shipping'])
   })
 
   it('keeps RX -> Free Shipping order with Backorder absent', () => {
@@ -35,7 +35,7 @@ describe('ProductLabelBadges — RX + Backorder + Free Shipping order', () => {
         shippingDisplay={{ class: 'standard-free', message: 'Free shipping', displayCopy: null }}
       />,
     )
-    const badges = screen.getAllByText(/^(RX Only|Backorder|Free Shipping)$/)
-    expect(badges.map((el) => el.textContent)).toEqual(['RX Only', 'Free Shipping'])
+    const badges = screen.getAllByText(/^(Rx Only|Backorder|Free Shipping)$/)
+    expect(badges.map((el) => el.textContent)).toEqual(['Rx Only', 'Free Shipping'])
   })
 })
