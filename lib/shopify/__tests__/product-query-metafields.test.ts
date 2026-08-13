@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { GET_PRODUCT, GET_PRODUCTS_BY_VENDOR, GET_PRODUCT_RECS } from '../queries/products'
+import { GET_PRODUCT, GET_PRODUCTS_BY_VENDOR, GET_PRODUCT_RECS, SEARCH_PRODUCTS_BY_TAG } from '../queries/products'
+import { GET_COLLECTION } from '../queries/collections'
+import { GET_CART } from '../queries/cart'
+import { SEARCH_PRODUCTS } from '../queries/search'
 
 /**
  * The product page maps a metafield onto every field normalizeProduct declares,
@@ -19,16 +22,28 @@ describe('GET_PRODUCT metafield selections', () => {
     expect(GET_PRODUCT).toContain('key: "brand_name"')
   })
 
-  it('requests the back-order restock date, so the back-ordered state can render', () => {
-    // Without it, an out-of-stock product holding a real ETA shows as a plain
-    // "out of stock" and the back-ordered branch in ProductView is unreachable.
+  // DEV-SHIP-04: both ETA fields are queried for compatibility/live-theme use
+  // only — the custom storefront never displays or infers Backorder status
+  // from either. custom.backorder (below) is the sole trigger.
+  it('requests both ETA fields for compatibility, though neither is ever displayed', () => {
     expect(GET_PRODUCT).toMatch(/estimatedRestockDate:\s*metafield\(/)
     expect(GET_PRODUCT).toContain('key: "estimated_back_order_restock_date"')
+    expect(GET_PRODUCT).toMatch(/backorderRestockEta:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "backorder_restock_eta"')
   })
 
   it('requests the backorder boolean, which is the sole gate for the backorder label', () => {
     expect(GET_PRODUCT).toMatch(/backorder:\s*metafield\(/)
     expect(GET_PRODUCT).toContain('key: "backorder"')
+  })
+
+  // DEV-SHIP-02: custom.free_shipping is the merchant-controlled gate ANDed
+  // with the shipping resolver's own confirmation (lib/shipping-resolver/
+  // free-shipping-gate.ts). Without this selection the field resolves to
+  // null everywhere and the AND-gate silently closes on every product.
+  it('requests custom.free_shipping, the merchant gate for the Free Shipping badge', () => {
+    expect(GET_PRODUCT).toMatch(/freeShipping:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "free_shipping"')
   })
 
   it('is still a single parseable template literal', () => {
@@ -63,5 +78,68 @@ describe('ProductCard fragment metafield selections', () => {
       expect(query).toMatch(/isRxOnly:\s*metafield\(/)
       expect(query).toContain('key: "is_rx_only"')
     })
+
+    it(`${name} requests custom.free_shipping via the shared fragment`, () => {
+      expect(query).toMatch(/freeShipping:\s*metafield\(/)
+      expect(query).toContain('key: "free_shipping"')
+    })
   }
+})
+
+// DEV-SHIP-02: every product-bearing query the card/PDP/cart surfaces are
+// built on must request custom.free_shipping, or attachCardShippingDisplay /
+// attachCartShippingDisplay silently gate the claim closed everywhere
+// (the AND-gate treats a missing metafield exactly like an explicit false).
+describe('custom.free_shipping selected on every surface query', () => {
+  it('SEARCH_PRODUCTS_BY_TAG (L2/industry/OCC card grids) requests it', () => {
+    expect(SEARCH_PRODUCTS_BY_TAG).toMatch(/freeShipping:\s*metafield\(/)
+    expect(SEARCH_PRODUCTS_BY_TAG).toContain('key: "free_shipping"')
+  })
+
+  it('GET_COLLECTION (L1 category card grids) requests it', () => {
+    expect(GET_COLLECTION).toMatch(/freeShipping:\s*metafield\(/)
+    expect(GET_COLLECTION).toContain('key: "free_shipping"')
+  })
+
+  it('the cart query (cart popup + cart page lines) requests it', () => {
+    expect(GET_CART).toMatch(/freeShipping:\s*metafield\(/)
+    expect(GET_CART).toContain('key: "free_shipping"')
+  })
+
+  // DEV-SHIP-03: SEARCH_PRODUCTS (the /search page, distinct from
+  // SEARCH_PRODUCTS_BY_TAG which backs L2/industry/OCC pages) previously had
+  // no metafield selections at all — /search results carried no
+  // shippingDisplay whatsoever regardless of this task's fix.
+  it('SEARCH_PRODUCTS (the /search page) requests it', () => {
+    expect(SEARCH_PRODUCTS).toMatch(/freeShipping:\s*metafield\(/)
+    expect(SEARCH_PRODUCTS).toContain('key: "free_shipping"')
+  })
+})
+
+// DEV-SHIP-04: every product-bearing query the card/PDP/cart/search surfaces
+// are built on must request custom.backorder, or the Backorder label
+// silently never renders on that surface regardless of the merchant's own
+// declaration. SEARCH_PRODUCTS in particular had NO backorder selection at
+// all before this fix — a product with custom.backorder=true never showed
+// the label in search results.
+describe('custom.backorder selected on every surface query', () => {
+  it('SEARCH_PRODUCTS_BY_TAG (L2/industry/OCC card grids) requests it', () => {
+    expect(SEARCH_PRODUCTS_BY_TAG).toMatch(/backorder:\s*metafield\(/)
+    expect(SEARCH_PRODUCTS_BY_TAG).toContain('key: "backorder"')
+  })
+
+  it('GET_COLLECTION (L1 category card grids) requests it', () => {
+    expect(GET_COLLECTION).toMatch(/backorder:\s*metafield\(/)
+    expect(GET_COLLECTION).toContain('key: "backorder"')
+  })
+
+  it('the cart query (cart popup + cart page lines) requests it', () => {
+    expect(GET_CART).toMatch(/backorder:\s*metafield\(/)
+    expect(GET_CART).toContain('key: "backorder"')
+  })
+
+  it('SEARCH_PRODUCTS (the /search page) requests it — the gap this fix closes', () => {
+    expect(SEARCH_PRODUCTS).toMatch(/backorder:\s*metafield\(/)
+    expect(SEARCH_PRODUCTS).toContain('key: "backorder"')
+  })
 })

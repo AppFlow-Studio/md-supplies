@@ -229,73 +229,74 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   'surgical-sutures': cat(M.type, M.material, M.size, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
 
   // The L1 collection handle is testing-screening; `testing` is the category:
-  // tag value and is not a collection.
-  'testing-screening': cat(M.type, M.testsFor, M.detectableDrugs, M.adulterants, M.size, M.features, M.otherFeatures, M.sterility, M.use),
+  // tag value and is not a collection. Verified live: 12 facets, 52 category
+  // values.
+  'testing-screening': withUniversal(APPROVED_METAFIELDS.testsFor), // 173
+  // Keyed 'capes-gowns' for the same tag-vs-collection-handle reason as
+  // 'seating' and 'trocars-trocar-kits' above: it's the live collection
+  // handle for the apparel tag.
+  'capes-gowns': OCC_RULES,                                   // 152
+  incontinence: OCC_RULES,                                    // 114
+  'pharmacy-products': OCC_RULES,                             // 101
+  'housekeeping-janitorial': OCC_RULES,                       // 85
+  'urology-ostomy': OCC_RULES,                                // 52
+  sterilization: withUniversal(APPROVED_METAFIELDS.size),     // 51, size 80%
+  'face-masks': OCC_RULES,                                    // 35
+  disinfectants: OCC_RULES,                                   // 31
+  'office-supplies': OCC_RULES,                               // 18
 
-  'exam-room': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+  // Confirmed live 2026-07-17 (docs/superpowers/plans/2026-07-17-attribute-
+  // facet-audit.md, Task 1): needle_gauge/needle_length/size_length_/
+  // order_size are all live, populated Storefront metafields on this
+  // collection today -- same gauge/length/order-size metafield family as
+  // needles-syringes above, but with size in place of volume, since dental
+  // needle products carry gauge/length/size attributes, not a fill volume.
+  dental: withUniversal(
+    APPROVED_METAFIELDS.needleGauge,
+    APPROVED_METAFIELDS.length,
+    APPROVED_METAFIELDS.size,
+  ),
 
-  respiratory: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use),
+  // Confirmed live 2026-07-17 (same audit as dental above) -- IV catheter
+  // gauge is the attribute in question (24g-iv-catheters etc.), same
+  // metafield family.
+  'iv-therapy': withUniversal(
+    APPROVED_METAFIELDS.needleGauge,
+    APPROVED_METAFIELDS.length,
+    APPROVED_METAFIELDS.size,
+  ),
 
-  mobility: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  'patient-therapy-rehab': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  // Surgery & Procedure. Keyed on the live collection handle because that is
-  // the public route slug.
-  'trocars-trocar-kits': cat(M.type, M.material, M.size, M.needleGauge, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-
-  // Apparel.
-  'capes-gowns': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-
-  hygiene: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  disinfectants: cat(M.type, M.size, M.features, M.otherFeatures, M.use),
-
-  'home-care': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  'emergency-supplies': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-
-  incontinence: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  'iv-therapy': cat(M.type, M.needleGauge, M.length, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use),
-
-  'urology-ostomy': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-
-  sterilization: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use),
-
-  dental: cat(M.type, M.material, M.size, M.needleGauge, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-
-  'housekeeping-janitorial': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  bariatric: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  // Room Furniture.
-  seating: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
-
-  // Face Masks. Registered under BOTH keys on purpose: `face-masks` is the
-  // canonical public slug (proxy.ts 301s the handle to it) and is what
-  // getAllowedFacets is called with, while `face-coverings` is the Shopify
-  // handle and stays registered so a direct hit on the pre-redirect URL cannot
-  // silently fall through to the bare default facet set.
-  // Thickness is approved here and live on other routes, so it stays
-  // registered even though this route currently returns no Thickness values.
-  'face-masks': cat(M.type, M.material, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-  'face-coverings': cat(M.type, M.material, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-
-  'pharmacy-products': cat(M.type, M.material, M.size, M.testsFor, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-}
-
-// ── The 5 approved INDUSTRY routes ─────────────────────────────────────────
-// Industry pages span several product families, so Category leads even more
-// firmly than on a category page. Keyed by industry slug; resolved through
-// getIndustryFacetRules so an industry can never accidentally pick up a
-// same-named category entry.
-export const industryFilterRegistry: Record<string, FacetRule[]> = {
-  'urgent-care': cat(M.type, M.testsFor, M.needleGauge, M.length, M.material, M.gloveSize, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-  'hrt-clinics': cat(M.type, M.needleGauge, M.length, M.size, M.material, M.features, M.otherFeatures, M.sterility, M.use),
-  'home-health': cat(M.type, M.material, M.gloveSize, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-  'clinics-doctors-offices': cat(M.type, M.testsFor, M.needleGauge, M.length, M.material, M.gloveSize, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
-  pharmacies: cat(M.type, M.testsFor, M.detectableDrugs, M.adulterants, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+  // ── Industry pages (facetKey = Industry.collectionHandle, lib/industries.ts) ──
+  // Before this entry, none of these five handles existed in the registry, so
+  // every industry page fell through to DEFAULT_FACET_RULES (Availability +
+  // Price) — the exact gap the category coverage audit above was built to
+  // close, just never extended to /industries.
+  //
+  // Facet-coverage audit (scripts/audit-industry-facet-coverage.ts, live
+  // Storefront API, 2026-08-12) against each industry's actual
+  // `tag:"industry:*"` scope, using the same 60%-population / 2-40-distinct-
+  // value bar as the category audit and the same APPROVED_METAFIELDS
+  // vocabulary (no new metafield sources added):
+  //   urgent-care              4,343 products (industry:urgent-care)
+  //   hrt-clinics                531 products (industry:hrt-surgery)
+  //   home-health               3,090 products (industry:home-care)
+  //   clinics-doctors-offices  6,388 products (industry:clinic)
+  //   pharmacies                  282 products (industry:pharmacy)
+  // In every case the best category-specific candidate (material, glove
+  // size, needle gauge/length, size, tests-for) landed well under 60% —
+  // expected, since an industry tag spans many product categories at once,
+  // the same reason broad multi-category collections above (occ, exam-room,
+  // home-care, …) get no category-specific facets either. Only the
+  // universal facets clear the bar (order_size ~96-99%, brand_name ~98-100%
+  // on every one of the five). So each gets the same broad-collection
+  // treatment as OCC_RULES: category picker, brand, order size, price —
+  // real filters instead of the two-facet fallback, without fabricating
+  // narrow facets the data does not support.
+  'urgent-care': OCC_RULES,
+  'hrt-clinics': OCC_RULES,
+  'home-health': OCC_RULES,
+  'clinics-doctors-offices': OCC_RULES,
+  pharmacies: OCC_RULES,
 }
 
 // Safe default for any collection without an explicit registry entry.
