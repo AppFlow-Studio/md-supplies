@@ -1,5 +1,10 @@
 import { ROADMAP_CATEGORIES } from '@/lib/category-nav'
-import { CATEGORY_IMAGE_CONFIG, CATEGORY_IMAGE_FALLBACK, type CategoryImageEntry } from '@/lib/category-images'
+import {
+  CATEGORY_IMAGE_CONFIG,
+  CATEGORY_IMAGE_FALLBACK,
+  DEFAULT_HERO_FOCAL,
+  type CategoryImageEntry,
+} from '@/lib/category-images'
 
 // All BunnyCDN reads go through the same-origin proxy route (app/api/bunny/[...path]/route.ts)
 // because the storage zone has no public Pull Zone — only the private Storage API, which
@@ -11,7 +16,18 @@ const CATEGORIES_PATH = 'categories'
 
 export const GLOBAL_PRODUCT_PLACEHOLDER = `${PROXY_PREFIX}/${CATEGORIES_PATH}/${CATEGORY_IMAGE_FALLBACK.file}`
 
-export const LOGO_PATH = `${PROXY_PREFIX}/logo/logo.png`
+/**
+ * Site logo — served from the bundled asset in `public/images`, NOT from the
+ * BunnyCDN proxy.
+ *
+ * The logo is brand-critical chrome on every page: it must not depend on a
+ * third-party storage credential. On 2026-08-02 every Bunny request returned
+ * 401 Unauthorized (invalid storage AccessKey), and because the proxy mapped
+ * every upstream failure to 404 the logo simply rendered broken sitewide. The
+ * identical file already existed at public/images/logo.png, so serving it
+ * locally removes the dependency entirely.
+ */
+export const LOGO_PATH = '/images/logo.png'
 
 function findRoadmapCategory(handle: string) {
   return ROADMAP_CATEGORIES.find((category) =>
@@ -26,11 +42,14 @@ function resolveEntry(handle: string): CategoryImageEntry {
 }
 
 /** Returns the BunnyCDN proxy path and descriptive alt text for a category hero banner. */
-export function getCategoryBannerConfig(handle: string): { path: string; alt: string } {
+export function getCategoryBannerConfig(
+  handle: string,
+): { path: string; alt: string; focalPosition: string } {
   const entry = resolveEntry(handle)
   return {
     path: `${PROXY_PREFIX}/${CATEGORIES_PATH}/${entry.file}`,
     alt:  entry.alt,
+    focalPosition: entry.focalPosition ?? DEFAULT_HERO_FOCAL,
   }
 }
 

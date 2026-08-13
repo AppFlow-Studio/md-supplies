@@ -1,24 +1,29 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 
 import {
   ShieldCheck, Truck, Package, ChevronDown,
   Search, User, ShoppingCart, Menu, X, Building2,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 import { useCart } from '@/components/store/CartProvider'
 import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
-import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
-import { buildCategoryTreeNav } from '@/lib/category-tree'
+import type { MenuItem } from '@/lib/shopify/types'
+import { buildCategoryTreeNav, CATEGORY_TREE_L1 } from '@/lib/category-tree'
 import { LOGO_PATH } from '@/lib/bunnycdn'
+import { approvedClaims, type ClaimKey } from '@/lib/claims'
+import { announcementBarClass } from '@/lib/announcement-visibility'
 
 interface HeaderProps {
   menuItems: MenuItem[]
-  collections: SlimCollection[]
+  /** Complete live collection-handle set for nav reconciliation (DEV-NAV-01). */
+  collections: { handle: string }[]
 }
 
 const ANNOUNCEMENTS = [
@@ -27,12 +32,23 @@ const ANNOUNCEMENTS = [
   'Shop medical supplies by category, brand, or industry',
 ]
 
-const STATS = [
-  { label: '12,000+', sublabel: 'Facilities', icon: Building2 },
-  { label: '99.8%', sublabel: 'Order Accuracy', icon: ShieldCheck },
-  { label: 'Fast', sublabel: 'Shipping', icon: Truck },
-  { label: '8,000+', sublabel: 'Products', icon: Package },
-]
+// Top-bar claims are gated on the approved-claims register (lib/claims.ts).
+// All four are BLOCKED pending written client evidence (plan §2.1 /
+// IZ-PROD-09), so the stats bars render nothing today rather than showing an
+// unsourced number. Approving a claim there brings its tile back automatically.
+const STAT_ICONS: Record<ClaimKey, LucideIcon> = {
+  facilitiesServed: Building2,
+  orderAccuracy: ShieldCheck,
+  shippingSpeed: Truck,
+  productCount: Package,
+}
+
+const STATS = approvedClaims(['facilitiesServed', 'orderAccuracy', 'shippingSpeed', 'productCount'])
+  .map(({ key, claim }) => ({
+    label: claim.text,
+    sublabel: claim.label ?? '',
+    icon: STAT_ICONS[key],
+  }))
 
 function titleToSlug(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -42,6 +58,10 @@ function titleToSlug(title: string): string {
 const FOCUSABLE = 'a[href], button:not([disabled])'
 
 export function Header({ menuItems, collections }: HeaderProps) {
+  // usePathname() is populated during SSR too, so the announcement bar's
+  // visibility class resolves identically on the server and the client — no
+  // post-hydration flash of a bar that is about to disappear.
+  const pathname = usePathname()
   const { cart, openCart } = useCart()
   const cartCount = cart?.totalQuantity ?? 0
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -147,9 +167,16 @@ export function Header({ menuItems, collections }: HeaderProps) {
   // list (already in props) and fail closed to /categories instead of
   // shipping a sitewide 404. Skipped when the collections fetch failed
   // (empty list) — degrading every link would be worse than the risk.
+  //
+  // DEV-NAV-01: the reviewed registry wins over the live-list check. A
+  // registry L1 is a validated canonical route, so it must never degrade to
+  // /categories — that regression is exactly what sent Needles/Syringes to
+  // the generic page when the live list was truncated.
   const validHandles = new Set(collections.map((c) => c.handle))
+  const registryHandles = new Set(CATEGORY_TREE_L1.map((c) => c.collectionHandle))
   const categoryHref = (title: string) => {
     const slug = titleToSlug(title)
+    if (registryHandles.has(slug)) return ROUTES.category(slug)
     if (validHandles.size > 0 && !validHandles.has(slug)) return ROUTES.categories
     return ROUTES.category(slug)
   }
@@ -163,7 +190,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
     <header className="sticky top-0 z-40">
       {/* 1 — Announcement bar */}
       <div
-        className="bg-navy-900 h-13.5 flex items-center"
+        className={`bg-navy-900 h-13.5 items-center ${announcementBarClass(pathname)}`}
         onMouseEnter={() => setAnnPaused(true)}
         onMouseLeave={() => setAnnPaused(false)}
         aria-live="polite"
@@ -186,27 +213,33 @@ export function Header({ menuItems, collections }: HeaderProps) {
         </div>
       </div>
 
-      {/* 2 — Stats bar */}
-      <div className="hidden md:flex bg-neutral-50 border-b border-blue-50 h-11.5 items-center">
-        <div className="max-w-360 mx-auto px-8 w-full flex items-center justify-center gap-12 lg:gap-16">
-          {STATS.map(({ label, sublabel, icon: Icon }) => (
-            <div key={sublabel} className="flex items-center gap-2 text-sm text-navy-900">
-              <Icon size={18} className="text-teal-500 shrink-0" />
-              <span>
-                <strong className="font-bold">{label}</strong>{' '}
-                <span className="text-gray-500">{sublabel}</span>
-              </span>
-            </div>
-          ))}
+      {/* 2 — Stats bar (only when claims are approved; see lib/claims.ts) */}
+      {STATS.length > 0 && (
+        <div className="hidden md:flex bg-neutral-50 border-b border-blue-50 h-11.5 items-center">
+          <div className="max-w-360 mx-auto px-8 w-full flex items-center justify-center gap-12 lg:gap-16">
+            {STATS.map(({ label, sublabel, icon: Icon }) => (
+              <div key={sublabel} className="flex items-center gap-2 text-sm text-navy-900">
+                <Icon size={18} className="text-teal-500 shrink-0" />
+                <span>
+                  <strong className="font-bold">{label}</strong>{' '}
+                  <span className="text-gray-500">{sublabel}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 3 — Main nav */}
       <nav className="bg-white border-b border-blue-50 h-18 flex items-center relative">
         <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src={LOGO_PATH} alt="MDSupplies" width={420} height={100} className="h-10 w-auto object-contain" />
+            {/* h-8 below sm: at 320px the 40px-tall logo renders 168px wide,
+                which with the 150px actions cluster and 32px of gutters made
+                the header 350px in a 320px viewport — horizontal page scroll on
+                every route, including ones with no other wide content. */}
+            <Image src={LOGO_PATH} alt="MDSupplies" width={420} height={100} className="h-8 sm:h-10 w-auto object-contain" />
           </Link>
 
           {/* Desktop nav links — shown only at xl where all items fit without
@@ -292,7 +325,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
                   <div className="mt-4 pt-3 border-t border-gray-100">
                     <Link
                       href={ROUTES.categories}
-                      className="text-[13px] text-teal-500 font-semibold hover:text-teal-600 transition-colors"
+                      className="text-[13px] text-teal-500 font-semibold hover:text-ink-link transition-colors"
                     >
                       Browse all categories →
                     </Link>
@@ -443,14 +476,16 @@ export function Header({ menuItems, collections }: HeaderProps) {
           id="mobile-menu"
           className={`${mobileOpen ? 'block' : 'hidden'} xl:hidden absolute top-full left-0 right-0 bg-white border-b border-blue-50 shadow-lg z-50 max-h-[80vh] overflow-y-auto`}
         >
-          <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-neutral-50 border-b border-blue-50">
-            {STATS.map(({ label, sublabel, icon: Icon }) => (
-              <div key={sublabel} className="flex items-center gap-1.5 text-xs text-navy-900">
-                <Icon size={14} className="text-teal-500 shrink-0" />
-                <span><strong>{label}</strong> {sublabel}</span>
-              </div>
-            ))}
-          </div>
+          {STATS.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-neutral-50 border-b border-blue-50">
+              {STATS.map(({ label, sublabel, icon: Icon }) => (
+                <div key={sublabel} className="flex items-center gap-1.5 text-xs text-navy-900">
+                  <Icon size={14} className="text-teal-500 shrink-0" />
+                  <span><strong>{label}</strong> {sublabel}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <nav className="px-4 py-3 flex flex-col gap-1">
             {/* Categories mobile */}

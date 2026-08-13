@@ -21,7 +21,8 @@ export interface OCCHub {
   programExplanation: string
   freeShippingMessage: string
   eligibleCategories: OCCCategory[]
-  eligibleProducts: OCCProduct[]
+  // Featured products removed: OCC renders the full collection through
+  // CategoryResults, exactly like a category page.
   faq?: FAQ[]
   seoTitle?: string
   seoDescription?: string

@@ -50,11 +50,14 @@ export interface ProductCardData {
   compareAtPrice?: number
   sku: string
   available: boolean
-  leadTime?: string
   isOCC?: boolean
-  hasFreeShipping?: boolean
+  // No hasFreeShipping / leadTime here: a shipping claim may come only from
+  // the resolver-backed shippingDisplay (DEV-LABEL-01 / DEV-SHIP-01).
   shippingDisplay?: ShippingDisplay | null
   isRx?: boolean
+  /** Flattened `custom.backorder` — boolean gate; the ETA below is optional decoration only. */
+  isBackordered?: boolean
+  backorderRestockDate?: string | null
   variants: { id: string; title: string; price: number; compareAtPrice?: number; available: boolean }[]
 }
 

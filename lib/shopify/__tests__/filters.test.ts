@@ -50,7 +50,7 @@ describe('getVisibleFilters', () => {
 
   it('keeps unrelated groups untouched', () => {
     const vendor = listFilter({
-      id: 'filter.p.vendor',
+      id: 'filter.p.m.custom.brand_name',
       label: 'Brand',
       values: [{ id: 'acme', label: 'Acme', count: 5, input: '{"v":"acme"}' }],
     })

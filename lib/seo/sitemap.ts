@@ -5,9 +5,10 @@ import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { CATEGORY_TREE_L1, buildL2Tree } from '@/lib/category-tree'
+import { CATEGORY_TREE_L1, buildL2Tree, getCategorySlug } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
-import { INDUSTRIES } from '@/lib/industries'
+import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
+import { STATIC_ARTICLES } from '@/lib/blog-static'
 
 type SitemapEntry = MetadataRoute.Sitemap[number]
 
@@ -28,22 +29,42 @@ const STATIC_URLS: SitemapEntry[] = [
 ]
 
 async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
+  // The REGISTRY decides which category routes exist; Shopify only supplies
+  // lastmod. This used to iterate the Storefront collection list and keep the
+  // handles that happened to be in the registry — an unpaginated `first: 250`
+  // over a store with more collections than that, so whichever L1 collections
+  // fell past the cutoff were silently absent. Measured 2026-08-12: 17 of the
+  // 25 approved categories were in the sitemap and 8 were missing entirely
+  // (needles-syringes, surgical-sutures, respiratory, disinfectants,
+  // iv-therapy, urology-ostomy, sterilization, pharmacy-products) — all live,
+  // indexable, linked-from-nav pages. Driving the list from the registry makes
+  // the count structurally 25, and a Storefront failure now costs freshness
+  // rather than the entries themselves.
+  //
+  // URLs use the CANONICAL public slug: listing the raw Shopify handle put a
+  // redirecting URL (/category/face-coverings → /category/face-masks) in the
+  // sitemap, which is what "only canonical, indexable, 200-status URLs" forbids.
+  let lastModByHandle = new Map<string, string>()
   try {
     const data = await storefrontFetch<{
       collections: { nodes: { handle: string; updatedAt: string }[] }
     }>(GET_COLLECTIONS_FOR_SITEMAP, { first: 250 })
-    const allowedHandles = new Set(CATEGORY_TREE_L1.map((c) => c.collectionHandle))
-    return data.collections.nodes
-      .filter((c) => allowedHandles.has(c.handle))
-      .map((c) => ({
-        url: `${SITE_URL}/category/${c.handle}`,
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
-        lastModified: new Date(c.updatedAt),
-      }))
+    lastModByHandle = new Map(data.collections.nodes.map((c) => [c.handle, c.updatedAt]))
   } catch {
-    return []
+    // Fall through: emit the routes without lastmod rather than dropping them.
   }
+
+  return CATEGORY_TREE_L1.map((c) => {
+    const updatedAt = lastModByHandle.get(c.collectionHandle)
+    return {
+      url: `${SITE_URL}/category/${getCategorySlug(c)}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+      // lastmod only when it is backed by a real Shopify updatedAt — never a
+      // synthesized "now" that makes every URL look freshly changed.
+      ...(updatedAt ? { lastModified: new Date(updatedAt) } : {}),
+    }
+  })
 }
 
 async function fetchSubcategoryUrls(): Promise<SitemapEntry[]> {
@@ -55,7 +76,7 @@ async function fetchSubcategoryUrls(): Promise<SitemapEntry[]> {
         const l1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)
         if (!l1) return null
         return {
-          url: `${SITE_URL}/category/${l1.collectionHandle}/${node.tag}`,
+          url: `${SITE_URL}/category/${getCategorySlug(l1)}/${node.tag}`,
           changeFrequency: 'weekly' as const,
           priority: 0.7,
         }
@@ -131,10 +152,20 @@ export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
 
   // Industry detail pages are index,follow content pages (built out with FAQs
   // in Priority #11), so they belong in the sitemap per closeout §12.2.
-  const industryUrls: SitemapEntry[] = INDUSTRIES.map(i => ({
+  // Only industries with unique content AND a validated assortment. The
+  // sitemap previously listed all twelve while seven of them served noindex,
+  // which asks Google to crawl URLs that then refuse indexing.
+  const industryUrls: SitemapEntry[] = SUPPORTED_INDUSTRIES.map(i => ({
     url: `${SITE_URL}/industries/${i.slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.6,
+  }))
+
+  // Static blog articles (not in Shopify — must be included separately).
+  const staticArticleUrls: SitemapEntry[] = Object.keys(STATIC_ARTICLES).map((handle) => ({
+    url: `${SITE_URL}/blog/${handle}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
   }))
 
   const [categoryUrls, subcategoryUrls, productUrls, articleUrls] = await Promise.all([
@@ -144,6 +175,14 @@ export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
     fetchArticleUrls(),
   ])
 
+  // Merge Shopify article URLs with static article URLs, deduplicating by URL.
+  const shopifyArticleHandles = new Set(
+    articleUrls.map((e) => e.url.split('/blog/')[1]),
+  )
+  const deduplicatedStaticUrls = staticArticleUrls.filter(
+    (e) => !shopifyArticleHandles.has(e.url.split('/blog/')[1]),
+  )
+
   return [
     ...STATIC_URLS,
     ...categoryUrls,
@@ -152,5 +191,6 @@ export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
     ...partnerUrls,
     ...industryUrls,
     ...articleUrls,
+    ...deduplicatedStaticUrls,
   ]
 }

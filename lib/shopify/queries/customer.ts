@@ -74,8 +74,10 @@ export const GET_ORDER_DETAILS = `#graphql
           }
           lineItems(first: 50) {
             nodes {
+              id
               title
               quantity
+              refundableQuantity
               sku
               variantTitle
               image { url altText }
@@ -83,12 +85,25 @@ export const GET_ORDER_DETAILS = `#graphql
               totalPrice { amount currencyCode }
             }
           }
-          fulfillments(first: 5) {
+          fulfillments(first: 20) {
             nodes {
+              id
+              createdAt
+              status
+              latestShipmentStatus
+              estimatedDeliveryAt
+              isPickedUp
+              requiresShipping
               trackingInformation {
                 company
                 number
                 url
+              }
+              fulfillmentLineItems(first: 50) {
+                nodes {
+                  quantity
+                  lineItem { id }
+                }
               }
             }
           }

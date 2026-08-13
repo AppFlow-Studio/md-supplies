@@ -4,8 +4,6 @@ import path from 'node:path'
 
 const ISR_ROUTE_FILES = [
   'app/page.tsx',
-  'app/solutions/occ/page.tsx',
-  'app/industries/[industry-slug]/page.tsx',
   'app/blog/[handle]/page.tsx',
 ]
 
@@ -14,9 +12,20 @@ const ISR_ROUTE_FILES = [
 // (storefrontFetch cache tags + the Shopify webhook via app/api/revalidate),
 // not by route-level ISR — a route-level `revalidate` export here would be
 // dead config that misleads readers about how caching works.
+//
+// solutions/occ joined this list with DEV-OCC-01: the page now reads
+// searchParams for the OCC catalog's filter/sort/search/page state, so it
+// cannot be statically revalidated. Its Storefront fetches carry
+// revalidate + collection cache tags instead.
 const DYNAMIC_ROUTE_FILES = [
   'app/category/[slug]/page.tsx',
   'app/product/[slug]/page.tsx',
+  'app/solutions/occ/page.tsx',
+  // industries/[slug] joined for the same reason: supported industries now
+  // render the full discovery engine and read searchParams for filter/sort/
+  // search/page state, so route-level ISR cannot apply. Freshness comes from
+  // the fetch-level cache tags in CategoryResults.
+  'app/industries/[industry-slug]/page.tsx',
 ]
 
 function read(file: string): string {

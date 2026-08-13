@@ -3,6 +3,7 @@ import { INDUSTRIES, isIndustryComplete, type Industry } from '@/lib/industries'
 
 const base: Industry = {
   name: 'Test',
+  h1: 'Test Supplies',
   slug: 'test',
   collectionHandle: 'test',
   description: 'desc',

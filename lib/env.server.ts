@@ -27,10 +27,15 @@ export const serverEnv = {
   get shopifyStorefrontToken() { return required('SHOPIFY_STOREFRONT_ACCESS_TOKEN') },
   // Admin API credential for the RX prescription gate ONLY (P0 launch-gate
   // ticket): writing/reading the compliance.rx_document / rx_verified
-  // customer metafields server-side. Custom Admin app token scoped to
+  // customer metafields server-side. Custom Admin app scoped to
   // read_customers + write_customers — nothing broader. (Custom admin apps
   // are allowed on Basic; the Plus-only limit is Functions in custom apps.)
-  get shopifyAdminToken()      { return required('SHOPIFY_ADMIN_ACCESS_TOKEN') },
+  // This app issues short-lived tokens via the client_credentials grant
+  // rather than a static shpat_ token, so the client id/secret pair — not an
+  // access token — is what's configured; lib/shopify/admin-token.ts exchanges
+  // and caches the actual token.
+  get shopifyAdminClientId()     { return required('SHOPIFY_ADMIN_CLIENT_ID') },
+  get shopifyAdminClientSecret() { return required('SHOPIFY_ADMIN_CLIENT_SECRET') },
   // HMAC secret for verifying Shopify webhooks (app/api/revalidate). For
   // admin-created webhooks this is the shared secret shown under
   // Settings → Notifications → Webhooks in the Shopify admin.

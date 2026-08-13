@@ -15,6 +15,57 @@
   --color-blue-50: #e5eff7;
   --color-neutral-50: #f9faf9;
   --color-neutral-100: #f9fafc;
+  /* Pointer-hover / keyboard-focus surface for tiles and cards on white.
+     neutral-50 (#f9faf9) and neutral-100 (#f9fafc) are the same lightness as
+     each other and within 2% of white, so neither reads as a state change on a
+     white tile — which is why the Popular Categories hover was invisible. This
+     is a genuinely darker step while staying restrained.
+     Measured on this surface (L = 0.8612): ink-muted #6b6b6b 4.62:1,
+     gray-500 #666664 4.83:1, navy-900 #0b172b 15.6:1 — all clear AA for
+     normal-size text, so any existing text token stays legible on hover. */
+  --color-surface-hover: #eceff4;
+
+  /* ── Semantic text tokens ──────────────────────────────────────────────
+     Named by ROLE, not by hue, so a colour choice is made once and every
+     surface inherits it. Each is measured against the light surfaces this
+     site actually uses (#fff, neutral-50 #f9faf9, neutral-100 #f9fafc) and
+     must clear WCAG AA for NORMAL-size text: 4.5:1.
+
+     Use these instead of reaching for a raw palette step. The audit that
+     keeps them honest is scripts/audit-text-contrast.mjs, which measures
+     rendered colour against the effective background rather than trusting
+     class names; e2e/contrast.spec.ts fails the build if any of them
+     regress.
+
+     Deliberately NOT semantic tokens: --color-teal-300 (#00c1ff) is a
+     DECORATIVE accent — chip fills, rules, icon washes on dark panels. It is
+     1.9:1 on white and must never carry normal-size body text. */
+
+  /* Ratios below are measured, not estimated: white / neutral-50 / neutral-100. */
+
+  /* Body links and any actionable inline text on a light surface. 5.83 / 5.57 / 5.58. */
+  --color-ink-link: #006d92;
+  /* Hover/active partner for the above — darker, never lighter. 8.90 / 8.51 / 8.52. */
+  --color-ink-link-hover: #00506b;
+  /* Product-card Brand line. Same value as the link token today; separate so
+     merchandising can be retuned without touching link semantics. 5.83 / 5.57 / 5.58. */
+  --color-ink-brand: #006d92;
+  /* Status text (stock, backorder, validation). 6.42 / 6.14 / 6.15. */
+  --color-ink-danger: #c10007;
+  /* Muted/secondary body copy on LIGHT surfaces. 5.33 / 5.09 / 5.10. */
+  --color-ink-muted: #6b6b6b;
+  /* Muted/secondary body copy on DARK surfaces — navy-900 panels and the
+     dark image overlays on /about. A light-surface token used on a dark panel
+     inverts the problem instead of fixing it, so the pair is explicit rather
+     than one value someone has to reason about. 8.26:1 on navy-900, 4.78:1 on
+     the darkest overlay measured (#404040), so it clears AA on both. */
+  --color-ink-muted-on-dark: #b0b0b0;
+  /* Non-text separators (breadcrumb chevrons, bullet dividers): decorative and
+     aria-hidden, so the 3:1 NON-TEXT threshold applies rather than 4.5:1.
+     gray-300 at 1.41:1 cleared neither and was genuinely hard to see.
+     3.45 / 3.30 / 3.31 — chosen to clear 3:1 on every light surface here, not
+     just on pure white. */
+  --color-ink-separator: #8a8a8a;
 }
 
 body {

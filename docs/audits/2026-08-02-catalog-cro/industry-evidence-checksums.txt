@@ -1,0 +1,8 @@
+# Checksums for the regenerable bulk evidence (gitignored).
+# Regenerate:  node scripts/industries-mapping-dryrun.mjs <catalog-full.csv>
+# Then verify these sha256 values match before relying on the outputs.
+# source: C:/Users/Bilal/Downloads/catalog-full-2026-07-07.csv
+
+d1df45a319d3cdf31718c881c66862736ca7d1d6ae184859c1a2814aa30efe8a  industry-current-to-proposed.csv  (7369 lines, 1067678 bytes)
+5ef7a949948a0df7a06217ba5b0dbeeae113e179b377b2fc93e17f119bb36e08  industry-affected-products.csv  (14639 lines, 1440231 bytes)
+3f8e8eb241395a407b9e3e45a7575571c6815edff6ae4286f9875cb37b33501e  industry-rollback.json  (58962 lines, 1574458 bytes)

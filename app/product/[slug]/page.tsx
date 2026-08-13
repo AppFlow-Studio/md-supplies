@@ -3,7 +3,9 @@ import { buildMetadata, trimDescription } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
-import type { Product, CollectionProduct, ProductMetafields } from '@/lib/shopify/types'
+import type { CollectionProduct } from '@/lib/shopify/types'
+import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
+import { publicBrand } from '@/lib/brand'
 import { ProductView } from '@/components/product/ProductView'
 import { PARTNERS } from '@/lib/partners'
 import { ProductSchema } from '@/components/schema/ProductSchema'
@@ -11,11 +13,14 @@ import { normalizeGtin } from '@/lib/gtin'
 import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag } from '@/lib/category-tree'
+import { getProductCategoryPath, buildL2Tree, parseProductTags, humanizeTag,
+  getCategorySlug,
+} from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { ROUTES } from '@/lib/routes'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
+import { getDefaultVariant } from '@/lib/purchasability'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -40,42 +45,8 @@ function buildPriceValidUntil(): string {
   return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
-// Shopify returns metafields as `{ value: string } | null`, not bare strings.
-// This type reflects the actual JSON shape before we normalize it.
-type RawMetafield = { value: string } | null
-type RawProduct = Omit<Product, keyof ProductMetafields> & {
-  [K in keyof ProductMetafields]: RawMetafield
-}
-
-function normalizeProduct(raw: RawProduct): Product {
-  const mv = (m: RawMetafield): string | null => m?.value ?? null
-  return {
-    ...raw,
-    brandName:            mv(raw.brandName),
-    unitsPerOrder:        mv(raw.unitsPerOrder),
-    quantityOfUnits:      mv(raw.quantityOfUnits),
-    orderSize:            mv(raw.orderSize),
-    material:             mv(raw.material),
-    use:                  mv(raw.use),
-    features:             mv(raw.features),
-    color:                mv(raw.color),
-    sterility:            mv(raw.sterility),
-    thickness:            mv(raw.thickness),
-    gloveSize:            mv(raw.gloveSize),
-    needleGauge:          mv(raw.needleGauge),
-    needleLength:         mv(raw.needleLength),
-    sizeLength:           mv(raw.sizeLength),
-    estimatedRestockDate: mv(raw.estimatedRestockDate),
-    testsFor:             mv(raw.testsFor),
-    detectableDrugs:      mv(raw.detectableDrugs),
-    adulterants:          mv(raw.adulterants),
-    otherFeatures:        mv(raw.otherFeatures),
-    typeList:             mv(raw.typeList),
-    customBadge1:         mv(raw.customBadge1),
-    customBadge2:         mv(raw.customBadge2),
-    customBadge3:         mv(raw.customBadge3),
-  }
-}
+// Metafield flattening moved to lib/shopify/normalize.ts so the category
+// product route normalizes identically (it previously passed raw objects).
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
@@ -87,11 +58,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     )
     if (!data.product) return buildMetadata({ pageType: 'product', title: 'Product' })
     const product = normalizeProduct(data.product)
-    const brand = product.brandName ?? product.vendor
+    // Public brand only — never the fulfilling vendor (lib/brand.ts).
+    const brand = publicBrand(product)
     return buildMetadata({
       pageType: 'product',
       title: product.seo?.title || product.title,
-      description: product.seo?.description || trimDescription(`${brand} — ${product.description}`, 155),
+      description:
+        product.seo?.description ||
+        trimDescription(brand ? `${brand} — ${product.description}` : product.description, 155),
       slug,
       image: product.images.nodes[0]?.url,
       imageWidth: product.images.nodes[0]?.width,
@@ -131,21 +105,27 @@ export default async function ProductPage({ params }: Props) {
   const relatedProducts = recsData.related
   const complementaryProducts = recsData.complementary
 
-  const firstVariant = product.variants.nodes[0]
-  const isAvailable = firstVariant?.availableForSale ?? product.availableForSale
+  // Same default-variant selection ProductView renders (lib/purchasability.ts)
+  // so the Product schema can never disagree with the visibly-selected price/
+  // SKU/availability, or drop the Offer for a product that has a purchasable
+  // variant just because variants.nodes[0] happened to be a $0/quote-only one.
+  const defaultVariant = getDefaultVariant(product.variants.nodes)
+  const isAvailable = defaultVariant?.availableForSale ?? product.availableForSale
   const productUrl = `${SITE_URL}/product/${slug}`
 
   const schemaProps = {
     name: product.title,
     description: product.description,
     image: product.images.nodes[0]?.url ?? '',
-    sku: firstVariant?.sku || slug,
+    sku: defaultVariant?.sku || slug,
     // gtin only when the Shopify barcode is a checksum-valid GTIN — most
     // barcodes in this catalog are SKU copies and must not be emitted (M5).
-    gtin: normalizeGtin(firstVariant?.barcode),
-    brand: product.brandName ?? product.vendor,
-    price: parseFloat(firstVariant?.price?.amount ?? '0'),
-    priceCurrency: firstVariant?.price?.currencyCode ?? 'USD',
+    gtin: normalizeGtin(defaultVariant?.barcode),
+    // Product structured data: omit brand entirely rather than emit the
+    // fulfilling vendor as a consumer brand (lib/brand.ts).
+    brand: publicBrand(product) ?? undefined,
+    price: parseFloat(defaultVariant?.price?.amount ?? '0'),
+    priceCurrency: defaultVariant?.price?.currencyCode ?? 'USD',
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
@@ -166,7 +146,7 @@ export default async function ProductPage({ params }: Props) {
   const categoryPath = getProductCategoryPath({ handle: product.handle, categories, subcategories }, l2Nodes)
   const categoryCrumbs = categoryPath
     ? [
-        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        { label: categoryPath.category.displayName, href: ROUTES.category(getCategorySlug(categoryPath.category)) },
         ...(categoryPath.subcategory
           ? [{
               label: humanizeTag(categoryPath.subcategory.tag),

@@ -1,4 +1,4 @@
-import { WholesalePricing } from "@/components/home/WholesalePricing";
+import { WholesalePricingSkeleton } from "@/components/home/WholesalePricingSkeleton";
 import { Skeleton }         from "@/components/ui/Skeleton";
 
 export default function ArticleLoading() {
@@ -8,9 +8,9 @@ export default function ArticleLoading() {
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-5">
         <div className="flex items-center gap-2">
           <Skeleton className="h-4 w-10" />
-          <span className="text-gray-300">›</span>
+          <span aria-hidden="true" className="text-ink-separator">›</span>
           <Skeleton className="h-4 w-10" />
-          <span className="text-gray-300">›</span>
+          <span aria-hidden="true" className="text-ink-separator">›</span>
           <Skeleton className="h-4 w-48" />
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function ArticleLoading() {
         </div>
       </section>
 
-      <WholesalePricing />
+      <WholesalePricingSkeleton />
     </main>
   );
 }

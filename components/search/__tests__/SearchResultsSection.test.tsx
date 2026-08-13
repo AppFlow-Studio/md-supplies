@@ -1,25 +1,9 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
 import { SearchResultsSection } from '../SearchResultsSection'
-import type { CollectionProduct, PageInfo } from '@/lib/shopify/types'
+import type { CollectionProduct } from '@/lib/shopify/types'
 
-const replace = vi.fn()
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace }),
-  useSearchParams: () => new URLSearchParams('q=gloves'),
-}))
-
-vi.mock('../../../app/search/actions', () => ({
-  loadMoreSearchProducts: vi.fn().mockResolvedValue({
-    products: [],
-    pageInfo: { hasNextPage: false, hasPreviousPage: true, startCursor: null, endCursor: 'cursor-2' },
-  }),
-}))
-
-afterEach(() => {
-  cleanup()
-  replace.mockClear()
-})
+afterEach(cleanup)
 
 const product: CollectionProduct = {
   id: 'gid://1',
@@ -45,28 +29,49 @@ const product: CollectionProduct = {
   },
 }
 
-const pageInfo: PageInfo = { hasNextPage: true, hasPreviousPage: false, startCursor: null, endCursor: 'cursor-1' }
-
-describe('SearchResultsSection Load More URL reflection (NF13)', () => {
-  it('reflects the new cursor in the URL via router.replace after loading more', async () => {
+describe('SearchResultsSection', () => {
+  it('renders the products it is given (pagination lives in page.tsx, not here)', () => {
     render(
       <SearchResultsSection
-        initialProducts={[product]}
-        initialPageInfo={pageInfo}
+        products={[product]}
         q="gloves"
-        sortKey="RELEVANCE"
-        reverse={false}
-        filters={[]}
         clearFiltersUrl="/search?q=gloves"
         isFiltered={false}
       />,
     )
 
-    fireEvent.click(screen.getByText('Load More'))
+    expect(screen.getByText('Gloves')).toBeInTheDocument()
+    expect(screen.queryByText('Load More')).toBeNull()
+  })
 
-    await waitFor(() => expect(replace).toHaveBeenCalled())
-    const [url] = replace.mock.calls[0]
-    expect(url).toContain('after=cursor-2')
-    expect(url).toContain('q=gloves')
+  it('shows the empty state with a clear-filters recovery link when filtered', () => {
+    render(
+      <SearchResultsSection
+        products={[]}
+        q="zzznonexistent"
+        clearFiltersUrl="/search?q=zzznonexistent"
+        isFiltered
+      />,
+    )
+
+    expect(screen.getByText('No results for “zzznonexistent”')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Clear filters' })).toHaveAttribute(
+      'href',
+      '/search?q=zzznonexistent',
+    )
+  })
+
+  it('shows suggested categories instead of a clear-filters link when there is no active filter', () => {
+    render(
+      <SearchResultsSection
+        products={[]}
+        q="zzznonexistent"
+        clearFiltersUrl="/search?q=zzznonexistent"
+        isFiltered={false}
+      />,
+    )
+
+    expect(screen.queryByRole('link', { name: 'Clear filters' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Exam Gloves' })).toBeInTheDocument()
   })
 })

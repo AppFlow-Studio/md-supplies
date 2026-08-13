@@ -12,3 +12,15 @@ export type {
   CanonicalStrategy,
   RobotsInput,
 } from './types'
+
+// SEO database helpers
+export { getCategorySeo, getSubcategorySeo } from './categorySeo'
+export { getIndustrySeo } from './industrySeo'
+export { getPartnerSeo } from './partnerSeo'
+export { getSolutionSeo } from './solutionSeo'
+export { getBlogSeo } from './blogSeo'
+export type { PageSEO, FAQItem, ContentSection } from './seoTypes'
+export type { IndustrySeoOverride } from './industrySeo'
+export type { PartnerSeoData } from './partnerSeo'
+export type { SolutionSeoData } from './solutionSeo'
+export type { BlogSeoData } from './blogSeo'

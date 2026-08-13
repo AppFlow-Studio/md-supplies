@@ -1,0 +1,57 @@
+{
+  "_meta": {
+    "artifact": "shipping-facts",
+    "schema_version": "v3.0",
+    "store": "md-supplies-qa-shipping-and-checkout.myshopify.com",
+    "note": "Synthetic fixture for the RATES_ONLY_SHOWS_CLAIM gate test cases only — not real store data. checksum_sha256_of_payload below is not meaningful; tests validate against SHIPPING_FACTS_CHECKSUM_SHA256.",
+    "checksum_sha256_of_payload": "TEST-FIXTURE-NOT-VALIDATED"
+  },
+  "delivery_profiles": [],
+  "products": {
+    "gid://shopify/Product/TEST-drift-single": {
+      "handle": "test-drift-single",
+      "title": "Test Drift Single",
+      "diagnostic_status": "clean_free",
+      "public_display_class": "standard-free",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/TEST-drift-single-v1": {
+          "sku": "DRIFT1",
+          "effective_rate_class": "PAID",
+          "diagnostic_status": "curation_drift",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    },
+    "gid://shopify/Product/TEST-drift-multi": {
+      "handle": "test-drift-multi",
+      "title": "Test Drift Multi",
+      "diagnostic_status": "clean_free",
+      "public_display_class": "standard-free",
+      "display_copy": null,
+      "hold": false,
+      "hold_reason": null,
+      "canada_status": "n/a",
+      "variants": {
+        "gid://shopify/ProductVariant/TEST-drift-multi-v1": {
+          "sku": "DRIFT2A",
+          "effective_rate_class": "FREE",
+          "diagnostic_status": "clean_free",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        },
+        "gid://shopify/ProductVariant/TEST-drift-multi-v2": {
+          "sku": "DRIFT2B",
+          "effective_rate_class": "PAID",
+          "diagnostic_status": "curation_drift",
+          "public_display_class": "standard-free",
+          "display_copy": null
+        }
+      }
+    }
+  }
+}

@@ -106,3 +106,30 @@ describe('ProductView PDP semantic markup (Audit M13)', () => {
     expect(rowHeader).toHaveAttribute('scope', 'row')
   })
 })
+
+// DEV-RX-02 / Izzy retest on 225678bc: custom.backorder was read nowhere on
+// the PDP, so a backordered product never showed the label regardless of the
+// metafield's value.
+describe('ProductView — Backorder label (DEV-RX-02)', () => {
+  it('shows the Backorder badge when custom.backorder is true', () => {
+    render(
+      <ProductView
+        product={{ ...product, backorder: { value: 'true' } }}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('renders no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
+    render(
+      <ProductView
+        product={{ ...product, estimatedRestockDate: '2099-01-01' }}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
+  })
+})

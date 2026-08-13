@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Industry migration rollback package",
+  "description": "Shape of evidence/industry-rollback.json — each product's CURRENT industry: tags, captured BEFORE any migration. Regenerate with scripts/industries-mapping-dryrun.mjs and verify against industry-evidence-checksums.txt.",
+  "type": "object",
+  "required": [
+    "generatedFrom",
+    "generatedAt",
+    "products"
+  ],
+  "properties": {
+    "generatedFrom": {
+      "type": "string",
+      "description": "Source catalog export path"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    },
+    "products": {
+      "type": "object",
+      "description": "Keyed by Shopify product_id (the identity; SKU never is)",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "handle",
+          "status",
+          "industryTags"
+        ],
+        "properties": {
+          "handle": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "draft",
+              "archived"
+            ]
+          },
+          "industryTags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "CURRENT industry: tags — the exact set to restore"
+          }
+        }
+      }
+    }
+  }
+}

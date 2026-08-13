@@ -5,18 +5,19 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { CartProvider } from '@/components/store/CartProvider'
 import { CartPopup } from '@/components/store/CartPopup'
+import { CartToast } from '@/components/store/CartToast'
 import { SkipLink } from '@/components/a11y/SkipLink'
 import { Suspense } from 'react'
 import { GoogleTagManager } from '@next/third-parties/google'
 import { PageViewTracker } from '@/components/analytics/PageViewTracker'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_LOCALIZATION } from '@/lib/shopify/queries/markets'
-import { GET_COLLECTIONS_SLIM } from '@/lib/shopify/queries/collections'
 import { GET_MENU } from '@/lib/shopify/queries/menu'
 import { buildOrganizationSchema, jsonLdSafe } from '@/lib/schema'
 import { getNonce } from '@/lib/csp-nonce'
 import { IS_STAGING, SITE_ORIGIN } from '@/lib/site-config'
-import type { LocalizationData, AvailableCountry, SlimCollection, ShopifyMenu } from '@/lib/shopify/types'
+import { fetchAllCollectionHandles, type CollectionHandle } from '@/lib/shopify/collection-handles.server'
+import type { LocalizationData, AvailableCountry, ShopifyMenu } from '@/lib/shopify/types'
 
 const manrope = Manrope({
   variable: '--font-manrope',
@@ -49,11 +50,10 @@ export default async function RootLayout({
       undefined,
       { next: { revalidate: 86400, tags: ['shopify', 'localization'] } },
     ).catch(() => null),
-    storefrontFetch<{ collections: { nodes: SlimCollection[] } }>(
-      GET_COLLECTIONS_SLIM,
-      { first: 249 },
-      { next: { revalidate: 3600, tags: ['shopify', 'collections'] } },
-    ).catch(() => ({ collections: { nodes: [] as SlimCollection[] } })),
+    // DEV-NAV-01: the COMPLETE live handle set (paginated). Header/Footer use
+    // it only to reconcile nav links, and a truncated list silently degraded
+    // real categories (e.g. Needles/Syringes) to /categories.
+    fetchAllCollectionHandles().catch(() => [] as CollectionHandle[]),
     storefrontFetch<{ menu: ShopifyMenu }>(
       GET_MENU,
       { handle: 'main-menu' },
@@ -61,7 +61,7 @@ export default async function RootLayout({
     ).catch(() => ({ menu: { id: '', title: '', items: [] } as ShopifyMenu })),
   ])
   const availableCountries: AvailableCountry[] = localization?.localization.availableCountries ?? []
-  const collections: SlimCollection[] = collectionsData.collections.nodes
+  const collections: CollectionHandle[] = collectionsData
   const menuItems = menuData.menu?.items ?? []
 
   const isStaging = IS_STAGING
@@ -95,6 +95,10 @@ export default async function RootLayout({
             availableCountries={availableCountries}
           />
           <CartPopup />
+          {/* Global: surfaces a refused cart change (DEF-08/QA-092) no matter
+              which surface triggered it — popup, quick-add, or the /cart
+              page — instead of only the /cart page hearing about it. */}
+          <CartToast />
         </CartProvider>
       </body>
     </html>

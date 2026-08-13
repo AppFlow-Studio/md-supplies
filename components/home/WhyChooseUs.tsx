@@ -19,9 +19,11 @@ const FEATURES: { Icon: LucideIcon; title: string; description: string }[] = [
     description: "Transparent pricing across medical supply categories, with no inflated markups.",
   },
   {
+    // DEV-POLICY-01: no blanket return promise — returns follow the vendor's
+    // policy (plan §7.2), so this tile points to it instead of promising ease.
     Icon: RotateCcw,
-    title: "Easy Returns",
-    description: "Hassle-free returns on unopened products",
+    title: "Clear Return Policies",
+    description: "Returns follow each vendor's policy — see the Returns tab on any product page.",
   },
 ];
 

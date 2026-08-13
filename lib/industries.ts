@@ -5,6 +5,13 @@ export type { FAQ }
 
 export type Industry = {
   name: string
+  /**
+   * The page's H1. Not derivable from `name`: the landing page rendered
+   * `${name} Supplies`, which produces "Pharmacies Supplies" and "Clinics &
+   * Doctor's Offices Supplies" — both ungrammatical, and both were the visible
+   * heading on an indexable page. Explicit per industry instead.
+   */
+  h1: string
   slug: string
   collectionHandle: string
   tag?: string
@@ -17,6 +24,7 @@ export type Industry = {
 export const INDUSTRIES: Industry[] = [
   {
     name: 'Urgent Care',
+    h1: 'Urgent Care Supplies',
     slug: 'urgent-care',
     collectionHandle: 'urgent-care',
     tag: 'industry:urgent-care',
@@ -44,6 +52,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'HRT Clinics',
+    h1: 'HRT Clinic Supplies',
     slug: 'hrt-clinics',
     collectionHandle: 'hrt-clinics',
     tag: 'industry:hrt-surgery',
@@ -71,6 +80,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'EMS & First Responders',
+    h1: 'EMS & First Responder Supplies',
     slug: 'ems',
     collectionHandle: 'ems',
     description: 'First responder bags, trauma supplies, and emergency kits.',
@@ -79,6 +89,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Home Health',
+    h1: 'Home Health Supplies',
     slug: 'home-health',
     collectionHandle: 'home-health',
     tag: 'industry:home-care',
@@ -106,6 +117,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Long-Term Care',
+    h1: 'Long-Term Care Supplies',
     slug: 'long-term-care',
     collectionHandle: 'long-term-care',
     description: 'Bulk supplies for nursing homes and assisted living facilities.',
@@ -114,6 +126,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Physical Therapy',
+    h1: 'Physical Therapy Supplies',
     slug: 'physical-therapy',
     collectionHandle: 'physical-therapy',
     description: 'Mobility equipment and therapy rehabilitation aids.',
@@ -122,6 +135,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Private Practice',
+    h1: 'Private Practice Supplies',
     slug: 'private-practice',
     collectionHandle: 'private-practice',
     description: 'Exam room essentials, diagnostics, and office supplies.',
@@ -130,6 +144,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Dental',
+    h1: 'Dental Supplies',
     slug: 'dental',
     collectionHandle: 'dental',
     description: 'Gloves, sterilization, barriers, and instruments.',
@@ -138,6 +153,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Veterinary',
+    h1: 'Veterinary Supplies',
     slug: 'veterinary',
     collectionHandle: 'veterinary',
     description: 'Syringes, gloves, and veterinary wound care.',
@@ -146,6 +162,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Community Health',
+    h1: 'Community Health Supplies',
     slug: 'community-health',
     collectionHandle: 'community-health',
     description: 'Affordable supplies for nonprofits and free clinics.',
@@ -154,6 +171,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Clinics & Doctor\'s Offices',
+    h1: 'Supplies for Clinics & Doctor\'s Offices',
     slug: 'clinics-doctors-offices',
     collectionHandle: 'clinics-doctors-offices',
     tag: 'industry:clinic',
@@ -181,6 +199,7 @@ export const INDUSTRIES: Industry[] = [
   },
   {
     name: 'Pharmacies',
+    h1: 'Supplies for Pharmacies',
     slug: 'pharmacies',
     collectionHandle: 'pharmacies',
     tag: 'industry:pharmacy',
@@ -218,3 +237,39 @@ export function isIndustryComplete(industry: Industry): boolean {
     industry.buyerType?.trim() && industry.description?.trim() && industry.faq?.length,
   )
 }
+
+/**
+ * Does this industry have a VALIDATED product assortment?
+ *
+ * Catalog audit 2026-08-02 against the July-7 export: the catalog carries
+ * exactly SIX `industry:` values on active products —
+ *   clinic 6,390 · urgent-care 4,344 · home-care 3,091 · hrt-surgery 531 ·
+ *   pharmacy 282 · occ-charities 106
+ * (counts overlap; a product may carry several). Five of them back an industry
+ * page here; occ-charities is served by /solutions/occ.
+ *
+ * Everything else — EMS, Long-Term Care, Physical Therapy, Private Practice,
+ * Dental, Veterinary, Community Health — has NO approved product membership.
+ * A generic occurrence of "dental" or "physical therapy" inside some other tag
+ * does not establish an industry assignment, and human-medical products must
+ * not be poured into Veterinary just to fill a page.
+ */
+export function hasValidatedAssortment(industry: Industry): boolean {
+  return Boolean(industry.tag?.trim())
+}
+
+/**
+ * Indexable = unique content AND a real assortment. Both are required: a page
+ * with copy but no products is a thin doorway, and a page with products but no
+ * copy is a duplicate of the category it wraps.
+ *
+ * This is the single predicate for metadata robots, sitemap inclusion and the
+ * Industries grid, so those three can no longer disagree — the sitemap
+ * previously listed all twelve while seven of them served `noindex`.
+ */
+export function isIndustryIndexable(industry: Industry): boolean {
+  return isIndustryComplete(industry) && hasValidatedAssortment(industry)
+}
+
+/** Industries safe to surface in navigation, the grid and the sitemap. */
+export const SUPPORTED_INDUSTRIES: Industry[] = INDUSTRIES.filter(isIndustryIndexable)

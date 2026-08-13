@@ -23,7 +23,7 @@
       "variants": {
         "gid://shopify/ProductVariant/51573764784361": {
           "sku": "QA-RTL10389GB",
-          "effective_rate_class": null,
+          "effective_rate_class": "FREE",
           "diagnostic_status": "clean_free",
           "public_display_class": "standard-free",
           "display_copy": null

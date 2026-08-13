@@ -11,16 +11,31 @@ import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
 import { setCartAttribute } from '@/app/actions/cart'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
-import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
+import { unshippableCartLines, CART_LINE_UNSHIPPABLE_MESSAGE } from '@/lib/shopify/cart-lines'
+import { resolveProductLabels } from '@/lib/labels/labels'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 
 export function CartPopup() {
   const { cart, isOpen, closeCart, removeItem, updateItem } = useCart()
   const lines = cart?.lines.nodes ?? []
   const rxGate = useRxGate(cart)
+  // Phase 11: a line with no usable price would transact at $0 or be silently
+  // dropped at checkout. Block the handoff and name the offending items.
+  const blockedLines = cart ? blockedCartLines(cart.lines.nodes) : []
+  // DEV-LAUNCH-09: a line Shopify can't ship to the destination is a
+  // separate, differently-caused block from a price-unavailable one — both
+  // must stop checkout, but neither message may stand in for the other.
+  const unshippableLines = cart ? unshippableCartLines(cart) : []
+  const checkoutBlocked = blockedLines.length > 0 || unshippableLines.length > 0
   const panelRef = useRef<HTMLDivElement>(null)
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null)
+  const checkoutInFlightRef = useRef(false)
 
   useEffect(() => {
     if (!isOpen) return
+
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null
 
     const panel = panelRef.current
     if (!panel) return
@@ -53,39 +68,48 @@ export function CartPopup() {
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      previouslyFocusedRef.current?.focus()
+    }
   }, [isOpen, closeCart])
 
   async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {
     if (!cart) return
     e.preventDefault()
+    if (checkoutInFlightRef.current) return
+    checkoutInFlightRef.current = true
 
-    track(
-      {
-        ...buildBeginCheckoutEvent({
-          currency: cart.cost.subtotalAmount.currencyCode,
-          items: lines.map((line) => ({
-            item_id: line.merchandise.id,
-            item_name: line.merchandise.product.title,
-            price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-            quantity: line.quantity,
-          })),
-        }),
-      },
-    )
-
-    // Bridge the storefront GA client_id into Shopify checkout for the pixel.
-    // Best-effort: never block the handoff on analytics.
     try {
-      const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
-      const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
-      if (clientId) await setCartAttribute('ga_client_id', clientId)
-    } catch (err) {
-      console.error('[CartPopup] failed to stamp ga_client_id:', err)
-    }
+      track(
+        {
+          ...buildBeginCheckoutEvent({
+            currency: cart.cost.subtotalAmount.currencyCode,
+            items: lines.map((line) => ({
+              item_id: line.merchandise.id,
+              item_name: line.merchandise.product.title,
+              price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
+              quantity: line.quantity,
+            })),
+          }),
+        },
+      )
 
-    // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
-    await rxGate.proceedToCheckout()
+      // Bridge the storefront GA client_id into Shopify checkout for the pixel.
+      // Best-effort: never block the handoff on analytics.
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
+        const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
+        if (clientId) await setCartAttribute('ga_client_id', clientId)
+      } catch (err) {
+        console.error('[CartPopup] failed to stamp ga_client_id:', err)
+      }
+
+      // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
+      await rxGate.proceedToCheckout()
+    } finally {
+      checkoutInFlightRef.current = false
+    }
   }
 
   return (
@@ -130,7 +154,7 @@ export function CartPopup() {
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {lines.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 py-20">
-              <ShoppingCart size={48} className="text-gray-300" />
+              <ShoppingCart size={48} aria-hidden className="text-gray-300" />
               <p className="text-gray-500 text-[15px] tracking-[0.3px]">Your cart is empty</p>
               <button
                 type="button"
@@ -175,11 +199,21 @@ export function CartPopup() {
                           {variantTitle}
                         </p>
                       )}
-                      {line.shippingDisplay && (
-                        <div className="mb-2">
-                          <ShippingBadge shippingDisplay={line.shippingDisplay} />
-                        </div>
-                      )}
+                      {/* Same tag ∪ custom.is_rx_only union and
+                          custom.backorder boolean the card/PDP/checkout gate
+                          use — display-only, never itself a checkout decision
+                          (DEV-LAUNCH-08). Order (RX -> Backorder -> Free
+                          Shipping) guaranteed by ProductLabelBadges. */}
+                      <ProductLabelBadges
+                        className="mb-2"
+                        labels={resolveProductLabels({
+                          tags: line.merchandise.product.tags,
+                          isRxOnly: line.merchandise.product.isRxOnly,
+                          isBackordered: line.merchandise.product.backorder,
+                          estimatedRestockDate: line.merchandise.product.estimatedRestockDate?.value ?? null,
+                        })}
+                        shippingDisplay={line.shippingDisplay}
+                      />
                       <div className="flex items-center justify-between">
                         {/* Qty stepper */}
                         <div className="flex items-center border border-gray-200 h-[32px]">
@@ -241,7 +275,33 @@ export function CartPopup() {
             <p className="text-gray-500 text-[12px] tracking-[0.24px]">
               Shipping and taxes calculated at checkout
             </p>
-            {rxGate.blocked ? (
+            {checkoutBlocked ? (
+              <div className="border border-amber-300 bg-amber-50 p-4 flex flex-col gap-2">
+                <p className="text-navy-900 text-[14px] font-semibold">
+                  {blockedLines.length > 0 && unshippableLines.length > 0
+                    ? 'Action needed before checkout'
+                    : blockedLines.length > 0
+                      ? 'Pricing needed before checkout'
+                      : 'Shipping unavailable for one or more items'}
+                </p>
+                {blockedLines.length > 0 && (
+                  <p className="text-gray-600 text-[13px] leading-relaxed">
+                    {blockedCheckoutMessage(blockedLines)}
+                  </p>
+                )}
+                {unshippableLines.length > 0 && (
+                  <p className="text-gray-600 text-[13px] leading-relaxed">
+                    {CART_LINE_UNSHIPPABLE_MESSAGE}
+                  </p>
+                )}
+                <span
+                  aria-disabled="true"
+                  className="bg-gray-200 text-gray-500 h-[52px] flex items-center justify-center text-[15px] font-semibold tracking-[0.3px] uppercase cursor-not-allowed"
+                >
+                  Proceed to Checkout
+                </span>
+              </div>
+            ) : rxGate.blocked ? (
               <RxGatePanel signedIn={rxGate.signedIn} />
             ) : (
               <a

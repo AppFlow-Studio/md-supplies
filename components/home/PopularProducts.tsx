@@ -9,6 +9,9 @@ import { ProductImage } from '@/components/shared/ProductImage'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import type { ProductCardData } from '@/types/product'
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { publicBrand } from '@/lib/brand'
+import { isBackorderedMetafield, resolveProductLabels } from '@/lib/labels/labels'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 
 interface Props {
   products: CollectionProduct[]
@@ -39,15 +42,17 @@ function toCardData(product: CollectionProduct): ProductCardData {
       width: img.width ?? 800,
       height: img.height ?? 800,
     })),
-    brand: product.vendor,
-    vendor: product.vendor,
+    // Public brand only; never the fulfilling vendor (lib/brand.ts).
+    brand: publicBrand(product) ?? '',
+    vendor: '',
     price,
     compareAtPrice,
     sku: '',
     available: product.availableForSale,
-    hasFreeShipping: product.tags.includes('free-shipping'),
     shippingDisplay: product.shippingDisplay ?? null,
-    isRx: product.tags.includes('rx-required'),
+    isBackordered: isBackorderedMetafield(product.backorder),
+    backorderRestockDate: product.estimatedRestockDate?.value ?? null,
+    isRx: product.tags.some((t) => t === 'rx-required' || t === 'compliance:rx-only'),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
       title: v.title,
@@ -88,8 +93,11 @@ export function PopularProducts({ products }: Props) {
             return (
               <FadeIn key={product.id} delay={i * 0.08} className="bg-white flex flex-col">
 
+                {/* DEF-02/QA-135: image-only link — the visible title sits
+                    outside it below, so it needs its own accessible name. */}
                 <Link
                   href={`/product/${product.handle}`}
+                  aria-label={product.title}
                   className="group relative overflow-hidden aspect-square bg-gray-50 block"
                 >
                   <ProductImage
@@ -101,13 +109,32 @@ export function PopularProducts({ products }: Props) {
 
                 <div className="flex flex-col gap-1.5 p-3 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-teal-500 tracking-[0.26px]">
-                      {product.vendor}
-                    </span>
-                    <span className="text-[13px] font-semibold text-gray-500 tracking-[0.26px]">
-                      {product.availableForSale ? 'in stock' : 'out of stock'}
-                    </span>
+                    {/* Public brand only (lib/brand.ts) — never the vendor. */}
+                    {publicBrand(product) && (
+                      <span className="text-[13px] font-semibold text-teal-500 tracking-[0.26px]">
+                        {publicBrand(product)}
+                      </span>
+                    )}
+                    {/* Negative availability only (DEV-CATALOG-01) — no
+                        real-time inventory claim. */}
+                    {!product.availableForSale && (
+                      <span className="text-[13px] font-semibold text-gray-500 tracking-[0.26px]">
+                        out of stock
+                      </span>
+                    )}
                   </div>
+
+                  {/* Order (RX -> Backorder -> Free Shipping) guaranteed by
+                      ProductLabelBadges. */}
+                  <ProductLabelBadges
+                    labels={resolveProductLabels({
+                      tags: product.tags,
+                      isRxOnly: product.isRxOnly,
+                      isBackordered: product.backorder,
+                      estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
+                    })}
+                    shippingDisplay={product.shippingDisplay}
+                  />
 
                   <p className="text-[14px] font-semibold text-black leading-snug line-clamp-3">
                     {product.title}

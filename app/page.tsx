@@ -7,6 +7,7 @@ import { WhyChooseUs }       from "@/components/home/WhyChooseUs";
 import { WholesalePricing }  from "@/components/home/WholesalePricing";
 import { storefrontFetch }   from '@/lib/shopify/storefront';
 import { GET_PRODUCTS, GET_PRODUCT_CARD_FULL } from '@/lib/shopify/queries/products';
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach';
 import type { CollectionProduct } from '@/lib/shopify/types';
 import { buildMetadata } from '@/lib/seo'
 import { buildWebSiteSchema, jsonLdSafe } from '@/lib/schema'
@@ -77,11 +78,11 @@ export default async function Home() {
     return null
   }
 
-  const popularProducts = ranked.map((p) => p ?? nextFallback()).filter(
-    (p): p is CollectionProduct => p !== null,
+  const popularProducts = attachCardShippingDisplay(
+    ranked.map((p) => p ?? nextFallback()).filter((p): p is CollectionProduct => p !== null),
   )
 
-  const heroProducts = bestsellers.slice(0, 4)
+  const heroProducts = attachCardShippingDisplay(bestsellers.slice(0, 4))
 
   return (
     <main id="main-content">

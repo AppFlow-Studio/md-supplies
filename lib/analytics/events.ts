@@ -1,4 +1,5 @@
 import type { CollectionProduct } from '@/lib/shopify/types'
+import { publicBrand } from '@/lib/brand'
 
 export interface GA4Item {
   item_id: string
@@ -43,7 +44,9 @@ export function toGA4Item(product: CollectionProduct): GA4Item {
     item_id: variant?.id ?? product.id,
     item_name: product.title,
     price: parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount),
-    item_brand: product.vendor,
+    // Public brand only — `vendor` is the fulfilling vendor and must not be
+    // reported as a brand (lib/brand.ts). Omitted when none is approved.
+    ...(publicBrand(product) ? { item_brand: publicBrand(product)! } : {}),
   }
 }
 

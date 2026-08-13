@@ -43,29 +43,36 @@ beforeEach(() => {
 })
 
 describe('industry detail page product fetch', () => {
-  it('fetches by Storefront tag query for a tag-mapped industry (urgent-care)', async () => {
-    mockFetch.mockResolvedValue({ products: { nodes: [mockProduct('p1')] } })
-
+  // A tag-mapped industry no longer fetches six teaser products: it renders the
+  // full landing page, whose catalogue comes from CategoryResults (the shared
+  // discovery engine) scoped to the industry tag. The old six-product fetch was
+  // the defect — an industry with thousands of SKUs is not a six-item page.
+  it('renders the full landing page for a tag-mapped industry (urgent-care)', async () => {
     const element = await IndustryDetailPage({
+      searchParams: Promise.resolve({}),
       params: Promise.resolve({ 'industry-slug': 'urgent-care' }),
     })
 
-    expect(mockFetch).toHaveBeenCalledWith(
+    // No legacy six-product teaser fetch happens on this path.
+    expect(mockFetch).not.toHaveBeenCalledWith(
       GET_PRODUCTS_BY_TAG,
-      expect.objectContaining({
-        query: 'tag:"industry:urgent-care"',
-        first: 6,
-        sortKey: 'BEST_SELLING',
-        reverse: false,
-      }),
+      expect.objectContaining({ first: 6 }),
     )
-    expect(industryOf(element).relevantProducts).toEqual([mockProduct('p1')])
+
+    // The landing page is scoped to the industry's real catalog tag.
+    const props = (element as { props: Record<string, unknown> }).props
+    expect(props.tag).toBe('industry:urgent-care')
+    expect((props.industry as { slug: string }).slug).toBe('urgent-care')
+    // Unique, non-name-swapped content is supplied.
+    expect((props.categoryLinks as unknown[]).length).toBeGreaterThan(0)
+    expect((props.buyingGuide as unknown[]).length).toBeGreaterThan(0)
   })
 
   it('falls back to the collection fetch for an untagged industry (dental)', async () => {
     mockFetch.mockResolvedValue({ collection: { products: { nodes: [mockProduct('p2')] } } })
 
     const element = await IndustryDetailPage({
+      searchParams: Promise.resolve({}),
       params: Promise.resolve({ 'industry-slug': 'dental' }),
     })
 
@@ -85,6 +92,7 @@ describe('industry detail page product fetch', () => {
     mockFetch.mockResolvedValue({ collection: null })
 
     const element = await IndustryDetailPage({
+      searchParams: Promise.resolve({}),
       params: Promise.resolve({ 'industry-slug': 'dental' }),
     })
 

@@ -7,12 +7,11 @@ import type { Product, CollectionProduct } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { CategoryResults } from '@/components/category/CategoryResults'
-import { parseSortKey, parseFilterParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
+import { SubcategoryNavigator } from '@/components/category/SubcategoryNavigator'
+import { parseSortKey, parseFilterParam, parseSearchParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
-import { CategoryImage } from '@/components/shared/CategoryImage'
-import { getSubcategoryBannerPath } from '@/lib/bunnycdn'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
@@ -26,11 +25,15 @@ import {
   getProductCategoryPath,
   parseProductTags,
   type L2Node,
+  getCategorySlug,
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { getNonce } from '@/lib/csp-nonce'
+import { getSubcategorySeo } from '@/lib/seo/categorySeo'
+import { FAQSection } from '@/components/b2b/FAQSection'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
+import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -48,8 +51,9 @@ interface Props {
   searchParams: Promise<CategorySearchParams>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
+  const sp = await searchParams
   const l1 = getL1ByCollectionHandle(slug)
 
   if (l1) {
@@ -60,11 +64,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (node && (node.parentTag === l1.tag || node.crossLinkParentTag === l1.tag)) {
       const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
       const title = humanizeTag(node.tag)
+      const canonical = `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`
+      // Filtered / sorted / searched L2 views are noindex and canonicalize to
+      // the clean route (plan §3.5).
+      const isQueryVariant =
+        parseFilterParam(sp.filter).length > 0 || Boolean(sp.sort) || Boolean(parseSearchParam(sp.q))
+
+      if (isQueryVariant) {
+        return buildMetadata({ pageType: 'subcategory', title, canonical, noIndex: true })
+      }
+
+      // Check SEO database for optimized title/description.
+      const seoDB = getSubcategorySeo(slug, handle)
+      if (seoDB) {
+        const base = buildMetadata({
+          pageType: 'subcategory',
+          slug: handle,
+          parentSlug: slug,
+          description: seoDB.metaDescription,
+          canonical,
+        })
+        const og = (base.openGraph ?? {}) as Record<string, unknown>
+        return {
+          ...base,
+          title: seoDB.title,
+          description: seoDB.metaDescription,
+          openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
+        }
+      }
+
+      // Neutral copy only — no shipping-speed or pricing promises in metadata
+      // (client-liability stop rule).
       return buildMetadata({
         pageType: 'subcategory',
         title,
-        description: `Shop ${title} within ${canonicalL1.displayName} at MDSupplies — fast shipping, bulk pricing available.`,
-        canonical: `${SITE_URL}${ROUTES.subcategory(canonicalL1.collectionHandle, node.tag)}`,
+        description: `Shop ${title} within ${canonicalL1.displayName} at MDSupplies.`,
+        canonical,
       })
     }
   }
@@ -97,6 +132,7 @@ async function renderSubcategoryPage(
   const title = humanizeTag(node.tag)
   const activeFilterStrings = parseFilterParam(sp.filter)
   const { sortKey, reverse } = parseSortKey(sp.sort)
+  const searchQuery = parseSearchParam(sp.q)
   const currentPage = parseInt(sp.page ?? '1', 10)
   if (isNaN(currentPage) || currentPage < 1) notFound()
 
@@ -106,8 +142,7 @@ async function renderSubcategoryPage(
     : undefined
 
   const canonicalUrl = `${SITE_URL}${ROUTES.subcategory(slug, handle)}`
-  const bannerPath = getSubcategoryBannerPath(node.tag)
-  const bannerAlt = `${title} — MDSupplies medical supplies`
+  const seoData = getSubcategorySeo(slug, handle)
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -120,67 +155,66 @@ async function renderSubcategoryPage(
         />
       </div>
 
-      {/* Simpler thumbnail-style banner for L2 subcategory pages (§3.3),
-          vs. the split hero on L1 category pages. */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
-        <div className="relative w-full h-[180px] sm:h-[220px] overflow-hidden">
-          <CategoryImage bannerPath={bannerPath} alt={bannerAlt} sizes="100vw" />
-        </div>
-      </div>
-
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-6">
-        <h1 className="text-navy-900 text-[36px] sm:text-[44px] font-semibold leading-[1.2] tracking-[-0.01em] mb-2">
-          {title}
+      {/* Compact L2 header (Phase 9): breadcrumb + H1 + parent context. No
+          full-width banner — an L2 page should reach its products fast, and
+          the wide thumbnail was mostly empty space once the CDN failed. */}
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-4">
+        <h1 className="text-navy-900 text-[26px] sm:text-[32px] font-semibold leading-[1.15] tracking-[-0.01em] mb-1">
+          {seoData ? seoData.h1 : title}
         </h1>
         <p className="text-gray-500 text-[15px]">Part of {l1.displayName}</p>
+        {seoData && (
+          <p className="text-gray-500 text-[15px] leading-[1.6] mt-2 max-w-[640px] line-clamp-2">
+            {seoData.answerBlock}
+          </p>
+        )}
         {crossLinkL1 && (
           <p className="text-gray-500 text-[14px] mt-2">
             Also relevant to{' '}
-            <Link href={ROUTES.category(crossLinkL1.collectionHandle)} className="text-teal-500 hover:underline">
+            <Link href={ROUTES.category(getCategorySlug(crossLinkL1))} className="text-teal-500 hover:underline">
               {crossLinkL1.displayName}
             </Link>
           </p>
         )}
       </div>
 
-      {siblings.length > 0 && (
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
-          <div className="flex flex-wrap gap-2 items-center">
-            <Link
-              href={ROUTES.category(slug)}
-              className="border border-gray-200 bg-white text-navy-900 text-[13px] font-semibold px-4 h-[44px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
-            >
-              All {l1.displayName}
-            </Link>
-            {siblings.map((sib) => (
-              <Link
-                key={sib.tag}
-                href={ROUTES.subcategory(slug, sib.tag)}
-                className="border border-gray-200 bg-white text-navy-900 text-[13px] font-semibold px-4 h-[44px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
-              >
-                {humanizeTag(sib.tag)}
-              </Link>
-            ))}
-            <span className="bg-navy-900 text-white text-[13px] font-semibold px-4 h-[44px] flex items-center whitespace-nowrap">
-              {title}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Sibling subcategories (Phase 7): the current one is marked active
+          inside the navigator rather than appended as a dead chip. */}
+      <SubcategoryNavigator
+        items={[
+          ...siblings.map((sib) => ({
+            label: humanizeTag(sib.tag),
+            href: ROUTES.subcategory(slug, sib.tag),
+          })),
+          { label: title, href: ROUTES.subcategory(slug, handle), active: true },
+        ].sort((a, b) => a.label.localeCompare(b.label))}
+        allHref={ROUTES.category(slug)}
+        allLabel={`All ${l1.displayName}`}
+        ariaLabel={`${l1.displayName} subcategories`}
+      />
 
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6">
         <CategoryResults
           source={{ kind: 'tag', query: buildSubcategoryTagQuery(l1.tag, node.tag), title, slug: node.tag }}
           baseUrl={ROUTES.subcategory(slug, handle)}
-          facetKey={l1.tag}
+          facetKey={getCategorySlug(l1)}
           sortKey={sortKey}
           reverse={reverse}
           sortParam={sp.sort}
           activeFilterStrings={activeFilterStrings}
           currentPage={currentPage}
           trackingParamsSource={sp}
+          searchQuery={searchQuery}
+          searchScopeTitle={title}
         />
       </div>
+
+      {/* FAQ section — below product grid (SEO database) */}
+      {seoData && seoData.faqs.length > 0 && (
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
+          <FAQSection faq={seoData.faqs} />
+        </div>
+      )}
 
       <script
         type="application/ld+json"
@@ -222,7 +256,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
 
     if (node && node.crossLinkParentTag === l1.tag && node.parentTag !== l1.tag) {
       const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
-      redirect(ROUTES.subcategory(canonicalL1.collectionHandle, node.tag))
+      redirect(ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag))
     }
 
     if (node && node.parentTag === l1.tag) {
@@ -231,13 +265,16 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
   }
 
   // Fall back to product
-  const productData = await storefrontFetch<{ product: Product | null }>(
+  const rawProductData = await storefrontFetch<{ product: RawProduct | null }>(
     GET_PRODUCT,
     { handle },
     productFetchOptions(handle),
   )
 
-  if (!productData.product) notFound()
+  if (!rawProductData.product) notFound()
+  // Same metafield flattening as /product/[slug] — without it ProductView
+  // receives raw `{ value }` objects (broken spec rows / backorder date).
+  const productData = { product: normalizeProduct(rawProductData.product) }
   if (productData.product.variants.nodes.length === 0) notFound()
 
   const partner = PARTNERS.find(
@@ -265,11 +302,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
 
   const breadcrumbs = categoryPath
     ? [
-        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        { label: categoryPath.category.displayName, href: ROUTES.category(getCategorySlug(categoryPath.category)) },
         ...(categoryPath.subcategory
           ? [{
               label: humanizeTag(categoryPath.subcategory.tag),
-              href: ROUTES.subcategory(categoryPath.category.collectionHandle, categoryPath.subcategory.tag),
+              href: ROUTES.subcategory(getCategorySlug(categoryPath.category), categoryPath.subcategory.tag),
             }]
           : []),
       ]

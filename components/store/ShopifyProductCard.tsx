@@ -7,7 +7,10 @@ import { ProductImage } from '@/components/shared/ProductImage'
 import { track } from '@/lib/analytics/track'
 import { buildSelectItemEvent, toGA4Item, currencyOf } from '@/lib/analytics/events'
 import { cleanShopifyAlt } from '@/lib/alt-text'
-import { ShippingBadge } from '@/components/product/ShippingBadge'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
+import { resolveProductLabels } from '@/lib/labels/labels'
+import { publicBrand } from '@/lib/brand'
+import { hasUsablePrice } from '@/lib/purchasability'
 
 interface Props {
   product: CollectionProduct
@@ -27,6 +30,7 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
     : null
   const image = product.images.nodes[0]
   const hasDiscount = compareAt !== null && compareAt > price
+  const brand = publicBrand(product)
 
   const href = categorySlug
     ? `/category/${categorySlug}/${product.handle}`
@@ -48,12 +52,18 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
     <div className="group relative bg-white flex flex-col">
       {/* Image */}
       <div className="relative overflow-hidden bg-white aspect-square">
-        <Link href={href} onClick={handleSelect} className="block w-full h-full">
+        {/* DEF-02/QA-135: this link wraps only the image — the visible title
+            lives in the separate info Link below. An explicit aria-label
+            guarantees a discernible name for screen readers rather than
+            relying on the <img>'s alt text being inherited (fragile: a
+            future decorative/empty alt on ProductImage would silently strip
+            it). */}
+        <Link href={href} onClick={handleSelect} aria-label={product.title} className="block w-full h-full">
           <ProductImage
             src={image?.url}
             alt={cleanShopifyAlt(image?.altText) ?? product.title}
             categoryHandle={categorySlug}
-            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 50vw, 33vw"
             priority={imagePriority}
           />
 
@@ -68,48 +78,68 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             <div className="absolute inset-0 bg-white/60" />
           )}
         </Link>
-
-        {/* Quick add — sibling of the image link, not nested inside it, so clicks never navigate */}
-        <ShopifyQuickAddButton product={product} />
       </div>
 
       {/* Info */}
-      <Link href={href} onClick={handleSelect} className="px-[22px] pt-[19px] pb-[22px] flex flex-col">
-        <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
-          {product.vendor}
-        </span>
-        <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
+      <Link href={href} onClick={handleSelect} className="px-3 pt-3 pb-2 sm:px-[22px] sm:pt-[19px] sm:pb-3 flex flex-col flex-1">
+        {/* Public brand only (custom.brand_name). `vendor` is the FULFILLING
+            vendor and must never be shown as a brand — when no approved brand
+            exists the line is omitted entirely (lib/brand.ts). */}
+        {brand ? (
+          <span className="text-teal-500 text-[12px] sm:text-[13px] font-semibold tracking-[0.26px] uppercase leading-[20px] sm:leading-[25px] line-clamp-1">
+            {brand}
+          </span>
+        ) : (
+          <span className="leading-[20px] sm:leading-[25px]" aria-hidden />
+        )}
+        <p className="text-black text-[13px] sm:text-[14px] font-semibold tracking-[0.28px] leading-[1.35] sm:leading-5 line-clamp-2 mb-3 sm:mb-[30px]">
           {product.title}
         </p>
-        {(product.shippingDisplay || product.tags.includes('free-shipping') || product.tags.includes('rx-required')) && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {product.shippingDisplay ? (
-              <ShippingBadge shippingDisplay={product.shippingDisplay} />
-            ) : (
-              product.tags.includes('free-shipping') && (
-                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-teal-500 text-white">
-                  Free Shipping
-                </span>
-              )
-            )}
-            {product.tags.includes('rx-required') && (
-              <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded bg-amber-600 text-white">
-                RX Only
-              </span>
-            )}
-          </div>
-        )}
-        <div className="flex items-baseline gap-2">
-          <span className="text-black text-[18px] font-bold tracking-[0.36px]">
-            ${price.toFixed(2)}
-          </span>
-          {hasDiscount && (
+        {/* DEV-LABEL-01: a shipping claim comes ONLY from the resolver-backed
+            ShippingBadge — the raw `free-shipping` tag fallback is gone (an
+            uncurated tag must never create a shipping promise). RX/backorder
+            come from the shared label contract, so card and PDP agree. Order
+            (RX -> Backorder -> Free Shipping) is guaranteed by
+            ProductLabelBadges, not by call-site markup order. */}
+        <ProductLabelBadges
+          className="mb-3"
+          labels={resolveProductLabels({
+            tags: product.tags,
+            isBackordered: product.backorder ?? null,
+            estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
+            // Same tag ∪ custom.is_rx_only union as the PDP and the cart gate:
+            // without it the 40 ACTIVE metafield-only RX products carry no
+            // "RX Only" badge on any grid.
+            isRxOnly: product.isRxOnly ?? null,
+          })}
+          shippingDisplay={product.shippingDisplay}
+        />
+        {/* Price sits at the bottom of the body (mt-auto) so every card in a
+            row lines its footer up regardless of title length or label count. */}
+        <div className="flex items-baseline gap-2 mt-auto">
+          {hasUsablePrice(price) ? (
+            <span className="text-black text-[16px] sm:text-[18px] font-bold tracking-[0.36px]">
+              ${price.toFixed(2)}
+            </span>
+          ) : (
+            <span className="text-navy-900 text-[15px] font-semibold tracking-[0.3px]">
+              Contact for pricing
+            </span>
+          )}
+          {hasUsablePrice(price) && hasDiscount && (
             <span className="text-gray-500 text-[14px] line-through tracking-[0.28px]">
               ${compareAt!.toFixed(2)}
             </span>
           )}
         </div>
       </Link>
+
+      {/* Card footer/action row (Phase 4). The quick-add control lives HERE,
+          bottom-right of the whole card — not overlaid on the image, where it
+          covered product photography and sat outside the card's own layout. */}
+      <div className="px-3 pb-3 sm:px-[22px] sm:pb-[18px] pt-1 flex items-center justify-end">
+        <ShopifyQuickAddButton product={product} />
+      </div>
     </div>
   )
 }

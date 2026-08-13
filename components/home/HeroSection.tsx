@@ -4,6 +4,9 @@ import { AnimatedArrow } from "@/components/ui/AnimatedArrow";
 import type { CollectionProduct } from "@/lib/shopify/types";
 import { Van } from "lucide-react";
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { OCC_PANEL_HEADING, OCC_PANEL_SUBHEAD, OCC_PANEL_CTA } from '@/lib/occ-copy'
+import { resolveProductLabels } from '@/lib/labels/labels'
+import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 
 interface Props {
   products: CollectionProduct[];
@@ -36,7 +39,20 @@ function ProductCard({ product, priority = false }: { product: CollectionProduct
       </div>
       <div className="p-3 flex flex-col gap-0.5">
         <p className="text-[14px] font-semibold text-navy-900 leading-snug line-clamp-2">{product.title}</p>
-        <p className="text-[12px] text-gray-500">From ${price.toFixed(2)} · {product.vendor}</p>
+        {/* No vendor: it is the fulfilling vendor, not a brand (lib/brand.ts).
+            Order (RX -> Backorder -> Free Shipping) guaranteed by
+            ProductLabelBadges. */}
+        <ProductLabelBadges
+          className="mt-1 mb-0.5"
+          labels={resolveProductLabels({
+            tags: product.tags,
+            isRxOnly: product.isRxOnly,
+            isBackordered: product.backorder,
+            estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
+          })}
+          shippingDisplay={product.shippingDisplay}
+        />
+        <p className="text-[12px] text-gray-500">From ${price.toFixed(2)}</p>
       </div>
     </Link>
   );
@@ -65,8 +81,10 @@ export function HeroSection({ products }: Props) {
             </h1>
 
             {/* Description */}
+            {/* Product-count claim removed — blocked pending the dated
+                catalog census (lib/claims.ts / IZ-PROD-09). */}
             <p className="text-gray-500 text-[18px] leading-[30px] tracking-[0.36px] max-w-[516px]">
-              Shop 8,000+ medical, home care, testing, mobility, and care supplies online.
+              Shop medical, home care, testing, mobility, and care supplies online.
               MDSupplies serves healthcare teams, organizations, businesses, and individual
               customers with clear product access and reliable ordering support.
             </p>
@@ -92,17 +110,19 @@ export function HeroSection({ products }: Props) {
               <Van className="w-10 h-9"/>
               <div className="flex-1">
                 <p className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px] leading-snug">
-                  OCC Program
+                  {OCC_PANEL_HEADING}
                 </p>
+                {/* Copy is centralized in lib/occ-copy.ts, which documents the
+                    open client decision on unconditional free shipping. */}
                 <p className="text-navy-900 text-[16px] font-semibold tracking-[0.32px] leading-snug mt-0.5">
-                  Dedicated pricing, terms &amp; account support
+                  {OCC_PANEL_SUBHEAD}
                 </p>
               </div>
               <Link
                 href="/solutions/occ"
                 className="group text-teal-500 text-[15px] font-semibold shrink-0 tracking-[0.3px] inline-flex items-center gap-1"
               >
-                Shop OCC <AnimatedArrow size={14} />
+                {OCC_PANEL_CTA} <AnimatedArrow size={14} />
               </Link>
             </div>
 

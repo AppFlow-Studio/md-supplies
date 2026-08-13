@@ -102,6 +102,21 @@ describe('ShopifyProductCard', () => {
     })
   })
 
+  // DEF-02/QA-135: the image link carries no visible text of its own (the
+  // title lives in the separate info link) — it needs its own accessible
+  // name rather than relying on the <img> alt text being inherited.
+  it('gives the image-only link an accessible name via aria-label, not just inherited alt text', () => {
+    const product = makeProduct()
+    render(<ShopifyProductCard product={product} />)
+
+    const links = screen.getAllByRole('link')
+    const imageLink = links.find((link) => link.querySelector('img'))
+    expect(imageLink).toHaveAttribute('aria-label', product.title)
+    // The accessible-name computation resolves to the explicit aria-label,
+    // not an empty/ambiguous name.
+    expect(imageLink).toHaveAccessibleName(product.title)
+  })
+
   it('clicking the quick-add button does not fire the card select-item tracking', () => {
     const product = makeProduct()
     render(
@@ -133,9 +148,9 @@ describe('ShopifyProductCard', () => {
     expect(trackMock).toHaveBeenCalledOnce()
   })
 
-  it('positions the quick-add button bottom-right and keeps it always visible', () => {
+  it('renders the quick-add control in the card footer, not over the image', () => {
     const product = makeProduct()
-    render(
+    const { container } = render(
       <ShopifyProductCard
         product={product}
         categorySlug="gloves"
@@ -145,12 +160,22 @@ describe('ShopifyProductCard', () => {
     )
 
     const button = screen.getByRole('button', { name: `Quick add ${product.title}` })
-    expect(button.className).toContain('bottom-2')
-    expect(button.className).toContain('right-2')
-    expect(button.className).not.toContain('top-2')
-    // Always visible — no hover-reveal on any breakpoint
-    expect(button.className).not.toContain('opacity-0')
-    expect(button.className).not.toContain('group-hover')
+
+    // Phase 4: no absolute overlay positioning — it sits in normal flow.
+    expect(button.className).not.toContain('absolute')
+    expect(button.className).not.toContain('bottom-2')
+
+    // 44x44 minimum target for older shoppers.
+    expect(button.className).toMatch(/w-11/)
+    expect(button.className).toMatch(/h-11/)
+
+    // It must NOT be inside the image block (the first aspect-square wrapper).
+    const imageBlock = container.querySelector('.aspect-square')
+    expect(imageBlock).toBeTruthy()
+    expect(imageBlock!.contains(button)).toBe(false)
+
+    // Accessible name carries the product title.
+    expect(button.getAttribute('aria-label')).toContain(product.title)
   })
 
   it('routes the product image through next/image with responsive sizes, lazy by default', () => {
@@ -201,5 +226,87 @@ describe('ShopifyProductCard', () => {
     )
 
     expect(screen.queryByRole('button', { name: `Quick add ${product.title}` })).not.toBeInTheDocument()
+  })
+
+  // DEV-LAUNCH-07: the two hard rules, exercised on the card itself.
+  it('shows "Contact for pricing" and disables quick add for a zero-price product', () => {
+    const product = makeProduct({
+      variants: {
+        nodes: [
+          {
+            id: 'gid://shopify/ProductVariant/1',
+            title: 'Default',
+            price: { amount: '0.00', currencyCode: 'USD' },
+            compareAtPrice: null,
+            availableForSale: true,
+            quantityAvailable: 10,
+          },
+        ],
+      },
+    })
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+      />,
+    )
+
+    expect(screen.getByText('Contact for pricing')).toBeInTheDocument()
+    const button = screen.getByRole('button', { name: `Contact for pricing — ${product.title}` })
+    expect(button).toBeDisabled()
+  })
+
+  it('never falls back to vendor when no approved brand exists', () => {
+    // vendor is the fulfilling vendor, not a customer-facing brand
+    // (lib/brand.ts) — with no custom.brand_name the line must be omitted,
+    // never filled with the vendor string.
+    const product = makeProduct({ brandName: null, vendor: 'MedPlus Fulfillment' })
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+      />,
+    )
+
+    expect(screen.queryByText('MedPlus Fulfillment')).not.toBeInTheDocument()
+  })
+
+  it('renders the approved brand line when custom.brand_name is present', () => {
+    const product = makeProduct({ brandName: { value: 'Dynarex' }, vendor: 'MedPlus Fulfillment' })
+    render(
+      <ShopifyProductCard
+        product={product}
+        categorySlug="gloves"
+        itemListId="list"
+        itemListName="Gloves"
+      />,
+    )
+
+    expect(screen.getByText('Dynarex')).toBeInTheDocument()
+    expect(screen.queryByText('MedPlus Fulfillment')).not.toBeInTheDocument()
+  })
+
+  // DEV-RX-02 / Izzy retest on 225678bc: custom.backorder was read nowhere,
+  // so no grid card ever showed a Backorder badge regardless of the metafield.
+  it('shows the Backorder badge when custom.backorder is true', () => {
+    const product = makeProduct({ backorder: { value: 'true' } })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('renders no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
+    const product = makeProduct({ estimatedRestockDate: { value: '2099-01-01' } })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
 })

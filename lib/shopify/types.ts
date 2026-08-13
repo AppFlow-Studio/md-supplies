@@ -69,6 +69,10 @@ export type ProductMetafields = {
   needleLength: string | null;
   sizeLength: string | null;
   estimatedRestockDate: string | null;
+  /** Raw `custom.backorder`; boolean gate for the backorder label (ETA above is optional decoration only). */
+  backorder?: { value: string } | null;
+  /** Raw `custom.is_rx_only`; union'd with the RX tag by lib/rx-gate.ts. */
+  isRxOnly?: { value: string } | null;
   testsFor: string | null;
   detectableDrugs: string | null;
   adulterants: string | null;
@@ -108,17 +112,36 @@ export type CollectionProduct = {
   vendor: string;
   availableForSale: boolean;
   tags: string[];
+  /** Raw `custom.brand_name`. The ONLY approved public brand source —
+      resolve via lib/brand.ts, never fall back to `vendor`. */
+  brandName?: { value: string } | null;
+  /** Raw backorder metafield (DEV-LABEL-01 single source); flattened by the
+      label contract, may be absent on queries that don't request it. */
+  estimatedRestockDate?: { value: string } | null;
+  /** Raw `custom.backorder`; boolean gate for the backorder label — the ETA above is optional decoration only. */
+  backorder?: { value: string } | null;
+  /** Raw `custom.is_rx_only`. Union'd with the RX tag by lib/rx-gate.ts so a
+      grid card's RX badge matches the PDP and the checkout gate. Optional:
+      queries that don't select it degrade to tag-only detection. */
+  isRxOnly?: { value: string } | null;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
   variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
   shippingDisplay?: ShippingDisplay | null;
 };
 
+export type CollectionFilterValue = {
+  id: string;
+  label: string;
+  count: number;
+  input: string;
+};
+
 export type CollectionFilter = {
   id: string;
   label: string;
   type: string;
-  values: { id: string; label: string; count: number; input: string }[];
+  values: CollectionFilterValue[];
 };
 
 export type PageInfo = {
@@ -152,6 +175,10 @@ export type CartLine = {
     id: string;
     title: string;
     sku: string | null;
+    /** The variant's own unit price -- distinct from `cost.totalAmount`
+     * below, which a no-rate-for-destination line zeroes out while this
+     * stays positive. See lib/shopify/cart-lines.ts. */
+    price: Money;
     selectedOptions: SelectedOption[];
     product: {
       id: string;
@@ -159,6 +186,12 @@ export type CartLine = {
       handle: string;
       vendor: string;
       tags: string[];
+      /** `custom.is_rx_only` — second RX signal, union'd with the tag. */
+      isRxOnly?: { value: string } | null;
+      /** `custom.estimated_back_order_restock_date` — optional decoration only, see `backorder`. */
+      estimatedRestockDate?: { value: string } | null;
+      /** Raw `custom.backorder`; boolean gate for the backorder label. */
+      backorder?: { value: string } | null;
       images: { nodes: ProductImage[] };
     };
   };

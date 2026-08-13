@@ -2,26 +2,28 @@ import 'server-only'
 import { serverEnv } from '@/lib/env.server'
 import { logServerError } from '@/lib/log-error'
 import { RX_METAFIELDS } from '@/lib/rx-gate'
+import { getAdminAccessToken } from './admin-token'
 import { assertShopDomainAllowed } from './shop-guard'
 import type { ShopifyResponse } from './types'
 
 // Narrowly-scoped Admin GraphQL client for the RX prescription gate. The
-// token (SHOPIFY_ADMIN_ACCESS_TOKEN) is scoped to customers read/write only;
-// keep this module's surface to the two RX metafield operations — new Admin
-// needs get their own review, not a ride on this client.
+// token (exchanged via admin-token.ts, scoped to customers read/write only)
+// gates just the two RX metafield operations below — new Admin needs get
+// their own review, not a ride on this client.
 
 const ADMIN_API_VERSION = '2026-04'
 
 async function adminFetch<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   let res: Response
   try {
+    const accessToken = await getAdminAccessToken()
     res = await fetch(
       `https://${serverEnv.shopifyStoreDomain}/admin/api/${ADMIN_API_VERSION}/graphql.json`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': serverEnv.shopifyAdminToken,
+          'X-Shopify-Access-Token': accessToken,
         },
         body: JSON.stringify({ query, variables }),
         cache: 'no-store',

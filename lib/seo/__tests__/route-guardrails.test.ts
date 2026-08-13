@@ -56,6 +56,11 @@ const isRedirectStub = (src: string) =>
 const CONDITIONAL_NOINDEX_ALLOWLIST: Record<string, string> = {
   'category/[slug]/page.tsx': 'filtered/sorted views canonical to the unfiltered page',
   'industries/[industry-slug]/page.tsx': 'thin industry pages stay out of the index until FAQ copy lands',
+  // DEV-SEARCH-01 / DEV-OCC-01 (plan §3.5): filter/sort/search/page query
+  // variants are noindex and canonical to the clean route. The clean routes
+  // themselves stay indexable.
+  'category/[slug]/[product]/page.tsx': 'filtered/sorted/searched L2 views canonical to the clean subcategory route',
+  'solutions/occ/page.tsx': 'filtered/sorted/searched/paginated OCC views canonical to /solutions/occ',
 }
 
 /** Signals in page source that would keep a page out of the index. */

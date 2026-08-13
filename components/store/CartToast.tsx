@@ -17,7 +17,7 @@ export function CartToast() {
     <div
       role="alert"
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-red-600 text-white px-4 py-3 shadow-lg max-w-sm transition-opacity duration-200 ${
-        lastError ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        lastError ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
       }`}
     >
       <span className="text-[14px] flex-1">{lastError}</span>

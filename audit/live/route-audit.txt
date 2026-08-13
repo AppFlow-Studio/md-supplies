@@ -1,0 +1,68 @@
+ROUTE                              TOTAL  FACETS RENDERED (registry order)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/category/gloves                     445  Category(10) › Type(8) › Material(6) › Glove Size(6) › Size(10) › Thickness(10) › Other Features(17) › Sterility(2) › Color(13) › Order Size(3) › Brand Name(26) › Price › Certification(2)
+                                          registered but not published: features, use
+/category/wound-care                 724  Category(64) › Type(18) › Size(100) › Other Features(21) › Sterility(2) › Color(9) › Order Size(5) › Brand Name(17) › Price
+                                          registered but not published: material, features, use, certification
+/category/needles-syringes           628  Category(62) › Type(16) › Needle Gauge(18) › Needle Length(29) › Size(16) › Features(4) › Other Features(63) › Sterility(2) › Order Size(3) › Brand Name(24) › Price
+                                          registered but not published: material, use, certification
+/category/surgical-sutures           192  Category(13) › Type(2) › Material(12) › Other Features(21) › Sterility(1) › Color(8) › Order Size(2) › Brand Name(5) › Price
+                                          registered but not published: size_length_, needle_length, features, use, certification
+/category/testing-screening          175  Category(52) › Type(16) › Tests For(32) › Detectable Drugs(30) › Size(1) › Features(1) › Other Features(4) › Sterility(1) › Order Size(5) › Brand Name(43) › Price
+                                          registered but not published: adulterants, use, certification
+/category/exam-room                  845  Category(100) › Type(6) › Material(1) › Size(32) › Features(1) › Other Features(5) › Use(1) › Color(10) › Order Size(4) › Brand Name(21) › Price
+                                          dropped: Sterility
+                                          registered but not published: certification
+/category/respiratory                408  Category(38) › Type(1) › Size(9) › Other Features(16) › Order Size(5) › Brand Name(15) › Price
+                                          registered but not published: material, features, sterility, use, certification
+/category/mobility                   646  Category(45) › Type(7) › Size(12) › Other Features(23) › Color(11) › Order Size(5) › Brand Name(12) › Price
+                                          registered but not published: material, features, use, certification
+/category/patient-therapy-rehab      299  Category(49) › Size(37) › Use(1) › Color(1) › Order Size(4) › Brand Name(19) › Price
+                                          registered but not published: type, material, features, other_features, certification
+/category/trocars-trocar-kits        319  Category(43) › Type(4) › Material(6) › Size(42) › Features(1) › Other Features(14) › Sterility(2) › Use(2) › Color(2) › Order Size(5) › Brand Name(24) › Price
+                                          dropped: Glove Size
+                                          registered but not published: needle_gauge, needle_length, certification
+/category/capes-gowns                152  Category(31) › Type(6) › Material(1) › Size(16) › Other Features(7) › Sterility(2) › Use(1) › Color(8) › Order Size(3) › Brand Name(11) › Price
+                                          registered but not published: features, certification
+/category/hygiene                    256  Category(69) › Type(3) › Size(26) › Features(3) › Other Features(14) › Use(1) › Color(6) › Order Size(3) › Brand Name(18) › Price
+                                          dropped: Sterility
+                                          registered but not published: material, certification
+/category/disinfectants               35  Category(6) › Type(1) › Size(5) › Other Features(1) › Order Size(2) › Brand Name(13) › Price
+                                          dropped: Sterility
+                                          registered but not published: features, use, certification
+/category/home-care                  429  Category(76) › Type(2) › Size(2) › Other Features(6) › Color(5) › Order Size(3) › Brand Name(17) › Price
+                                          registered but not published: material, features, use, certification
+/category/emergency-supplies         359  Category(38) › Type(4) › Material(2) › Size(7) › Other Features(36) › Sterility(1) › Color(8) › Order Size(2) › Brand Name(15) › Price
+                                          registered but not published: features, use, certification
+/category/incontinence               121  Category(16) › Type(3) › Size(24) › Other Features(3) › Use(2) › Color(1) › Order Size(2) › Brand Name(15) › Price
+                                          dropped: Sterility
+                                          registered but not published: material, features, certification
+/category/iv-therapy                  78  Category(10) › Type(3) › Needle Gauge(4) › Needle Length(3) › Size(4) › Other Features(43) › Sterility(1) › Order Size(3) › Brand Name(15) › Price
+                                          registered but not published: material, features, use, certification
+/category/urology-ostomy              52  Category(6) › Size(13) › Other Features(4) › Sterility(1) › Order Size(2) › Brand Name(6) › Price
+                                          registered but not published: type, material, features, use, color, certification
+/category/sterilization               51  Category(6) › Size(30) › Other Features(1) › Sterility(1) › Order Size(3) › Brand Name(5) › Price
+                                          registered but not published: type, material, features, use, certification
+/category/dental                     149  Category(33) › Type(5) › Size(3) › Needle Gauge(4) › Needle Length(7) › Features(1) › Other Features(1) › Sterility(1) › Color(1) › Order Size(4) › Brand Name(10) › Price
+                                          registered but not published: material, use, certification
+/category/housekeeping-janitorial     85  Category(14) › Size(32) › Color(4) › Order Size(4) › Brand Name(12) › Price
+                                          dropped: Thickness
+                                          registered but not published: type, material, features, other_features, use, certification
+/category/bariatric                  259  Category(42) › Type(3) › Size(4) › Other Features(8) › Color(4) › Order Size(3) › Brand Name(10) › Price
+                                          registered but not published: material, features, use, certification
+/category/seating                    512  Category(25) › Order Size(3) › Brand Name(10) › Price
+                                          registered but not published: type, material, size_length_, features, other_features, use, color, certification
+/category/face-masks                  35  Category(10) › Type(7) › Other Features(10) › Sterility(1) › Color(6) › Order Size(3) › Brand Name(8) › Price
+                                          registered but not published: material, size_length_, thickness, features, use, certification
+/category/pharmacy-products          115  Category(14) › Type(4) › Size(8) › Other Features(25) › Sterility(1) › Use(1) › Order Size(3) › Brand Name(33) › Price
+                                          registered but not published: material, tests_for, features, color, certification
+/industries/urgent-care             4343  Category(100) › Type(85) › Tests For(32) › Needle Gauge(19) › Needle Length(29) › Material(28) › Glove Size(6) › Size(100) › Thickness(10) › Features(7) › Other Features(100) › Sterility(2) › Use(2) › Color(27) › Order Size(7) › Brand Name(100) › Price › Certification(2)
+/industries/hrt-clinics              531  Category(61) › Type(8) › Size(42) › Material(18) › Features(1) › Other Features(35) › Sterility(2) › Use(2) › Order Size(5) › Brand Name(37) › Price
+                                          registered but not published: needle_gauge, needle_length, certification
+/industries/home-health             3090  Category(100) › Type(37) › Size(100) › Features(3) › Other Features(79) › Sterility(2) › Use(2) › Color(18) › Order Size(7) › Brand Name(68) › Price
+                                          registered but not published: material, glove_size, certification
+/industries/clinics-doctors-offices  6388  Category(100) › Type(100) › Tests For(32) › Needle Gauge(19) › Needle Length(32) › Material(28) › Glove Size(6) › Size(100) › Thickness(10) › Features(10) › Other Features(100) › Sterility(2) › Use(2) › Color(34) › Order Size(8) › Brand Name(100) › Price › Certification(2)
+/industries/pharmacies               282  Category(100) › Type(25) › Tests For(31) › Detectable Drugs(30) › Material(2) › Size(15) › Features(3) › Other Features(15) › Sterility(1) › Color(3) › Order Size(4) › Brand Name(75) › Price
+                                          registered but not published: adulterants, use, certification
+
+Wrote audit/live/route-audit.json (30 routes)

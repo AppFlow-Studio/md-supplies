@@ -112,3 +112,111 @@ describe('fetchProductConnection', () => {
     expect(variables).toMatchObject({ sortKey: 'PRICE', reverse: true })
   })
 })
+
+describe('sanitizeSearchText (DEV-SEARCH-01)', () => {
+  it('strips query-syntax characters so input cannot become field filters or booleans', async () => {
+    const { sanitizeSearchText } = await import('../category-results-source')
+    expect(sanitizeSearchText('tag:"category:occ" OR vendor:evil')).toBe('tag category occ or vendor evil')
+    expect(sanitizeSearchText('nitrile (exam) -powder *')).toBe('nitrile exam powder')
+    expect(sanitizeSearchText('  BD   Syringe  ')).toBe('bd syringe')
+  })
+
+  it('lowercases so AND/OR/NOT are plain words, and caps length', async () => {
+    const { sanitizeSearchText } = await import('../category-results-source')
+    expect(sanitizeSearchText('gauze AND bandage')).toBe('gauze and bandage')
+    expect(sanitizeSearchText('x'.repeat(300)).length).toBeLessThanOrEqual(80)
+  })
+
+  it('returns empty string when nothing searchable remains', async () => {
+    const { sanitizeSearchText } = await import('../category-results-source')
+    expect(sanitizeSearchText('()"":*')).toBe('')
+  })
+})
+
+describe('scoped text search (DEV-SEARCH-01)', () => {
+  const emptySearch = {
+    search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, productFilters: [] },
+  }
+
+  it('combines sanitized text with the tag query for a tag source', async () => {
+    mockFetch.mockResolvedValue(emptySearch)
+    const { fetchProductConnection } = await import('../category-results-source')
+    await fetchProductConnection(
+      { kind: 'tag', query: 'tag:"category:gloves" AND tag:"subcategory:exam-gloves"', title: 'Exam Gloves', slug: 'exam-gloves' },
+      { first: 10, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [], text: 'Nitrile "XL"' },
+    )
+    const [, variables] = mockFetch.mock.calls[0]
+    expect(variables).toMatchObject({
+      query: 'nitrile xl AND (tag:"category:gloves" AND tag:"subcategory:exam-gloves")',
+    })
+  })
+
+  it('scopes a registry-backed collection source by its searchScope tag', async () => {
+    mockFetch.mockResolvedValue(emptySearch)
+    const { fetchProductConnection } = await import('../category-results-source')
+    await fetchProductConnection(
+      { kind: 'collection', handle: 'gloves', searchScope: 'tag:"category:gloves"' },
+      { first: 10, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [], text: 'surgical' },
+    )
+    const [query, variables] = mockFetch.mock.calls[0]
+    expect(query).toContain('SearchProductsByTag')
+    expect(variables).toMatchObject({ query: 'surgical AND (tag:"category:gloves")' })
+  })
+
+  it('falls back to the normal collection fetch when text sanitizes to empty', async () => {
+    mockFetch.mockResolvedValue({ collection: null })
+    const { fetchProductConnection } = await import('../category-results-source')
+    await fetchProductConnection(
+      { kind: 'collection', handle: 'gloves' },
+      { first: 10, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [], text: '():"' },
+    )
+    const [query] = mockFetch.mock.calls[0]
+    expect(query).toContain('GetCollection')
+  })
+
+  it('enforces collection membership by ID intersection for scope-less collections (OCC)', async () => {
+    const inMember = { id: 'gid://shopify/Product/1', handle: 'member' }
+    const outsider = { id: 'gid://shopify/Product/2', handle: 'outsider' }
+    mockFetch.mockImplementation(async (query: string) => {
+      if (query.includes('SearchProductsByTag')) {
+        return {
+          search: {
+            nodes: [inMember, outsider],
+            pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+            productFilters: [],
+          },
+        }
+      }
+      // GET_COLLECTION_PRODUCT_IDS
+      return {
+        collection: {
+          products: { nodes: [{ id: 'gid://shopify/Product/1' }], pageInfo: { hasNextPage: false, endCursor: null } },
+        },
+      }
+    })
+
+    const { fetchProductConnection } = await import('../category-results-source')
+    const result = await fetchProductConnection(
+      { kind: 'collection', handle: 'occ' },
+      { first: 10, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [], text: 'shoebox' },
+    )
+    expect(result?.products.nodes).toEqual([inMember])
+  })
+
+  it('returns null (treat as unavailable) when the membership collection is missing', async () => {
+    mockFetch.mockImplementation(async (query: string) => {
+      if (query.includes('SearchProductsByTag')) {
+        return {
+          search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, productFilters: [] },
+        }
+      }
+      return { collection: null }
+    })
+    const { fetchProductConnection } = await import('../category-results-source')
+    const result = await fetchProductConnection(
+      { kind: 'collection', handle: 'missing-occ' },
+      { first: 10, sortKey: 'COLLECTION_DEFAULT', reverse: false, filters: [], text: 'anything' },
+    )
+    expect(result).toBeNull()
+  })
+})

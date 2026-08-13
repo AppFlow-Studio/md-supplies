@@ -5,8 +5,11 @@ import { ArrowLeft, Package, Tag } from 'lucide-react'
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { buildMetadata } from '@/lib/seo'
 import { getPartnerBySlug, PARTNERS } from '@/lib/partners'
+import { getPartnerSeo } from '@/lib/seo/partnerSeo'
+import { FAQSection } from '@/components/b2b/FAQSection'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCTS_BY_VENDOR } from '@/lib/shopify/queries/products'
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { FeaturedProductCard } from '@/components/b2b/FeaturedProductCard'
 import { WholesalePricing } from '@/components/home/WholesalePricing'
@@ -31,7 +34,7 @@ async function fetchFeaturedProducts(vendorName: string): Promise<CollectionProd
       sortKey: 'BEST_SELLING',
       reverse: false,
     })
-    return data.products.nodes
+    return attachCardShippingDisplay(data.products.nodes)
   } catch {
     return []
   }
@@ -50,13 +53,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const partner = getPartnerBySlug(slug)
   if (!partner) return {}
 
-  return buildMetadata({
+  const partnerSeo = getPartnerSeo(slug)
+  const base = buildMetadata({
     pageType: 'partner-detail',
     title: partner.seoTitle || partner.name,
     description: partner.seoDescription || partner.description,
     slug: partner.slug,
     image: partner.logo.url,
   })
+  if (!partnerSeo) return base
+  const og = (base.openGraph ?? {}) as Record<string, unknown>
+  return {
+    ...base,
+    title: partnerSeo.title,
+    description: partnerSeo.metaDescription,
+    openGraph: { ...og, title: partnerSeo.title, description: partnerSeo.metaDescription },
+  }
 }
 
 export default async function PartnerDetailPage({ params }: Props) {
@@ -65,6 +77,7 @@ export default async function PartnerDetailPage({ params }: Props) {
 
   if (!partner || !partner.isActive) notFound()
 
+  const partnerSeo = getPartnerSeo(slug)
   const pageUrl = `${SITE_URL}/partners/${partner.slug}`
   const pageDescription = partner.seoDescription || partner.description
 
@@ -233,10 +246,23 @@ export default async function PartnerDetailPage({ params }: Props) {
                           price: Math.round(
                             parseFloat(p.priceRange.minVariantPrice.amount) * 100
                           ),
+                          tags: p.tags,
+                          isRxOnly: p.isRxOnly,
+                          backorder: p.backorder,
+                          estimatedRestockDate: p.estimatedRestockDate?.value ?? null,
+                          shippingDisplay: p.shippingDisplay,
                         }}
                       />
                     ))}
                   </div>
+                </div>
+              </FadeIn>
+            )}
+
+            {partnerSeo?.faqs && partnerSeo.faqs.length > 0 && (
+              <FadeIn delay={0.19}>
+                <div className="mt-10 pt-10 border-t border-gray-200">
+                  <FAQSection faq={partnerSeo.faqs} />
                 </div>
               </FadeIn>
             )}

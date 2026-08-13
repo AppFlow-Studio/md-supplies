@@ -1,0 +1,127 @@
+{
+  "gloves": {
+    "handle": "gloves",
+    "searchTotal": 445,
+    "collTotal": 445
+  },
+  "wound-care": {
+    "handle": "wound-care",
+    "searchTotal": 723,
+    "collTotal": 724
+  },
+  "needles-syringes": {
+    "handle": "needles-syringes",
+    "searchTotal": 593,
+    "collTotal": 628
+  },
+  "surgical-sutures": {
+    "handle": "surgical-sutures",
+    "searchTotal": 192,
+    "collTotal": 192
+  },
+  "testing": {
+    "handle": "testing-screening",
+    "searchTotal": 173,
+    "collTotal": 175
+  },
+  "exam-room": {
+    "handle": "exam-room",
+    "searchTotal": 845,
+    "collTotal": 845
+  },
+  "respiratory": {
+    "handle": "respiratory",
+    "searchTotal": 408,
+    "collTotal": 408
+  },
+  "mobility": {
+    "handle": "mobility",
+    "searchTotal": 638,
+    "collTotal": 646
+  },
+  "patient-therapy-rehab": {
+    "handle": "patient-therapy-rehab",
+    "searchTotal": 299,
+    "collTotal": 299
+  },
+  "surgery-procedure": {
+    "handle": "trocars-trocar-kits",
+    "searchTotal": 319,
+    "collTotal": 41
+  },
+  "apparel": {
+    "handle": "capes-gowns",
+    "searchTotal": 152,
+    "collTotal": 34
+  },
+  "hygiene": {
+    "handle": "hygiene",
+    "searchTotal": 256,
+    "collTotal": 256
+  },
+  "disinfectants": {
+    "handle": "disinfectants",
+    "searchTotal": 31,
+    "collTotal": 35
+  },
+  "home-care": {
+    "handle": "home-care",
+    "searchTotal": 423,
+    "collTotal": 429
+  },
+  "emergency-supplies": {
+    "handle": "emergency-supplies",
+    "searchTotal": 355,
+    "collTotal": 359
+  },
+  "incontinence": {
+    "handle": "incontinence",
+    "searchTotal": 114,
+    "collTotal": 121
+  },
+  "iv-therapy": {
+    "handle": "iv-therapy",
+    "searchTotal": 78,
+    "collTotal": 78
+  },
+  "urology-ostomy": {
+    "handle": "urology-ostomy",
+    "searchTotal": 52,
+    "collTotal": 52
+  },
+  "sterilization": {
+    "handle": "sterilization",
+    "searchTotal": 51,
+    "collTotal": 51
+  },
+  "dental": {
+    "handle": "dental",
+    "searchTotal": 149,
+    "collTotal": 149
+  },
+  "housekeeping-janitorial": {
+    "handle": "housekeeping-janitorial",
+    "searchTotal": 85,
+    "collTotal": 85
+  },
+  "bariatric": {
+    "handle": "bariatric",
+    "searchTotal": 258,
+    "collTotal": 259
+  },
+  "room-furniture": {
+    "handle": "seating",
+    "searchTotal": 512,
+    "collTotal": 8
+  },
+  "face-masks": {
+    "handle": "face-coverings",
+    "searchTotal": 35,
+    "collTotal": 1
+  },
+  "pharmacy-products": {
+    "handle": "pharmacy-products",
+    "searchTotal": 101,
+    "collTotal": 115
+  }
+}

@@ -11,13 +11,13 @@ export const metadata = buildMetadata({
 
 export default function ContactPage() {
   return (
-    <main className="bg-[#f9fafc] min-h-screen">
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-14">
         <div className="max-w-[640px]">
           <h1 className="text-navy-900 text-[32px] font-bold mb-2">Contact Us</h1>
           <p className="text-gray-500 text-[15px] leading-[1.75] mb-6">
             Have a question about an order or product availability?
-            Fill out the form and our team will get back to you within one business day.
+            Fill out the form and our team will get back to you as soon as possible.
           </p>
 
           {/* Visible NAP (M12): same source as the footer and the
@@ -26,14 +26,14 @@ export default function ContactPage() {
           <address className="not-italic text-gray-500 text-[15px] leading-[1.75] mb-10 space-y-0.5">
             <p>
               Email:{' '}
-              <a href={`mailto:${SITE_CONTACT.email}`} className="text-teal-600 hover:text-teal-500 transition-colors">
+              <a href={`mailto:${SITE_CONTACT.email}`} className="text-ink-link hover:text-ink-link-hover transition-colors">
                 {SITE_CONTACT.email}
               </a>
             </p>
             {SITE_CONTACT.phone && (
               <p>
                 Phone:{' '}
-                <a href={`tel:${SITE_CONTACT.phone}`} className="text-teal-600 hover:text-teal-500 transition-colors">
+                <a href={`tel:${SITE_CONTACT.phone}`} className="text-ink-link hover:text-ink-link-hover transition-colors">
                   {SITE_CONTACT.phoneDisplay ?? SITE_CONTACT.phone}
                 </a>
               </p>

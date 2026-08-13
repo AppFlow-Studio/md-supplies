@@ -14,6 +14,18 @@ interface Props {
   fallbackLabelWrapperClassName?: string
   /** Classes for the fallbackLabel text itself (size + color). */
   fallbackLabelTextClassName?: string
+  /**
+   * Called when every image source has failed. Lets a parent collapse the
+   * space the image was occupying instead of showing a large empty panel —
+   * see CategoryHeroImage.
+   */
+  onUnavailable?: () => void
+  /**
+   * CSS object-position for the crop (e.g. 'center 35%'). Registry-supplied per
+   * route: at the hero's 16:5 desktop ratio a plain centre crop cuts the
+   * subject out of several of the supplied assets.
+   */
+  objectPosition?: string
 }
 
 // Fallback chain: approved BunnyCDN banner → optional caller-supplied URL → letter/neutral panel.
@@ -26,9 +38,16 @@ export function CategoryImage({
   fallbackLabel,
   fallbackLabelWrapperClassName = 'absolute inset-0 bg-navy-900/5 flex items-center justify-center',
   fallbackLabelTextClassName = 'text-navy-900/20 text-[36px] font-bold',
+  onUnavailable,
+  objectPosition,
 }: Props) {
   const [bannerFailed, setBannerFailed] = useState(false)
   const [fallbackFailed, setFallbackFailed] = useState(false)
+
+  const markUnavailable = () => {
+    // Reported once every source is exhausted, so the parent can collapse.
+    if (!fallbackUrl) onUnavailable?.()
+  }
 
   if (!bannerFailed) {
     return (
@@ -38,7 +57,11 @@ export function CategoryImage({
         fill
         sizes={sizes}
         className="object-cover"
-        onError={() => setBannerFailed(true)}
+        style={objectPosition ? { objectPosition } : undefined}
+        onError={() => {
+          setBannerFailed(true)
+          markUnavailable()
+        }}
       />
     )
   }
@@ -50,7 +73,11 @@ export function CategoryImage({
         src={fallbackUrl}
         alt={alt}
         className="absolute inset-0 w-full h-full object-cover"
-        onError={() => setFallbackFailed(true)}
+        style={objectPosition ? { objectPosition } : undefined}
+        onError={() => {
+          setFallbackFailed(true)
+          onUnavailable?.()
+        }}
       />
     )
   }

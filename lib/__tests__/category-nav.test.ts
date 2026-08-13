@@ -21,7 +21,7 @@ describe('buildCategoryNav', () => {
     const { more } = buildCategoryNav(LIVE_HANDLES)
     expect(more.find((c) => c.displayName === 'Face Masks')).toEqual({
       displayName: 'Face Masks',
-      href: '/category/face-coverings',
+      href: '/category/face-masks',
     })
   })
 

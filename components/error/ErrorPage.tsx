@@ -45,7 +45,7 @@ export function ErrorPage({
           {secondaryLabel}
         </Link>
       </div>
-      <p className="text-gray-400 text-[12px] mt-8">
+      <p className="text-ink-muted text-[12px] mt-8">
         Support code: {supportCode}
       </p>
     </main>

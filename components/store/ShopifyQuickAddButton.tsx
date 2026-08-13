@@ -6,6 +6,10 @@ import type { ProductCardData } from '@/types/product'
 import { QuickAddModal } from '@/components/product/QuickAddModal'
 import {Plus} from "lucide-react";
 import { cleanShopifyAlt } from '@/lib/alt-text'
+import { publicBrand } from '@/lib/brand'
+import { resolvePurchasable, purchasabilityLabel } from '@/lib/purchasability'
+import { isRxProduct } from '@/lib/rx-gate'
+import { isBackorderedMetafield } from '@/lib/labels/labels'
 
 function toCardData(product: CollectionProduct): ProductCardData {
   const image = product.images.nodes[0]
@@ -26,15 +30,21 @@ function toCardData(product: CollectionProduct): ProductCardData {
       width: image?.width ?? 800,
       height: image?.height ?? 800,
     },
-    brand: product.vendor,
-    vendor: product.vendor,
+    // Public brand only; never the fulfilling vendor (lib/brand.ts).
+    brand: publicBrand(product) ?? '',
+    vendor: '',
     price,
     compareAtPrice,
     sku: '',
     available: product.availableForSale,
-    hasFreeShipping: product.tags.includes('free-shipping'),
     shippingDisplay: product.shippingDisplay ?? null,
-    isRx: product.tags.includes('rx-required'),
+    isBackordered: isBackorderedMetafield(product.backorder),
+    backorderRestockDate: product.estimatedRestockDate?.value ?? null,
+    // Shared union (tag ∪ custom.is_rx_only), never a local re-implementation:
+    // this used to hand-roll a tag-only check, which silently NARROWED RX
+    // detection on grid cards versus the PDP and cart. Detection lives in one
+    // place so the three surfaces cannot drift apart.
+    isRx: isRxProduct({ tags: product.tags, isRxOnly: product.isRxOnly }),
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
       title: v.title,
@@ -51,8 +61,13 @@ export function ShopifyQuickAddButton({ product }: { product: CollectionProduct 
   const [isOpen, setIsOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
-  if (!product.availableForSale) return null
-
+  // Phase 4: the control lives in the card FOOTER, so it must reason about
+  // purchasability itself rather than relying on the image overlay being
+  // hidden. A zero/missing price is quote-only, not a stock problem.
+  const firstPrice = Number.parseFloat(
+    product.variants.nodes[0]?.price.amount ?? product.priceRange.minVariantPrice.amount,
+  )
+  const state = resolvePurchasable({ price: firstPrice, availableForSale: product.availableForSale })
   const cardData = toCardData(product)
 
   function handleOpen(e: React.MouseEvent) {
@@ -71,10 +86,16 @@ export function ShopifyQuickAddButton({ product }: { product: CollectionProduct 
         ref={triggerRef}
         type="button"
         onClick={handleOpen}
-        aria-label={`Quick add ${product.title}`}
-        className="absolute bottom-2.5 right-2.5 z-10 w-9 h-9 bg-white rounded-full border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-navy-900 transition-colors duration-200 ease-out hover:bg-navy-900 hover:border-navy-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-900 focus-visible:ring-offset-2"
+        disabled={!state.purchasable}
+        aria-label={
+          state.purchasable
+            ? `Quick add ${product.title}`
+            : `${purchasabilityLabel(state.reason)} — ${product.title}`
+        }
+        title={state.purchasable ? undefined : purchasabilityLabel(state.reason)}
+        className="w-11 h-11 shrink-0 bg-white rounded-full border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center text-navy-900 transition-colors duration-200 ease-out hover:bg-navy-900 hover:border-navy-900 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-navy-900 disabled:hover:border-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-900 focus-visible:ring-offset-2"
       >
-        <Plus size={18} />
+        <Plus size={18} aria-hidden />
       </button>
       {isOpen && <QuickAddModal product={cardData} onClose={handleClose} />}
     </>

@@ -73,6 +73,21 @@ export const GET_COLLECTION = `#graphql
           vendor
           availableForSale
           tags
+          # DEV-LABEL-01: single backorder source, shared with the PDP so
+          # card and PDP can never disagree.
+          # Public brand. Cards must never fall back to the Shopify vendor
+          # field (the fulfilling vendor) — see lib/brand.ts.
+          brandName: metafield(namespace: "custom", key: "brand_name") { value }
+          estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+          backorder: metafield(namespace: "custom", key: "backorder") { value }
+          # The store's own RX declaration. Selected here so grid cards can
+          # evaluate the SAME tag∪metafield union as the PDP and the cart
+          # (lib/rx-gate.ts). Without it the 40 ACTIVE metafield-only RX
+          # products found in the 2026-08-02 audit carry no RX indicator on any
+          # category/industry grid. Fails closed: if the definition lacks
+          # Storefront access this returns null and detection falls back to the
+          # tag, which is the pre-existing behaviour — never wider-then-broken.
+          isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
           priceRange {
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }
@@ -191,6 +206,19 @@ export const GET_COLLECTION_PRODUCT_CARDS = `#graphql
           priceRange { minVariantPrice { amount currencyCode } }
           images(first: 1) { nodes { url altText } }
         }
+        pageInfo { hasNextPage endCursor }
+      }
+    }
+  }
+`;
+
+// DEV-SEARCH-01: IDs-only membership page for server-side search-scope
+// enforcement on collections without a registry tag scope (OCC).
+export const GET_COLLECTION_PRODUCT_IDS = `#graphql
+  query GetCollectionProductIds($handle: String!, $first: Int!, $after: String) {
+    collection(handle: $handle) {
+      products(first: $first, after: $after) {
+        nodes { id }
         pageInfo { hasNextPage endCursor }
       }
     }

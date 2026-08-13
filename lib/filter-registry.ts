@@ -9,6 +9,7 @@
 // as the nav registry in lib/category-nav.ts.
 
 import type { CollectionFilter } from '@/lib/shopify/types'
+import { orderFacetValues } from '@/lib/catalog/facet-order'
 
 // ── Facet id shapes (Storefront API) ────────────────────────────────────────
 // filter.v.availability · filter.v.price · filter.p.type / filter.p.product_type
@@ -38,7 +39,6 @@ function metafield(namespace: string, key: string): FacetRule {
 
 const AVAILABILITY = exact('availability', 'filter.v.availability')
 const PRICE = exact('price', 'filter.v.price')
-const VENDOR = exact('vendor', 'filter.p.vendor')
 // Both spellings observed across Storefront API versions.
 const PRODUCT_TYPE = exact('productType', 'filter.p.type', 'filter.p.product_type')
 const CATEGORY = exact('category', 'filter.p.category')
@@ -67,6 +67,35 @@ export const APPROVED_METAFIELDS = {
   volume: metafield(METAFIELD_NS, 'volume'),
   weight: metafield(METAFIELD_NS, 'weight'),
 
+  // ── Added 2026-08-12 from the approved Search & Discovery table ──────────
+  // Every key below was READ OFF the live Storefront filter response, not
+  // guessed: audit/live/facets.json records the exact facet ids returned for
+  // all 25 category collections on 2026-08-12. Before this, S&D published
+  // Type/Thickness/Features/Other Features/Sterility/Use/Color/Certification/
+  // Detectable Drugs on the store, but this registry had no entry for them, so
+  // the default-deny gate silently dropped every one — the gloves rail showed
+  // 5 of the 13 facets Shopify was actually returning.
+  //
+  // `type` is registered now (it was deliberately withheld while it held
+  // material values on gloves). The live response shows the inversion is
+  // fixed: gloves Type has 8 values over 442 products AND a separate Material
+  // facet with 6 values over 317, so the two no longer collide.
+  type: metafield(METAFIELD_NS, 'type'),
+  thickness: metafield(METAFIELD_NS, 'thickness'),
+  features: metafield(METAFIELD_NS, 'features'),
+  otherFeatures: metafield(METAFIELD_NS, 'other_features'),
+  sterility: metafield(METAFIELD_NS, 'sterility'),
+  use: metafield(METAFIELD_NS, 'use'),
+  color: metafield(METAFIELD_NS, 'color'),
+  certification: metafield(METAFIELD_NS, 'certification'),
+  detectableDrugs: metafield(METAFIELD_NS, 'detectable_drugs'),
+  // Approved in the S&D table but NOT returned by any of the 25 sampled
+  // collections on 2026-08-12 — including testing-screening, the only page
+  // that would use it. Registered so it appears the moment the definition goes
+  // live; until then the default-deny gate keeps it invisible. Reported as a
+  // data follow-up rather than faked from another field.
+  adulterants: metafield(METAFIELD_NS, 'adulterants'),
+
   // The category facet the client is actually asking for, and the
   // highest-coverage attribute in the catalogue: populated on 100% of products
   // in most categories, and the field behind the old site's "Categories" list
@@ -93,8 +122,19 @@ export const APPROVED_METAFIELDS = {
 } as const
 
 // ── Hard deny: raw tags never render, no matter what S&D returns ───────────
+// `filter.p.vendor` is denied for the same reason brand deliberately reads a
+// metafield: Shopify's vendor field holds the FULFILLING vendor (MedPlus,
+// Medchain, …), and Bilal's 2026-07-28 instruction forbids exposing internal
+// fulfillers as customer-facing brands. The live store's Vendor facet was
+// removed from Search & Discovery on 2026-07-29 (CHANGE-01 in the agency
+// repo's live-filters bundle); a registry that still allowed it would
+// reintroduce on this site exactly what was removed from the live one.
 export function isBlockedFacetId(facetId: string): boolean {
-  return facetId === 'filter.p.tag' || facetId.startsWith('filter.p.tag.')
+  return (
+    facetId === 'filter.p.tag' ||
+    facetId.startsWith('filter.p.tag.') ||
+    facetId === 'filter.p.vendor'
+  )
 }
 
 // Internal taxonomy/ops tag values that must never leak into the UI.
@@ -129,38 +169,44 @@ export const BLOCKED_TAG_PATTERNS: readonly RegExp[] = [
 // through to Availability/Price/Vendor, which is exactly the client's complaint
 // that filters "don't cover the product range".
 
-// Measured at or near 100% population in every audited category, so every
-// collection gets these. Registering a facet does not force it to render: the
-// Storefront API has to return it, so anything not yet live simply fails closed.
-const UNIVERSAL: FacetRule[] = [
-  APPROVED_METAFIELDS.customerCategory,
-  APPROVED_METAFIELDS.brandName,
-  APPROVED_METAFIELDS.orderSize,
-  PRODUCT_TYPE,
-  VENDOR,
-  PRICE,
-  AVAILABILITY,
-]
+// ── Ordered, per-route allowlists (spec §"Category-specific public facet
+// registry" / §"Industry-specific public facet registry") ──────────────────
+//
+// ORDER IS PART OF THE CONTRACT. Unlike the previous FacetRule[] sets, the
+// position of a rule in these arrays is the display order of the facet group
+// in the rail and the drawer — getAllowedFacets sorts the Storefront response
+// into registry order rather than passing through Shopify's arbitrary order.
+//
+// These are allowlists, not render instructions: a facet listed here still has
+// to be returned by the Storefront API with at least one non-zero value for
+// the current product set before it renders (see getAllowedFacets). Empty
+// groups are never emitted, so "Certification" being allowed on all 25
+// categories does not mean 25 empty Certification groups — on 2026-08-12 it is
+// live on gloves only.
+const M = APPROVED_METAFIELDS
 
-/** Category-specific facets first, then the universal set. */
-function withUniversal(...specific: FacetRule[]): FacetRule[] {
-  return [...specific, ...UNIVERSAL]
+/** Facets every category page shares, in their approved relative order. */
+const TAIL: FacetRule[] = [M.orderSize, M.brandName, PRICE, M.certification]
+
+/** Category → the approved ordered facet list, minus the shared tail. */
+function cat(...head: FacetRule[]): FacetRule[] {
+  return [M.customerCategory, ...head, ...TAIL]
 }
 
-// NOTE ON `custom.type`: deliberately never registered. Its meaning is not
-// consistent across categories — on gloves it holds MATERIAL values ("Nitrile
-// Gloves", "Latex Gloves"), which is the inversion Bilal reported. Exam versus
-// Surgical, the value he wants under Type, comes from `product_type` instead,
-// which is 100% populated on gloves (Exam Glove 343, Surgical Glove 70) and is
-// already an approved source. So gloves get a correct Type facet with no data
-// migration, and Material waits on `custom.material` being populated (0.9%
-// today, so it fails closed until then).
-const OCC_RULES: FacetRule[] = withUniversal()
+// OCC and its eligible collections are not one of the 25 approved category
+// routes, so they get the generic set: Category leads (it is the facet the
+// client's old site exposed and the one the complaint was about), then the
+// shared tail.
+const OCC_RULES: FacetRule[] = cat()
 
+// The 25 approved CATEGORY routes, keyed by the public route slug.
+//
+// getAllowedFacets is called with the route slug, which for 24 of the 25 is
+// also the Shopify collection handle; the exceptions (testing-screening,
+// trocars-trocar-kits, capes-gowns, seating, face-coverings) are keyed on the
+// handle for the same reason, because that IS the public slug — see the route
+// table in lib/route-registry.ts.
 export const filterRegistry: Record<string, FacetRule[]> = {
-  // OCC hub + its eligible collections: no glove / needle / testing facets.
-  // The category facet matters most here: it is what the client's old site
-  // exposed and what the complaint is about.
   occ: OCC_RULES,
   'hygiene-kits': OCC_RULES,
   'school-supplies': OCC_RULES,
@@ -170,91 +216,100 @@ export const filterRegistry: Record<string, FacetRule[]> = {
   // and is inert. Left in place rather than removed so whoever added it can
   // confirm the intended handle.
   'gifts-toys': OCC_RULES,
+  'office-supplies': OCC_RULES,
 
-  // 445 products. Type comes from product_type (in UNIVERSAL); glove_size is
-  // only 39% populated so it fails closed until filled from vendor data.
-  gloves: withUniversal(
-    APPROVED_METAFIELDS.gloveSize,
-    variantOption('size'),
-    APPROVED_METAFIELDS.material,
-  ),
+  // Category, Type, Material, Glove Size, Size, Thickness, Features, Other
+  // Features, Sterility, Use, Color, Order Size, Brand Name, Price, Certification
+  gloves: cat(M.type, M.material, M.gloveSize, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
 
-  // 593 products. Measured: needle gauge 80%, needle length 78%.
-  'needles-syringes': withUniversal(
-    APPROVED_METAFIELDS.needleGauge,
-    APPROVED_METAFIELDS.length,
-    APPROVED_METAFIELDS.volume,
-  ),
+  'wound-care': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
 
-  // 638 products.
-  mobility: withUniversal(
-    APPROVED_METAFIELDS.weight,
-    APPROVED_METAFIELDS.size,
-    variantOption('size'),
-  ),
+  'needles-syringes': cat(M.type, M.needleGauge, M.length, M.size, M.material, M.features, M.otherFeatures, M.sterility, M.use),
 
-  // ── Categories added from the coverage audit ──────────────────────────────
-  // Each previously fell through to Availability/Price/Vendor only.
-  'exam-room': OCC_RULES,                                     // 845 products
-  'wound-care': withUniversal(APPROVED_METAFIELDS.size),      // 723, size 66%
-  'room-furniture': OCC_RULES,                                // 512
-  'home-care': OCC_RULES,                                     // 423
-  respiratory: OCC_RULES,                                     // 408
-  'emergency-supplies': OCC_RULES,                            // 355
-  'surgery-procedure': OCC_RULES,                             // 319
-  'patient-therapy-rehab': OCC_RULES,                         // 299
-  bariatric: OCC_RULES,                                       // 258
-  hygiene: OCC_RULES,                                         // 256
-  'surgical-sutures': withUniversal(APPROVED_METAFIELDS.material), // 192, material 96%
+  'surgical-sutures': cat(M.type, M.material, M.size, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
   // The L1 collection handle is testing-screening; `testing` is the category:
-  // tag value and is not a collection. Verified live: 12 facets, 52 category
-  // values.
-  'testing-screening': withUniversal(APPROVED_METAFIELDS.testsFor), // 173
-  apparel: OCC_RULES,                                         // 152
-  incontinence: OCC_RULES,                                    // 114
-  'pharmacy-products': OCC_RULES,                             // 101
-  'housekeeping-janitorial': OCC_RULES,                       // 85
-  'urology-ostomy': OCC_RULES,                                // 52
-  sterilization: withUniversal(APPROVED_METAFIELDS.size),     // 51, size 80%
-  'face-masks': OCC_RULES,                                    // 35
-  disinfectants: OCC_RULES,                                   // 31
-  'office-supplies': OCC_RULES,                               // 18
+  // tag value and is not a collection.
+  'testing-screening': cat(M.type, M.testsFor, M.detectableDrugs, M.adulterants, M.size, M.features, M.otherFeatures, M.sterility, M.use),
 
-  // Confirmed live 2026-07-17 (docs/superpowers/plans/2026-07-17-attribute-
-  // facet-audit.md, Task 1): needle_gauge/needle_length/size_length_/
-  // order_size are all live, populated Storefront metafields on this
-  // collection today -- same gauge/length/order-size metafield family as
-  // needles-syringes above, but with size in place of volume, since dental
-  // needle products carry gauge/length/size attributes, not a fill volume.
-  dental: withUniversal(
-    APPROVED_METAFIELDS.needleGauge,
-    APPROVED_METAFIELDS.length,
-    APPROVED_METAFIELDS.size,
-  ),
+  'exam-room': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
 
-  // Confirmed live 2026-07-17 (same audit as dental above) -- IV catheter
-  // gauge is the attribute in question (24g-iv-catheters etc.), same
-  // metafield family.
-  'iv-therapy': withUniversal(
-    APPROVED_METAFIELDS.needleGauge,
-    APPROVED_METAFIELDS.length,
-    APPROVED_METAFIELDS.size,
-  ),
+  respiratory: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use),
+
+  mobility: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  'patient-therapy-rehab': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  // Surgery & Procedure. Keyed on the live collection handle because that is
+  // the public route slug.
+  'trocars-trocar-kits': cat(M.type, M.material, M.size, M.needleGauge, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
+  // Apparel.
+  'capes-gowns': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
+  hygiene: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  disinfectants: cat(M.type, M.size, M.features, M.otherFeatures, M.use),
+
+  'home-care': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  'emergency-supplies': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
+  incontinence: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  'iv-therapy': cat(M.type, M.needleGauge, M.length, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use),
+
+  'urology-ostomy': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
+  sterilization: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use),
+
+  dental: cat(M.type, M.material, M.size, M.needleGauge, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
+  'housekeeping-janitorial': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  bariatric: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  // Room Furniture.
+  seating: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+
+  // Face Masks. Registered under BOTH keys on purpose: `face-masks` is the
+  // canonical public slug (proxy.ts 301s the handle to it) and is what
+  // getAllowedFacets is called with, while `face-coverings` is the Shopify
+  // handle and stays registered so a direct hit on the pre-redirect URL cannot
+  // silently fall through to the bare default facet set.
+  // Thickness is approved here and live on other routes, so it stays
+  // registered even though this route currently returns no Thickness values.
+  'face-masks': cat(M.type, M.material, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+  'face-coverings': cat(M.type, M.material, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
+  'pharmacy-products': cat(M.type, M.material, M.size, M.testsFor, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+}
+
+// ── The 5 approved INDUSTRY routes ─────────────────────────────────────────
+// Industry pages span several product families, so Category leads even more
+// firmly than on a category page. Keyed by industry slug; resolved through
+// getIndustryFacetRules so an industry can never accidentally pick up a
+// same-named category entry.
+export const industryFilterRegistry: Record<string, FacetRule[]> = {
+  'urgent-care': cat(M.type, M.testsFor, M.needleGauge, M.length, M.material, M.gloveSize, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+  'hrt-clinics': cat(M.type, M.needleGauge, M.length, M.size, M.material, M.features, M.otherFeatures, M.sterility, M.use),
+  'home-health': cat(M.type, M.material, M.gloveSize, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+  'clinics-doctors-offices': cat(M.type, M.testsFor, M.needleGauge, M.length, M.material, M.gloveSize, M.size, M.thickness, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+  pharmacies: cat(M.type, M.testsFor, M.detectableDrugs, M.adulterants, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
 }
 
 // Safe default for any collection without an explicit registry entry.
-export const DEFAULT_FACET_RULES: FacetRule[] = [AVAILABILITY, PRICE, VENDOR]
+export const DEFAULT_FACET_RULES: FacetRule[] = [AVAILABILITY, PRICE]
 
 // Search spans every collection, so unlike getAllowedFacets there is no
 // collection handle to key a per-collection allowlist on. One registry
 // entry covers all of search: the same non-tag sources approved anywhere
-// (availability/price/vendor/productType) plus every approved metafield,
+// (availability/price/productType) plus every approved metafield,
 // since a search result set can span collections with different metafield
 // registries.
 export const SEARCH_FACET_RULES: FacetRule[] = [
   AVAILABILITY,
   PRICE,
-  VENDOR,
   PRODUCT_TYPE,
   ...Object.values(APPROVED_METAFIELDS),
 ]
@@ -262,9 +317,16 @@ export const SEARCH_FACET_RULES: FacetRule[] = [
 /** The single gate for search-page facets — mirrors getAllowedFacets but
  *  keyed on the search-wide allowlist instead of a collection handle. */
 export function getSearchFacets(facets: CollectionFilter[]): CollectionFilter[] {
-  return facets.filter(
-    (facet) => !isBlockedFacetId(facet.id) && SEARCH_FACET_RULES.some((rule) => rule.matches(facet.id)),
-  )
+  return facets
+    .filter(
+      (facet) => !isBlockedFacetId(facet.id) && SEARCH_FACET_RULES.some((rule) => rule.matches(facet.id)),
+    )
+    // Same count-descending value order as the category rail — /search shares
+    // the FilterRail component, so a different order there would be a visible
+    // inconsistency for the same facet.
+    .map((facet) =>
+      facet.type === 'PRICE_RANGE' ? facet : { ...facet, values: orderFacetValues(facet.values) },
+    )
 }
 
 // Sources that MAY be referenced by registry entries (spec §"Allowed filter
@@ -273,7 +335,6 @@ export function getSearchFacets(facets: CollectionFilter[]): CollectionFilter[] 
 export const ALL_ALLOWED_RULES: FacetRule[] = [
   CATEGORY,
   PRODUCT_TYPE,
-  VENDOR,
   PRICE,
   AVAILABILITY,
   // Variant options are an approved source and were already referenced by the
@@ -287,19 +348,64 @@ export function getFacetRules(collectionHandle: string): FacetRule[] {
   return filterRegistry[collectionHandle] ?? DEFAULT_FACET_RULES
 }
 
+/** Industry routes resolve against their own registry, never the category one. */
+export function getIndustryFacetRules(industrySlug: string): FacetRule[] {
+  return industryFilterRegistry[industrySlug] ?? DEFAULT_FACET_RULES
+}
+
+/** Which registry a route family reads from. */
+export type FacetRouteKind = 'category' | 'industry'
+
+export function getFacetRulesFor(kind: FacetRouteKind, key: string): FacetRule[] {
+  return kind === 'industry' ? getIndustryFacetRules(key) : getFacetRules(key)
+}
+
 /**
- * The single gate for the filter rail: returns only the facets whose source
- * is allowlisted for this collection. Blocked sources (raw tags) are stripped
- * first; everything not explicitly allowed is dropped (default-deny).
+ * The single gate for the filter rail: returns only the facets whose source is
+ * allowlisted for this route, IN REGISTRY ORDER, with each group's values
+ * ordered by exact live count descending (alphabetical on ties).
+ *
+ * Three things happen here and nowhere else, so the rail, the mobile drawer and
+ * the Category tab row cannot disagree:
+ *
+ *  1. Default-deny. Blocked sources (raw tags, vendor) are stripped, then
+ *     anything not explicitly allowlisted for this route is dropped. An
+ *     unexpected facet appearing in Search & Discovery cannot reach the UI.
+ *  2. Registry order. Shopify returns facets in its own order; the approved
+ *     spec fixes the order per route (Category first, Price/Certification last).
+ *  3. Relevance. A group with no values carrying a non-zero count is not a
+ *     filter — it is noise — so it is not emitted at all. PRICE_RANGE is
+ *     exempt: its single value carries bounds rather than a count.
  */
 export function getAllowedFacets(
   collectionHandle: string,
   facets: CollectionFilter[],
+  kind: FacetRouteKind = 'category',
+  /**
+   * Currently-selected filter inputs. A selected value keeps its group alive
+   * even after another selection drives its count to zero — otherwise the
+   * group vanishes and the user has no way to deselect it (spec: "preserve
+   * selected values even if another selection makes their current count zero").
+   */
+  activeFilterInputs: readonly string[] = [],
 ): CollectionFilter[] {
-  const rules = getFacetRules(collectionHandle)
-  return facets.filter(
-    (facet) => !isBlockedFacetId(facet.id) && rules.some((rule) => rule.matches(facet.id)),
-  )
+  const rules = getFacetRulesFor(kind, collectionHandle)
+  const active = new Set(activeFilterInputs)
+  const ordered: CollectionFilter[] = []
+
+  for (const rule of rules) {
+    const facet = facets.find((f) => !isBlockedFacetId(f.id) && rule.matches(f.id))
+    if (!facet) continue
+    if (facet.type === 'PRICE_RANGE') {
+      ordered.push(facet)
+      continue
+    }
+    // Relevance gate: a group whose every value is zero-count narrows nothing.
+    if (!facet.values.some((v) => v.count > 0 || active.has(v.input))) continue
+    ordered.push({ ...facet, values: orderFacetValues(facet.values) })
+  }
+
+  return ordered
 }
 
 /** Strips only hard-denied facets (raw tags) — used where there is no
@@ -357,7 +463,16 @@ const INPUT_VALIDATORS: Record<string, (v: unknown) => boolean> = {
     return true
   },
   productType: isSaneString,
-  productVendor: isSaneString,
+  // `productVendor` is deliberately ABSENT. Denying the `filter.p.vendor` FACET
+  // only stops the rail from rendering a Vendor group — it does not stop a
+  // hand-crafted or crawled `?filter={"productVendor":"MedPlus"}` from being
+  // accepted here and forwarded to the Storefront API, which would filter the
+  // catalogue by internal FULFILLING vendor, render a vendor chip, and mint
+  // indexable faceted URLs keyed on fulfiller names. Facet-deny and input-deny
+  // are two separate gates and both have to close. Omitting the key is the
+  // enforcement: unknown keys are default-denied by isAllowedFilterObject.
+  // The partner pages do NOT depend on this — they pass `vendor:"…"` as a
+  // Storefront `query` string, which never reaches this validator.
   variantOption: (v) => {
     if (typeof v !== 'object' || v === null || Array.isArray(v)) return false
     const o = v as Record<string, unknown>

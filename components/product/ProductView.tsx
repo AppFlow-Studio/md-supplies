@@ -15,15 +15,16 @@ import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
-import { ShippingBadge } from './ShippingBadge'
 import { ShippingBlock } from './ShippingBlock'
+import { ProductLabelBadges } from './ProductLabelBadges'
+import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
+import { resolveReturnPolicy } from '@/lib/policy/return-policy'
+import { resolveProductLabels } from '@/lib/labels/labels'
+import { publicBrand } from '@/lib/brand'
+import { hasUsablePrice, getDefaultVariant } from '@/lib/purchasability'
 
-type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
-const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
-
-function getDefaultVariant(variants: ProductVariant[]): ProductVariant {
-  return variants.find((v) => v.availableForSale) ?? variants[0]
-}
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const price = parseFloat(
@@ -37,11 +38,16 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
         <ProductImage src={image?.url} alt={cleanShopifyAlt(image?.altText) ?? product.title} />
       </div>
       <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
-        <span className="text-teal-500 text-[12px] font-semibold uppercase tracking-[0.24px]">
-          {product.vendor}
-        </span>
+        {/* Public brand only — omitted when none is approved (lib/brand.ts). */}
+        {publicBrand(product) && (
+          <span className="text-teal-500 text-[12px] font-semibold uppercase tracking-[0.24px]">
+            {publicBrand(product)}
+          </span>
+        )}
         <p className="text-black text-[13px] font-semibold leading-5 line-clamp-2">{product.title}</p>
-        <span className="text-black text-[16px] font-bold">${price.toFixed(2)}</span>
+        <span className="text-black text-[16px] font-bold">
+          {hasUsablePrice(price) ? `$${price.toFixed(2)}` : 'Contact for pricing'}
+        </span>
       </div>
     </Link>
   )
@@ -62,6 +68,12 @@ interface Props {
 }
 
 export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
+  // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
+  // Medchain, …) and must never be presented as a brand — when brand_name is
+  // absent the brand line, spec row, and analytics item_brand are all omitted.
+  // Declared before the analytics effect that reads it.
+  const brandDisplay = publicBrand(product)
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     () => getDefaultVariant(product.variants.nodes),
   )
@@ -79,7 +91,8 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             item_id: selectedVariant.id,
             item_name: product.title,
             price: parseFloat(selectedVariant.price.amount),
-            item_brand: product.vendor,
+            // Public brand only; never the fulfilling vendor (lib/brand.ts).
+            ...(brandDisplay ? { item_brand: brandDisplay } : {}),
           },
         }),
       },
@@ -100,18 +113,25 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
       ? Math.round(((compareAt - price) / compareAt) * 100)
       : null
 
-  const restockDate = product.estimatedRestockDate
-    ? new Date(product.estimatedRestockDate).toLocaleDateString('en-US', {
-        month: 'long', day: 'numeric', year: 'numeric',
-      })
-    : null
+  // DEV-LABEL-01 / DEV-CATALOG-01: backorder + RX come from the shared label
+  // contract (single metafield source, stale ETAs suppressed) so card and PDP
+  // can never disagree. availableForSale only gates purchasability — it is
+  // never presented as a real-time "In Stock" inventory claim. Backorder is
+  // gated on the custom.backorder boolean alone, independent of availability.
+  const labels = resolveProductLabels({
+    tags: product.tags,
+    isBackordered: product.backorder,
+    estimatedRestockDate: product.estimatedRestockDate,
+    // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the
+    // PDP badge can never disagree with whether the cart will actually be gated.
+    isRxOnly: product.isRxOnly,
+  })
+  const backorderLabel = labels.find((l) => l.type === 'backorder') ?? null
 
-  const stockStatus: 'in_stock' | 'out_of_stock' | 'backordered' = (() => {
-    if (!selectedVariant.availableForSale) return restockDate ? 'backordered' : 'out_of_stock'
-    return 'in_stock'
+  const stockStatus: 'available' | 'out_of_stock' | 'backordered' = (() => {
+    if (!selectedVariant.availableForSale) return backorderLabel ? 'backordered' : 'out_of_stock'
+    return 'available'
   })()
-
-  const brandDisplay = product.brandName ?? product.vendor
 
   const variantSku = selectedVariant.sku || (selectedVariant.id.split('/').pop() ?? '')
 
@@ -187,20 +207,25 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
           {/* Right – Product info */}
           <div className="flex-1 flex flex-col gap-5">
             {/* Brand */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              {partnerSlug ? (
-                <Link
-                  href={`/partners/${partnerSlug}`}
-                  className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase hover:text-teal-600 transition-colors"
-                >
-                  {brandDisplay}
-                </Link>
-              ) : (
-                <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
-                  {brandDisplay}
-                </span>
-              )}
-            </div>
+            {/* Brand line renders only for an approved public brand. The
+                partner link is also brand-gated: linking a partner page from
+                a fulfilling-vendor string would leak the same information. */}
+            {brandDisplay && (
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                {partnerSlug ? (
+                  <Link
+                    href={`/partners/${partnerSlug}`}
+                    className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase hover:text-ink-link transition-colors"
+                  >
+                    {brandDisplay}
+                  </Link>
+                ) : (
+                  <span className="text-teal-500 text-[15px] font-semibold tracking-[0.3px] uppercase">
+                    {brandDisplay}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Title */}
             <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
@@ -212,50 +237,44 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               SKU: {variantSku}
             </p>
 
-            {/* Availability */}
-            <div className="flex items-center gap-2">
-              {stockStatus === 'in_stock' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-green-500" />
-                  <span className="text-gray-500 text-[13px] tracking-[0.26px]">
-                    In Stock
-                  </span>
-                </>
-              )}
-              {stockStatus === 'backordered' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
-                  <span className="text-orange-600 text-[13px] font-semibold tracking-[0.26px]">
-                    Back-ordered – ships {restockDate ?? 'soon'}
-                  </span>
-                </>
-              )}
-              {stockStatus === 'out_of_stock' && (
-                <>
-                  <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
-                  <span className="text-red-500 text-[13px] font-semibold tracking-[0.26px]">
-                    Out of Stock
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Product badges. A shipping claim may come only from the resolver,
-                never from a tag: `free-shipping` is an uncurated catalog tag and
-                is not an approved source for a customer-facing promise. The RX
-                badge is a separate, non-shipping label and keeps its tag. */}
-            {(shippingDisplay || product.tags.includes('rx-required')) && (
-              <div className="flex flex-wrap gap-2">
-                {shippingDisplay && (
-                  <ShippingBadge shippingDisplay={shippingDisplay} className="px-3 py-1 text-[13px]" />
+            {/* Availability — negative states only. No "In stock" claim:
+                vendor inventory is not real time (DEV-CATALOG-01), so an
+                available product simply shows no availability text and the
+                add-to-cart control does the talking. */}
+            {stockStatus !== 'available' && (
+              <div className="flex items-center gap-2">
+                {stockStatus === 'backordered' && backorderLabel && (
+                  <>
+                    <span className="size-[8px] rounded-full shrink-0 bg-orange-400" />
+                    {/* orange-600 measured 3.56:1 on white — below the 4.5:1 AA minimum,
+                        flagged [serious] by axe. orange-700 measures ~5.18:1. */}
+                    <span className="text-orange-700 text-[13px] font-semibold tracking-[0.26px]">
+                      {backorderLabel.text}
+                    </span>
+                  </>
                 )}
-                {product.tags.includes('rx-required') && (
-                  <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded bg-amber-600 text-white">
-                    RX Only
-                  </span>
+                {stockStatus === 'out_of_stock' && (
+                  <>
+                    <span className="size-[8px] rounded-full shrink-0 bg-red-400" />
+                    {/* Semantic status token (--color-ink-danger, 6.42:1).
+                        red-500 was 3.81:1 at 13px — below the 4.5:1 AA
+                        minimum and flagged serious by axe. */}
+                    <span className="text-ink-danger text-[13px] font-semibold tracking-[0.26px]">
+                      Out of Stock
+                    </span>
+                  </>
                 )}
               </div>
             )}
+
+            {/* Product badges. A shipping claim may come only from the resolver,
+                never from a tag: `free-shipping` is an uncurated catalog tag and
+                is not an approved source for a customer-facing promise. RX and
+                Backorder are display-only labels from the shared contract
+                (lib/labels) — RX never enforces checkout behavior itself.
+                Order (RX -> Backorder -> Free Shipping) is guaranteed by
+                ProductLabelBadges. */}
+            <ProductLabelBadges labels={labels} shippingDisplay={shippingDisplay} size="md" />
 
             {/* Always rendered, never blank. Anything the resolver did not
                 classify for the selected variant, including every product when
@@ -276,12 +295,19 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               />
             )}
 
-            {/* Price */}
+            {/* Price. A zero/missing price is a quote-only item, not a $0
+                product and not an out-of-stock or no-rate signal (Phase 11). */}
             <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-black text-[35px] font-extrabold leading-none tracking-[0.7px]">
-                ${price.toFixed(2)}
-              </span>
-              {compareAt && compareAt > price && (
+              {hasUsablePrice(price) ? (
+                <span className="text-black text-[35px] font-extrabold leading-none tracking-[0.7px]">
+                  ${price.toFixed(2)}
+                </span>
+              ) : (
+                <span className="text-navy-900 text-[24px] font-semibold leading-none tracking-[0.4px]">
+                  Contact for pricing
+                </span>
+              )}
+              {hasUsablePrice(price) && compareAt && compareAt > price && (
                 <span className="text-gray-500 text-[15px] line-through tracking-[0.3px]">
                   ${compareAt.toFixed(2)}
                 </span>
@@ -351,6 +377,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 variantId={selectedVariant.id}
                 quantity={orderQty}
                 availableForSale={selectedVariant.availableForSale}
+                price={price}
               />
             </div>
 
@@ -381,11 +408,15 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
           <div className="border-b border-gray-200">
-            <div className="flex overflow-x-auto scrollbar-hide">
+            <div className="flex overflow-x-auto scrollbar-hide" role="tablist" aria-label="Product information">
               {TABS.map((tab) => (
                 <button
                   key={tab}
                   type="button"
+                  role="tab"
+                  id={`product-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
+                  aria-selected={activeTab === tab}
+                  aria-controls="product-tab-panel"
                   onClick={() => setActiveTab(tab)}
                   className={`px-5 py-5 text-[15px] font-semibold tracking-[0.3px] whitespace-nowrap border-b-[3px] transition-colors ${
                     activeTab === tab
@@ -399,7 +430,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             </div>
           </div>
 
-          <div className="py-10 sm:py-14">
+          <div
+            className="py-10 sm:py-14"
+            id="product-tab-panel"
+            role="tabpanel"
+            aria-labelledby={`product-tab-${activeTab.toLowerCase().replace(/\s+/g, '-')}`}
+          >
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-8 max-w-[760px]">
                 {/* Item Number */}
@@ -452,7 +488,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                       .map((badge) => (
                         <span
                           key={badge}
-                          className="bg-teal-50 text-teal-700 text-[12px] font-semibold px-3 py-1 border border-teal-200"
+                          className="bg-teal-50 text-ink-link text-[12px] font-semibold px-3 py-1 border border-teal-200"
                         >
                           {badge}
                         </span>
@@ -489,17 +525,16 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               </div>
             )}
 
-            {activeTab === 'VENDOR SHIPPING & RETURNS' && (
-              <div className="flex flex-col gap-4 max-w-[760px]">
-                <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                  Orders are processed through trusted medical supply partners with clear product
-                  and shipping details, and ship fast so your facility stays stocked.
-                </p>
-                <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                  Return policies vary by vendor. Returns are accepted for unopened, undamaged items
-                  in original packaging — contact support to initiate a return authorization.
-                </p>
-              </div>
+            {activeTab === 'RETURNS' && (
+              // DEV-POLICY-01: always the approved policy from the central
+              // module — vendor-specific copy renders here once IZ-PROD-04
+              // populates the approved production source; until then every
+              // product shows the approved general fallback (never empty,
+              // never invented).
+              <ReturnPolicyContent
+                sections={resolveReturnPolicy({ vendor: product.vendor }).sections}
+                headingLevel="h3"
+              />
             )}
 
             {activeTab === 'REVIEWS' && (
@@ -552,7 +587,12 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
-            <div className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch">
+            <div
+              className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch"
+              tabIndex={0}
+              role="region"
+              aria-label="You May Also Need — scrollable product list"
+            >
               {relatedProducts.slice(4).map((item) => (
                 <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
                   <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">

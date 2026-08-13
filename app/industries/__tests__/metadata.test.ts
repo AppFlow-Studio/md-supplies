@@ -16,12 +16,12 @@ describe('industries hub metadata — OG image', () => {
 
 describe('industry detail metadata — OG image', () => {
   it('uses the distinct per-industry image', async () => {
-    const m = await generateDetailMetadata({ params: Promise.resolve({ 'industry-slug': 'urgent-care' }) })
+    const m = await generateDetailMetadata({ params: Promise.resolve({ 'industry-slug': 'urgent-care' }), searchParams: Promise.resolve({}) })
     expect(ogImageUrl(m)).toBe('https://mdsupplies.com/api/bunny/industries/industry-urgent-care.jpeg')
   })
 
   it('a different industry gets a different image', async () => {
-    const m = await generateDetailMetadata({ params: Promise.resolve({ 'industry-slug': 'dental' }) })
+    const m = await generateDetailMetadata({ params: Promise.resolve({ 'industry-slug': 'dental' }), searchParams: Promise.resolve({}) })
     expect(ogImageUrl(m)).toBe('https://mdsupplies.com/api/bunny/industries/industry-dental.jpeg')
   })
 })

@@ -1,5 +1,6 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
 import { getNonce } from '@/lib/csp-nonce'
+import { hasUsablePrice } from '@/lib/purchasability'
 
 interface Props {
   name: string
@@ -8,7 +9,9 @@ interface Props {
   sku: string
   mpn?: string
   gtin?: string
-  brand: string
+  /** Public brand (custom.brand_name). Undefined when none is approved —
+      never the fulfilling vendor, so the Brand node is simply omitted. */
+  brand?: string
   price: number
   priceCurrency: string
   availability: 'InStock' | 'OutOfStock' | 'PreOrder'
@@ -47,8 +50,21 @@ export async function ProductSchema({
     description,
     image,
     sku,
-    brand: { '@type': 'Brand', name: brand },
-    offers: {
+    ...(brand ? { brand: { '@type': 'Brand', name: brand } } : {}),
+  }
+
+  // Never fabricate identifiers or policies: each field is emitted only when
+  // a real value exists (gtin is pre-validated by lib/gtin.ts).
+  if (mpn) schema.mpn = mpn
+  if (gtin) schema.gtin = gtin
+
+  // A zero/missing price is a quote-only item, never a $0 product
+  // (lib/purchasability.ts). Emitting an Offer with `price: 0` would tell
+  // Google (and any other JSON-LD consumer) a price the page itself refuses
+  // to state — the exact card/PDP/structured-data disagreement this schema
+  // must not create. Omit the Offer entirely rather than fabricate one.
+  if (hasUsablePrice(price)) {
+    const offers: Record<string, unknown> = {
       '@type': 'Offer',
       url,
       price,
@@ -56,17 +72,12 @@ export async function ProductSchema({
       availability: `https://schema.org/${availability}`,
       itemCondition: 'https://schema.org/NewCondition',
       seller: { '@type': 'Organization', name: seller },
-    },
+    }
+    if (priceValidUntil) offers.priceValidUntil = priceValidUntil
+    if (returnPolicy) offers.hasMerchantReturnPolicy = returnPolicy
+    if (shippingDetails) offers.shippingDetails = shippingDetails
+    schema.offers = offers
   }
-
-  // Never fabricate identifiers or policies: each field is emitted only when
-  // a real value exists (gtin is pre-validated by lib/gtin.ts).
-  if (mpn) schema.mpn = mpn
-  if (gtin) schema.gtin = gtin
-  const offers = schema.offers as Record<string, unknown>
-  if (priceValidUntil) offers.priceValidUntil = priceValidUntil
-  if (returnPolicy) offers.hasMerchantReturnPolicy = returnPolicy
-  if (shippingDetails) offers.shippingDetails = shippingDetails
 
   return (
     <script

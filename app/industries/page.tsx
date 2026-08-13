@@ -1,10 +1,12 @@
 import Link from 'next/link'
-import { INDUSTRIES } from '@/lib/industries'
+import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
 import {BadgeCheck, Headset, Truck} from "lucide-react";
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import { getIndustryImagePath } from '@/lib/bunnycdn'
+import { approvedClaims } from '@/lib/claims'
+import { OCC_PANEL_HEADING, OCC_PANEL_SUBHEAD, OCC_PANEL_CTA } from '@/lib/occ-copy'
 
 export const revalidate = 3600
 
@@ -18,12 +20,13 @@ export const metadata = buildMetadata({
   image: `${SITE_URL}${HERO_IMAGE}`,
 })
 
-const STATS = [
-  { value: '1,000+', label: 'ACTIVE ACCOUNTS' },
-  { value: '8,000+', label: 'PRODUCTS' },
-  { value: 'Fast', label: 'FULFILLMENT' },
-  { value: '24-48 hr', label: 'FAST SUPPORT' },
-]
+// Every figure here was an unsourced customer-facing claim (account count,
+// product count, fulfillment speed, support-time promise). All are BLOCKED
+// pending written client evidence (plan §2.1 / IZ-PROD-09), so the stats bar
+// renders nothing until lib/claims.ts approves them. No replacement numbers
+// were invented.
+const STATS = approvedClaims(['facilitiesServed', 'productCount', 'shippingSpeed'])
+  .map(({ key, claim }) => ({ key, value: claim.text, label: (claim.label ?? '').toUpperCase() }))
 
 export default function IndustriesPage() {
   return (
@@ -45,8 +48,9 @@ export default function IndustriesPage() {
               Medical Supplies for<br />Your Facility
             </h1>
 
+            {/* No fulfillment-speed promise (unsupported shipping claim). */}
             <p className="text-gray-500 text-[18px] leading-[30px] max-w-[541px]">
-              Whether you run an urgent care clinic, HRT practice, or home health agency — we stock the products you need with fast, reliable fulfillment.
+              Whether you run an urgent care clinic, HRT practice, or home health agency — we stock the products you need.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -67,17 +71,22 @@ export default function IndustriesPage() {
             {/* OCC Program banner */}
             <div className="bg-[rgba(0,193,255,0.2)] flex items-center gap-4 px-6 py-5 mt-2 max-w-[541px]">
               <div className="flex flex-col gap-0.5">
-                <span className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px]">OCC Program</span>
-                <span className="text-navy-900 text-[16px] font-semibold tracking-[0.32px]">Dedicated pricing, terms &amp; account support</span>
+                <span className="text-navy-900 text-[18px] font-extrabold tracking-[0.36px]">{OCC_PANEL_HEADING}</span>
+                {/* Centralized in lib/occ-copy.ts — see the client decision point there. */}
+                <span className="text-navy-900 text-[16px] font-semibold tracking-[0.32px]">{OCC_PANEL_SUBHEAD}</span>
               </div>
               <Link href="/solutions/occ" className="group ml-auto text-teal-500 text-[15px] font-semibold whitespace-nowrap inline-flex items-center gap-1">
-                Shop OCC <AnimatedArrow size={14} />
+                {OCC_PANEL_CTA} <AnimatedArrow size={14} />
               </Link>
             </div>
           </div>
 
-          {/* Right hero image */}
-          <div className="hidden lg:block absolute right-0 top-0 w-[743px] h-[744px]">
+          {/* Right hero image. Fixed 743px width: at the `lg` breakpoint
+              (1024px) the container is too narrow for it, and it overlaps
+              the "Contact Us"/"Shop OCC" CTAs in the left column (confirmed
+              at 1024x768: image left edge at x=281 vs. CTA text starting at
+              x=289). `xl` (1280px) is the first width where it clears them. */}
+          <div className="hidden xl:block absolute right-0 top-0 w-[743px] h-[744px]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={HERO_IMAGE}
@@ -88,19 +97,21 @@ export default function IndustriesPage() {
         </div>
       </section>
 
-      {/* ── Stats bar ── */}
-      <section className="bg-navy-900 h-[178px] flex items-center">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-[59px] w-full">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-            {STATS.map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center gap-1">
-                <span className="text-white text-[35px] font-semibold">{value}</span>
-                <span className="text-[#9e9e9e] text-[15px] tracking-[0.3px]">{label}</span>
-              </div>
-            ))}
+      {/* ── Stats bar (approved claims only; see lib/claims.ts) ── */}
+      {STATS.length > 0 && (
+        <section className="bg-navy-900 h-[178px] flex items-center">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-[59px] w-full">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+              {STATS.map(({ key, value, label }) => (
+                <div key={key} className="flex flex-col items-center gap-1">
+                  <span className="text-white text-[35px] font-semibold">{value}</span>
+                  <span className="text-[#9e9e9e] text-[15px] tracking-[0.3px]">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Industries We Serve ── */}
       <section className="bg-neutral-100 py-16 lg:py-[71px]">
@@ -109,18 +120,34 @@ export default function IndustriesPage() {
             Industries We Serve
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {INDUSTRIES.map(({ name, slug, image, description }) => (
+            {/* Only industries with unique content AND a validated product
+                assortment. Seven of the twelve (EMS, Long-Term Care, Physical
+                Therapy, Private Practice, Dental, Veterinary, Community
+                Health) have NO approved product membership in the catalog, so
+                linking them from here would build a doorway network. */}
+            {SUPPORTED_INDUSTRIES.map(({ name, slug, image, description }) => (
               <Link
                 key={slug}
                 href={`/industries/${slug}`}
-                className="group bg-white flex flex-col overflow-hidden hover:shadow-md transition-shadow"
+                /* One card, one link, one clean accessible name. The card's
+                   name used to be the concatenation of everything inside it —
+                   the image alt (the industry name), the visible name again,
+                   the whole description, and the trailing "Shop Industry" —
+                   so a screen reader announced "Urgent Care Urgent Care Exam
+                   gloves, wound care, diagnostics, and testing supplies. Shop
+                   Industry" as the link text. */
+                aria-label={`${name} supplies`}
+                className="group bg-white flex flex-col overflow-hidden hover:shadow-md transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
               >
                 <div className="relative aspect-square overflow-hidden">
+                  {/* Decorative: the heading directly below names the industry,
+                      so alt text here would only repeat it. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image}
-                    alt={name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                   />
                 </div>
                 <div className="p-4 flex flex-col gap-2">
@@ -130,7 +157,8 @@ export default function IndustriesPage() {
                   <p className="text-gray-500 text-[15px] leading-[22px] tracking-[0.3px]">
                     {description}
                   </p>
-                  <span className="text-teal-500 text-[14px] font-medium tracking-[0.7px] mt-1 inline-flex items-center gap-1">
+                  {/* Visual affordance only — the link already has its name. */}
+                  <span aria-hidden className="text-teal-500 text-[14px] font-medium tracking-[0.7px] mt-1 inline-flex items-center gap-1">
                     Shop Industry <AnimatedArrow size={13} />
                   </span>
                 </div>
@@ -148,8 +176,10 @@ export default function IndustriesPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/20">
             {[
-              { icon: <Truck size={24} className="text-teal-300" />,    title: "Fast Shipping",    desc: "Fast, reliable fulfillment on every order — so your facility never runs short." },
-              { icon: <BadgeCheck size={24} className="text-teal-300" />,   title: "Trusted Brands",  desc: "We stock only industry-leading clinical brands with full ISO certifications." },
+              // No shipping-speed promise and no ISO-certification claim:
+              // both are unsupported customer-facing claims (plan §2.1).
+              { icon: <Truck size={24} className="text-teal-300" />,    title: "Vendor Fulfillment",    desc: "Orders ship from trusted medical supply partners, with shipping options shown at checkout." },
+              { icon: <BadgeCheck size={24} className="text-teal-300" />,   title: "Trusted Brands",  desc: "We stock established clinical brands sourced from manufacturers and authorized distributors." },
               { icon: <Headset size={24} className="text-teal-300" />, title: "Dedicated Support",   desc: "Expert account managers for every facility to handle complex procurement needs." },
             ].map(({ icon, title, desc }) => (
                 <div key={title} className="flex flex-col items-center text-center gap-5 px-8 sm:px-12 py-10 sm:py-0">

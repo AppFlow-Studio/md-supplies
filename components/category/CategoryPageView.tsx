@@ -5,37 +5,53 @@ import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION_HERO } from '@/lib/shopify/queries/collections'
 import type { CollectionHero } from '@/lib/shopify/types'
 import { CategoryResults } from '@/components/category/CategoryResults'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
 import { MAX_CATEGORY_PAGE } from '@/lib/category-utils'
+import { parsePageSize, DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
+import type { ProductSource } from '@/lib/category-results-source'
+import { getShopifyHandle } from '@/lib/category-nav'
 import {
   buildL2Tree,
   getSubcategoriesForParent,
   getL1ByCollectionHandle,
   humanizeTag,
   CATEGORY_TREE_L1,
+  getCategorySlug,
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
-import { CategoryImage } from '@/components/shared/CategoryImage'
+import { CatalogHero } from '@/components/category/CatalogHero'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
 import { getNonce } from '@/lib/csp-nonce'
+import { getCategorySeo } from '@/lib/seo/categorySeo'
+import { FAQSection } from '@/components/b2b/FAQSection'
 
-// Shared server-rendered category page, used by two routes:
-//  - app/category/[slug]           — static/ISR canonical view (sp is {})
-//  - app/category-browse/[slug]    — dynamic view for ?sort/filter/page
-//    variants (proxy.ts rewrites /category/<slug>?<query> onto it, since a
-//    statically-generated route cannot read searchParams at request time).
+// Server-rendered category view for the single canonical route
+// app/category/[slug], which reads searchParams directly. The former
+// /category-browse twin and its proxy rewrite were removed in Phase 5: having
+// the clean and filtered views on different route segments forced a remount on
+// every filter/sort/search interaction.
 
 export type CategorySearchParams = {
   sort?: string
   filter?: string | string[]
   page?: string
+  /** DEV-SEARCH-01: collection-scoped search text. */
+  q?: string | string[]
+  /** "Show [N] per page" — validated by lib/catalog/page-size. */
+  per_page?: string | string[]
+}
+
+/** ?q= must be a single sane string; arrays and junk collapse to undefined. */
+export function parseSearchParam(q?: string | string[]): string | undefined {
+  if (typeof q !== 'string') return undefined
+  const trimmed = q.trim()
+  return trimmed ? trimmed.slice(0, 80) : undefined
 }
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
@@ -62,13 +78,17 @@ export function parseFilterParam(filter?: string | string[]): string[] {
   return raw.filter(isAllowedFilterInput)
 }
 
-// Beyond MAX_CATEGORY_PAGE the deterministic per-page fetch in CategoryResults
-// would need a Storefront `first` larger than the API allows — bounce to
-// page 1 instead of erroring, mirroring the fetch-failure fallback there.
+// Beyond MAX_CATEGORY_PAGE (the product index's own cap) a request is a
+// crawler or a hand-edited URL — bounce to page 1 instead of erroring,
+// mirroring the fetch-failure fallback in CategoryResults.
 function page1RedirectUrl(slug: string, sp: CategorySearchParams, activeFilterStrings: string[]): string {
   const p = new URLSearchParams()
   if (sp.sort) p.set('sort', sp.sort)
   activeFilterStrings.forEach((f) => p.append('filter', f))
+  const q = parseSearchParam(sp.q)
+  if (q) p.set('q', q)
+  const perPage = parsePageSize(sp.per_page)
+  if (perPage !== DEFAULT_PAGE_SIZE) p.set('per_page', String(perPage))
   withTrackingParams(p, sp)
   const qs = p.toString()
   return qs ? `${ROUTES.category(slug)}?${qs}` : ROUTES.category(slug)
@@ -78,20 +98,56 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
   const base = SITE_URL
 
   const activeFilterStrings = parseFilterParam(sp.filter)
-  const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
+  // Search and page-size states are noindex like filtered states (plan §3.5).
+  // ?per_page= renders the same products in a different quantity, so leaving it
+  // indexable would mint five addresses per category for one set of content.
+  const isFiltered =
+    activeFilterStrings.length > 0 ||
+    Boolean(sp.sort) ||
+    Boolean(parseSearchParam(sp.q)) ||
+    parsePageSize(sp.per_page) !== DEFAULT_PAGE_SIZE
   const requestedPage = parseInt(sp.page ?? '1', 10)
   const currentPage = requestedPage > MAX_CATEGORY_PAGE ? 1 : requestedPage
+
+  // `slug` is the public canonical URL segment; a handful of categories
+  // (e.g. face-masks) alias it to a differently-named live Shopify
+  // collection (face-coverings) — see lib/category-nav.ts canonicalSlug.
+  // Every Shopify-facing lookup below must use the real handle, not slug.
+  const shopifyHandle = getShopifyHandle(slug)
 
   try {
     const data = await storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
-      { handle: slug },
-      collectionFetchOptions(slug),
+      { handle: shopifyHandle },
+      collectionFetchOptions(shopifyHandle),
     )
     if (!data.collection) return buildMetadata({ pageType: 'category', title: 'Category' })
-    const { title, description, seo } = data.collection
-    const metaTitle = seo?.title || title
-    const metaDescription = seo?.description || (description ? trimDescription(description, 155) : undefined)
+    const { description, seo } = data.collection
+    // Approved public display name, not the Shopify collection title: the
+    // collection behind Face Masks is titled "Face Coverings" and the one
+    // behind Room Furniture is "Stools & Seating". Nav, breadcrumbs, tiles and
+    // schema all use the display name, so metadata must too or the page's
+    // title disagrees with every link pointing at it.
+    const l1 = getL1ByCollectionHandle(shopifyHandle)
+    const displayName = l1?.displayName ?? data.collection.title
+
+    // A tag-sourced category must NOT inherit its proxy collection's SEO
+    // fields. /category/trocars-trocar-kits now serves all 319 Surgery &
+    // Procedure products, but the collection's own seo.title is
+    // "Trocars & Trocar Kits - 3.2mm, 3.5mm, 4.5mm - FDA Registered" — a title
+    // describing 41 of them, and an FDA claim that does not hold for the wider
+    // set. Same for Room Furniture ("Stools & Seating") and Apparel. Those
+    // routes take the registry's name and approved description instead.
+    const isProxyCollection = l1?.productSet === 'tag'
+    const metaTitle = (isProxyCollection ? undefined : seo?.title) || displayName
+    // Shopify-sourced descriptions are UNCONTROLLED copy from the merchandising
+    // team, so both the SEO field and the body description get clamped. Exam
+    // Room's Shopify seo.description is 314 characters — over twice what a SERP
+    // shows — and it was being emitted whole because only the body-description
+    // fallback was trimmed.
+    const metaDescription = isProxyCollection
+      ? l1!.shortDescription
+      : trimDescription(seo?.description || description || '', 155) || undefined
 
     if (isFiltered) {
       return buildMetadata({
@@ -118,6 +174,26 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
       })
     }
 
+    // Unfiltered page 1: use SEO database values when available.
+    const seoDB = getCategorySeo(slug)
+    if (seoDB) {
+      const base = buildMetadata({
+        pageType: 'category',
+        slug,
+        description: seoDB.metaDescription,
+        image: data.collection.image?.url,
+        imageWidth: data.collection.image?.width,
+        imageHeight: data.collection.image?.height,
+      })
+      const og = (base.openGraph ?? {}) as Record<string, unknown>
+      return {
+        ...base,
+        title: seoDB.title,
+        description: seoDB.metaDescription,
+        openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
+      }
+    }
+
     return buildMetadata({
       pageType: 'category',
       title: metaTitle,
@@ -136,24 +212,38 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   const nonce = await getNonce()
   const activeFilterStrings = parseFilterParam(sp.filter)
   const { sortKey, reverse } = parseSortKey(sp.sort)
+  const searchQuery = parseSearchParam(sp.q)
   const currentPage = parseInt(sp.page ?? '1', 10)
-  const isFiltered = activeFilterStrings.length > 0 || Boolean(sp.sort)
+  const pageSize = parsePageSize(sp.per_page)
+  const isFiltered =
+    activeFilterStrings.length > 0 ||
+    Boolean(sp.sort) ||
+    Boolean(searchQuery) ||
+    pageSize !== DEFAULT_PAGE_SIZE
 
   if (isNaN(currentPage) || currentPage < 1) notFound()
   if (currentPage > MAX_CATEGORY_PAGE) redirect(page1RedirectUrl(slug, sp, activeFilterStrings))
 
-  const l1 = getL1ByCollectionHandle(slug)
+  // `slug` is the public canonical URL segment; a handful of categories
+  // (e.g. face-masks) alias it to a differently-named live Shopify
+  // collection (face-coverings) — see lib/category-nav.ts canonicalSlug.
+  // Every Shopify-facing lookup below must use the real handle, not slug.
+  const shopifyHandle = getShopifyHandle(slug)
+
+  const l1 = getL1ByCollectionHandle(shopifyHandle)
 
   const [data, summaries] = await Promise.all([
     storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
-      { handle: slug },
-      collectionFetchOptions(slug),
+      { handle: shopifyHandle },
+      collectionFetchOptions(shopifyHandle),
     ),
     fetchProductTagSummaries(),
   ])
 
   if (!data.collection) notFound()
+
+  const { collection } = data
 
   const l2Nodes = buildL2Tree(summaries)
   const subcategories = l1
@@ -162,96 +252,122 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   const relatedCategories = CATEGORY_TREE_L1
     .filter((c) => c.tag !== l1?.tag)
     .slice(0, 6)
-    .map((c) => ({ label: c.displayName, slug: c.collectionHandle }))
+    .map((c) => ({ label: c.displayName, slug: getCategorySlug(c) }))
 
-  const banner = getCategoryBannerConfig(slug)
-  const clusterLinks = getClusterLinks(slug)
+  const banner = getCategoryBannerConfig(shopifyHandle)
+  const clusterLinks = getClusterLinks(shopifyHandle)
 
-  const { collection } = data
+  // Public display name comes from the registry, not the Shopify collection
+  // title: the collection behind Face Masks is titled "Face Coverings" and the
+  // one behind Room Furniture is "Stools & Seating", neither of which is the
+  // approved public name used in nav, breadcrumbs, tiles and metadata.
+  const displayName = l1?.displayName ?? collection.title
+
+  // Four categories' collections are narrow artwork proxies rather than the
+  // category itself (see L1CategoryDef.productSet). Those browse the
+  // `category:` tag so the page shows what its own tile promises; the rest keep
+  // the collection source and its richer sort keys.
+  const isProxyCollection = l1?.productSet === 'tag'
+  const productSource: ProductSource =
+    l1?.productSet === 'tag'
+      ? { kind: 'tag', query: `tag:"category:${l1.tag}"`, title: displayName, slug }
+      : {
+          kind: 'collection',
+          handle: shopifyHandle,
+          // Registry-backed L1s scope text search by their category tag
+          // (the same membership source the L2 pages are built on).
+          searchScope: l1 ? `tag:"category:${l1.tag}"` : undefined,
+        }
+
+  const cacheTags =
+    productSource.kind === 'tag'
+      ? ['shopify', 'products', 'category-tree', `category:${l1!.tag}`]
+      : ['shopify', 'products', 'collections', `collection:${shopifyHandle}`]
+
+  // SEO database — H1 override, answer block, and FAQ on unfiltered page 1.
+  const seoData = (!isFiltered && currentPage === 1) ? getCategorySeo(slug) : undefined
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
-      {/* Breadcrumb */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
-        <Breadcrumb items={[{ label: collection.title }]} />
-      </div>
+      <CatalogHero
+        breadcrumb={[{ label: displayName }]}
+        title={seoData ? seoData.h1 : displayName}
+        // The COMPLETE approved description from the route registry, shown in
+        // full on every breakpoint. `shortDescription` is the client-approved
+        // copy table; the Shopify collection description is the fallback for
+        // anything not in the registry (e.g. OCC sub-collections).
+        description={l1?.shortDescription ?? (isProxyCollection ? undefined : collection.description ?? undefined)}
+        eyebrow="CERTIFIED MEDICAL SUPPLIER"
+        image={{ path: banner.path, alt: banner.alt, focalPosition: banner.focalPosition }}
+      />
 
-      {/* ── Hero — banner image always present (BunnyCDN → Shopify → neutral panel) ── */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pb-8">
-        <div className="relative bg-white overflow-hidden flex min-h-[320px] sm:min-h-[380px]">
-          {/* Text content */}
-          <div className="relative z-10 flex flex-col justify-center px-8 sm:px-12 py-10 max-w-[560px]">
-            <div className="inline-flex self-start items-center bg-[rgba(0,193,255,0.2)] rounded-full px-4 py-1.5 mb-5">
-              <span className="text-teal-500 text-[13px] font-semibold tracking-[0.3px]">
-                CERTIFIED MEDICAL SUPPLIER
-              </span>
-            </div>
-
-            <h1 className="text-navy-900 text-[40px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-4">
-              {collection.title}
-            </h1>
-
-            {collection.description && (
-              <p className="text-gray-500 text-[15px] leading-[1.75] mb-8 max-w-[500px]">
-                {collection.description}
-              </p>
-            )}
-
-            <Link
-              href={ROUTES.category(slug)}
-              className="self-start border border-navy-900 text-navy-900 text-[14px] font-semibold px-6 h-[52px] flex items-center hover:bg-navy-900 hover:text-white transition-colors"
-            >
-              View All {collection.title}
-            </Link>
-          </div>
-
-          {/* Right: banner image — only on larger screens, matching the existing layout */}
-          <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[55%]">
-            <CategoryImage
-              bannerPath={banner.path}
-              alt={banner.alt}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Subcategory tabs ── */}
-      {subcategories.length > 0 && (
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 mb-6">
-          <div className="flex flex-wrap gap-2 items-center">
-            {subcategories.map((sub) => (
-              <Link
-                key={sub.slug}
-                href={ROUTES.subcategory(slug, sub.slug)}
-                className="border border-[rgba(102,102,100,0.2)] bg-white text-navy-900 text-[13px] font-semibold px-4 h-[52px] flex items-center hover:border-navy-900 transition-colors whitespace-nowrap"
-              >
-                {sub.label}
-              </Link>
-            ))}
-            <Link
-              href={ROUTES.category(slug)}
-              className="bg-navy-900 text-white text-[13px] font-semibold px-4 h-[52px] flex items-center hover:bg-navy-800 transition-colors whitespace-nowrap"
-            >
-              All
-            </Link>
-          </div>
+      {/* Answer-first block (AEO). The hero carries the approved category
+          description; this is the longer, question-resolving paragraph from the
+          SEO database, and it renders only on the canonical unfiltered page 1
+          where it is accurate. It used to be squeezed into the hero under a
+          two-line clamp, which truncated it mid-sentence and displaced the
+          approved description. */}
+      {seoData?.answerBlock && (
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pt-5">
+          <p className="text-gray-600 text-[15px] leading-[1.7] max-w-[72ch]">
+            {seoData.answerBlock}
+          </p>
         </div>
       )}
 
-      {/* Main layout */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6">
         <CategoryResults
-          source={{ kind: 'collection', handle: slug }}
+          source={productSource}
           baseUrl={ROUTES.category(slug)}
           facetKey={slug}
+          facetKind="category"
+          pageSize={pageSize}
+          cacheTags={cacheTags}
           sortKey={sortKey}
           reverse={reverse}
           sortParam={sp.sort}
           activeFilterStrings={activeFilterStrings}
           currentPage={currentPage}
           trackingParamsSource={sp}
+          searchQuery={searchQuery}
+          searchScopeTitle={displayName}
+          tabsAllLabel={`All ${displayName}`}
         />
       </div>
+
+      {/* FAQ section — below product grid (SEO database) */}
+      {seoData && seoData.faqs.length > 0 && (
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
+          <FAQSection faq={seoData.faqs} />
+        </div>
+      )}
+
+      {/* ── Subcategory links ──
+          The interactive subcategory control is now the Category-facet tab row
+          above the grid (CategoryTabs), which filters in place instead of
+          navigating away. These L2 routes still exist and are still in the
+          sitemap, so they keep a crawlable, server-rendered link list here —
+          removing the old navigator without this would have orphaned every
+          /category/<slug>/<sub> page. */}
+      {subcategories.length > 0 && (
+        <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
+          <h2 className="text-navy-900 text-[18px] font-semibold mb-4">
+            Browse {displayName} subcategories
+          </h2>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 list-none m-0 p-0">
+            {subcategories.map((sub) => (
+              <li key={sub.slug}>
+                <Link
+                  href={ROUTES.subcategory(slug, sub.slug)}
+                  className="text-ink-link text-[14px] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
+                >
+                  {sub.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Related categories */}
       {relatedCategories.length > 0 && (
@@ -321,7 +437,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
                 </p>
                 <Link
                   href={ROUTES.solutions.occ}
-                  className="border border-teal-500 bg-teal-50 text-teal-700 text-[14px] px-4 py-2 hover:bg-teal-100 transition-colors inline-block"
+                  className="border border-teal-500 bg-teal-50 text-ink-link text-[14px] px-4 py-2 hover:bg-teal-100 transition-colors inline-block"
                 >
                   OCC Program — Bulk Orders
                 </Link>
@@ -331,12 +447,18 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         </section>
       )}
 
-      {/* ── About section — dark navy background ── */}
-      {collection.descriptionHtml && (
+      {/* ── About section — dark navy background ──
+          Suppressed on tag-sourced routes for the same reason their metadata
+          ignores the collection's SEO fields: this prose describes the narrow
+          proxy collection (trocars, stools, capes & gowns), not the category
+          the page now serves, and on the trocars collection it carries an
+          FDA-registration claim that does not hold for all 319 Surgery &
+          Procedure products. Better no About block than a wrong one. */}
+      {!isProxyCollection && collection.descriptionHtml && (
         <section className="bg-navy-900 py-16 sm:py-20">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 text-center">
             <h2 className="text-white text-[36px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-8">
-              About {collection.title}
+              About {displayName}
             </h2>
             <div
               className="prose prose-invert max-w-[880px] mx-auto text-[15px] leading-[1.85] text-white/75
@@ -356,7 +478,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
                 buildCollectionPageSchema({
-                  name: collection.title,
+                  name: displayName,
                   url: `${SITE_URL}/category/${slug}`,
                   ...(collection.description ? { description: collection.description } : {}),
                   ...(collection.image?.url ? { image: collection.image.url } : {}),
@@ -371,7 +493,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
                 buildBreadcrumbListSchema(
-                  [{ label: collection.title }],
+                  [{ label: displayName }],
                   `${SITE_URL}/category/${slug}`,
                 ),
               ),
