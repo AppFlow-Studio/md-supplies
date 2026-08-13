@@ -63,40 +63,43 @@ describe('CartPopup', () => {
     rerender(<CartPopup />)
   })
 
+  // Shared by the RX and Backorder badge suites below: a single-line cart
+  // whose line product accepts arbitrary metafield/tag overrides, so both
+  // suites build fixtures the same way instead of drifting apart.
+  const cartWithLineProduct = (product: Record<string, unknown>) => ({
+    id: 'cart-1',
+    checkoutUrl: 'https://shop.example.com/checkout',
+    totalQuantity: 1,
+    lines: {
+      nodes: [{
+        id: 'line-1',
+        quantity: 1,
+        merchandise: {
+          id: 'variant-1',
+          title: 'Default Title',
+          sku: 'SKU-001',
+          price: { amount: '19.99', currencyCode: 'USD' },
+          selectedOptions: [],
+          product: { id: 'prod-1', title: 'Xylocaine Injection', handle: 'xylocaine', images: { nodes: [] }, ...product },
+        },
+        cost: { totalAmount: { amount: '19.99', currencyCode: 'USD' } },
+      }],
+    },
+    cost: {
+      subtotalAmount: { amount: '19.99', currencyCode: 'USD' },
+      totalAmount: { amount: '19.99', currencyCode: 'USD' },
+      totalTaxAmount: null,
+    },
+  })
+
   // DEV-LAUNCH-08: RX state must be visible in the cart popup, not just
   // inferred from the blocking panel — same union the checkout gate uses.
   describe('RX badge', () => {
-    const rxCart = (product: Record<string, unknown>) => ({
-      id: 'cart-1',
-      checkoutUrl: 'https://shop.example.com/checkout',
-      totalQuantity: 1,
-      lines: {
-        nodes: [{
-          id: 'line-1',
-          quantity: 1,
-          merchandise: {
-            id: 'variant-1',
-            title: 'Default Title',
-            sku: 'SKU-001',
-            price: { amount: '19.99', currencyCode: 'USD' },
-            selectedOptions: [],
-            product: { id: 'prod-1', title: 'Xylocaine Injection', handle: 'xylocaine', images: { nodes: [] }, ...product },
-          },
-          cost: { totalAmount: { amount: '19.99', currencyCode: 'USD' } },
-        }],
-      },
-      cost: {
-        subtotalAmount: { amount: '19.99', currencyCode: 'USD' },
-        totalAmount: { amount: '19.99', currencyCode: 'USD' },
-        totalTaxAmount: null,
-      },
-    })
-
     it('shows an RX Only badge for a tag-only RX line', () => {
       vi.mocked(getRxGateStatus).mockResolvedValue({
         cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
       })
-      mockCart(true, { cart: rxCart({ tags: ['compliance:rx-only'] }) })
+      mockCart(true, { cart: cartWithLineProduct({ tags: ['compliance:rx-only'] }) })
       render(<CartPopup />)
       expect(screen.getByText('RX Only')).toBeInTheDocument()
     })
@@ -105,15 +108,60 @@ describe('CartPopup', () => {
       vi.mocked(getRxGateStatus).mockResolvedValue({
         cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
       })
-      mockCart(true, { cart: rxCart({ tags: [], isRxOnly: { value: 'true' } }) })
+      mockCart(true, { cart: cartWithLineProduct({ tags: [], isRxOnly: { value: 'true' } }) })
       render(<CartPopup />)
       expect(screen.getByText('RX Only')).toBeInTheDocument()
     })
 
     it('shows no RX badge for a non-RX line', () => {
-      mockCart(true, { cart: rxCart({ tags: [] }) })
+      mockCart(true, { cart: cartWithLineProduct({ tags: [] }) })
       render(<CartPopup />)
       expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
+    })
+  })
+
+  // DEV-LABEL-01: the cart popup reads custom.backorder off the line's
+  // product via the same resolveProductLabels() contract as the PDP/card/
+  // quick add, so a backordered line must agree with every other surface.
+  describe('Backorder badge', () => {
+    it('shows the Backorder badge when the line product has custom.backorder=true', () => {
+      mockCart(true, { cart: cartWithLineProduct({ tags: [], backorder: { value: 'true' } }) })
+      render(<CartPopup />)
+      expect(screen.getByText('Backorder')).toBeInTheDocument()
+    })
+
+    it('shows no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
+      mockCart(true, {
+        cart: cartWithLineProduct({ tags: [], estimatedRestockDate: { value: '2099-01-01' } }),
+      })
+      render(<CartPopup />)
+      expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
+    })
+  })
+
+  // DEV-SHIP-02: the cart popup reads line.shippingDisplay exactly as
+  // attachCartShippingDisplay attached it (custom.free_shipping ANDed with
+  // the resolver's own confirmation) — the popup never re-derives a claim.
+  describe('Free Shipping badge', () => {
+    function cartWithLineShipping(shippingDisplay: Record<string, unknown> | null) {
+      const cart = cartWithLineProduct({ tags: [] })
+      return { ...cart, lines: { nodes: [{ ...cart.lines.nodes[0], shippingDisplay }] } }
+    }
+
+    it('shows a Free Shipping badge when the line shippingDisplay is standard-free', () => {
+      mockCart(true, {
+        cart: cartWithLineShipping({ class: 'standard-free', message: 'Free shipping', displayCopy: null }),
+      })
+      render(<CartPopup />)
+      expect(screen.getByText('Free Shipping')).toBeInTheDocument()
+    })
+
+    it('shows no Free Shipping badge when the gate did not confirm it (unknown class)', () => {
+      mockCart(true, {
+        cart: cartWithLineShipping({ class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null }),
+      })
+      render(<CartPopup />)
+      expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
     })
   })
 

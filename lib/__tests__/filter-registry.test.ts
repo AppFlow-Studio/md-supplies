@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
   filterRegistry,
+  industryFilterRegistry,
   getAllowedFacets,
   getFacetRules,
+  getIndustryFacetRules,
+  getFacetRulesFor,
   getSearchFacets,
   stripBlockedFacets,
   isBlockedFacetId,
@@ -178,6 +181,55 @@ describe('page-specific facet sets', () => {
   it('unlisted collections fall back to availability/price only', () => {
     const ids = getAllowedFacets('some-unlisted-collection', HOSTILE_FACETS).map((f) => f.id)
     expect(ids.sort()).toEqual(['filter.v.availability', 'filter.v.price'])
+  })
+})
+
+// Before industryFilterRegistry existed, every industry page (facetKey =
+// Industry.collectionHandle) fell through to DEFAULT_FACET_RULES because none
+// of these five handles were registered anywhere — the same "filters don't
+// cover the product range" gap the category audit fixed, just never extended
+// past /category. Industries resolve through their own registry
+// (getIndustryFacetRules / getFacetRulesFor('industry', …)) rather than
+// filterRegistry, so a same-named category entry can never leak in.
+describe('industry-specific facet sets', () => {
+  const INDUSTRY_HANDLES = [
+    'urgent-care',
+    'hrt-clinics',
+    'home-health',
+    'clinics-doctors-offices',
+    'pharmacies',
+  ]
+
+  it('every industry page has an explicit registry entry, not the bare default', () => {
+    for (const handle of INDUSTRY_HANDLES) {
+      expect(handle in industryFilterRegistry, handle).toBe(true)
+      expect(getIndustryFacetRules(handle).length, handle).toBeGreaterThan(DEFAULT_FACET_RULES.length)
+      expect(getFacetRulesFor('industry', handle).length, handle).toBeGreaterThan(DEFAULT_FACET_RULES.length)
+    }
+  })
+
+  it('industry pages show category/order-size/brand/price, never vendor', () => {
+    for (const handle of INDUSTRY_HANDLES) {
+      const ids = getAllowedFacets(handle, HOSTILE_FACETS, 'industry').map((f) => f.id)
+      expect(ids, handle).toEqual(
+        expect.arrayContaining(['filter.p.m.custom.order_size', 'filter.v.price']),
+      )
+      expect(ids, handle).not.toContain('filter.p.vendor')
+    }
+  })
+
+  it('industry routes resolve independently of any same-named category entry', () => {
+    for (const handle of INDUSTRY_HANDLES) {
+      expect(handle in filterRegistry, handle).toBe(false)
+    }
+  })
+
+  it('registry entries only reference allowed sources', () => {
+    for (const [handle, rules] of Object.entries(industryFilterRegistry)) {
+      for (const rule of rules) {
+        expect(ALL_ALLOWED_RULES.some((a) => a.name === rule.name), `${handle}:${rule.name}`).toBe(true)
+      }
+    }
   })
 })
 

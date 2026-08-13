@@ -128,3 +128,68 @@ describe('QuickAddContent — RX state (DEV-LAUNCH-08)', () => {
     expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
   })
 })
+
+// DEV-LABEL-01: Quick Add reads custom.backorder through the same
+// resolveBackorderLabel() the PDP and card use (product.isBackordered /
+// product.backorderRestockDate are pre-flattened by ShopifyQuickAddButton's
+// toCardData()), so all three surfaces must agree on a given product.
+describe('QuickAddContent — Backorder state', () => {
+  it('shows the Backorder badge when isBackordered is true', () => {
+    render(<QuickAddContent product={{ ...baseProduct, isBackordered: true }} titleId="t" />)
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('shows no Backorder badge when isBackordered is false, even with a future ETA', () => {
+    render(
+      <QuickAddContent
+        product={{ ...baseProduct, isBackordered: false, backorderRestockDate: '2099-01-01' }}
+        titleId="t"
+      />,
+    )
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
+  })
+
+  // DEV-SHIP-04 (final business rule): the ETA must never be appended —
+  // the label is always exactly "Backorder", regardless of ETA.
+  it('shows exactly "Backorder" with no date, even with a valid future ETA', () => {
+    render(
+      <QuickAddContent
+        product={{ ...baseProduct, isBackordered: true, backorderRestockDate: '2099-01-01' }}
+        titleId="t"
+      />,
+    )
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+    expect(screen.queryByText(/2099-01-01/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+  })
+})
+
+// DEV-SHIP-02: Quick Add reads product.shippingDisplay as attached upstream
+// by attachCardShippingDisplay (custom.free_shipping ANDed with the
+// resolver's own confirmation) — never re-derives a claim itself.
+describe('QuickAddContent — Free Shipping badge', () => {
+  it('shows a Free Shipping badge when shippingDisplay is standard-free', () => {
+    render(
+      <QuickAddContent
+        product={{ ...baseProduct, shippingDisplay: { class: 'standard-free', message: 'Free shipping', displayCopy: null } }}
+        titleId="t"
+      />,
+    )
+    expect(screen.getByText('Free Shipping')).toBeInTheDocument()
+  })
+
+  it('shows no Free Shipping badge when the gate did not confirm it (unknown class)', () => {
+    render(
+      <QuickAddContent
+        product={{ ...baseProduct, shippingDisplay: { class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null } }}
+        titleId="t"
+      />,
+    )
+    expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+  })
+
+  it('shows no Free Shipping badge when shippingDisplay was never attached', () => {
+    render(<QuickAddContent product={{ ...baseProduct, shippingDisplay: null }} titleId="t" />)
+    expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+  })
+})

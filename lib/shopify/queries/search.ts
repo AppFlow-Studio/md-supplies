@@ -42,6 +42,21 @@ export const SEARCH_PRODUCTS = `#graphql
           vendor
           availableForSale
           tags
+          # DEV-SHIP-04: SEARCH_PRODUCTS (the /search page) previously had no
+          # backorder selection at all, so a product with custom.backorder=true
+          # never showed the Backorder label in search results. ETA fields are
+          # compatibility/live-theme only — never displayed; custom.backorder
+          # alone triggers the label.
+          estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+          backorderRestockEta: metafield(namespace: "custom", key: "backorder_restock_eta") { value }
+          backorder: metafield(namespace: "custom", key: "backorder") { value }
+          # DEV-SHIP-03: merchant-controlled gate for the Free Shipping
+          # badge, ANDed with the shipping resolver's confirmation — see
+          # lib/shipping-resolver/free-shipping-gate.ts. Without this
+          # selection, /search results never carried a shippingDisplay at
+          # all (attachCardShippingDisplay was never called on them either
+          # — see app/search/page.tsx).
+          freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
           priceRange {
             minVariantPrice { amount currencyCode }
             maxVariantPrice { amount currencyCode }

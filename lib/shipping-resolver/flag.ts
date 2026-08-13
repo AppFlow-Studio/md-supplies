@@ -9,15 +9,18 @@ export function isShippingResolverEnabled(): boolean {
   return process.env.SHIPPING_RESOLVER_ENABLED === 'true'
 }
 
-// RATES_ONLY_SHOWS_CLAIM — the flag alone must never CREATE a Free Shipping
-// claim; it only ever narrows one. When on, a `standard-free` classification
-// additionally requires the underlying rate math (`effective_rate_class`) to
-// independently confirm FREE before the claim renders — see resolve.ts. This
-// fails the OPPOSITE direction from isShippingResolverEnabled: that flag's
-// safe default is disabled (no claim), but this flag's safe default is
-// ENABLED (the stricter check stays on), because an unset/invalid value here
-// should never silently loosen an already-narrow claim path. Same reasoning
-// RX_CHECKOUT_ENFORCEMENT documents for failing to the safer side.
+// RATES_ONLY_SHOWS_CLAIM — HARDENED, no environment-variable escape hatch
+// (Juliette's directive, DEV-SHIP-03): a `standard-free` classification must
+// ALWAYS be independently confirmed by the underlying rate math
+// (`effective_rate_class`) before a Free Shipping claim renders — see
+// resolve.ts. This used to read process.env.RATES_ONLY_SHOWS_CLAIM and only
+// disable the check on the exact string 'false'; that escape hatch is
+// deliberately removed so no environment misconfiguration (or a well-meaning
+// but wrong .env value) can ever loosen this guarantee again. Kept as a named
+// function, not inlined at each call site, so the guarantee has exactly one
+// place to read and one place a future change would have to deliberately
+// touch — an accidental revert of this comment/return value is the only way
+// to reopen the hole, not a stray env var.
 export function isRatesOnlyClaimEnabled(): boolean {
-  return process.env.RATES_ONLY_SHOWS_CLAIM !== 'false'
+  return true
 }

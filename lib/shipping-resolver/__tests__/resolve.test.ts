@@ -250,13 +250,17 @@ describe('RATES_ONLY_SHOWS_CLAIM gate', () => {
     expect(result['gid://shopify/ProductVariant/TEST-drift-multi-v2']).toEqual(FALLBACK)
   })
 
-  it('only the exact string "false" relaxes the gate, letting the drifted claim through', () => {
+  // DEV-SHIP-03: hardened per Juliette's directive — RATES_ONLY_SHOWS_CLAIM
+  // no longer reads the environment at all, so no value (including the
+  // literal string "false", which used to bypass this check) can let a
+  // rate-drifted claim through.
+  it('the old "false" bypass is gone — a drifted claim stays suppressed regardless of the env var', () => {
     vi.stubEnv('RATES_ONLY_SHOWS_CLAIM', 'false')
     const result = resolveVariantShippingDisplay(
       'gid://shopify/Product/TEST-drift-single',
       'gid://shopify/ProductVariant/TEST-drift-single-v1',
     )
-    expect(result.class).toBe('standard-free')
+    expect(result).toEqual(FALLBACK)
   })
 
 })
