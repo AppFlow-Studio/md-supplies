@@ -32,6 +32,7 @@ export function normalizeProduct(raw: RawProduct): Product {
     needleLength:         mv(raw.needleLength),
     sizeLength:           mv(raw.sizeLength),
     estimatedRestockDate: mv(raw.estimatedRestockDate),
+    backorderRestockEta:  mv(raw.backorderRestockEta),
     testsFor:             mv(raw.testsFor),
     detectableDrugs:      mv(raw.detectableDrugs),
     adulterants:          mv(raw.adulterants),

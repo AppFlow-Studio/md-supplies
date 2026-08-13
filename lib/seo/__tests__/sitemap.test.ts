@@ -258,8 +258,53 @@ describe('getSitemapUrls', () => {
       if (query.includes('GetAllArticleHandles')) return Promise.resolve({ blogs: { nodes: [] } })
       return Promise.reject(new Error('Unexpected query'))
     })
-    const urls = (await getSitemapUrls()).map((e) => e.url)
+    const entries = await getSitemapUrls()
+    const urls = entries.map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/')
-    expect(urls.some((u) => u.includes('/category/'))).toBe(false)
+
+    // The 25 approved category routes come from the REGISTRY, not from the
+    // Storefront collection list, so an empty or failed collection fetch costs
+    // freshness rather than the entries themselves. This test previously
+    // asserted the opposite — that no /category/ URL survived — which is
+    // exactly the failure mode that left 8 of 25 live categories out of the
+    // production sitemap when the unpaginated `first: 250` collection query
+    // did not reach them.
+    const l1 = urls.filter((u) => /\/category\/[^/]+$/.test(u))
+    expect(l1).toHaveLength(25)
+    expect(l1).toContain('https://mdsupplies.com/category/needles-syringes')
+    expect(l1).toContain('https://mdsupplies.com/category/pharmacy-products')
+
+    // With no collection data there is no real updatedAt, so no lastmod is
+    // stamped — a synthesized "now" on every URL is exactly the fake-freshness
+    // signal the spec forbids.
+    const withoutLastMod = entries.filter((e) => /\/category\/[^/]+$/.test(e.url))
+    expect(withoutLastMod.every((e) => e.lastModified === undefined)).toBe(true)
+  })
+
+  it('lists every approved category exactly once, using canonical slugs', async () => {
+    mockFetch.mockImplementation((query: string) => {
+      if (query.includes('GetAllProductTags')) return Promise.resolve({ products: { nodes: [], pageInfo: { hasNextPage: false, endCursor: '' } } })
+      if (query.includes('GetCollectionsForSitemap')) {
+        return Promise.resolve({
+          collections: {
+            nodes: [{ handle: 'gloves', updatedAt: '2026-08-01T00:00:00Z' }],
+          },
+        })
+      }
+      if (query.includes('GetAllProductHandles')) {
+        return Promise.resolve({ products: { nodes: [], pageInfo: { hasNextPage: false, endCursor: '' } } })
+      }
+      if (query.includes('GetAllArticleHandles')) return Promise.resolve({ blogs: { nodes: [] } })
+      return Promise.reject(new Error('Unexpected query'))
+    })
+    const urls = (await getSitemapUrls()).map((e) => e.url)
+    const l1 = urls.filter((u) => /\/category\/[^/]+$/.test(u))
+
+    expect(new Set(l1).size).toBe(l1.length)
+    // The canonical public slug, never the redirecting Shopify handle.
+    expect(l1).toContain('https://mdsupplies.com/category/face-masks')
+    expect(l1).not.toContain('https://mdsupplies.com/category/face-coverings')
+    // No query-parameter variants ever reach the sitemap.
+    expect(urls.some((u) => u.includes('?'))).toBe(false)
   })
 })

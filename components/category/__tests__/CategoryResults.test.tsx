@@ -38,6 +38,7 @@ vi.mock('@/components/category/ProductGrid', () => ({
 
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { CategoryResults } from '../CategoryResults'
+import { DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
 
 const mockFetch = vi.mocked(storefrontFetch)
 
@@ -66,6 +67,13 @@ const HOSTILE_FILTERS: Collection['products']['filters'] = [
     label: 'Glove size',
     type: 'LIST',
     values: [{ id: 'gs.m', label: 'Medium', count: 2, input: '{"productMetafield":{"namespace":"custom","key":"glove_size","value":"M"}}' }],
+  },
+  // Approved on every route, so it proves the rail is gated rather than empty.
+  {
+    id: 'filter.p.m.custom.order_size',
+    label: 'Order Size',
+    type: 'LIST',
+    values: [{ id: 'os.case', label: 'Case', count: 4, input: '{"productMetafield":{"namespace":"custom","key":"order_size","value":"Case"}}' }],
   },
 ]
 
@@ -117,6 +125,33 @@ function baseProps(slug: string) {
   }
 }
 
+
+// ── Query-aware Storefront mock ─────────────────────────────────────────────
+// CategoryResults now issues TWO kinds of query per render: the cursor/total
+// index (CatalogCollectionIndex, edges+cursors only) and the display page
+// (GetCollection, full product payloads). A single mockResolvedValue can no
+// longer serve both, so the mock dispatches on the operation name.
+function mockCatalog(slug: string, nodes: CollectionProduct[], pageSize = DEFAULT_PAGE_SIZE) {
+  mockFetch.mockImplementation(async (query: string, variables: Record<string, unknown> = {}) => {
+    if (String(query).includes('CatalogCollectionIndex')) {
+      return {
+        collection: {
+          products: {
+            edges: nodes.map((n) => ({ cursor: `cursor:${n.handle}` })),
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        },
+      }
+    }
+    // Display page: honour `after` + `first` exactly as Shopify would, so the
+    // assertions below exercise real cursor slicing rather than a fixture.
+    const after = variables.after as string | null
+    const start = after ? nodes.findIndex((n) => `cursor:${n.handle}` === after) + 1 : 0
+    const first = (variables.first as number) ?? pageSize
+    return { collection: mockCollection(slug, nodes.slice(start, start + first)) }
+  })
+}
+
 afterEach(cleanup)
 beforeEach(() => {
   mockFetch.mockReset()
@@ -125,7 +160,7 @@ beforeEach(() => {
 
 describe('CategoryResults filter rail is registry-gated', () => {
   it('never renders the raw-tag facet or blocked tag values, even when the Storefront response includes them', async () => {
-    mockFetch.mockResolvedValue({ collection: mockCollection('occ') })
+    mockCatalog('occ', [])
 
     const element = await CategoryResults(baseProps('occ'))
     render(element)
@@ -137,17 +172,22 @@ describe('CategoryResults filter rail is registry-gated', () => {
   })
 
   it('drops facets not on the OCC allowlist (e.g. glove size) even though the Storefront response includes them', async () => {
-    mockFetch.mockResolvedValue({ collection: mockCollection('occ') })
+    mockCatalog('occ', [])
 
     const element = await CategoryResults(baseProps('occ'))
     render(element)
 
     expect(screen.queryByText('Glove size')).toBeNull()
-    expect(screen.getByText('Availability')).toBeInTheDocument()
+    // Availability is NOT in the approved Search & Discovery table, so it is
+    // dropped on every route now — it used to be part of the universal set.
+    expect(screen.queryByText('Availability')).toBeNull()
+    // Order Size is approved and still renders, proving the rail is gated
+    // rather than simply empty.
+    expect(screen.getByText('Order Size')).toBeInTheDocument()
   })
 
   it('renders the glove-size facet on the gloves collection, where it is allowlisted', async () => {
-    mockFetch.mockResolvedValue({ collection: mockCollection('gloves') })
+    mockCatalog('gloves', [])
 
     const element = await CategoryResults(baseProps('gloves'))
     render(element)
@@ -158,34 +198,72 @@ describe('CategoryResults filter rail is registry-gated', () => {
 })
 
 describe('CategoryResults deterministic page-N pagination', () => {
-  it('requests first = currentPage * pageSize + 1 with no cursor, for a direct deep-page visit', async () => {
-    mockFetch.mockResolvedValue({ collection: mockCollection('gloves', []) })
+  it('fetches exactly one page, positioned by cursor rather than over-fetching', async () => {
+    const nodes = Array.from({ length: 55 }, (_, i) => mockProduct(`p${i}`))
+    mockCatalog('gloves', nodes)
 
     await CategoryResults({ ...baseProps('gloves'), currentPage: 3 })
 
+    // Page 3 at 20 per page starts after item 40 (0-based offset 40), and asks
+    // for 20 products — not 3 * 20 + 1 = 61 as the pre-cursor version did.
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ first: 28, after: null }),
+      expect.stringContaining('GetCollection'),
+      expect.objectContaining({ first: 20, after: 'cursor:p39' }),
       expect.objectContaining({ next: expect.objectContaining({ tags: expect.arrayContaining(['collection:gloves']) }) }),
     )
   })
 
-  it("slices out only page 2's products and reports the real count", async () => {
-    const nodes = Array.from({ length: 19 }, (_, i) => mockProduct(`p${i}`))
-    mockFetch.mockResolvedValue({ collection: mockCollection('gloves', nodes) })
+  it("shows only page 2's products and reports the exact matching total", async () => {
+    const nodes = Array.from({ length: 55 }, (_, i) => mockProduct(`p${i}`))
+    mockCatalog('gloves', nodes)
 
     const element = await CategoryResults({ ...baseProps('gloves'), currentPage: 2 })
     render(element)
 
-    expect(screen.getByText('Showing 9 products')).toBeInTheDocument()
-    expect(screen.getByText('p9')).toBeInTheDocument()
+    // 20 rendered on this page, 55 matching overall — the denominator is the
+    // authoritative total, never the page size or the DOM count.
+    expect(screen.getByText('Showing 20 products of 55')).toBeInTheDocument()
+    expect(screen.getByText('p20')).toBeInTheDocument()
     expect(screen.queryByText('p0')).toBeNull()
-    expect(screen.queryByText('p18')).toBeNull()
+    expect(screen.queryByText('p40')).toBeNull()
+  })
+
+  it('renders the exact remainder on the last page, not a full page size', async () => {
+    const nodes = Array.from({ length: 47 }, (_, i) => mockProduct(`p${i}`))
+    mockCatalog('gloves', nodes)
+
+    const element = await CategoryResults({ ...baseProps('gloves'), currentPage: 3 })
+    render(element)
+
+    expect(screen.getByText('Showing 7 products of 47')).toBeInTheDocument()
+  })
+
+  it('uses singular grammar for a single result', async () => {
+    mockCatalog('gloves', [mockProduct('only')])
+
+    const element = await CategoryResults(baseProps('gloves'))
+    render(element)
+
+    expect(screen.getByText('Showing 1 product of 1')).toBeInTheDocument()
+  })
+
+  it('honours a non-default page size and carries it through pagination links', async () => {
+    const nodes = Array.from({ length: 55 }, (_, i) => mockProduct(`p${i}`))
+    mockCatalog('gloves', nodes, 10)
+
+    const element = await CategoryResults({ ...baseProps('gloves'), pageSize: 10 })
+    render(element)
+
+    expect(screen.getByText('Showing 10 products of 55')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Next page' })).toHaveAttribute(
+      'href',
+      '/category/gloves?per_page=10&page=2',
+    )
   })
 
   it('renders a real next-page anchor for a deep page, not a page-1 duplicate', async () => {
-    const nodes = Array.from({ length: 19 }, (_, i) => mockProduct(`p${i}`))
-    mockFetch.mockResolvedValue({ collection: mockCollection('gloves', nodes) })
+    const nodes = Array.from({ length: 55 }, (_, i) => mockProduct(`p${i}`))
+    mockCatalog('gloves', nodes)
 
     const element = await CategoryResults({ ...baseProps('gloves'), currentPage: 2 })
     render(element)

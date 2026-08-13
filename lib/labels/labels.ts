@@ -9,11 +9,14 @@
 //  - Rx Only: display-only label; checkout enforcement is a separate,
 //    separately-flagged concern (lib/rx-gate.ts) and is never triggered by
 //    this label.
-//  - Backorder: gated on the `custom.backorder` boolean — the merchant's own
-//    declaration, not an inventory inference. `custom.estimated_back_order_
-//    restock_date` is optional decoration only: when present and not stale it
-//    appends a ship date to the text, but its absence (or staleness) never
-//    suppresses the label — the boolean alone controls whether it renders.
+//  - Backorder: gated on the `custom.backorder` boolean ALONE — the merchant's
+//    own declaration (mirrored from Juliette's Fordeer list via Izzy), not an
+//    inventory inference. DEV-SHIP-04 (final business rule): the ETA fields
+//    (`custom.backorder_restock_eta`, `custom.estimated_back_order_restock_
+//    date`) are queried and normalized for compatibility/live-theme use only —
+//    the custom storefront never displays, announces, or infers anything from
+//    them. `resolveBackorderLabel` always renders the fixed text "Backorder"
+//    when the boolean is true, regardless of what either ETA field contains.
 //
 // Fordeer: no supported headless retrieval path is proven yet (see
 // lib/labels/fordeer-provider.ts). When one is, its provider output
@@ -83,24 +86,20 @@ export function isBackorderedMetafield(
   return ['true', '1', 'yes'].includes((v ?? '').trim().toLowerCase())
 }
 
-/** A parseable date more than 36h in the past — a stale ETA never renders. */
-function isStaleEta(value: string, now?: Date): boolean {
-  const parsed = new Date(value)
-  if (isNaN(parsed.getTime())) return false
-  // 36-hour grace past the parsed instant: covers a date-only value (which
-  // parses as UTC midnight) staying valid through that calendar day in any
-  // merchant/customer timezone, without local-timezone math.
-  const GRACE_MS = 36 * 60 * 60 * 1000
-  return parsed.getTime() + GRACE_MS < (now ?? new Date()).getTime()
-}
-
 /**
- * Backorder label. The `custom.backorder` boolean is the SOLE gate — the
- * merchant's own declaration, not an availability inference. The ETA
- * (`custom.estimated_back_order_restock_date`) is optional decoration only:
- *  - boolean false/absent → no label, regardless of ETA;
- *  - boolean true + present, non-stale ETA → label with a ship date;
- *  - boolean true + missing/stale ETA → label with generic text, still shown.
+ * Backorder label. The `custom.backorder` boolean is the SOLE trigger — the
+ * merchant's own declaration (Juliette's Fordeer list, mirrored by Izzy),
+ * never an availability/inventory inference and never influenced by an ETA.
+ *
+ * DEV-SHIP-04 (final business rule, supersedes the earlier ETA-appending
+ * behavior): text and accessibleText are always the fixed string "Backorder"
+ * when the boolean is true — no date, no "ships", no "estimated", no
+ * "available" wording, ever. `estimatedRestockDate`/`now` remain accepted
+ * parameters purely so existing callers that still pass ETA data (queried
+ * and normalized for live-theme/internal compatibility — see
+ * lib/shopify/queries/products.ts) don't need to change their call sites;
+ * both are deliberately ignored here. A date must never by itself create or
+ * shape Backorder status.
  */
 export function resolveBackorderLabel(input: {
   isBackordered?: { value: string } | string | boolean | null
@@ -109,17 +108,12 @@ export function resolveBackorderLabel(input: {
 }): ProductLabel | null {
   if (!isBackorderedMetafield(input.isBackordered)) return null
 
-  const value = input.estimatedRestockDate?.trim()
-  const eta = value && !isStaleEta(value, input.now) ? value : null
-
   return {
     type: 'backorder',
-    // "Backorder", not "Back-ordered" (Bilal's spec / Juliette's guide), and
-    // no en dash (house copy rule) — plain comma, matching accessibleText.
-    text: eta ? `Backorder, ships ${eta}` : 'Backorder',
-    accessibleText: eta
-      ? `Backorder, estimated to ship ${eta}`
-      : 'Backorder, ships when available',
+    // "Backorder", not "Back-ordered" (Bilal's spec / Juliette's guide).
+    // Fixed text — no ETA ever appended (DEV-SHIP-04).
+    text: 'Backorder',
+    accessibleText: 'Backorder',
     priority: 20,
     source: 'metafield',
   }

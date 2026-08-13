@@ -100,46 +100,53 @@ describe('filter registry guard: no blocked source can ever render', () => {
 })
 
 describe('page-specific facet sets', () => {
-  it('OCC shows availability/price/type only — no vendor, glove, needle or testing facets', () => {
+  it('OCC shows Category/Order Size/Brand/Price — no vendor, glove, needle or testing facets', () => {
     const ids = getAllowedFacets('occ', HOSTILE_FACETS).map((f) => f.id)
     expect(ids).toEqual(
-      expect.arrayContaining(['filter.v.availability', 'filter.v.price', 'filter.p.type']),
+      expect.arrayContaining(['filter.p.m.custom.order_size', 'filter.v.price']),
     )
     expect(ids).not.toContain('filter.p.vendor')
+    // Availability and product_type are not in the approved S&D table.
+    expect(ids).not.toContain('filter.v.availability')
+    expect(ids).not.toContain('filter.p.type')
     expect(ids).not.toContain('filter.p.m.custom.glove_size')
     expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
     expect(ids).not.toContain('filter.p.m.custom.tests_for')
     expect(ids).not.toContain('filter.v.option.size')
   })
 
-  it('Gloves shows glove size + material (+ size option), not needle facets', () => {
+  it('Gloves shows glove size + material, not needle facets', () => {
     const ids = getAllowedFacets('gloves', HOSTILE_FACETS).map((f) => f.id)
     expect(ids).toContain('filter.p.m.custom.glove_size')
     expect(ids).toContain('filter.p.m.custom.material')
-    expect(ids).toContain('filter.v.option.size')
     expect(ids).not.toContain('filter.p.vendor')
     expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
+    // Variant options are no longer a public source: the approved table routes
+    // every size dimension through the Size / Glove Size metafields, so a raw
+    // variant option would be a second, differently-populated Size group.
+    expect(ids).not.toContain('filter.v.option.size')
     expect(ids).not.toContain('filter.v.option.color')
   })
 
-  it('Needles/Syringes shows gauge + length + volume + order size', () => {
+  it('Needles/Syringes shows gauge + length + size + order size', () => {
     const ids = getAllowedFacets('needles-syringes', HOSTILE_FACETS).map((f) => f.id)
     expect(ids).toEqual(
       expect.arrayContaining([
         'filter.p.m.custom.needle_gauge',
         'filter.p.m.custom.needle_length',
-        'filter.p.m.custom.volume',
+        'filter.p.m.custom.size_length_',
         'filter.p.m.custom.order_size',
       ]),
     )
     expect(ids).not.toContain('filter.p.m.custom.glove_size')
   })
 
-  it('Mobility shows weight + size', () => {
+  it('Mobility shows size but not needle facets', () => {
     const ids = getAllowedFacets('mobility', HOSTILE_FACETS).map((f) => f.id)
-    expect(ids).toContain('filter.p.m.custom.weight')
     expect(ids).toContain('filter.p.m.custom.size_length_')
     expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
+    // `weight` is not in the approved S&D table; it fails closed.
+    expect(ids).not.toContain('filter.p.m.custom.weight')
   })
 
   it('Dental shows needle gauge + length + size + order size', () => {
@@ -171,6 +178,42 @@ describe('page-specific facet sets', () => {
   it('unlisted collections fall back to availability/price only', () => {
     const ids = getAllowedFacets('some-unlisted-collection', HOSTILE_FACETS).map((f) => f.id)
     expect(ids.sort()).toEqual(['filter.v.availability', 'filter.v.price'])
+  })
+
+  // Before this entry, every industry page (facetKey = Industry.collectionHandle)
+  // fell through to DEFAULT_FACET_RULES because none of these five handles were
+  // registered — the same "filters don't cover the product range" gap the
+  // category audit fixed, just never extended past /category. Live coverage
+  // audit (scripts/audit-industry-facet-coverage.ts, 2026-08-12) found no
+  // category-specific APPROVED_METAFIELDS facet clears 60% across any of the
+  // five industry tag scopes (expected — an industry tag spans many product
+  // categories at once), so each gets the same broad-collection treatment as
+  // OCC_RULES rather than a fabricated narrow facet.
+  it('every industry page has an explicit registry entry, not the bare default', () => {
+    const industryHandles = [
+      'urgent-care',
+      'hrt-clinics',
+      'home-health',
+      'clinics-doctors-offices',
+      'pharmacies',
+    ]
+    for (const handle of industryHandles) {
+      expect(handle in filterRegistry, handle).toBe(true)
+      expect(getFacetRules(handle).length, handle).toBeGreaterThan(DEFAULT_FACET_RULES.length)
+    }
+  })
+
+  it('industry pages show category/brand/order-size/type/price, no vendor or narrow attribute facets', () => {
+    for (const handle of ['urgent-care', 'hrt-clinics', 'home-health', 'clinics-doctors-offices', 'pharmacies']) {
+      const ids = getAllowedFacets(handle, HOSTILE_FACETS).map((f) => f.id)
+      expect(ids, handle).toEqual(
+        expect.arrayContaining(['filter.v.availability', 'filter.v.price', 'filter.p.type']),
+      )
+      expect(ids, handle).not.toContain('filter.p.vendor')
+      expect(ids, handle).not.toContain('filter.p.m.custom.glove_size')
+      expect(ids, handle).not.toContain('filter.p.m.custom.needle_gauge')
+      expect(ids, handle).not.toContain('filter.v.option.size')
+    }
   })
 })
 
@@ -325,7 +368,7 @@ describe('category coverage: every audited category has real facets', () => {
     'patient-therapy-rehab', 'bariatric', 'hygiene', 'surgical-sutures',
     'testing-screening', 'capes-gowns', 'dental', 'incontinence', 'pharmacy-products',
     'housekeeping-janitorial', 'iv-therapy', 'urology-ostomy', 'sterilization',
-    'face-masks', 'disinfectants', 'office-supplies', 'occ',
+    'face-coverings', 'disinfectants', 'office-supplies', 'occ',
   ]
 
   it('every audited category has an explicit registry entry', () => {
@@ -352,7 +395,7 @@ describe('the category facet the client asked for', () => {
   })
 
   it('renders on every audited category, not just OCC', () => {
-    for (const handle of ['exam-room', 'gloves', 'wound-care', 'testing-screening', 'face-masks']) {
+    for (const handle of ['exam-room', 'gloves', 'wound-care', 'testing-screening', 'face-coverings']) {
       expect(getAllowedFacets(handle, [CATEGORY_FACET]), handle).toHaveLength(1)
     }
   })
@@ -367,20 +410,40 @@ describe('brand and fulfilling vendor stay separate (IZ-VENDOR-01)', () => {
     expect(getAllowedFacets('exam-room', [brand])).toHaveLength(1)
   })
 
-  it('custom.type is never registered here; Exam/Surgical comes from product_type', () => {
-    // Registered-source policy, not a data claim: the live store's custom.type DATA
-    // was corrected on 2026-07-31 (CHANGE-03: Type now holds Exam/Surgical), so
-    // registering it can be reconsidered, but that is a deliberate registry decision,
-    // not a drive-by. Until then product_type carries the use distinction.
-    const wrong = facet('filter.p.m.custom.type', 'Type')
-    for (const handle of ['gloves', 'surgical-sutures', 'occ', 'exam-room']) {
-      expect(getAllowedFacets(handle, [wrong]), handle).toEqual([])
+  it('custom.type is now THE registered Type source (2026-08-12 decision)', () => {
+    // The deliberate registry decision this test previously deferred. Two
+    // things had to be true and now both are:
+    //  1. The client's approved Search & Discovery table names "Type | Product
+    //     metafield: Type" as the public Type source.
+    //  2. The live data no longer inverts Type and Material. Probed 2026-08-12
+    //     (audit/live/facets.json): gloves returns Type with 8 values over 442
+    //     products AND a separate Material facet with 6 values over 317, so the
+    //     collision the old policy guarded against is gone.
+    const type = facet('filter.p.m.custom.type', 'Type')
+    for (const handle of ['gloves', 'surgical-sutures', 'exam-room']) {
+      expect(getAllowedFacets(handle, [type]), handle).toHaveLength(1)
     }
   })
 
-  it('gloves get Exam/Surgical from product_type', () => {
+  it('product_type is no longer a public facet on category routes', () => {
+    // `filter.p.type` is absent from the approved S&D table and the live store
+    // does not publish it on any of the 25 category collections. Type comes
+    // from the metafield now, so this source must not reappear as a second,
+    // differently-populated "Type" group.
     const pt = facet('filter.p.type', 'Product type')
-    expect(getAllowedFacets('gloves', [pt])).toHaveLength(1)
+    for (const handle of ['gloves', 'occ', 'exam-room']) {
+      expect(getAllowedFacets(handle, [pt]), handle).toEqual([])
+    }
+  })
+
+  it('availability is not published as a public facet', () => {
+    // Spec: "Do not introduce Availability or another filter unless it is
+    // already approved". It is not in the approved table and the live store
+    // returns it on none of the 25 collections.
+    const av = facet('filter.v.availability', 'Availability')
+    for (const handle of ['gloves', 'occ', 'exam-room', 'testing-screening']) {
+      expect(getAllowedFacets(handle, [av]), handle).toEqual([])
+    }
   })
 })
 

@@ -133,7 +133,7 @@ export default async function OCCPage({ searchParams }: Props) {
       />
 
       {/* Toolbar + filters + grid + pagination — the shared catalog engine. */}
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4 flex gap-0 items-start">
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
         {available ? (
           <CategoryResults
             source={{ kind: 'collection', handle: occHandle }}

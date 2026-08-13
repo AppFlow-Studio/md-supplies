@@ -63,7 +63,7 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             src={image?.url}
             alt={cleanShopifyAlt(image?.altText) ?? product.title}
             categoryHandle={categorySlug}
-            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 50vw, 33vw"
             priority={imagePriority}
           />
 
@@ -81,18 +81,18 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
       </div>
 
       {/* Info */}
-      <Link href={href} onClick={handleSelect} className="px-[22px] pt-[19px] pb-3 flex flex-col flex-1">
+      <Link href={href} onClick={handleSelect} className="px-3 pt-3 pb-2 sm:px-[22px] sm:pt-[19px] sm:pb-3 flex flex-col flex-1">
         {/* Public brand only (custom.brand_name). `vendor` is the FULFILLING
             vendor and must never be shown as a brand — when no approved brand
             exists the line is omitted entirely (lib/brand.ts). */}
         {brand ? (
-          <span className="text-teal-500 text-[13px] font-semibold tracking-[0.26px] uppercase leading-[25px]">
+          <span className="text-teal-500 text-[12px] sm:text-[13px] font-semibold tracking-[0.26px] uppercase leading-[20px] sm:leading-[25px] line-clamp-1">
             {brand}
           </span>
         ) : (
-          <span className="leading-[25px]" aria-hidden />
+          <span className="leading-[20px] sm:leading-[25px]" aria-hidden />
         )}
-        <p className="text-black text-[14px] font-semibold tracking-[0.28px] leading-5 line-clamp-2 mb-[30px]">
+        <p className="text-black text-[13px] sm:text-[14px] font-semibold tracking-[0.28px] leading-[1.35] sm:leading-5 line-clamp-2 mb-3 sm:mb-[30px]">
           {product.title}
         </p>
         {/* DEV-LABEL-01: a shipping claim comes ONLY from the resolver-backed
@@ -118,7 +118,7 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             row lines its footer up regardless of title length or label count. */}
         <div className="flex items-baseline gap-2 mt-auto">
           {hasUsablePrice(price) ? (
-            <span className="text-black text-[18px] font-bold tracking-[0.36px]">
+            <span className="text-black text-[16px] sm:text-[18px] font-bold tracking-[0.36px]">
               ${price.toFixed(2)}
             </span>
           ) : (
@@ -137,7 +137,7 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
       {/* Card footer/action row (Phase 4). The quick-add control lives HERE,
           bottom-right of the whole card — not overlaid on the image, where it
           covered product photography and sat outside the card's own layout. */}
-      <div className="px-[22px] pb-[18px] pt-1 flex items-center justify-end">
+      <div className="px-3 pb-3 sm:px-[22px] sm:pb-[18px] pt-1 flex items-center justify-end">
         <ShopifyQuickAddButton product={product} />
       </div>
     </div>

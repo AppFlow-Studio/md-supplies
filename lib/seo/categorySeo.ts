@@ -12,7 +12,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     targetAudience: 'Urgent care center managers, clinic procurement staff, home health agency buyers',
     title: 'Wound Care Supplies for Healthcare | MDSupplies',
     metaDescription:
-      'Shop wound care supplies at wholesale prices — gauze, dressings, bandages, and irrigation kits for clinics, urgent care centers, and home health agencies. Bulk pricing available.',
+      'Shop wound care supplies at wholesale prices — gauze, dressings, bandages, and irrigation kits for clinics, urgent care, and home health agencies.',
     h1: 'Wound Care Supplies',
     answerBlock:
       'MDSupplies stocks professional wound care supplies — gauze sponges, wound dressings, bandages, and irrigation solutions — at wholesale prices for clinics, urgent care centers, and home health agencies.',
@@ -43,10 +43,22 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     targetAudience: 'Dental office managers, urgent care buyers, veterinary clinics, general healthcare facilities',
     title: 'Exam Gloves | Nitrile, Latex & Vinyl | MDSupplies',
     metaDescription:
-      'Shop exam gloves at wholesale prices — nitrile, latex, and vinyl in all sizes from Dynarex, Dukal, and more. Powder-free options available. Bulk case pricing for healthcare facilities.',
-    h1: 'Exam Gloves',
+      'Shop gloves at wholesale prices — nitrile, latex, and vinyl, exam and surgical, powder-free options in all sizes. Bulk case pricing for facilities.',
+    // H1 was 'Exam Gloves', which is a SUBSET of this page, not the page.
+    // Measured live 2026-08-12: /category/gloves carries 445 products and its
+    // Category facet's top value is literally "Exam Gloves — 307" — so the
+    // heading named one facet value while the grid showed nine more (Surgical
+    // 74, General Purpose 25, Cleanroom 11, Finger Cots, Industrial, Glove
+    // Dispensers, Specialty, Utility). A shopper landing on "Exam Gloves" and
+    // seeing surgical gloves has been mis-titled, and the heading disagreed
+    // with the breadcrumb, the nav label and the tile that linked here.
+    // 'Medical Gloves' is accurate for the whole set, matches the approved
+    // display name, and keeps the keyword. The TITLE tag still leads with
+    // "Exam Gloves" — that is metadata targeting the dominant query, which is
+    // fine; the visible H1 has to describe what is actually on the page.
+    h1: 'Medical Gloves',
     answerBlock:
-      'MDSupplies carries nitrile, latex, and vinyl exam gloves in all sizes from Dynarex, Dukal, and other trusted manufacturers at wholesale prices for clinics, dental offices, and healthcare facilities.',
+      'MDSupplies carries nitrile, latex, and vinyl gloves — exam, surgical, and general-purpose — in all sizes from Dynarex, Dukal, and other trusted manufacturers at wholesale prices for clinics, dental offices, and healthcare facilities.',
     contentSections: [],
     faqs: CATEGORY_FAQS['gloves'] ?? [],
     internalLinks: [
@@ -74,7 +86,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     targetAudience: 'Urgent care center managers, private practice physicians, surgical facility buyers',
     title: 'Surgical Sutures | All Types & Sizes | MDSupplies',
     metaDescription:
-      'Shop surgical sutures at wholesale prices — absorbable, non-absorbable, monofilament, and braided sutures in all clinical sizes from AD Surgical. Bulk ordering available.',
+      'Shop surgical sutures at wholesale prices — absorbable, non-absorbable, monofilament, and braided sutures in all clinical sizes. Bulk ordering available.',
     h1: 'Surgical Sutures',
     answerBlock:
       'MDSupplies carries a complete range of surgical sutures — absorbable and non-absorbable, monofilament and braided — in all clinical sizes for urgent care, private practice, and surgical settings.',
@@ -104,7 +116,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     targetAudience: 'Home health agency buyers, long-term care facility procurement, physical therapy practices',
     title: 'Mobility Supplies & DME | Wholesale | MDSupplies',
     metaDescription:
-      'Shop mobility supplies at wholesale prices — wheelchairs, walkers, rollators, and mobility aids from Drive Medical and Graham Field for home health, long-term care, and PT practices.',
+      'Shop mobility supplies at wholesale prices — wheelchairs, walkers, rollators, canes, and mobility aids for home health, long-term care, and PT practices.',
     h1: 'Mobility Supplies & Equipment',
     answerBlock:
       'MDSupplies stocks wheelchairs, walkers, rollators, and mobility aids from Drive Medical and Graham Field at wholesale prices for home health agencies, long-term care facilities, and physical therapy practices.',
@@ -135,7 +147,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     targetAudience: 'HRT clinic operators, urgent care centers, veterinary clinics, home health agencies',
     title: 'Needles & Syringes | All Gauges & Sizes | MDSupplies',
     metaDescription:
-      'Shop needles and syringes at wholesale prices — hypodermic needles in all gauges, insulin syringes, safety-engineered options, and bulk case pricing for healthcare facilities.',
+      'Shop needles and syringes at wholesale prices — hypodermic needles in all gauges, insulin syringes, and safety-engineered options. Bulk case pricing.',
     h1: 'Needles & Syringes',
     answerBlock:
       'MDSupplies carries hypodermic needles in gauges from 18 to 30 and syringes from 1 mL to 60 mL at wholesale prices for clinics, HRT practices, urgent care centers, and veterinary use.',
@@ -164,7 +176,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     targetAudience: 'Clinic managers, urgent care centers, dental offices, home health agencies, healthcare facilities',
     title: 'Medical Face Masks | Surgical & Disposable | MDSupplies',
     metaDescription:
-      'Shop medical face masks at wholesale prices — surgical, disposable, and KN95 face masks for clinics, urgent care centers, and healthcare facilities. Bulk case ordering available.',
+      'Shop medical face masks at wholesale prices — surgical, procedure, and N95 masks for clinics, urgent care, and healthcare facilities. Bulk case ordering.',
     h1: 'Medical Face Masks',
     answerBlock:
       'MDSupplies carries surgical face masks, disposable procedural masks, and KN95 face masks at wholesale prices for clinics, urgent care centers, dental offices, and healthcare facilities.',
@@ -194,7 +206,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     targetAudience: 'Retail pharmacy buyers, compounding pharmacy procurement, pharmacy managers',
     title: 'Pharmacy Supplies & Dispensing Products | MDSupplies',
     metaDescription:
-      'Shop pharmacy supplies at wholesale prices — prescription vials, pharmacy labels, oral syringes, amber bottles, and dispensing accessories for retail and compounding pharmacies.',
+      'Shop pharmacy supplies at wholesale prices — prescription vials, labels, oral syringes, and dispensing accessories for retail and compounding pharmacies.',
     h1: 'Pharmacy Supplies',
     answerBlock:
       'MDSupplies stocks pharmacy dispensing supplies including prescription vials, amber bottles, pharmacy labels, oral syringes, and counting trays at wholesale prices for retail and compounding pharmacies.',

@@ -129,14 +129,25 @@ export default function IndustriesPage() {
               <Link
                 key={slug}
                 href={`/industries/${slug}`}
-                className="group bg-white flex flex-col overflow-hidden hover:shadow-md transition-shadow"
+                /* One card, one link, one clean accessible name. The card's
+                   name used to be the concatenation of everything inside it —
+                   the image alt (the industry name), the visible name again,
+                   the whole description, and the trailing "Shop Industry" —
+                   so a screen reader announced "Urgent Care Urgent Care Exam
+                   gloves, wound care, diagnostics, and testing supplies. Shop
+                   Industry" as the link text. */
+                aria-label={`${name} supplies`}
+                className="group bg-white flex flex-col overflow-hidden hover:shadow-md transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
               >
                 <div className="relative aspect-square overflow-hidden">
+                  {/* Decorative: the heading directly below names the industry,
+                      so alt text here would only repeat it. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image}
-                    alt={name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                   />
                 </div>
                 <div className="p-4 flex flex-col gap-2">
@@ -146,7 +157,8 @@ export default function IndustriesPage() {
                   <p className="text-gray-500 text-[15px] leading-[22px] tracking-[0.3px]">
                     {description}
                   </p>
-                  <span className="text-teal-500 text-[14px] font-medium tracking-[0.7px] mt-1 inline-flex items-center gap-1">
+                  {/* Visual affordance only — the link already has its name. */}
+                  <span aria-hidden className="text-teal-500 text-[14px] font-medium tracking-[0.7px] mt-1 inline-flex items-center gap-1">
                     Shop Industry <AnimatedArrow size={13} />
                   </span>
                 </div>

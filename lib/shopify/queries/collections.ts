@@ -78,8 +78,15 @@ export const GET_COLLECTION = `#graphql
           # Public brand. Cards must never fall back to the Shopify vendor
           # field (the fulfilling vendor) — see lib/brand.ts.
           brandName: metafield(namespace: "custom", key: "brand_name") { value }
+          # DEV-SHIP-04: ETA fields are compatibility/live-theme only — never
+          # displayed. custom.backorder alone triggers the Backorder label.
           estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+          backorderRestockEta: metafield(namespace: "custom", key: "backorder_restock_eta") { value }
           backorder: metafield(namespace: "custom", key: "backorder") { value }
+          # DEV-SHIP-02: merchant-controlled gate for the Free Shipping badge,
+          # ANDed with the shipping resolver's confirmation — see
+          # lib/shipping-resolver/free-shipping-gate.ts.
+          freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
           # The store's own RX declaration. Selected here so grid cards can
           # evaluate the SAME tag∪metafield union as the PDP and the cart
           # (lib/rx-gate.ts). Without it the 40 ACTIVE metafield-only RX

@@ -309,4 +309,27 @@ describe('ShopifyProductCard', () => {
 
     expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
+
+  // DEV-SHIP-02: the card reads whatever shippingDisplay attachCardShippingDisplay
+  // already attached (custom.free_shipping ANDed with the resolver's own
+  // confirmation) — the card never re-derives a claim itself.
+  it('shows a Free Shipping badge when the attached shippingDisplay is standard-free', () => {
+    const product = makeProduct({
+      shippingDisplay: { class: 'standard-free', message: 'Free shipping', displayCopy: null },
+    })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+    expect(screen.getByText('Free Shipping')).toBeInTheDocument()
+  })
+
+  it('shows no Free Shipping badge when the gate did not confirm it (unknown class)', () => {
+    const product = makeProduct({
+      shippingDisplay: { class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null },
+    })
+    render(
+      <ShopifyProductCard product={product} categorySlug="gloves" itemListId="list" itemListName="Gloves" />,
+    )
+    expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+  })
 })

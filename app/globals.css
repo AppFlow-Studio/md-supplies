@@ -15,6 +15,15 @@
   --color-blue-50: #e5eff7;
   --color-neutral-50: #f9faf9;
   --color-neutral-100: #f9fafc;
+  /* Pointer-hover / keyboard-focus surface for tiles and cards on white.
+     neutral-50 (#f9faf9) and neutral-100 (#f9fafc) are the same lightness as
+     each other and within 2% of white, so neither reads as a state change on a
+     white tile — which is why the Popular Categories hover was invisible. This
+     is a genuinely darker step while staying restrained.
+     Measured on this surface (L = 0.8612): ink-muted #6b6b6b 4.62:1,
+     gray-500 #666664 4.83:1, navy-900 #0b172b 15.6:1 — all clear AA for
+     normal-size text, so any existing text token stays legible on hover. */
+  --color-surface-hover: #eceff4;
 
   /* ── Semantic text tokens ──────────────────────────────────────────────
      Named by ROLE, not by hue, so a colour choice is made once and every

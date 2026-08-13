@@ -25,6 +25,7 @@ import {
   getProductCategoryPath,
   parseProductTags,
   type L2Node,
+  getCategorySlug,
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { getNonce } from '@/lib/csp-nonce'
@@ -32,6 +33,8 @@ import { getSubcategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
 import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
+import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-gate'
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
@@ -63,7 +66,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     if (node && (node.parentTag === l1.tag || node.crossLinkParentTag === l1.tag)) {
       const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
       const title = humanizeTag(node.tag)
-      const canonical = `${SITE_URL}${ROUTES.subcategory(canonicalL1.collectionHandle, node.tag)}`
+      const canonical = `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`
       // Filtered / sorted / searched L2 views are noindex and canonicalize to
       // the clean route (plan §3.5).
       const isQueryVariant =
@@ -170,7 +173,7 @@ async function renderSubcategoryPage(
         {crossLinkL1 && (
           <p className="text-gray-500 text-[14px] mt-2">
             Also relevant to{' '}
-            <Link href={ROUTES.category(crossLinkL1.collectionHandle)} className="text-teal-500 hover:underline">
+            <Link href={ROUTES.category(getCategorySlug(crossLinkL1))} className="text-teal-500 hover:underline">
               {crossLinkL1.displayName}
             </Link>
           </p>
@@ -192,11 +195,11 @@ async function renderSubcategoryPage(
         ariaLabel={`${l1.displayName} subcategories`}
       />
 
-      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6 flex gap-0 items-start">
+      <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6">
         <CategoryResults
           source={{ kind: 'tag', query: buildSubcategoryTagQuery(l1.tag, node.tag), title, slug: node.tag }}
           baseUrl={ROUTES.subcategory(slug, handle)}
-          facetKey={l1.tag}
+          facetKey={getCategorySlug(l1)}
           sortKey={sortKey}
           reverse={reverse}
           sortParam={sp.sort}
@@ -255,7 +258,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
 
     if (node && node.crossLinkParentTag === l1.tag && node.parentTag !== l1.tag) {
       const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
-      redirect(ROUTES.subcategory(canonicalL1.collectionHandle, node.tag))
+      redirect(ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag))
     }
 
     if (node && node.parentTag === l1.tag) {
@@ -288,8 +291,10 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     complementary: [] as CollectionProduct[],
   }))
 
+  // DEV-SHIP-02: same AND-gate as /product/[slug] — see
+  // lib/shipping-resolver/free-shipping-gate.ts.
   const variantShippingDisplays = isShippingResolverEnabled()
-    ? resolveVariantsForProduct(productData.product.id)
+    ? gateFreeShippingClaims(resolveVariantsForProduct(productData.product.id), productData.product.freeShipping)
     : {}
 
   const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
@@ -301,11 +306,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
 
   const breadcrumbs = categoryPath
     ? [
-        { label: categoryPath.category.displayName, href: ROUTES.category(categoryPath.category.collectionHandle) },
+        { label: categoryPath.category.displayName, href: ROUTES.category(getCategorySlug(categoryPath.category)) },
         ...(categoryPath.subcategory
           ? [{
               label: humanizeTag(categoryPath.subcategory.tag),
-              href: ROUTES.subcategory(categoryPath.category.collectionHandle, categoryPath.subcategory.tag),
+              href: ROUTES.subcategory(getCategorySlug(categoryPath.category), categoryPath.subcategory.tag),
             }]
           : []),
       ]
@@ -322,8 +327,8 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
       />
       <ProductView
         product={productData.product}
-        relatedProducts={recsData.related}
-        complementaryProducts={recsData.complementary}
+        relatedProducts={attachCardShippingDisplay(recsData.related)}
+        complementaryProducts={attachCardShippingDisplay(recsData.complementary)}
         breadcrumbs={breadcrumbs}
         partnerSlug={partner?.slug ?? null}
         variantShippingDisplays={variantShippingDisplays}

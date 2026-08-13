@@ -41,7 +41,12 @@ export function ProductGrid({
   }
 
   return (
-    <div data-testid="product-grid" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[23px]">
+    // Two cards per row on phones (spec §"Mobile collection shopping
+    // experience"). This was grid-cols-1, which meant one full-width card per
+    // screen and a great deal of scrolling to see a 20-product page. The gutter
+    // tightens to 12px below sm so two cards fit at 320px without the card
+    // content being squeezed; it returns to the established 23px from sm up.
+    <div data-testid="product-grid" className="grid grid-cols-2 gap-3 sm:gap-[23px] xl:grid-cols-3">
       <ViewItemListTracker products={products} itemListId={itemListId} itemListName={itemListName} />
       {products.map((product, index) => (
         <ShopifyProductCard

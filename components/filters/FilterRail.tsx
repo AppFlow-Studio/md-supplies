@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { CollectionFilter } from '@/lib/shopify/types'
 import { parsePriceBounds, calcPriceStep } from '@/lib/shopify/filters'
+import { needsFacetSearch, facetValueMatches } from '@/lib/catalog/facet-order'
 
 // Shared filter rail for the category and search pages (NF5/NF6 dedupe).
 // The page-specific part — how the next URL is built (path, ?q, ?sort,
@@ -16,22 +17,60 @@ interface Props {
   buildUrl: (nextFilters: string[]) => string
 }
 
-function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+/**
+ * One facet value: a single checkbox control whose accessible name carries the
+ * value AND its live result count.
+ *
+ * This used to be a bare 16px `role="checkbox"` button wrapped in a `<label>`
+ * alongside two sibling `<span>`s. That produced a control with NO accessible
+ * name — `<label>` only names native form controls, never an ARIA-role button —
+ * so a screen reader announced 26 identical "checkbox, not checked" rows on the
+ * gloves Brand Name facet. Wrapping the whole row in the button makes the text
+ * the accessible name and leaves exactly one tab stop per value.
+ */
+function FacetValueCheckbox({
+  label,
+  count,
+  checked,
+  onChange,
+}: {
+  label: string
+  count: number
+  checked: boolean
+  onChange: () => void
+}) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={checked}
       onClick={onChange}
-      className={`size-[16px] shrink-0 border flex items-center justify-center transition-colors ${
-        checked ? 'bg-navy-900 border-navy-900' : 'bg-white border-[rgba(102,102,100,0.6)]'
-      }`}
+      // `relative` anchors the sr-only count span below to this row. `sr-only`
+      // is position:absolute, so without a positioned ancestor it is laid out
+      // against a far-up container and escapes any scroll clipping — the same
+      // defect that put a 1681px document behind a 375px viewport on the
+      // category tab rail (see CategoryTabs).
+      className="group relative flex w-full items-center gap-[14px] text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
     >
-      {checked && (
-        <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-          <path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
+      <span
+        aria-hidden
+        className={`size-[16px] shrink-0 border flex items-center justify-center transition-colors ${
+          checked ? 'bg-navy-900 border-navy-900' : 'bg-white border-[rgba(102,102,100,0.6)] group-hover:border-navy-900'
+        }`}
+      >
+        {checked && (
+          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+            <path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
+      <span className="flex-1 text-navy-900 text-[15px] tracking-[0.3px]">{label}</span>
+      {/* Visually a bare number; announced with its unit so the count is not
+          read as part of the value name. */}
+      <span className="text-gray-500 text-[15px] tracking-[0.3px]" aria-hidden>
+        {count}
+      </span>
+      <span className="sr-only">{count === 1 ? '1 product' : `${count} products`}</span>
     </button>
   )
 }
@@ -41,9 +80,12 @@ function isCategoryFacet(filter: CollectionFilter): boolean {
   return /(^|\.)category$/i.test(filter.id) || filter.label.trim().toLowerCase() === 'category'
 }
 
-/** Beyond this many values a group gets Show more + an in-facet search box. */
+/**
+ * Beyond this many values a group collapses behind Show more. The SEARCH
+ * threshold is not defined here: it is FACET_SEARCH_THRESHOLD (> 7 values) from
+ * lib/catalog/facet-order, shared with the tab row so the two never diverge.
+ */
 const VALUES_BEFORE_COLLAPSE = 8
-const VALUES_BEFORE_SEARCH = 12
 
 function FilterGroup({
   filter,
@@ -70,10 +112,10 @@ function FilterGroup({
     if (hasActive) setOpen(true)
   }
 
-  const searchable = filter.values.length > VALUES_BEFORE_SEARCH
-  const q = facetQuery.trim().toLowerCase()
+  const searchable = needsFacetSearch(filter.values.length)
+  const q = facetQuery.trim()
   const matched = q
-    ? filter.values.filter((v) => v.label.toLowerCase().includes(q))
+    ? filter.values.filter((v) => facetValueMatches(v.label, q))
     : filter.values
   // Active values survive filtering and zero counts so a selection is never
   // silently dropped from view.
@@ -113,19 +155,14 @@ function FilterGroup({
               className="w-full min-h-[44px] px-3 border border-gray-200 text-[15px] text-navy-900 focus:outline-none focus:border-navy-900"
             />
           )}
-          {shown.map((value, idx) => (
-            <label key={idx} className="flex items-center gap-[14px] cursor-pointer">
-              <Checkbox
-                checked={selected.includes(value.input)}
-                onChange={() => onToggle(value.input)}
-              />
-              <span className="flex-1 text-navy-900 text-[15px] tracking-[0.3px]">
-                {value.label}
-              </span>
-              <span className="text-gray-500 text-[15px] tracking-[0.3px]">
-                {value.count}
-              </span>
-            </label>
+          {shown.map((value) => (
+            <FacetValueCheckbox
+              key={value.input}
+              label={value.label}
+              count={value.count}
+              checked={selected.includes(value.input)}
+              onChange={() => onToggle(value.input)}
+            />
           ))}
           {hiddenCount > 0 && !showAll && !q && (
             <button

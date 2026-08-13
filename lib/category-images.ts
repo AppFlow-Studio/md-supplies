@@ -22,7 +22,31 @@ export type CategoryImageEntry = {
   file: string
   /** Descriptive alt text for the category hero/banner image. */
   alt: string
+  /**
+   * CSS object-position for the hero's object-cover crop.
+   *
+   * Every delivered asset is 4:3 (measured 2026-08-12: 1200x896 or 2400x1792,
+   * ar 1.34 on all 25). The hero crops that to a much wider box, so the
+   * vertical anchor decides what survives. These are product-on-white studio
+   * shots with the subject sitting LOW in frame — on mobility, the wheelchairs
+   * and walkers occupy roughly 44%-79% of the frame height; on room-furniture
+   * the exam table and stool occupy roughly 39%-87%. A default `center`
+   * (50%) anchor slices the wheels and legs off both.
+   *
+   * DEFAULT_HERO_FOCAL below is the measured compromise. Per-route overrides
+   * go here when an asset needs one.
+   */
+  focalPosition?: string
 }
+
+/**
+ * Vertical anchor for the hero crop, measured from the delivered assets rather
+ * than guessed: the subject's centre of mass sits at ~61% (mobility) and ~63%
+ * (room-furniture) of frame height, and the remaining assets in the set share
+ * the same studio framing. 58% keeps the product bases in frame at the hero's
+ * widest crop without pushing the tops out.
+ */
+export const DEFAULT_HERO_FOCAL = 'center 58%'
 
 /** Used when a handle matches no roadmap category (or the category has no entry). */
 export const CATEGORY_IMAGE_FALLBACK: CategoryImageEntry = {

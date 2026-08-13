@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 
 import {
@@ -17,6 +18,7 @@ import type { MenuItem } from '@/lib/shopify/types'
 import { buildCategoryTreeNav, CATEGORY_TREE_L1 } from '@/lib/category-tree'
 import { LOGO_PATH } from '@/lib/bunnycdn'
 import { approvedClaims, type ClaimKey } from '@/lib/claims'
+import { announcementBarClass } from '@/lib/announcement-visibility'
 
 interface HeaderProps {
   menuItems: MenuItem[]
@@ -56,6 +58,10 @@ function titleToSlug(title: string): string {
 const FOCUSABLE = 'a[href], button:not([disabled])'
 
 export function Header({ menuItems, collections }: HeaderProps) {
+  // usePathname() is populated during SSR too, so the announcement bar's
+  // visibility class resolves identically on the server and the client — no
+  // post-hydration flash of a bar that is about to disappear.
+  const pathname = usePathname()
   const { cart, openCart } = useCart()
   const cartCount = cart?.totalQuantity ?? 0
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -184,7 +190,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
     <header className="sticky top-0 z-40">
       {/* 1 — Announcement bar */}
       <div
-        className="bg-navy-900 h-13.5 flex items-center"
+        className={`bg-navy-900 h-13.5 items-center ${announcementBarClass(pathname)}`}
         onMouseEnter={() => setAnnPaused(true)}
         onMouseLeave={() => setAnnPaused(false)}
         aria-live="polite"
@@ -229,7 +235,11 @@ export function Header({ menuItems, collections }: HeaderProps) {
         <div className="max-w-360 mx-auto px-4 md:px-8 w-full flex items-center gap-4">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src={LOGO_PATH} alt="MDSupplies" width={420} height={100} className="h-10 w-auto object-contain" />
+            {/* h-8 below sm: at 320px the 40px-tall logo renders 168px wide,
+                which with the 150px actions cluster and 32px of gutters made
+                the header 350px in a 320px viewport — horizontal page scroll on
+                every route, including ones with no other wide content. */}
+            <Image src={LOGO_PATH} alt="MDSupplies" width={420} height={100} className="h-8 sm:h-10 w-auto object-contain" />
           </Link>
 
           {/* Desktop nav links — shown only at xl where all items fit without

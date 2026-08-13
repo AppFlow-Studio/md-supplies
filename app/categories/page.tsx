@@ -9,7 +9,12 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
 import { CategoryImage } from '@/components/shared/CategoryImage'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
-import { buildCategoryTreeNav, buildL1Tiles, type ProductTagSummary } from '@/lib/category-tree'
+import {
+  buildL1Tiles,
+  CATEGORY_TREE_L1,
+  getCategorySlug,
+  type ProductTagSummary,
+} from '@/lib/category-tree'
 import { getNonce } from '@/lib/csp-nonce'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 
@@ -61,14 +66,18 @@ export default async function CategoriesPage() {
   }
   const l1Tiles = buildL1Tiles(summaries)
 
-  const allCollectionsByHandle = new Map(allCollections.map((c) => [c.handle, c]))
-  const popularCollections = buildCategoryTreeNav(allCollections)
-    .primary
-    .map((entry) => {
-      const handle = entry.href.split('/').pop() ?? ''
-      return allCollectionsByHandle.get(handle)
-    })
-    .filter((c): c is CollectionNode => c != null)
+  // Popular strip: the REGISTRY supplies name and URL; Shopify is consulted
+  // only for whether the collection is live. It used to round-trip through
+  // `allCollectionsByHandle` and render the raw Shopify `title`, so the same
+  // hub page named the same category two different ways — the strip said
+  // "Trocars & Trocar Kits", "Stools & Seating", "Face Coverings", "Capes &
+  // Gowns" and "Testing & Screening" while the grid immediately below said
+  // "Surgery & Procedure", "Room Furniture", "Face Masks", "Apparel" and
+  // "Testing". It also linked by raw handle, which is the redirecting URL for
+  // Face Masks.
+  const liveHandles = new Set(allCollections.map((c) => c.handle))
+  const popularCategories = CATEGORY_TREE_L1
+    .filter((c) => c.navGroup === 'primary' && liveHandles.has(c.collectionHandle))
     .slice(0, 8)
 
   return (
@@ -90,18 +99,18 @@ export default async function CategoriesPage() {
       </div>
 
       {/* Popular Categories strip */}
-      {popularCollections.length > 0 && (
+      {popularCategories.length > 0 && (
         <section className="bg-white border-t border-b border-gray-100 py-10">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
             <h2 className="text-navy-900 text-[22px] font-semibold mb-7">Popular Categories</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-[1px] border border-[rgba(0,0,0,0.08)] bg-[rgba(0,0,0,0.08)]">
-              {popularCollections.map((col) => {
-                const banner = getCategoryBannerConfig(col.handle)
+              {popularCategories.map((cat) => {
+                const banner = getCategoryBannerConfig(cat.collectionHandle)
                 return (
                   <Link
-                    key={col.id}
-                    href={ROUTES.category(col.handle)}
-                    className="group bg-white hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
+                    key={cat.tag}
+                    href={ROUTES.category(getCategorySlug(cat))}
+                    className="group bg-white transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy-900 flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
                   >
                     <div className="relative w-[50px] h-[50px] rounded-xl overflow-hidden bg-[rgba(0,193,255,0.15)] group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">
                       {/* DEV-CAT-01: no initial-letter placeholder. Every
@@ -115,7 +124,7 @@ export default async function CategoriesPage() {
                       />
                     </div>
                     <span className="text-[14px] font-semibold text-navy-900 text-center leading-snug">
-                      {col.title}
+                      {cat.displayName}
                     </span>
                   </Link>
                 )
@@ -138,14 +147,19 @@ export default async function CategoriesPage() {
               return (
                 <Link
                   key={tile.tag}
-                  href={ROUTES.category(tile.collectionHandle)}
-                  className="group bg-white border border-gray-200 hover:border-navy-900 transition-colors overflow-hidden"
+                  href={ROUTES.category(getCategorySlug(tile))}
+                  /* Same reason as the industry cards: without this the link's
+                     accessible name is the image alt plus the display name plus
+                     the whole description run together. */
+                  aria-label={`${tile.displayName} — ${tile.shortDescription}`}
+                  className="group bg-white border border-gray-200 hover:border-navy-900 transition-colors overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
                 >
                   <div className="relative w-full aspect-[4/3]">
-                    {/* No initial-letter placeholder — see the note above. */}
+                    {/* Decorative: the tile's own label and description sit
+                        directly below and say the same thing. */}
                     <CategoryImage
                       bannerPath={banner.path}
-                      alt={banner.alt}
+                      alt=""
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                     />
                   </div>

@@ -1,5 +1,10 @@
 import { ROADMAP_CATEGORIES } from '@/lib/category-nav'
-import { CATEGORY_IMAGE_CONFIG, CATEGORY_IMAGE_FALLBACK, type CategoryImageEntry } from '@/lib/category-images'
+import {
+  CATEGORY_IMAGE_CONFIG,
+  CATEGORY_IMAGE_FALLBACK,
+  DEFAULT_HERO_FOCAL,
+  type CategoryImageEntry,
+} from '@/lib/category-images'
 
 // All BunnyCDN reads go through the same-origin proxy route (app/api/bunny/[...path]/route.ts)
 // because the storage zone has no public Pull Zone — only the private Storage API, which
@@ -37,11 +42,14 @@ function resolveEntry(handle: string): CategoryImageEntry {
 }
 
 /** Returns the BunnyCDN proxy path and descriptive alt text for a category hero banner. */
-export function getCategoryBannerConfig(handle: string): { path: string; alt: string } {
+export function getCategoryBannerConfig(
+  handle: string,
+): { path: string; alt: string; focalPosition: string } {
   const entry = resolveEntry(handle)
   return {
     path: `${PROXY_PREFIX}/${CATEGORIES_PATH}/${entry.file}`,
     alt:  entry.alt,
+    focalPosition: entry.focalPosition ?? DEFAULT_HERO_FOCAL,
   }
 }
 
