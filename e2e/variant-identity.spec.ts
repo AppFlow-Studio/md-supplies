@@ -3,43 +3,44 @@ import { test, expect } from '@playwright/test'
 // LG-03: selecting a different variant must update SKU, media, H1, URL and
 // the selector's pressed state together — not just SKU/price as before.
 //
-// NOT YET RUNNABLE AS-IS: needs a real live product handle with 2+ Color
-// variants substituted below. This session has no Shopify Admin/catalog
-// access to confirm which handle currently qualifies (that's Izzy's LG-01/
-// LG-02 catalog work, not something to guess at here) — e2e/visual.spec.ts's
-// PDP baseline (`exam-glove-nitrile-medium-blue-100-bx-10-bx-cs`) is a
-// single-variant product and won't exercise this path. Swap in a confirmed
-// multi-color handle (the plan's own Figure 5 example ends in `flame-blue`)
-// once one is available, then this suite runs unmodified — it only depends
-// on the VariantSelector `aria-pressed`/`aria-label` contract (LG-03 §6),
-// not on hardcoded variant GIDs.
-const MULTI_COLOR_PRODUCT_HANDLE = 'REPLACE_WITH_LIVE_MULTI_COLOR_PRODUCT_HANDLE'
+// Handle confirmed live via the Storefront API 2026-08-14: it's the exact
+// "Flame Blue" rollator from the launch plan's own Figure 5 evidence
+// (Blue/Red color variants). Live-verified in a real browser the same day:
+// selecting Red updates H1 ("... Flame Blue — Red"), SKU (10289BL ->
+// 10289RD), and the URL (?variant=<red gid>) together, on both routes below,
+// and the deep link reproduces the same state after a real page reload.
+const MULTI_COLOR_PRODUCT_HANDLE = '3-wheel-rollator-rolling-walker-with-basket-tray-and-pouch-flame-blue'
 
 const ROUTE_PREFIXES = [
   (handle: string) => `/product/${handle}`,
   // Category-route fallback resolves the same handle when it isn't an L2
   // subcategory tag — mirrors app/category/[slug]/[product]/page.tsx's own
-  // fallback. 'gloves' is a real L1 collection slug (see e2e/visual.spec.ts's
-  // own `/category/gloves` baseline) — swap for whichever L1 collection the
-  // real replacement handle actually belongs to if it's not gloves.
-  (handle: string) => `/category/gloves/${handle}`,
+  // fallback. 'mobility' is this product's real L1 collection (confirmed via
+  // its own breadcrumb: Home > Mobility > 3 Wheeled Rollators).
+  (handle: string) => `/category/mobility/${handle}`,
 ]
 
 for (const routeFor of ROUTE_PREFIXES) {
   test(`variant switch updates H1, SKU, image and pressed state on ${routeFor('<handle>')}`, async ({ page }) => {
     await page.goto(routeFor(MULTI_COLOR_PRODUCT_HANDLE))
 
-    const selector = page.getByRole('button', { name: /^Color:/ })
-    await expect(selector.first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Color:/ }).first()).toBeVisible()
 
     const initialH1 = await page.getByRole('heading', { level: 1 }).textContent()
     const initialSku = await page.getByText(/^SKU:/).textContent()
 
-    // Pick a Color option that isn't already selected.
-    const unselected = selector.filter({ hasNot: page.locator('[aria-pressed="true"]') }).first()
-    await unselected.click()
+    // Pick a Color option that isn't already selected (`pressed: false` reads
+    // each button's own aria-pressed, unlike a `hasNot` descendant filter,
+    // which doesn't see an attribute on the element itself). Capture its
+    // fixed accessible name before clicking: `pressed: false` is a dynamic
+    // filter that re-resolves on every query, so asserting on the same
+    // locator AFTER the click would silently re-target whichever button is
+    // now unselected instead of the one just clicked.
+    const targetName = await page.getByRole('button', { name: /^Color:/, pressed: false }).first().getAttribute('aria-label')
+    const target = page.getByRole('button', { name: targetName! })
+    await target.click()
 
-    await expect(unselected).toHaveAttribute('aria-pressed', 'true')
+    await expect(target).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByRole('heading', { level: 1 })).not.toHaveText(initialH1 ?? '')
     await expect(page.getByText(/^SKU:/)).not.toHaveText(initialSku ?? '')
 
@@ -50,7 +51,7 @@ for (const routeFor of ROUTE_PREFIXES) {
     const deepLinkUrl = page.url()
     await page.reload()
     await expect(page).toHaveURL(deepLinkUrl)
-    await expect(unselected).toHaveAttribute('aria-pressed', 'true')
+    await expect(target).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByRole('heading', { level: 1 })).not.toHaveText(initialH1 ?? '')
   })
 }
