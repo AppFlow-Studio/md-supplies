@@ -54,6 +54,35 @@ describe('GET_PRODUCT metafield selections', () => {
   })
 })
 
+// AeroWalk pilot (2026-08-14): variant-level manufacturer number, order
+// size, units per order and description. Proposed contract —
+// docs/launch/2026-08-14-variant-field-contract.md. If Izzy's actual
+// namespace/key differs, this test (and only the query string below) needs
+// to change; every other consumer reads the already-normalized field name.
+describe('GET_PRODUCT variant-level metafield selections (AeroWalk pilot)', () => {
+  it('requests custom.manufacturer_item_number on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/manufacturerNumber:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "manufacturer_item_number"')
+  })
+
+  it('requests custom.order_size on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/orderSize:\s*metafield\(/)
+  })
+
+  it('requests custom.units_per_order on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/unitsPerOrder:\s*metafield\(/)
+  })
+
+  it('requests custom.variant_description on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/description:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "variant_description"')
+  })
+
+  it('is still a single parseable template literal', () => {
+    expect(GET_PRODUCT.split('{').length).toBe(GET_PRODUCT.split('}').length)
+  })
+})
+
 /**
  * DEV-LAUNCH-07: every query built on the shared ProductCard fragment feeds
  * ShopifyProductCard (partner listings, PDP recommendations, homepage

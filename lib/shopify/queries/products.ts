@@ -86,6 +86,15 @@ export const GET_PRODUCT = `#graphql
           selectedOptions { name value }
           price { amount currencyCode }
           compareAtPrice { amount currencyCode }
+
+          # AeroWalk pilot (2026-08-14) — proposed contract, see
+          # docs/launch/2026-08-14-variant-field-contract.md. Resolves to
+          # null on every variant until Izzy's write lands; ProductView
+          # already handles null gracefully via resolveVariantValue.
+          manufacturerNumber: metafield(namespace: "custom", key: "manufacturer_item_number") { value }
+          orderSize: metafield(namespace: "custom", key: "order_size") { value }
+          unitsPerOrder: metafield(namespace: "custom", key: "units_per_order") { value }
+          description: metafield(namespace: "custom", key: "variant_description") { value }
         }
       }
       options {
