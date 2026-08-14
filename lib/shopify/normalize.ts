@@ -1,10 +1,32 @@
-import type { Product, ProductMetafields } from '@/lib/shopify/types'
+import type { Product, ProductMetafields, ProductVariant, VariantMetafields } from '@/lib/shopify/types'
 
 // Shopify returns metafields as `{ value: string } | null`, not bare strings.
 // This type reflects the actual JSON shape before we normalize it.
 export type RawMetafield = { value: string } | null
-export type RawProduct = Omit<Product, keyof ProductMetafields> & {
+
+// Mirrors ProductVariant's raw-metafield shape the same way RawProduct does
+// for product-level metafields (below) — variant.image is a native field,
+// already correctly typed on ProductVariant, so it is NOT part of this
+// remapped set.
+export type RawVariant = Omit<ProductVariant, keyof VariantMetafields> & {
+  [K in keyof VariantMetafields]?: RawMetafield
+}
+
+export type RawProduct = Omit<Product, keyof ProductMetafields | 'variants'> & {
+  variants: { nodes: RawVariant[] }
+} & {
   [K in keyof ProductMetafields]: RawMetafield
+}
+
+function normalizeVariant(raw: RawVariant): ProductVariant {
+  const mv = (m: RawMetafield | undefined): string | null => m?.value ?? null
+  return {
+    ...raw,
+    manufacturerNumber: mv(raw.manufacturerNumber),
+    orderSize:          mv(raw.orderSize),
+    unitsPerOrder:      mv(raw.unitsPerOrder),
+    description:        mv(raw.description),
+  }
 }
 
 /**
@@ -17,6 +39,7 @@ export function normalizeProduct(raw: RawProduct): Product {
   const mv = (m: RawMetafield): string | null => m?.value ?? null
   return {
     ...raw,
+    variants:             { nodes: raw.variants.nodes.map(normalizeVariant) },
     brandName:            mv(raw.brandName),
     unitsPerOrder:        mv(raw.unitsPerOrder),
     quantityOfUnits:      mv(raw.quantityOfUnits),
