@@ -109,7 +109,6 @@ describe('ProductView — variant-sourced order unit, above Add to Cart', () => 
     const orderUnitLabel = screen.getByText('UNIT')
     const addToCart = screen.getByRole('button', { name: /Add to Cart/i })
     // DOCUMENT_POSITION_FOLLOWING = 4 means addToCart follows orderUnitLabel
-    // eslint-disable-next-line no-bitwise
     expect(orderUnitLabel.compareDocumentPosition(addToCart) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

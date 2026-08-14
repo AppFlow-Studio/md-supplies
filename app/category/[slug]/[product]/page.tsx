@@ -49,6 +49,14 @@ import { compareFacetValues } from '@/lib/catalog/facet-order'
 // Freshness comes from the fetch-level data cache below, not route-level
 // revalidate/generateStaticParams.
 
+// Offer freshness hint (M6): +30 days, date-only per Google's examples,
+// mirroring /product/[slug]/page.tsx's identical helper. A top-level
+// function rather than an inline `new Date(Date.now()...)` in the component
+// body — react-hooks/purity flags a direct impure call at render time.
+function buildPriceValidUntil(): string {
+  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
+
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
 // the Shopify webhooks via per-handle tags (app/api/revalidate).
 function productFetchOptions(handle: string) {
@@ -339,7 +347,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
-    priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    priceValidUntil: buildPriceValidUntil(),
     ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }
