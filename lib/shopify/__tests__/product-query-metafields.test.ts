@@ -119,6 +119,24 @@ describe('ProductCard fragment metafield selections', () => {
 // built on must request custom.free_shipping, or attachCardShippingDisplay /
 // attachCartShippingDisplay silently gate the claim closed everywhere
 // (the AND-gate treats a missing metafield exactly like an explicit false).
+//
+// Quick Add gap (2026-08-14): ShopifyQuickAddButton/QuickAddContent read
+// CollectionProduct.variants.nodes[].image (types.ts) to switch the modal's
+// gallery per selected variant — but no card-grid query has ever selected
+// it, so the field was always undefined and Quick Add always showed the
+// product's first image regardless of which variant was picked. Not
+// AeroWalk-specific: every multi-color product had this gap.
+describe('variant.image selected on every card-grid query (Quick Add fix)', () => {
+  it('the shared ProductCard fragment (GET_PRODUCTS_BY_VENDOR, GET_PRODUCT_RECS) requests it', () => {
+    expect(GET_PRODUCTS_BY_VENDOR).toMatch(/variants\(first: 1\) \{\s*nodes \{[\s\S]*?image \{/)
+    expect(GET_PRODUCT_RECS).toMatch(/variants\(first: 1\) \{\s*nodes \{[\s\S]*?image \{/)
+  })
+
+  it('SEARCH_PRODUCTS_BY_TAG (L2/industry/OCC grids) requests it', () => {
+    expect(SEARCH_PRODUCTS_BY_TAG).toMatch(/variants\(first: 10\) \{\s*nodes \{[\s\S]*?image \{/)
+  })
+})
+
 describe('custom.free_shipping selected on every surface query', () => {
   it('SEARCH_PRODUCTS_BY_TAG (L2/industry/OCC card grids) requests it', () => {
     expect(SEARCH_PRODUCTS_BY_TAG).toMatch(/freeShipping:\s*metafield\(/)

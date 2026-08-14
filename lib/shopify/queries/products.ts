@@ -41,6 +41,11 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
         price { amount currencyCode }
         compareAtPrice { amount currencyCode }
         availableForSale
+        # Quick Add fix (2026-08-14): native variant-media assignment, same
+        # field the PDP already reads (LG-03). Without this, QuickAddContent
+        # always shows the product's first image regardless of the selected
+        # variant/color.
+        image { id url altText width height }
       }
     }
   }
@@ -277,6 +282,7 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale
+              image { id url altText width height }
             }
           }
         }

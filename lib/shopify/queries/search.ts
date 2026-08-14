@@ -70,6 +70,7 @@ export const SEARCH_PRODUCTS = `#graphql
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale
+              image { id url altText width height }
             }
           }
         }
