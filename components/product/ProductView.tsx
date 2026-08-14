@@ -23,6 +23,7 @@ import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
+import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
@@ -185,9 +186,28 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
     { label: 'Adulterants',      value: product.adulterants },
   ].filter((r) => r.value != null)
 
-  const hasPackaging = product.unitsPerOrder || product.orderSize || product.quantityOfUnits
   const hasOptions = product.options.length > 0 &&
     !(product.options.length === 1 && product.options[0].values.length === 1)
+
+  // AeroWalk pilot: variant-specific order unit overrides the shared product
+  // value; falls back to it only when the variant's own field is blank
+  // (resolveVariantValue — Bilal's rule 2). Used identically by the
+  // above-the-fold block and the ORDER PACKAGING tab, so they can never show
+  // two different totals for the same selection (LG-04 acceptance).
+  const resolvedOrderSize = resolveVariantValue(selectedVariant.orderSize, product.orderSize)
+  const resolvedUnitsPerOrder = resolveVariantValue(
+    selectedVariant.unitsPerOrder,
+    product.unitsPerOrder ?? product.quantityOfUnits,
+  )
+  const resolvedHasPackaging = Boolean(resolvedOrderSize || resolvedUnitsPerOrder)
+
+  // Variant Description supplements the product Description tab — never
+  // shown if blank, never shown if it would just repeat the product
+  // description verbatim (resolveVariantSupplement — Bilal's rule 3).
+  const variantDescriptionSupplement = resolveVariantSupplement(
+    selectedVariant.description,
+    product.description,
+  )
 
   return (
     <>
@@ -264,10 +284,20 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               {displayTitle}
             </h1>
 
-            {/* SKU */}
-            <p className="text-gray-500 text-[13px] tracking-[0.26px]">
-              SKU: {variantSku}
-            </p>
+            {/* SKU + Manufacturer Item Number — kept as two separately-
+                labeled values (never conflated): the plan's Figure 3
+                requirement, previously violated by the Specifications tab
+                (see below), now consistent site-wide. */}
+            <div className="flex flex-col gap-0.5">
+              <p className="text-gray-500 text-[13px] tracking-[0.26px]">
+                SKU: {variantSku}
+              </p>
+              {selectedVariant.manufacturerNumber && (
+                <p className="text-gray-500 text-[13px] tracking-[0.26px]">
+                  Mfr #: {selectedVariant.manufacturerNumber}
+                </p>
+              )}
+            </div>
 
             {/* Availability — negative states only. No "In stock" claim:
                 vendor inventory is not real time (DEV-CATALOG-01), so an
@@ -319,6 +349,41 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               />
             )}
 
+            {/* UNIT / QUANTITY — variant-sourced, positioned directly below
+                the selector and above Add to Cart per Bilal (2026-08-14):
+                "Populate variant-specific order units/packaging and display
+                them clearly above Add to Cart." Reads the same resolved
+                values as the ORDER PACKAGING tab — never a second
+                computation (LG-04). */}
+            {resolvedHasPackaging && (
+              <div className="border border-[rgba(102,102,100,0.5)]">
+                <div className="bg-navy-900 flex">
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">UNIT</p>
+                  </div>
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">QUANTITY</p>
+                  </div>
+                </div>
+                <div className="flex">
+                  <div className="flex-1 px-4 py-3">
+                    {resolvedOrderSize && (
+                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                        {resolvedOrderSize}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex-1 px-4 py-3">
+                    {resolvedUnitsPerOrder && (
+                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                        {resolvedUnitsPerOrder}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Price. A zero/missing price is a quote-only item, not a $0
                 product and not an out-of-stock or no-rate signal (Phase 11). */}
             <div className="flex items-baseline gap-3 flex-wrap">
@@ -342,36 +407,6 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                 </span>
               )}
             </div>
-
-            {/* UNIT / QUANTITY table */}
-            {hasPackaging && (
-              <div className="border border-[rgba(102,102,100,0.5)]">
-                <div className="bg-navy-900 flex">
-                  <div className="flex-1 px-4 py-3">
-                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">UNIT</p>
-                  </div>
-                  <div className="flex-1 px-4 py-3">
-                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">QUANTITY</p>
-                  </div>
-                </div>
-                <div className="flex">
-                  <div className="flex-1 px-4 py-3">
-                    {product.orderSize && (
-                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
-                        {product.orderSize}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex-1 px-4 py-3">
-                    {(product.unitsPerOrder || product.quantityOfUnits) && (
-                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
-                        {product.unitsPerOrder ?? product.quantityOfUnits}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Qty + Add to cart */}
             <div className="flex gap-3 flex-wrap sm:flex-nowrap">
@@ -462,9 +497,20 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
           >
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-8 max-w-[760px]">
-                {/* Item Number */}
+                {/* Manufacturer Item Number and Internal SKU — kept as two
+                    separate, separately-labeled rows. Previously this tab
+                    showed one heading, "Item Number", over `variantSku` (the
+                    INTERNAL sku) — silently conflating the two identifiers
+                    the launch plan's non-negotiable rule requires kept
+                    apart (Figure 3). */}
+                {selectedVariant.manufacturerNumber && (
+                  <div>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Manufacturer Item Number</h2>
+                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{selectedVariant.manufacturerNumber}</p>
+                  </div>
+                )}
                 <div>
-                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Item Number</h2>
+                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Internal SKU</h2>
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantSku}</p>
                 </div>
 
@@ -484,6 +530,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                       className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] prose max-w-none prose-p:mb-4 prose-ul:pl-5 prose-li:mb-1"
                       dangerouslySetInnerHTML={{ __html: product.descriptionHtml || product.description }}
                     />
+                  </div>
+                )}
+
+                {/* Variant Details — supplements the description above only
+                    when the archived source had genuinely variant-specific
+                    content; never a duplicate of it (resolveVariantSupplement). */}
+                {variantDescriptionSupplement && (
+                  <div>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Variant Details</h2>
+                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantDescriptionSupplement}</p>
                   </div>
                 )}
 
@@ -524,13 +580,12 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
 
             {activeTab === 'ORDER PACKAGING' && (
               <div className="flex flex-col gap-6 max-w-[760px]">
-                {hasPackaging ? (
+                {resolvedHasPackaging ? (
                   <table className="w-full max-w-[500px]">
                     <tbody>
                       {[
-                        { label: 'Order Size', value: product.orderSize },
-                        { label: 'Units Per Order', value: product.unitsPerOrder },
-                        { label: 'Quantity of Units', value: product.quantityOfUnits },
+                        { label: 'Order Size', value: resolvedOrderSize },
+                        { label: 'Units Per Order', value: resolvedUnitsPerOrder },
                       ]
                         .filter((r) => r.value != null)
                         .map(({ label, value }, i) => (

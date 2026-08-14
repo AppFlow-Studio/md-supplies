@@ -97,10 +97,13 @@ const product: Product = {
 }
 
 describe('ProductView PDP semantic markup (Audit M13)', () => {
-  it('exposes Item Number, Brand Name, Description, and Specifications as headings', () => {
+  it('exposes Internal SKU, Brand Name, Description, and Specifications as headings', () => {
     render(<ProductView product={product} initialVariant={product.variants.nodes[0]} relatedProducts={[]} complementaryProducts={[]} />)
 
-    expect(screen.getByRole('heading', { name: 'Item Number' })).toBeInTheDocument()
+    // AeroWalk fix (2026-08-14): "Item Number" was renamed to "Internal SKU"
+    // and split from a separate "Manufacturer Item Number" heading (rendered
+    // only when the variant carries one — this fixture's variant doesn't).
+    expect(screen.getByRole('heading', { name: 'Internal SKU' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Brand Name' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Description' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Specifications' })).toBeInTheDocument()
