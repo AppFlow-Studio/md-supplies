@@ -130,11 +130,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const schemaProps = {
     name: product.title,
     description: product.description,
-    image: product.images.nodes[0]?.url ?? '',
+    // AeroWalk fix: prefer the resolved variant's own image so structured
+    // data can't disagree with what's on the page (Red must never emit
+    // Blue's image) — falls back to the product's default gallery image
+    // only when the variant carries none.
+    image: resolvedVariant?.image?.url ?? product.images.nodes[0]?.url ?? '',
     sku: resolvedVariant?.sku || slug,
     // gtin only when the Shopify barcode is a checksum-valid GTIN — most
     // barcodes in this catalog are SKU copies and must not be emitted (M5).
     gtin: normalizeGtin(resolvedVariant?.barcode),
+    // Manufacturer Item Number (AeroWalk pilot field contract) — omitted
+    // entirely rather than emitting an empty string when not yet populated.
+    mpn: resolvedVariant?.manufacturerNumber ?? undefined,
     // Product structured data: omit brand entirely rather than emit the
     // fulfilling vendor as a consumer brand (lib/brand.ts).
     brand: publicBrand(product) ?? undefined,

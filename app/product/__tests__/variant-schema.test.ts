@@ -10,7 +10,7 @@ import ProductPage from '../[slug]/page'
 
 const mockFetch = vi.mocked(storefrontFetch)
 
-type SchemaEl = { props: { sku: string; price: number; priceCurrency: string; availability: string; url: string } }
+type SchemaEl = { props: { sku: string; mpn?: string; image: string; price: number; priceCurrency: string; availability: string; url: string } }
 type BreadcrumbEl = { props: { currentUrl: string } }
 type ProductViewEl = { props: { initialVariant: { id: string; sku: string | null } } }
 
@@ -23,6 +23,11 @@ const blueVariant = {
   selectedOptions: [{ name: 'Color', value: 'Blue' }],
   price: { amount: '9.99', currencyCode: 'USD' },
   compareAtPrice: null,
+  image: { id: 'img-blue', url: 'https://cdn.shopify.com/blue.jpg', altText: 'Blue', width: 800, height: 800 },
+  manufacturerNumber: { value: 'MFR-BLUE-1' },
+  orderSize: null,
+  unitsPerOrder: null,
+  description: null,
 }
 const redVariant = {
   ...blueVariant,
@@ -32,6 +37,8 @@ const redVariant = {
   selectedOptions: [{ name: 'Color', value: 'Red' }],
   price: { amount: '11.99', currencyCode: 'USD' },
   availableForSale: false,
+  image: { id: 'img-red', url: 'https://cdn.shopify.com/red.jpg', altText: 'Red', width: 800, height: 800 },
+  manufacturerNumber: { value: 'MFR-RED-2' },
 }
 
 const rawProduct = {
@@ -126,5 +133,17 @@ describe('ProductPage — ?variant= resolution feeds ProductSchema, not just Pro
   it('with an unknown ?variant= id, falls back to the default variant rather than erroring', async () => {
     const { schemaEl } = await renderProductPage('gid://shopify/ProductVariant/does-not-exist')
     expect(schemaEl.props.sku).toBe('SKU-BLUE')
+  })
+
+  it('with a valid ?variant=, structured data mpn and image follow Red, not Blue', async () => {
+    const { schemaEl } = await renderProductPage(redVariant.id)
+    expect(schemaEl.props.mpn).toBe('MFR-RED-2')
+    expect(schemaEl.props.image).toBe('https://cdn.shopify.com/red.jpg')
+  })
+
+  it('with no ?variant=, structured data mpn and image use the default (Blue) variant', async () => {
+    const { schemaEl } = await renderProductPage(undefined)
+    expect(schemaEl.props.mpn).toBe('MFR-BLUE-1')
+    expect(schemaEl.props.image).toBe('https://cdn.shopify.com/blue.jpg')
   })
 })

@@ -12,6 +12,10 @@ import { parseSortKey, parseFilterParam, parseSearchParam, type CategorySearchPa
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
+import { ProductSchema } from '@/components/schema/ProductSchema'
+import { normalizeGtin } from '@/lib/gtin'
+import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
+import { publicBrand } from '@/lib/brand'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
@@ -316,6 +320,30 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     basePath: `/category/${slug}/${handle}`,
   })
 
+  // Parity fix (2026-08-14): this route previously rendered no ProductSchema
+  // at all — /product/[slug] is the only route that had it. Mirrors that
+  // route's schemaProps exactly, including preferring the resolved variant's
+  // own image/mpn so structured data can't disagree with what's rendered
+  // (AeroWalk: White/Grey must never emit Blue's image/mpn here either).
+  const isAvailable = resolvedVariant?.availableForSale ?? productData.product.availableForSale
+  const schemaProps = {
+    name: productData.product.title,
+    description: productData.product.description,
+    image: resolvedVariant?.image?.url ?? productData.product.images.nodes[0]?.url ?? '',
+    sku: resolvedVariant?.sku || handle,
+    gtin: normalizeGtin(resolvedVariant?.barcode),
+    mpn: resolvedVariant?.manufacturerNumber ?? undefined,
+    brand: publicBrand(productData.product) ?? undefined,
+    price: parseFloat(resolvedVariant?.price?.amount ?? '0'),
+    priceCurrency: resolvedVariant?.price?.currencyCode ?? 'USD',
+    availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
+    url: productUrl,
+    seller: 'MDSupplies',
+    priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
+    ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
+  }
+
   const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
   const { categories, subcategories } = parseProductTags(productData.product.tags)
   const categoryPath = getProductCategoryPath(
@@ -340,6 +368,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
       {/* og:type `product` is outside Next's Metadata union — rendered here
           and hoisted into <head> by React 19 (audit L10). */}
       <meta property="og:type" content="product" />
+      <ProductSchema {...schemaProps} />
       <BreadcrumbSchema
         items={[...breadcrumbs, { label: productData.product.title }]}
         currentUrl={productUrl}
