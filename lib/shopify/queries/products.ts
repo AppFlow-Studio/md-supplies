@@ -146,6 +146,21 @@ export const GET_PRODUCT = `#graphql
       # standard-free + effective_rate_class=FREE confirmation before the
       # PDP renders a claim (lib/shipping-resolver/free-shipping-gate.ts).
       freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
+      # LG-04 fallback source: custom.order_size / custom.units_per_order also
+      # exist at PRODUCT level (10,001 / 8,210 products — confirmed in Izzy's
+      # 2026-08-14 field contract). ProductView's resolveVariantValue already
+      # reads product.orderSize/product.unitsPerOrder as the fallback when a
+      # variant carries no override, but nothing selected them at product
+      # level until now, so that fallback was silently always null.
+      orderSize: metafield(namespace: "custom", key: "order_size") { value }
+      unitsPerOrder: metafield(namespace: "custom", key: "units_per_order") { value }
+      # H-01 — Vendor Shipping & Returns. Confirmed by Izzy's 2026-08-14 field
+      # contract as the live theme's actual source: custom.shipping_returns,
+      # rich_text_field, PUBLIC_READ, populated on 10,001 products. Value is a
+      # Shopify rich-text JSON AST — flattened by
+      # lib/policy/rich-text.ts:shopifyRichTextToPlainParagraphs before it
+      # reaches resolveReturnPolicy's vendorPolicyText.
+      shippingReturns: metafield(namespace: "custom", key: "shipping_returns") { value }
     }
   }
 `;

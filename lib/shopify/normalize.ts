@@ -36,7 +36,7 @@ function normalizeVariant(raw: RawVariant): ProductVariant {
  * into ProductView (crashing spec rows / breaking the backorder date).
  */
 export function normalizeProduct(raw: RawProduct): Product {
-  const mv = (m: RawMetafield): string | null => m?.value ?? null
+  const mv = (m: RawMetafield | undefined): string | null => m?.value ?? null
   return {
     ...raw,
     variants:             { nodes: raw.variants.nodes.map(normalizeVariant) },
@@ -64,5 +64,6 @@ export function normalizeProduct(raw: RawProduct): Product {
     customBadge1:         mv(raw.customBadge1),
     customBadge2:         mv(raw.customBadge2),
     customBadge3:         mv(raw.customBadge3),
+    shippingReturns:      mv(raw.shippingReturns),
   }
 }

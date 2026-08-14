@@ -1,7 +1,7 @@
 # Launch remediation status — 2026-08-14
 
 **Prepared by:** Sardor (dev) · **For:** Bilal / Izzy
-**Sources:** `LG-01-LG-02-GATE-REPORT-2026-08-13.pdf` (Izzy) · `2026-08-14-launch-remediation-dev-status.md` (prior dev session) · today's session, commits `a5af4ad..7c5fdb8` on branch `catalog-cro-review-sardor-dev`
+**Sources:** `LG-01-LG-02-GATE-REPORT-2026-08-13.pdf` (Izzy) · `2026-08-14-launch-remediation-dev-status.md` (prior dev session) · today's session, commits `a5af4ad..7c5fdb8` on branch `catalog-cro-review-sardor-dev` · **`FIELD-CONTRACT-FOR-SARDOR.pdf` (Izzy, later same day) — see §6 addendum**
 
 This supersedes the two source reports above where they overlap; read it as the current state, not a diff against them.
 
@@ -14,10 +14,10 @@ This supersedes the two source reports above where they overlap; read it as the 
 | LG-01 — Manufacturer numbers, Admin search | Izzy | 🟡 Substantially done | Juliette (487 spot-check batch, 249 exceptions) |
 | LG-02 — Family reconstruction | Izzy | 🟡 Analyzed, not remediated | Bilal/Juliette decision on 151-row list + 2 urgent pricing defects |
 | LG-03 — Selected-variant identity sync | Devs | 🟢 Code complete, live-verified except AeroWalk | Izzy's Shopify write (metafields + AeroWalk data) |
-| LG-04 — Order units/packaging on PDP | Izzy + Devs | 🟡 Rendering done, no real data | Izzy populating variant-level packaging |
+| LG-04 — Order units/packaging on PDP | Izzy + Devs | 🟡 Rendering done, product-level fallback fixed, no variant data yet | Izzy populating variant-level packaging |
 | LG-05 — Backorder export + reset | Izzy | 🔴 Not started | Izzy (no report yet) |
 | LG-06 — Deploy & production acceptance | Devs + Izzy | 🔴 Not started | Everything above landing first; deploy access |
-| H-01 — Vendor Shipping & Returns | Devs | 🔴 Not attempted | New Admin API scope needed |
+| H-01 — Vendor Shipping & Returns | Devs | 🟢 Done | — |
 | H-02 — Free Shipping workbook | Izzy + Devs | 🔴 Blocked | Juliette's workbook |
 | H-03 — Natural filter sorting | Devs | 🟢 Done | — |
 | H-04 — Backorder/ETA + "Rx Only" copy | Devs | 🟡 Partially done | Bilal/Juliette: resolve ETA-display policy conflict |
@@ -179,3 +179,18 @@ Repeat B1–B3 on both routes at mobile width. Specifically confirm: the Order U
 ## 5. Traceability
 
 Today's work: 13 commits, `a5af4ad..7c5fdb8` on `catalog-cro-review-sardor-dev`. Full suite green (144/144 test files, 1467/1467 tests), `tsc`/lint clean, build succeeds, existing live-data e2e spec (`e2e/variant-identity.spec.ts`) still 4/4 against real Shopify data. Branch not yet pushed or merged.
+
+---
+
+## 6. Addendum — Izzy's field contract received (`FIELD-CONTRACT-FOR-SARDOR.pdf`)
+
+Izzy's contract confirms the four variant keys exactly as this doc's §3.1 already proposed (`custom.manufacturer_item_number`, `custom.order_size`, `custom.units_per_order`, `custom.variant_description`), confirms `custom.shipping_returns` as the H-01 source, and proposes `custom.estimated_back_order_restock_date` as the authoritative Backorder ETA field (matching what `GET_PRODUCT` already reads for that purpose). Nothing in it requires a different key or type than what dev already implemented or expected — see the reply drafted for Sardor to send back confirming all three.
+
+Two things unblocked by the confirmation, done this session (commits pending):
+
+- **H-01 — Vendor Shipping & Returns: done.** `GET_PRODUCT` now selects `custom.shipping_returns` (rich text). Shopify's rich-text JSON is flattened to plain paragraphs (`lib/policy/rich-text.ts`) and fed into `resolveReturnPolicy`'s `vendorPolicyText` (`lib/policy/return-policy.ts`), which already existed for exactly this purpose (its own docstring named "IZ-PROD-04" as the missing piece). Products without a value still render the approved general fallback — never empty, never invented. Only 10,001 of the catalog's products carry a value, so this is expected on the rest.
+- **LG-04 fallback bug found and fixed.** `ProductView.tsx` already computed `resolveVariantValue(selectedVariant.orderSize, product.orderSize)`, but `GET_PRODUCT` never selected `custom.order_size`/`custom.units_per_order` at the *product* level — only at variant level. `product.orderSize`/`product.unitsPerOrder` were therefore always `null`, so the fallback silently never activated for the common case (a product with shared packaging and no variant-level override). Fixed by adding both product-level selections. This does not by itself populate real variant-level data — that's still Izzy's bulk write on the 39 families — but it means products that already carry only the product-level value (10,001 / 8,210 of them) will now actually show it, instead of showing nothing.
+
+Verification: `tsc --noEmit` 0 errors, `npm run lint` clean, `npx vitest run` 145/145 test files / 1476/1476 tests passing (up from 144/1467, new coverage for both changes), `npm run build` succeeds.
+
+**Still not done, and why:** the AeroWalk pilot write itself (creating the 4 variant metafield definitions, re-pinning the 5 product fields, populating Blue/White/Grey data) is explicitly Izzy's next step per the contract, gated on Sardor's reply confirming the three open questions — not something dev can do without Shopify Admin write access. The screenshot checklist (§4) still can't be captured until that write lands and revalidation runs. The H-04 ETA *display* policy conflict (§ of the prior report) is unrelated to which field is authoritative and is still unresolved — this contract answers "which field to read," not "whether to show a date," and that still needs Bilal/Juliette.
