@@ -17,6 +17,14 @@ export function useSelectedVariant(product: Product, initialVariant: ProductVari
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(initialVariant)
   const [activeImg, setActiveImg] = useState(0)
 
+  // Only a genuine multi-value color dimension carries "another variant's
+  // image would misrepresent this one" risk — an Each/Case selection or a
+  // single-color product has no such risk, so the shared gallery remains a
+  // safe fallback there (unchanged behavior).
+  const isMultiColor = product.options.some(
+    (o) => o.name.toLowerCase() === 'color' && o.values.length > 1,
+  )
+
   // Reset the active gallery image whenever the selected variant changes —
   // otherwise a shopper who scrolled to thumbnail 3 on Blue lands on the
   // wrong image the instant they switch to Red. Adjusted during render
@@ -28,9 +36,17 @@ export function useSelectedVariant(product: Product, initialVariant: ProductVari
     setActiveImg(0)
   }
 
+  // AeroWalk gap (2026-08-14): a multi-color product with no verified media
+  // for the selected color must never show a sibling color's image as if it
+  // belonged to this one — the exact defect Bilal reported ("both
+  // storefronts continue showing the Blue image" for White/Grey). Empty
+  // gallery here means ProductImage's own placeholder chain renders
+  // instead (never `product.images.nodes`, which mixes every color).
   const galleryImages: ProductImage[] = selectedVariant.image
     ? [selectedVariant.image, ...product.images.nodes.filter((img) => img.id !== selectedVariant.image!.id)]
-    : product.images.nodes
+    : isMultiColor
+      ? []
+      : product.images.nodes
 
   function select(variant: ProductVariant) {
     setSelectedVariant(variant)
@@ -40,5 +56,5 @@ export function useSelectedVariant(product: Product, initialVariant: ProductVari
     router.replace(`${pathname}?variant=${encodeURIComponent(variant.id)}`, { scroll: false })
   }
 
-  return { selectedVariant, select, galleryImages, activeImg, setActiveImg }
+  return { selectedVariant, select, galleryImages, activeImg, setActiveImg, isMultiColor }
 }
