@@ -58,7 +58,18 @@ export interface ProductCardData {
   /** Flattened `custom.backorder` — boolean gate; the ETA below is optional decoration only. */
   isBackordered?: boolean
   backorderRestockDate?: string | null
-  variants: { id: string; title: string; price: number; compareAtPrice?: number; available: boolean }[]
+  variants: {
+    id: string
+    title: string
+    price: number
+    compareAtPrice?: number
+    available: boolean
+    /** Native Shopify variant-media assignment. Null/absent when the
+        variant has no assigned image — QuickAddContent falls back to a
+        neutral state rather than showing a sibling variant's image
+        (2026-08-14 fix, mirrors the PDP's useSelectedVariant). */
+    image?: { url: string; altText: string; width: number; height: number } | null
+  }[]
 }
 
 export interface Product {

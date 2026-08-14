@@ -193,3 +193,37 @@ describe('QuickAddContent — Free Shipping badge', () => {
     expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
   })
 })
+
+// Quick Add fix (2026-08-14): the modal's gallery previously never followed
+// the selected variant at all, for any product — it always showed
+// `product.image` regardless of which color/unit was picked. Not
+// AeroWalk-specific; this is the pass that surfaces and fixes it.
+describe('QuickAddContent — variant image switch (Quick Add fix, 2026-08-14)', () => {
+  it("shows the first variant's image initially, then switches when a different variant is selected", () => {
+    const product: ProductCardData = {
+      ...baseProduct,
+      variants: [
+        { id: 'v1', title: 'Blue', price: 12999, available: true, image: { url: 'https://cdn/blue.jpg', altText: 'Blue', width: 800, height: 800 } },
+        { id: 'v2', title: 'White', price: 12999, available: true, image: { url: 'https://cdn/white.jpg', altText: 'White', width: 800, height: 800 } },
+      ],
+    }
+    render(<QuickAddContent product={product} titleId="t" />)
+    expect(screen.getByAltText('Blue')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /White/ }))
+    expect(screen.getByAltText('White')).toBeInTheDocument()
+  })
+
+  it("never shows a sibling variant's image when the selected one has none", () => {
+    const product: ProductCardData = {
+      ...baseProduct,
+      image: { url: 'https://cdn/blue.jpg', altText: 'Blue', width: 800, height: 800 },
+      variants: [
+        { id: 'v1', title: 'Blue', price: 12999, available: true, image: { url: 'https://cdn/blue.jpg', altText: 'Blue', width: 800, height: 800 } },
+        { id: 'v2', title: 'Grey', price: 12999, available: true, image: null },
+      ],
+    }
+    render(<QuickAddContent product={product} titleId="t" />)
+    fireEvent.click(screen.getByRole('button', { name: /Grey/ }))
+    expect(screen.queryByAltText('Blue')).not.toBeInTheDocument()
+  })
+})
