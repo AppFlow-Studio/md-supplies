@@ -40,6 +40,25 @@ export type ProductOption = {
   values: string[];
 };
 
+export type VariantMetafields = {
+  /** `custom.manufacturer_item_number` (variant-owned, proposed — see
+      docs/launch/2026-08-14-variant-field-contract.md). No product-level
+      fallback: every variant carries its own value directly. Optional/null
+      until Izzy's AeroWalk pilot write lands. */
+  manufacturerNumber?: string | null;
+  /** `custom.order_size` (variant-owned, reuses the existing product-level
+      key/name — see contract doc). Falls back to `Product.orderSize` when
+      blank via lib/product/resolve-variant-value.ts. */
+  orderSize?: string | null;
+  /** `custom.units_per_order` (variant-owned). Falls back to
+      `Product.unitsPerOrder` / `Product.quantityOfUnits` when blank. */
+  unitsPerOrder?: string | null;
+  /** `custom.variant_description` (variant-owned, proposed). Only ever
+      rendered as a supplement to `Product.description`, and only when it
+      differs from it — see resolveVariantSupplement. */
+  description?: string | null;
+};
+
 export type ProductVariant = {
   id: string;
   title: string;
@@ -57,7 +76,7 @@ export type ProductVariant = {
       filename/text. Optional so existing variant fixtures/queries that don't
       select it still type-check. */
   image?: ProductImage | null;
-};
+} & VariantMetafields;
 
 export type ProductMetafields = {
   brandName: string | null;
@@ -157,7 +176,11 @@ export type CollectionProduct = {
   freeShipping?: { value: string } | null;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
-  variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
+  // 'image' added so Quick Add (fed by this type) can switch its gallery on
+  // variant selection instead of always showing the product's first image
+  // regardless of which color is picked — the same defect LG-03 fixed on the
+  // PDP, present here too because this type never carried variant media.
+  variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable' | 'image'>[] };
   shippingDisplay?: ShippingDisplay | null;
 };
 
