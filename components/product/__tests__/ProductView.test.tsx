@@ -123,4 +123,22 @@ describe('ProductView — Variant Description supplement (no duplicate display)'
     renderPDP(blueVariant)
     expect(screen.queryByText('Variant Details')).not.toBeInTheDocument()
   })
+
+  // Izzy's real 2026-08-15 AeroWalk QA write created custom.variant_description
+  // as a rich_text_field, not the plain multi-line text the field contract
+  // proposed — confirmed by querying live QA data (scripts/verify-aerowalk-pilot.ts),
+  // which returned Shopify's JSON AST verbatim in .value. Without flattening,
+  // this JSON would render as-is on the page.
+  it('flattens Shopify rich-text JSON instead of rendering it raw', () => {
+    const richTextVariant: ProductVariant = {
+      ...whiteVariant,
+      description: JSON.stringify({
+        type: 'root',
+        children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Blue frame with matching fork covers.' }] }],
+      }),
+    }
+    renderPDP(richTextVariant)
+    expect(screen.getByText('Blue frame with matching fork covers.')).toBeInTheDocument()
+    expect(screen.queryByText(/"type":"root"/)).not.toBeInTheDocument()
+  })
 })
