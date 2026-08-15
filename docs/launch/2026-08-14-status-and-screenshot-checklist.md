@@ -13,9 +13,9 @@ This supersedes the two source reports above where they overlap; read it as the 
 |---|---|---|---|
 | LG-01 — Manufacturer numbers, Admin search | Izzy | 🟡 Substantially done | Juliette (487 spot-check batch, 249 exceptions) |
 | LG-02 — Family reconstruction | Izzy | 🟡 Analyzed, not remediated | Bilal/Juliette decision on 151-row list + 2 urgent pricing defects |
-| LG-03 — Selected-variant identity sync | Devs | 🟢 Code complete, live-verified except AeroWalk | Izzy's Shopify write (metafields + AeroWalk data) |
-| LG-04 — Order units/packaging on PDP | Izzy + Devs | 🟡 Rendering done, product-level fallback fixed, no variant data yet | Izzy populating variant-level packaging |
-| LG-05 — Backorder export + reset | Izzy | 🔴 Not started | Izzy (no report yet) |
+| LG-03 — Selected-variant identity sync | Devs | 🟢 Done, AeroWalk live-verified on QA | — |
+| LG-04 — Order units/packaging on PDP | Izzy + Devs | 🟡 AeroWalk done; remaining 56 products/112 variants not written | Izzy: spot-check vs. supplier list, then write (derived data ready) |
+| LG-05 — Backorder export + reset | Izzy | 🟡 Pre-reset export done, re-checked against live | Bilal's go-ahead for the reset itself |
 | LG-06 — Deploy & production acceptance | Devs + Izzy | 🔴 Not started | Everything above landing first; deploy access |
 | H-01 — Vendor Shipping & Returns | Devs | 🟢 Done | — |
 | H-02 — Free Shipping workbook | Izzy + Devs | 🔴 Blocked | Juliette's workbook |
@@ -194,3 +194,54 @@ Two things unblocked by the confirmation, done this session (commits pending):
 Verification: `tsc --noEmit` 0 errors, `npm run lint` clean, `npx vitest run` 145/145 test files / 1476/1476 tests passing (up from 144/1467, new coverage for both changes), `npm run build` succeeds.
 
 **Still not done, and why:** the AeroWalk pilot write itself (creating the 4 variant metafield definitions, re-pinning the 5 product fields, populating Blue/White/Grey data) is explicitly Izzy's next step per the contract, gated on Sardor's reply confirming the three open questions — not something dev can do without Shopify Admin write access. The screenshot checklist (§4) still can't be captured until that write lands and revalidation runs. The H-04 ETA *display* policy conflict (§ of the prior report) is unrelated to which field is authoritative and is still unresolved — this contract answers "which field to read," not "whether to show a date," and that still needs Bilal/Juliette.
+
+---
+
+## 7. Addendum — bulk variant media/barcode recovery received (`BULK-RECOVERY-REPORT-2026-08-15.pdf`), does NOT unblock the checklist
+
+Izzy reported 39 families (AeroWalk plus 38 more) fully recovered: 100/100 colour variants now have their own native Shopify variant image, alt text set to the agreed `<product title>, <variant title>` convention, 37 barcodes recovered from archived sources, zero deletions/alterations. 36 families remain partial, 149 have no images at all (185 total, tracked in her `MISSING-ASSET-LIST.csv`, a sourcing/photography job, not a data task).
+
+**This does not move anything in §1's status table, and specifically does not unblock §4's screenshot checklist**, for one concrete reason: the report names its target store as `daebb2-76.myshopify.com`, labelled "(live)" in her own report — that is the literal `PRODUCTION_SHOP_DOMAIN` constant `lib/shopify/shop-guard.ts` hardcodes as "Never a permitted target on this branch." This dev app's `.env.local` (`SHOPIFY_STORE_DOMAIN`) points at `md-supplies-qa-shipping-and-checkout.myshopify.com` — the QA store — and the guard fails closed if that ever resolves to production instead. Every prior live-verification pass in this launch effort (DEV-LAUNCH-02/06/07/08/09/12/13) was run against QA fixtures Izzy added separately; none were run against production directly, and nothing indicates this recovery was mirrored to QA.
+
+Net effect: the AeroWalk pilot images (and the other 38 families') are real and live on the storefront customers actually see, but **invisible to this dev app, its local server, and `e2e/variant-identity.spec.ts`** until one of:
+1. Izzy mirrors the same recovery to the QA store (matches how every other launch-gate fixture got verified so far), or
+2. The app is deployed to production (LG-06) — which is unchanged: still blocked on deploy access and still the plan's own explicit human-confirmed step.
+
+Not attempted: pointing this branch's config at production to check directly. `shop-guard.ts`'s own docstring calls reaching production "opt-in and explicit" specifically to prevent exactly this kind of silent acquisition — that decision belongs to whoever owns deploy/production access, not something to flip locally to get a look.
+
+Also unresolved by this report: the four AeroWalk variant-detail metafields (Manufacturer Item Number, Order Size, Units per Order, Variant Description) from §3/§6 — this recovery covered media and barcodes only, nothing about metafield definitions or field values. §3's four open items (metafield keys confirmed but PUBLIC_READ unverified, AeroWalk GIDs/handles, redirect mapping, revalidation confirmation) stand as before.
+
+**Recommended next step, for whoever routes this back to Izzy:** ask her to confirm (a) whether this recovery batch touched QA at all, and if not, whether she can mirror it there so dev verification is actually possible before LG-06, and (b) the AeroWalk handle/GIDs and the four field-contract values, which this batch didn't include.
+
+---
+
+## 8. Addendum — AeroWalk pilot verified live on QA (2026-08-15), LG-03 closed
+
+Izzy replied same day: the recovery was mirrored to QA specifically for AeroWalk (product `9365094531305`, 12 images), all four variant metafield definitions created **with Storefront access confirmed working** (see below — not just asserted), and real Blue/White/Grey data written. She also confirmed no handles are being retired, so §3 item 3 (redirects) is moot, not outstanding.
+
+**Verified directly against the QA Storefront API**, not just taken on her word — `scripts/verify-aerowalk-pilot.ts` (new, read-only) resolves the product by ID, queries it by handle through the same `GET_PRODUCT` the app uses, and checks each of Blue/White/Grey for a non-reused native image plus all four metafields:
+
+```
+handle: aerowalk-ultra-lite-rollator-rolling-walker-blue
+collections: mobility, 4-wheeled-rollators, rollators
+Blue  10277BL — own image, all 4 fields populated
+White 10277WT — own image, all 4 fields populated
+Grey  10277GY — own image, all 4 fields populated
+PASS — AeroWalk pilot data verified on QA.
+```
+
+This closes all four §3 items: metafield keys + PUBLIC_READ (proven live, not asserted), GIDs (confirmed, and QA's differ from the ones in the production recovery report — this script uses the QA IDs Izzy gave directly), redirects (not needed), image assignment (confirmed, distinct per color).
+
+**One real bug found by this verification, fixed same session:** `custom.variant_description` came back from the QA API as Shopify's `rich_text_field` JSON AST (`{"type":"root","children":[...]}`), not the plain multi-line text the field contract proposed — Izzy created it as Rich Text. `ProductView.tsx` was rendering `selectedVariant.description` raw, so the Variant Details section would have shown the literal JSON to customers. Fixed by flattening it through the same `shopifyRichTextToPlainParagraphs` helper H-01 already uses for `custom.shipping_returns`, with a fallback to the raw value if it's ever *not* JSON (so a future plain-text field keeps working too). New regression test added (`ProductView.test.tsx`, "flattens Shopify rich-text JSON instead of rendering it raw").
+
+**One thing worth flagging back to Izzy/Bilal, not a dev fix:** the consolidated AeroWalk handle is `aerowalk-ultra-lite-rollator-rolling-walker-blue` — it has `-blue` in it, despite being the one color-neutral product all three variants live under. This doesn't break anything functionally (the app already treats title/handle as color-neutral and never derives color from the handle), but it's inconsistent with the plan's own "parent product title, handle... stay color-neutral" rule and may read oddly in URLs/SEO. Not something to rename unilaterally — old links/redirects may depend on it.
+
+**e2e coverage added:** `e2e/aerowalk-variant-pilot.spec.ts` (new), run live against the QA store — 16/16 passing across both PDP routes and both viewports (desktop `chromium` + `mobile-chromium`). Covers: default Blue SKU/Mfr#/Order Unit block, White/Grey selection updating SKU/Mfr#/image/URL together, deep-link reload, structured-data `mpn` following the selected variant, and the Variant Details rich-text-flattening fix above. `e2e/variant-identity.spec.ts` (Flame Blue) re-run and still 4/4 — no regression.
+
+**Verification:** `tsc --noEmit` 0 errors, `npm run lint` clean, `npx vitest run` 145/145 test files / 1477/1477 tests passing (up from 145/1476, one new regression test for the rich-text fix — no new test file), `npx playwright test e2e/aerowalk-variant-pilot.spec.ts e2e/variant-identity.spec.ts` 20/20 passing live against QA.
+
+**§4's screenshot checklist can now actually be shot** — substitute `<aerowalk-handle>` = `aerowalk-ultra-lite-rollator-rolling-walker-blue`, `<collection-slug>` = `mobility`. That part (human screenshots for Bilal's evidence packet) is still a manual step for whoever owns that task — not repeated here since the e2e suite above already proves the underlying behavior live.
+
+**LG-04, broader batch — not attempted, correctly.** Izzy also reported the 56-product/112-variant packaging batch as derived but withheld pending her own 5-item spot-check against a supplier list, explicitly *not yet written* to Shopify. There is nothing on QA to verify yet; the product-level fallback (already fixed, §6) remains correct behavior for those products until she writes it.
+
+**LG-05 — nothing for dev.** Izzy's pre-reset export (`BACKORDER-PRE-RESET-WORKBOOK-2026-08-13.csv`, 169 products/230 rows, all current Backorder/ETA values recorded) is done and re-checked against live data same day. The reset itself needs Bilal's go-ahead, not dev's — no code or verification task here until after the reset runs, at which point Izzy's after-state report is the thing to check against.
