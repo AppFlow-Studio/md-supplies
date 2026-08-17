@@ -46,6 +46,14 @@ describe('GET_PRODUCT metafield selections', () => {
     expect(GET_PRODUCT).toContain('key: "free_shipping"')
   })
 
+  // H-01: source for the PDP's "Vendor Shipping & Returns" section. Distinct
+  // from IZ-05's still-unconfirmed return-policy metafield (resolveReturnPolicy)
+  // — this key is the one Bilal's launch direction confirmed.
+  it('requests custom.shipping_returns, the source for the PDP Vendor Shipping & Returns section', () => {
+    expect(GET_PRODUCT).toMatch(/shippingReturns:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "shipping_returns"')
+  })
+
   it('is still a single parseable template literal', () => {
     // A backtick inside a comment in this file terminated the template literal
     // once already. Cheap check that the query survived editing.
@@ -76,6 +84,31 @@ describe('GET_PRODUCT variant-level metafield selections (AeroWalk pilot)', () =
   it('requests custom.variant_description on each variant', () => {
     expect(GET_PRODUCT).toMatch(/description:\s*metafield\(/)
     expect(GET_PRODUCT).toContain('key: "variant_description"')
+  })
+
+  it('is still a single parseable template literal', () => {
+    expect(GET_PRODUCT.split('{').length).toBe(GET_PRODUCT.split('}').length)
+  })
+})
+
+// LG-04 packaging breakdown (2026-08-17): Izzy created these three as Number
+// (integer), variant-scoped, PUBLIC_READ, confirmed live in QA — 458 values
+// across 117 products. Additive to order_size/units_per_order, not a
+// replacement; no product-level fallback exists for any of the three.
+describe('GET_PRODUCT variant-level packaging breakdown (LG-04)', () => {
+  it('requests custom.inner_pack_quantity on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/innerPackQuantity:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "inner_pack_quantity"')
+  })
+
+  it('requests custom.packs_per_case on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/packsPerCase:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "packs_per_case"')
+  })
+
+  it('requests custom.total_order_quantity on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/totalOrderQuantity:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "total_order_quantity"')
   })
 
   it('is still a single parseable template literal', () => {

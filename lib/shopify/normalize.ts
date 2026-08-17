@@ -1,4 +1,5 @@
 import type { Product, ProductMetafields, ProductVariant, VariantMetafields } from '@/lib/shopify/types'
+import { richTextToPlainText } from '@/lib/product/rich-text-to-plain'
 
 // Shopify returns metafields as `{ value: string } | null`, not bare strings.
 // This type reflects the actual JSON shape before we normalize it.
@@ -18,14 +19,20 @@ export type RawProduct = Omit<Product, keyof ProductMetafields | 'variants'> & {
   [K in keyof ProductMetafields]: RawMetafield
 }
 
-function normalizeVariant(raw: RawVariant): ProductVariant {
+export function normalizeVariant(raw: RawVariant): ProductVariant {
   const mv = (m: RawMetafield | undefined): string | null => m?.value ?? null
   return {
     ...raw,
     manufacturerNumber: mv(raw.manufacturerNumber),
     orderSize:          mv(raw.orderSize),
     unitsPerOrder:      mv(raw.unitsPerOrder),
-    description:        mv(raw.description),
+    // custom.variant_description is a Shopify "Rich text" metafield (confirmed
+    // live against the AeroWalk QA pilot, 2026-08-17) — its raw .value is
+    // JSON, not display text. See lib/product/rich-text-to-plain.ts.
+    description:        richTextToPlainText(mv(raw.description)),
+    innerPackQuantity:  mv(raw.innerPackQuantity),
+    packsPerCase:       mv(raw.packsPerCase),
+    totalOrderQuantity: mv(raw.totalOrderQuantity),
   }
 }
 
@@ -56,6 +63,10 @@ export function normalizeProduct(raw: RawProduct): Product {
     sizeLength:           mv(raw.sizeLength),
     estimatedRestockDate: mv(raw.estimatedRestockDate),
     backorderRestockEta:  mv(raw.backorderRestockEta),
+    // custom.shipping_returns is described as "rich text" in Bilal's
+    // launch-direction message — same JSON .value shape confirmed live for
+    // custom.variant_description. See lib/product/rich-text-to-plain.ts.
+    shippingReturns:      richTextToPlainText(mv(raw.shippingReturns)),
     testsFor:             mv(raw.testsFor),
     detectableDrugs:      mv(raw.detectableDrugs),
     adulterants:          mv(raw.adulterants),

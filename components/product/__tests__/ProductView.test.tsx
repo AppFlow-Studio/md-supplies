@@ -64,12 +64,13 @@ const product: Product = {
   sizeLength: null, estimatedRestockDate: null, backorderRestockEta: null,
   testsFor: null, detectableDrugs: null, adulterants: null, otherFeatures: null,
   typeList: null, customBadge1: null, customBadge2: null, customBadge3: null,
+  shippingReturns: null,
 }
 
-function renderPDP(initialVariant: ProductVariant) {
+function renderPDP(initialVariant: ProductVariant, productOverrides: Partial<Product> = {}) {
   return render(
     <ProductView
-      product={product}
+      product={{ ...product, ...productOverrides }}
       initialVariant={initialVariant}
       relatedProducts={[]}
       complementaryProducts={[]}
@@ -95,6 +96,100 @@ describe('ProductView — manufacturer number vs internal SKU (AeroWalk)', () =>
     renderPDP(blueVariant)
     fireEvent.click(screen.getByRole('button', { name: 'Color: White' }))
     expect(screen.getByText('Mfr #: 10277WT')).toBeInTheDocument()
+  })
+})
+
+describe('ProductView — Vendor Shipping & Returns (H-01)', () => {
+  it('shows the Vendor Shipping & Returns heading and text on the RETURNS tab when custom.shipping_returns is set', () => {
+    renderPDP(blueVariant, { shippingReturns: 'Ships via Drive Medical freight. Returns require a 30-day RGA.' })
+    fireEvent.click(screen.getByRole('tab', { name: 'RETURNS' }))
+    expect(screen.getByText('Vendor Shipping & Returns')).toBeInTheDocument()
+    expect(screen.getByText(/Ships via Drive Medical freight/)).toBeInTheDocument()
+  })
+
+  it('hides the Vendor Shipping & Returns section when the field is empty, without hiding the general return policy', () => {
+    renderPDP(blueVariant, { shippingReturns: null })
+    fireEvent.click(screen.getByRole('tab', { name: 'RETURNS' }))
+    expect(screen.queryByText('Vendor Shipping & Returns')).not.toBeInTheDocument()
+    expect(screen.getByText('Return Authorization Required')).toBeInTheDocument()
+  })
+})
+
+describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => {
+  it('shows Inner Pack Quantity and Packs Per Case but not Total when the source never stated one (izzy: "blank means no data, not zero")', () => {
+    const boxVariant: ProductVariant = {
+      ...blueVariant,
+      innerPackQuantity: '100',
+      packsPerCase: '8',
+      totalOrderQuantity: null,
+    }
+    renderPDP(boxVariant)
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.getByText('Inner Pack Quantity')).toBeInTheDocument()
+    expect(screen.getByText('100')).toBeInTheDocument()
+    expect(screen.getByText('Packs Per Case')).toBeInTheDocument()
+    expect(screen.getByText('8')).toBeInTheDocument()
+    expect(screen.queryByText('Total Order Quantity')).not.toBeInTheDocument()
+  })
+
+  it('shows only Total Order Quantity when that is the only value the source gave', () => {
+    const totalOnlyVariant: ProductVariant = {
+      ...blueVariant,
+      innerPackQuantity: null,
+      packsPerCase: null,
+      totalOrderQuantity: '2000',
+    }
+    renderPDP(totalOnlyVariant)
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.getByText('Total Order Quantity')).toBeInTheDocument()
+    expect(screen.getByText('2000')).toBeInTheDocument()
+    expect(screen.queryByText('Inner Pack Quantity')).not.toBeInTheDocument()
+    expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
+  })
+
+  it('shows none of the three breakdown rows when the variant has no packaging-breakdown data at all', () => {
+    const emptyVariant: ProductVariant = {
+      ...blueVariant,
+      innerPackQuantity: null,
+      packsPerCase: null,
+      totalOrderQuantity: null,
+    }
+    renderPDP(emptyVariant)
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.queryByText('Inner Pack Quantity')).not.toBeInTheDocument()
+    expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
+    expect(screen.queryByText('Total Order Quantity')).not.toBeInTheDocument()
+  })
+
+  it('shows the newly-selected variant\'s packaging breakdown, never a stale value carried over from the previously-selected variant', () => {
+    const boxVariant: ProductVariant = {
+      ...blueVariant,
+      innerPackQuantity: '100',
+      packsPerCase: '8',
+      totalOrderQuantity: null,
+    }
+    const caseVariant: ProductVariant = {
+      ...whiteVariant,
+      innerPackQuantity: null,
+      packsPerCase: null,
+      totalOrderQuantity: '2000',
+    }
+    renderPDP(boxVariant, { variants: { nodes: [boxVariant, caseVariant] } })
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.getByText('Inner Pack Quantity')).toBeInTheDocument()
+    expect(screen.getByText('100')).toBeInTheDocument()
+    expect(screen.getByText('Packs Per Case')).toBeInTheDocument()
+    expect(screen.getByText('8')).toBeInTheDocument()
+    expect(screen.queryByText('Total Order Quantity')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Color: White' }))
+
+    expect(screen.getByText('Total Order Quantity')).toBeInTheDocument()
+    expect(screen.getByText('2000')).toBeInTheDocument()
+    expect(screen.queryByText('Inner Pack Quantity')).not.toBeInTheDocument()
+    expect(screen.queryByText('100')).not.toBeInTheDocument()
+    expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
+    expect(screen.queryByText('8')).not.toBeInTheDocument()
   })
 })
 

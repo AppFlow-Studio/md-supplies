@@ -57,6 +57,18 @@ export type VariantMetafields = {
       rendered as a supplement to `Product.description`, and only when it
       differs from it — see resolveVariantSupplement. */
   description?: string | null;
+  /** `custom.inner_pack_quantity` (LG-04, variant-owned, Number integer).
+      No product-level fallback. Blank means no data, not zero — Izzy only
+      writes this when the source states it outright. */
+  innerPackQuantity?: string | null;
+  /** `custom.packs_per_case` (LG-04, variant-owned, Number integer). Same
+      no-fallback, blank-means-no-data rule as innerPackQuantity. */
+  packsPerCase?: string | null;
+  /** `custom.total_order_quantity` (LG-04, variant-owned, Number integer).
+      Stored only where Izzy's source states a total outright — never derived
+      from innerPackQuantity * packsPerCase, since Each/Bag families don't
+      decompose into two multiplicands. */
+  totalOrderQuantity?: string | null;
 };
 
 export type ProductVariant = {
@@ -114,6 +126,12 @@ export type ProductMetafields = {
    * and must never itself appear in the ShippingDisplay type components render.
    */
   freeShipping?: { value: string } | null;
+  /** `custom.shipping_returns` (H-01). Per-product vendor shipping/returns
+      terms, rendered verbatim under "Vendor Shipping & Returns" on the PDP
+      RETURNS tab — hidden entirely when absent, never replaced with the
+      generic policy fallback (lib/policy/return-policy.ts, a separate,
+      still-unconfirmed field owned by IZ-05). */
+  shippingReturns: string | null;
   testsFor: string | null;
   detectableDrugs: string | null;
   adulterants: string | null;

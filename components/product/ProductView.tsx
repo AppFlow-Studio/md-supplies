@@ -199,7 +199,14 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
     selectedVariant.unitsPerOrder,
     product.unitsPerOrder ?? product.quantityOfUnits,
   )
-  const resolvedHasPackaging = Boolean(resolvedOrderSize || resolvedUnitsPerOrder)
+  // LG-04 packaging breakdown (2026-08-17): variant-only, no product-level
+  // fallback (unlike orderSize/unitsPerOrder above) — Izzy only writes a
+  // value when the source states it outright, so each is independently
+  // optional and never derived from the other two.
+  const { innerPackQuantity, packsPerCase, totalOrderQuantity } = selectedVariant
+  const resolvedHasPackaging = Boolean(
+    resolvedOrderSize || resolvedUnitsPerOrder || innerPackQuantity || packsPerCase || totalOrderQuantity,
+  )
 
   // Variant Description supplements the product Description tab — never
   // shown if blank, never shown if it would just repeat the product
@@ -586,6 +593,9 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                       {[
                         { label: 'Order Size', value: resolvedOrderSize },
                         { label: 'Units Per Order', value: resolvedUnitsPerOrder },
+                        { label: 'Inner Pack Quantity', value: innerPackQuantity },
+                        { label: 'Packs Per Case', value: packsPerCase },
+                        { label: 'Total Order Quantity', value: totalOrderQuantity },
                       ]
                         .filter((r) => r.value != null)
                         .map(({ label, value }, i) => (
@@ -605,15 +615,30 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
             )}
 
             {activeTab === 'RETURNS' && (
-              // DEV-POLICY-01: always the approved policy from the central
-              // module — vendor-specific copy renders here once IZ-PROD-04
-              // populates the approved production source; until then every
-              // product shows the approved general fallback (never empty,
-              // never invented).
-              <ReturnPolicyContent
-                sections={resolveReturnPolicy({ vendor: product.vendor }).sections}
-                headingLevel="h3"
-              />
+              <div className="flex flex-col gap-8">
+                {/* H-01: custom.shipping_returns, verbatim per-product vendor
+                    terms — a distinct field from the general policy below.
+                    Hidden entirely when the merchant hasn't set it; never
+                    replaced with the generic fallback. */}
+                {product.shippingReturns && (
+                  <div>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Vendor Shipping & Returns</h2>
+                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] whitespace-pre-line">
+                      {product.shippingReturns}
+                    </p>
+                  </div>
+                )}
+
+                {/* DEV-POLICY-01: always the approved policy from the central
+                    module — vendor-specific copy renders here once IZ-PROD-04
+                    populates the approved production source; until then every
+                    product shows the approved general fallback (never empty,
+                    never invented). */}
+                <ReturnPolicyContent
+                  sections={resolveReturnPolicy({ vendor: product.vendor }).sections}
+                  headingLevel="h3"
+                />
+              </div>
             )}
 
             {activeTab === 'REVIEWS' && (

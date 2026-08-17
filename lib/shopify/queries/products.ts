@@ -100,6 +100,14 @@ export const GET_PRODUCT = `#graphql
           orderSize: metafield(namespace: "custom", key: "order_size") { value }
           unitsPerOrder: metafield(namespace: "custom", key: "units_per_order") { value }
           description: metafield(namespace: "custom", key: "variant_description") { value }
+
+          # LG-04 packaging breakdown (2026-08-17) — additive to order_size/
+          # units_per_order, no product-level fallback. Izzy: "totals are only
+          # ever stored where the source states one outright" — blank means no
+          # data, not zero, so these three are independently optional.
+          innerPackQuantity: metafield(namespace: "custom", key: "inner_pack_quantity") { value }
+          packsPerCase: metafield(namespace: "custom", key: "packs_per_case") { value }
+          totalOrderQuantity: metafield(namespace: "custom", key: "total_order_quantity") { value }
         }
       }
       options {
@@ -146,6 +154,11 @@ export const GET_PRODUCT = `#graphql
       # standard-free + effective_rate_class=FREE confirmation before the
       # PDP renders a claim (lib/shipping-resolver/free-shipping-gate.ts).
       freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
+      # H-01: per-product vendor shipping/returns terms, rendered under
+      # "Vendor Shipping & Returns" on the RETURNS tab. Distinct from IZ-05's
+      # still-unconfirmed return-policy metafield (lib/policy/return-policy.ts)
+      # — this key is the one Bilal's launch direction named directly.
+      shippingReturns: metafield(namespace: "custom", key: "shipping_returns") { value }
     }
   }
 `;

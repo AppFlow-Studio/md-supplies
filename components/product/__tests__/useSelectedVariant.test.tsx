@@ -44,6 +44,7 @@ function makeProduct(overrides: Partial<Product>): Product {
     sizeLength: null, estimatedRestockDate: null, backorderRestockEta: null,
     testsFor: null, detectableDrugs: null, adulterants: null, otherFeatures: null,
     typeList: null, customBadge1: null, customBadge2: null, customBadge3: null,
+    shippingReturns: null,
     ...overrides,
   }
 }
