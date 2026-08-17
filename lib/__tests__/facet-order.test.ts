@@ -17,37 +17,65 @@ function group(id: string, label: string, values: { label: string; count: number
   return { id, label, type: 'LIST', values: values.map((x) => v(x.label, x.count)) }
 }
 
-describe('facet value ordering', () => {
-  it('sorts by exact count, highest first', () => {
-    const ordered = orderFacetValues([v('A', 3), v('B', 307), v('C', 12)])
-    expect(ordered.map((x) => x.label)).toEqual(['B', 'C', 'A'])
-    // The count travels with the value — the label order is a consequence of
-    // the live counts, never a hardcoded list.
-    expect(ordered.map((x) => x.count)).toEqual([307, 12, 3])
+describe('facet value ordering (H-03: natural order, count no longer controls it)', () => {
+  it('sorts by label natural order regardless of live count', () => {
+    // Highest count ('A', 307) does NOT win top slot anymore — this is
+    // exactly the pre-H-03 behavior the launch plan flagged as a defect.
+    const ordered = orderFacetValues([v('A', 307), v('B', 3), v('C', 12)])
+    expect(ordered.map((x) => x.label)).toEqual(['A', 'B', 'C'])
+    // The count still travels with the value for display — it's just not
+    // the sort key.
+    expect(ordered.map((x) => x.count)).toEqual([307, 3, 12])
   })
 
-  it('breaks equal counts alphabetically', () => {
-    const ordered = orderFacetValues([v('Zinc Oxide Tape', 5), v('Alcohol Prep', 5), v('Mepore', 5)])
+  it('sorts alphabetically', () => {
+    const ordered = orderFacetValues([v('Zinc Oxide Tape', 5), v('Alcohol Prep', 9), v('Mepore', 1)])
     expect(ordered.map((x) => x.label)).toEqual(['Alcohol Prep', 'Mepore', 'Zinc Oxide Tape'])
   })
 
-  it('compares equal-count numeric labels numerically, not lexicographically', () => {
-    const ordered = orderFacetValues([v('25 Gauge', 4), v('9 Gauge', 4), v('100 Gauge', 4)])
+  it('compares numeric labels numerically, not lexicographically', () => {
+    const ordered = orderFacetValues([v('25 Gauge', 1), v('9 Gauge', 99), v('100 Gauge', 1)])
     expect(ordered.map((x) => x.label)).toEqual(['9 Gauge', '25 Gauge', '100 Gauge'])
   })
 
+  // H-03 fixtures: numeric-prefixed medical sizes (Figure 10/11's Surgical
+  // Sutures example) sort numerically, and numeric values as a block come
+  // before ordinary alphabetic values in the same natural collation.
+  it('sorts 0, 1-0, 2-0 … 10-0 numerically, and 20G/22G/23G numerically', () => {
+    const sizes = orderFacetValues(
+      ['4-0', '0', '10-0', '2-0', '1-0', '5-0', '3-0'].map((label) => v(label, 1)),
+    )
+    expect(sizes.map((x) => x.label)).toEqual(['0', '1-0', '2-0', '3-0', '4-0', '5-0', '10-0'])
+
+    const gauges = orderFacetValues(['23G', '20G', '22G'].map((label) => v(label, 1)))
+    expect(gauges.map((x) => x.label)).toEqual(['20G', '22G', '23G'])
+  })
+
+  it('sorts alphabetic values naturally, e.g. ABD Pads before Adhesive Bandages', () => {
+    const ordered = orderFacetValues(
+      ['Adhesive Bandages', 'ABD Pads'].map((label) => v(label, 1)),
+    )
+    expect(ordered.map((x) => x.label)).toEqual(['ABD Pads', 'Adhesive Bandages'])
+  })
+
+  it('normalizes stray whitespace in the label before comparing', () => {
+    const ordered = orderFacetValues([v('  Mepore', 1), v('Alcohol Prep  ', 1)])
+    expect(ordered.map((x) => x.label)).toEqual(['Alcohol Prep  ', '  Mepore'])
+  })
+
   it('does not mutate its input', () => {
-    const input = [v('A', 1), v('B', 9)]
+    const input = [v('B', 1), v('A', 9)]
     orderFacetValues(input)
-    expect(input.map((x) => x.label)).toEqual(['A', 'B'])
+    expect(input.map((x) => x.label)).toEqual(['B', 'A'])
   })
 
   it('is a total order, so server and client render identically', () => {
-    // Same-count, collator-equal labels must still order deterministically or
-    // the server HTML and the client re-render disagree (hydration mismatch).
-    expect(compareFacetValues(v('Large', 2), v('large', 2))).not.toBe(0)
-    const a = orderFacetValues([v('large', 2), v('Large', 2)])
-    const b = orderFacetValues([v('Large', 2), v('large', 2)])
+    // Collator-equal labels (differing only in case) must still order
+    // deterministically or the server HTML and the client re-render
+    // disagree (hydration mismatch).
+    expect(compareFacetValues(v('Large', 1), v('large', 1))).not.toBe(0)
+    const a = orderFacetValues([v('large', 1), v('Large', 1)])
+    const b = orderFacetValues([v('Large', 1), v('large', 1)])
     expect(a.map((x) => x.label)).toEqual(b.map((x) => x.label))
   })
 })

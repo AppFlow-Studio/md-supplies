@@ -118,14 +118,14 @@ describe('QuickAddContent — purchasability (DEV-LAUNCH-07)', () => {
 // though `product.isRx` was already computed by ShopifyQuickAddButton's
 // toCardData() via the same tag ∪ custom.is_rx_only union the card/PDP use.
 describe('QuickAddContent — RX state (DEV-LAUNCH-08)', () => {
-  it('shows an RX Only badge when the product is RX', () => {
+  it('shows an Rx Only badge when the product is RX', () => {
     render(<QuickAddContent product={{ ...baseProduct, isRx: true }} titleId="t" />)
-    expect(screen.getByText('RX Only')).toBeInTheDocument()
+    expect(screen.getByText('Rx Only')).toBeInTheDocument()
   })
 
   it('shows no RX badge for a non-RX product', () => {
     render(<QuickAddContent product={{ ...baseProduct, isRx: false }} titleId="t" />)
-    expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
+    expect(screen.queryByText('Rx Only')).not.toBeInTheDocument()
   })
 })
 
@@ -149,18 +149,16 @@ describe('QuickAddContent — Backorder state', () => {
     expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
 
-  // DEV-SHIP-04 (final business rule): the ETA must never be appended —
-  // the label is always exactly "Backorder", regardless of ETA.
-  it('shows exactly "Backorder" with no date, even with a valid future ETA', () => {
+  // Bilal, 2026-08-18: a valid, non-expired ETA IS appended (supersedes
+  // DEV-SHIP-04's "always exactly Backorder" rule).
+  it('appends the ship date when isBackordered is true and the ETA is a valid, non-expired date', () => {
     render(
       <QuickAddContent
         product={{ ...baseProduct, isBackordered: true, backorderRestockDate: '2099-01-01' }}
         titleId="t"
       />,
     )
-    expect(screen.getByText('Backorder')).toBeInTheDocument()
-    expect(screen.queryByText(/2099-01-01/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+    expect(screen.getByText('Backorder, ships 2099-01-01')).toBeInTheDocument()
   })
 })
 
@@ -191,5 +189,39 @@ describe('QuickAddContent — Free Shipping badge', () => {
   it('shows no Free Shipping badge when shippingDisplay was never attached', () => {
     render(<QuickAddContent product={{ ...baseProduct, shippingDisplay: null }} titleId="t" />)
     expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+  })
+})
+
+// Quick Add fix (2026-08-14): the modal's gallery previously never followed
+// the selected variant at all, for any product — it always showed
+// `product.image` regardless of which color/unit was picked. Not
+// AeroWalk-specific; this is the pass that surfaces and fixes it.
+describe('QuickAddContent — variant image switch (Quick Add fix, 2026-08-14)', () => {
+  it("shows the first variant's image initially, then switches when a different variant is selected", () => {
+    const product: ProductCardData = {
+      ...baseProduct,
+      variants: [
+        { id: 'v1', title: 'Blue', price: 12999, available: true, image: { url: 'https://cdn/blue.jpg', altText: 'Blue', width: 800, height: 800 } },
+        { id: 'v2', title: 'White', price: 12999, available: true, image: { url: 'https://cdn/white.jpg', altText: 'White', width: 800, height: 800 } },
+      ],
+    }
+    render(<QuickAddContent product={product} titleId="t" />)
+    expect(screen.getByAltText('Blue')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /White/ }))
+    expect(screen.getByAltText('White')).toBeInTheDocument()
+  })
+
+  it("never shows a sibling variant's image when the selected one has none", () => {
+    const product: ProductCardData = {
+      ...baseProduct,
+      image: { url: 'https://cdn/blue.jpg', altText: 'Blue', width: 800, height: 800 },
+      variants: [
+        { id: 'v1', title: 'Blue', price: 12999, available: true, image: { url: 'https://cdn/blue.jpg', altText: 'Blue', width: 800, height: 800 } },
+        { id: 'v2', title: 'Grey', price: 12999, available: true, image: null },
+      ],
+    }
+    render(<QuickAddContent product={product} titleId="t" />)
+    fireEvent.click(screen.getByRole('button', { name: /Grey/ }))
+    expect(screen.queryByAltText('Blue')).not.toBeInTheDocument()
   })
 })

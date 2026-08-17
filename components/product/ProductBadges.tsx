@@ -24,7 +24,7 @@ export function ProductBadges({ isOCC, isRx, available }: Props) {
         // instead of skip. amber-700 measures ~5.03:1, same fix shape as the
         // backorder-label precedent (text-orange-600 -> text-orange-700).
         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-amber-700 text-white">
-          RX Only
+          Rx Only
         </span>
       )}
       {!available && (

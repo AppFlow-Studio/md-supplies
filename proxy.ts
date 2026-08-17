@@ -122,6 +122,16 @@ const REDIRECT_ENTRIES: RedirectEntry[] = [
   // Account-scope cleanup (DEV-11): /b2b was a duplicate account dashboard.
   // It is retired in favor of a single wholesale entry point at /contact.
   { from: '/b2b',                                                                                       to: '/contact',                                        status: 301 },
+
+  // P0.7 AeroWalk color-neutral handle migration pilot (Bilal, 2026-08-18):
+  // Izzy renamed the product from the Blue-suffixed handle to a
+  // color-neutral one in QA (all three colors now live as variants under
+  // the neutral handle, selected via ?variant=). This redirect is the
+  // acceptance bar Bilal set for the pilot — without it, every existing
+  // bookmark/backlink to the old Blue handle 404s in this headless app
+  // (Shopify's own native redirects don't apply to a custom Storefront-API
+  // route). Single hop, same pattern as the bulk product redirects above.
+  { from: '/product/aerowalk-ultra-lite-rollator-rolling-walker-blue',                                 to: '/product/aerowalk-ultra-lite-rollator-rolling-walker', status: 301 },
 ]
 
 // Stamps the enforcing + parallel Report-Only CSP headers (M10) onto every

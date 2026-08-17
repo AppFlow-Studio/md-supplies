@@ -220,6 +220,25 @@ describe('proxy — trailing-slash normalization (DEV-LAUNCH-12)', () => {
   })
 })
 
+// P0.7 AeroWalk color-neutral handle migration (Bilal, 2026-08-18): the QA
+// pilot renamed the product from the Blue-suffixed handle to a color-neutral
+// one. A live redirect from the old handle is the acceptance bar he set —
+// without it, every existing bookmark/backlink to the Blue handle 404s.
+describe('proxy — AeroWalk color-neutral handle migration (P0.7)', () => {
+  it('old Blue handle → new color-neutral handle', () => {
+    const res = proxy(req('/product/aerowalk-ultra-lite-rollator-rolling-walker-blue'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe(
+      'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
+    )
+  })
+
+  it('still matches with a trailing slash', () => {
+    const res = proxy(req('/product/aerowalk-ultra-lite-rollator-rolling-walker-blue/'))
+    expect(res?.status).toBe(301)
+  })
+})
+
 describe('proxy — new 301 entries (backlink recovery)', () => {
   it('face-coverings root → /category/face-masks (no chain)', () => {
     const res = proxy(req('/category/face-coverings'))

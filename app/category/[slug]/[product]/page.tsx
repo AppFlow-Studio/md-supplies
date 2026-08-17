@@ -12,6 +12,10 @@ import { parseSortKey, parseFilterParam, parseSearchParam, type CategorySearchPa
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
+import { ProductSchema } from '@/components/schema/ProductSchema'
+import { normalizeGtin } from '@/lib/gtin'
+import { OFFER_SHIPPING_DETAILS, MERCHANT_RETURN_POLICY } from '@/lib/merchant-policy'
+import { publicBrand } from '@/lib/brand'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { PARTNERS } from '@/lib/partners'
@@ -36,11 +40,22 @@ import { isShippingResolverEnabled } from '@/lib/shipping-resolver/flag'
 import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-gate'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
+import { resolveInitialVariant } from '@/lib/product/resolve-variant'
+import { buildCanonical } from '@/lib/seo/canonical'
+import { compareFacetValues } from '@/lib/catalog/facet-order'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
 // Freshness comes from the fetch-level data cache below, not route-level
 // revalidate/generateStaticParams.
+
+// Offer freshness hint (M6): +30 days, date-only per Google's examples,
+// mirroring /product/[slug]/page.tsx's identical helper. A top-level
+// function rather than an inline `new Date(Date.now()...)` in the component
+// body — react-hooks/purity flags a direct impure call at render time.
+function buildPriceValidUntil(): string {
+  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
 // the Shopify webhooks via per-handle tags (app/api/revalidate).
@@ -50,7 +65,10 @@ function productFetchOptions(handle: string) {
 
 interface Props {
   params: Promise<{ slug: string; product: string }>
-  searchParams: Promise<CategorySearchParams>
+  // LG-03: `variant` is only meaningful on the product-detail fallback below,
+  // not the L2 category-grid render — kept as an intersection rather than
+  // widening the shared CategorySearchParams type category pages also use.
+  searchParams: Promise<CategorySearchParams & { variant?: string }>
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -181,7 +199,10 @@ async function renderSubcategoryPage(
       </div>
 
       {/* Sibling subcategories (Phase 7): the current one is marked active
-          inside the navigator rather than appended as a dead chip. */}
+          inside the navigator rather than appended as a dead chip. H-03:
+          shares the filter rail's natural numeric-then-alphabetic comparator
+          — plain localeCompare put numeric-prefixed medical subcategories
+          (e.g. suture sizes) out of order the same way facet values were. */}
       <SubcategoryNavigator
         items={[
           ...siblings.map((sib) => ({
@@ -189,7 +210,7 @@ async function renderSubcategoryPage(
             href: ROUTES.subcategory(slug, sib.tag),
           })),
           { label: title, href: ROUTES.subcategory(slug, handle), active: true },
-        ].sort((a, b) => a.label.localeCompare(b.label))}
+        ].sort(compareFacetValues)}
         allHref={ROUTES.category(slug)}
         allLabel={`All ${l1.displayName}`}
         ariaLabel={`${l1.displayName} subcategories`}
@@ -297,6 +318,40 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     ? gateFreeShippingClaims(resolveVariantsForProduct(productData.product.id), productData.product.freeShipping)
     : {}
 
+  // LG-03: same `?variant=` resolution as /product/[slug] — see
+  // lib/product/resolve-variant.ts — so this route can't drift from it.
+  const resolvedVariant = resolveInitialVariant(productData.product.variants.nodes, sp.variant)
+  // Neutral, query-free URL regardless of the selected variant.
+  const productUrl = buildCanonical({
+    path: `/category/${slug}/${handle}`,
+    strategy: 'base-product',
+    basePath: `/category/${slug}/${handle}`,
+  })
+
+  // Parity fix (2026-08-14): this route previously rendered no ProductSchema
+  // at all — /product/[slug] is the only route that had it. Mirrors that
+  // route's schemaProps exactly, including preferring the resolved variant's
+  // own image/mpn so structured data can't disagree with what's rendered
+  // (AeroWalk: White/Grey must never emit Blue's image/mpn here either).
+  const isAvailable = resolvedVariant?.availableForSale ?? productData.product.availableForSale
+  const schemaProps = {
+    name: productData.product.title,
+    description: productData.product.description,
+    image: resolvedVariant?.image?.url ?? productData.product.images.nodes[0]?.url ?? '',
+    sku: resolvedVariant?.sku || handle,
+    gtin: normalizeGtin(resolvedVariant?.barcode),
+    mpn: resolvedVariant?.manufacturerNumber ?? undefined,
+    brand: publicBrand(productData.product) ?? undefined,
+    price: parseFloat(resolvedVariant?.price?.amount ?? '0'),
+    priceCurrency: resolvedVariant?.price?.currencyCode ?? 'USD',
+    availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
+    url: productUrl,
+    seller: 'MDSupplies',
+    priceValidUntil: buildPriceValidUntil(),
+    ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
+    ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
+  }
+
   const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
   const { categories, subcategories } = parseProductTags(productData.product.tags)
   const categoryPath = getProductCategoryPath(
@@ -321,12 +376,14 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
       {/* og:type `product` is outside Next's Metadata union — rendered here
           and hoisted into <head> by React 19 (audit L10). */}
       <meta property="og:type" content="product" />
+      <ProductSchema {...schemaProps} />
       <BreadcrumbSchema
         items={[...breadcrumbs, { label: productData.product.title }]}
-        currentUrl={`${SITE_URL}/category/${slug}/${handle}`}
+        currentUrl={productUrl}
       />
       <ProductView
         product={productData.product}
+        initialVariant={resolvedVariant}
         relatedProducts={attachCardShippingDisplay(recsData.related)}
         complementaryProducts={attachCardShippingDisplay(recsData.complementary)}
         breadcrumbs={breadcrumbs}

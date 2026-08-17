@@ -50,11 +50,13 @@ export type ResolvedReturnPolicy = {
 /**
  * Resolves the policy to show on a PDP Returns tab.
  *
- * Vendor/product-specific policy data is owned by Izzy (IZ-PROD-04): until an
- * approved metafield is populated in production and wired through the product
- * query, `vendorPolicyText` is always absent and every product renders the
- * approved general fallback. The tab is therefore never empty and never
- * invents vendor-specific requirements.
+ * Vendor/product-specific policy data comes from `custom.shipping_returns`
+ * (H-01, confirmed by Izzy's 2026-08-14 field contract) — see
+ * ProductView.tsx's `vendorPolicyText`. Only 10,001 of the catalog's
+ * products carry a value, so `vendorPolicyText` is still absent for the
+ * rest, and every one of those renders the approved general fallback. The
+ * tab is therefore never empty and never invents vendor-specific
+ * requirements.
  */
 export function resolveReturnPolicy(input?: {
   vendor?: string | null

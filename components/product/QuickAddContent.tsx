@@ -28,10 +28,6 @@ export function QuickAddContent({ product, titleId }: Props) {
   const { addItem } = useCart()
   const [isPending, startTransition] = useTransition()
 
-  const allImages = product.images && product.images.length > 0
-    ? product.images
-    : [product.image]
-
   // Prefer a variant that is actually purchasable — availableForSale alone
   // is not enough, a $0 variant would still pass that check (Phase 11 /
   // DEV-LAUNCH-07: a zero-price line must never be reachable via quick add).
@@ -46,6 +42,22 @@ export function QuickAddContent({ product, titleId }: Props) {
   const [added, setAdded] = useState(false)
 
   const selectedVariant = product.variants.find((v) => v.id === selectedVariantId) ?? null
+
+  // Quick Add fix (2026-08-14): follow the selected variant's own image the
+  // same way the PDP's useSelectedVariant does. A multi-variant product
+  // where at least one variant carries its own image is treated the same
+  // way the PDP treats "multi-color" — a variant with no image of its own
+  // must never show a sibling variant's image, so the gallery is empty
+  // (renders the placeholder) rather than falling back to `product.image`.
+  const anyVariantHasOwnImage = product.variants.some((v) => v.image)
+  const allImages = selectedVariant?.image
+    ? [selectedVariant.image]
+    : anyVariantHasOwnImage
+      ? []
+      : product.images && product.images.length > 0
+        ? product.images
+        : [product.image]
+
   const displayPrice = selectedVariant?.price ?? product.price
   const compareAtPrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice
   const priceUsable = hasUsablePrice(displayPrice / 100)
@@ -98,6 +110,7 @@ export function QuickAddContent({ product, titleId }: Props) {
 
   function handleSelectVariant(id: string) {
     setSelectedVariantId(id)
+    setActiveImg(0)
     setAdded(false)
   }
 

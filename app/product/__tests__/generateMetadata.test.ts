@@ -58,7 +58,10 @@ beforeEach(() => {
 describe('product generateMetadata — OG image dimensions', () => {
   it('emits the true pixel dimensions from the Shopify image', async () => {
     mockFetch.mockResolvedValue({ product: rawProduct })
-    const m = await generateMetadata({ params: Promise.resolve({ slug: 'nitrile-exam-gloves' }) })
+    const m = await generateMetadata({
+      params: Promise.resolve({ slug: 'nitrile-exam-gloves' }),
+      searchParams: Promise.resolve({}),
+    })
     const images = (m.openGraph as { images?: { url: string; width: number; height: number }[] })?.images
     expect(images![0].url).toBe('https://cdn.shopify.com/gloves.jpg')
     expect(images![0].width).toBe(1600)
@@ -67,7 +70,10 @@ describe('product generateMetadata — OG image dimensions', () => {
 
   it('falls back to the 1200x630 default when the product has no image', async () => {
     mockFetch.mockResolvedValue({ product: { ...rawProduct, images: { nodes: [] } } })
-    const m = await generateMetadata({ params: Promise.resolve({ slug: 'nitrile-exam-gloves' }) })
+    const m = await generateMetadata({
+      params: Promise.resolve({ slug: 'nitrile-exam-gloves' }),
+      searchParams: Promise.resolve({}),
+    })
     const images = (m.openGraph as { images?: { width: number; height: number }[] })?.images
     expect(images![0].width).toBe(1200)
     expect(images![0].height).toBe(630)

@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
   filterRegistry,
+  industryFilterRegistry,
   getAllowedFacets,
   getFacetRules,
+  getIndustryFacetRules,
+  getFacetRulesFor,
   getSearchFacets,
   stripBlockedFacets,
   isBlockedFacetId,
@@ -179,40 +182,53 @@ describe('page-specific facet sets', () => {
     const ids = getAllowedFacets('some-unlisted-collection', HOSTILE_FACETS).map((f) => f.id)
     expect(ids.sort()).toEqual(['filter.v.availability', 'filter.v.price'])
   })
+})
 
-  // Before this entry, every industry page (facetKey = Industry.collectionHandle)
-  // fell through to DEFAULT_FACET_RULES because none of these five handles were
-  // registered — the same "filters don't cover the product range" gap the
-  // category audit fixed, just never extended past /category. Live coverage
-  // audit (scripts/audit-industry-facet-coverage.ts, 2026-08-12) found no
-  // category-specific APPROVED_METAFIELDS facet clears 60% across any of the
-  // five industry tag scopes (expected — an industry tag spans many product
-  // categories at once), so each gets the same broad-collection treatment as
-  // OCC_RULES rather than a fabricated narrow facet.
+// Before industryFilterRegistry existed, every industry page (facetKey =
+// Industry.collectionHandle) fell through to DEFAULT_FACET_RULES because none
+// of these five handles were registered anywhere — the same "filters don't
+// cover the product range" gap the category audit fixed, just never extended
+// past /category. Industries resolve through their own registry
+// (getIndustryFacetRules / getFacetRulesFor('industry', …)) rather than
+// filterRegistry, so a same-named category entry can never leak in.
+describe('industry-specific facet sets', () => {
+  const INDUSTRY_HANDLES = [
+    'urgent-care',
+    'hrt-clinics',
+    'home-health',
+    'clinics-doctors-offices',
+    'pharmacies',
+  ]
+
   it('every industry page has an explicit registry entry, not the bare default', () => {
-    const industryHandles = [
-      'urgent-care',
-      'hrt-clinics',
-      'home-health',
-      'clinics-doctors-offices',
-      'pharmacies',
-    ]
-    for (const handle of industryHandles) {
-      expect(handle in filterRegistry, handle).toBe(true)
-      expect(getFacetRules(handle).length, handle).toBeGreaterThan(DEFAULT_FACET_RULES.length)
+    for (const handle of INDUSTRY_HANDLES) {
+      expect(handle in industryFilterRegistry, handle).toBe(true)
+      expect(getIndustryFacetRules(handle).length, handle).toBeGreaterThan(DEFAULT_FACET_RULES.length)
+      expect(getFacetRulesFor('industry', handle).length, handle).toBeGreaterThan(DEFAULT_FACET_RULES.length)
     }
   })
 
-  it('industry pages show category/brand/order-size/type/price, no vendor or narrow attribute facets', () => {
-    for (const handle of ['urgent-care', 'hrt-clinics', 'home-health', 'clinics-doctors-offices', 'pharmacies']) {
-      const ids = getAllowedFacets(handle, HOSTILE_FACETS).map((f) => f.id)
+  it('industry pages show category/order-size/brand/price, never vendor', () => {
+    for (const handle of INDUSTRY_HANDLES) {
+      const ids = getAllowedFacets(handle, HOSTILE_FACETS, 'industry').map((f) => f.id)
       expect(ids, handle).toEqual(
-        expect.arrayContaining(['filter.v.availability', 'filter.v.price', 'filter.p.type']),
+        expect.arrayContaining(['filter.p.m.custom.order_size', 'filter.v.price']),
       )
       expect(ids, handle).not.toContain('filter.p.vendor')
-      expect(ids, handle).not.toContain('filter.p.m.custom.glove_size')
-      expect(ids, handle).not.toContain('filter.p.m.custom.needle_gauge')
-      expect(ids, handle).not.toContain('filter.v.option.size')
+    }
+  })
+
+  it('industry routes resolve independently of any same-named category entry', () => {
+    for (const handle of INDUSTRY_HANDLES) {
+      expect(handle in filterRegistry, handle).toBe(false)
+    }
+  })
+
+  it('registry entries only reference allowed sources', () => {
+    for (const [handle, rules] of Object.entries(industryFilterRegistry)) {
+      for (const rule of rules) {
+        expect(ALL_ALLOWED_RULES.some((a) => a.name === rule.name), `${handle}:${rule.name}`).toBe(true)
+      }
     }
   })
 })

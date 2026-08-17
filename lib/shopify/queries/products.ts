@@ -41,6 +41,11 @@ const PRODUCT_CARD_FRAGMENT = `#graphql
         price { amount currencyCode }
         compareAtPrice { amount currencyCode }
         availableForSale
+        # Quick Add fix (2026-08-14): native variant-media assignment, same
+        # field the PDP already reads (LG-03). Without this, QuickAddContent
+        # always shows the product's first image regardless of the selected
+        # variant/color.
+        image { id url altText width height }
       }
     }
   }
@@ -78,10 +83,31 @@ export const GET_PRODUCT = `#graphql
           sku
           barcode
           availableForSale
+          # Shopify's own variant-media assignment (LG-03) — never inferred
+          # from filename/option text. Falls back to the shared product
+          # gallery client-side when a variant has no assigned image.
+          image { id url altText width height }
 
           selectedOptions { name value }
           price { amount currencyCode }
           compareAtPrice { amount currencyCode }
+
+          # AeroWalk pilot (2026-08-14) — proposed contract, see
+          # docs/launch/2026-08-14-variant-field-contract.md. Resolves to
+          # null on every variant until Izzy's write lands; ProductView
+          # already handles null gracefully via resolveVariantValue.
+          manufacturerNumber: metafield(namespace: "custom", key: "manufacturer_item_number") { value }
+          orderSize: metafield(namespace: "custom", key: "order_size") { value }
+          unitsPerOrder: metafield(namespace: "custom", key: "units_per_order") { value }
+          description: metafield(namespace: "custom", key: "variant_description") { value }
+
+          # LG-04 packaging breakdown (2026-08-17) — additive to order_size/
+          # units_per_order, no product-level fallback. Izzy: "totals are only
+          # ever stored where the source states one outright" — blank means no
+          # data, not zero, so these three are independently optional.
+          innerPackQuantity: metafield(namespace: "custom", key: "inner_pack_quantity") { value }
+          packsPerCase: metafield(namespace: "custom", key: "packs_per_case") { value }
+          totalOrderQuantity: metafield(namespace: "custom", key: "total_order_quantity") { value }
         }
       }
       options {
@@ -128,6 +154,21 @@ export const GET_PRODUCT = `#graphql
       # standard-free + effective_rate_class=FREE confirmation before the
       # PDP renders a claim (lib/shipping-resolver/free-shipping-gate.ts).
       freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
+      # LG-04 fallback source: custom.order_size / custom.units_per_order also
+      # exist at PRODUCT level (10,001 / 8,210 products — confirmed in Izzy's
+      # 2026-08-14 field contract). ProductView's resolveVariantValue already
+      # reads product.orderSize/product.unitsPerOrder as the fallback when a
+      # variant carries no override, but nothing selected them at product
+      # level until now, so that fallback was silently always null.
+      orderSize: metafield(namespace: "custom", key: "order_size") { value }
+      unitsPerOrder: metafield(namespace: "custom", key: "units_per_order") { value }
+      # H-01 — Vendor Shipping & Returns. Confirmed by Izzy's 2026-08-14 field
+      # contract as the live theme's actual source: custom.shipping_returns,
+      # rich_text_field, PUBLIC_READ, populated on 10,001 products. Value is a
+      # Shopify rich-text JSON AST — flattened by
+      # lib/policy/rich-text.ts:shopifyRichTextToPlainParagraphs before it
+      # reaches resolveReturnPolicy's vendorPolicyText.
+      shippingReturns: metafield(namespace: "custom", key: "shipping_returns") { value }
     }
   }
 `;
@@ -264,6 +305,7 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale
+              image { id url altText width height }
             }
           }
         }
