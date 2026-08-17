@@ -14,8 +14,6 @@ import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
-import { SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
-import { ShippingBlock } from './ShippingBlock'
 import { ProductLabelBadges } from './ProductLabelBadges'
 import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
@@ -26,8 +24,8 @@ import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
 import { shopifyRichTextToPlainParagraphs } from '@/lib/policy/rich-text'
 
-type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
-const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const price = parseFloat(
@@ -358,13 +356,13 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                 ProductLabelBadges. */}
             <ProductLabelBadges labels={labels} shippingDisplay={shippingDisplay} size="md" />
 
-            {/* Always rendered, never blank. Anything the resolver did not
-                classify for the selected variant, including every product when
-                the resolver is disabled, falls back to the neutral copy. */}
-            <p data-testid="shipping-message" className="text-gray-600 text-[13px] tracking-[0.26px]">
-              {shippingDisplay?.message ?? SHIPPING_FALLBACK_MESSAGE}
-            </p>
-
+            {/* P0.5 (Bilal, 2026-08-18): the near-price "Shipping calculated
+                at checkout" line and the standalone Shipping section below
+                were both removed as generic PDP presentation. The Free
+                Shipping badge above (via ProductLabelBadges/ShippingBadge)
+                is the only shipping claim shown here — the resolver, its
+                fallback copy, and every other surface (cards/cart/checkout)
+                are untouched. */}
             <div className="h-px bg-gray-200" />
 
             {/* Variant selector */}
@@ -485,23 +483,21 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
         </div>
       </section>
 
-      {shippingDisplay && (
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
-          <ShippingBlock shippingDisplay={shippingDisplay} />
-        </div>
-      )}
-
       {/* Tabs */}
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
           <div className="border-b border-gray-200">
             <div className="flex overflow-x-auto scrollbar-hide" role="tablist" aria-label="Product information">
-              {TABS.map((tab) => (
+              {/* P0.5 (Bilal, 2026-08-18): the tab is hidden entirely — not
+                  replaced with the general return policy — when the product
+                  carries no custom.shipping_returns value. The general
+                  policy still lives at /returns. */}
+              {TABS.filter((tab) => tab !== 'VENDOR SHIPPING & RETURNS' || vendorPolicyText).map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   role="tab"
-                  id={`product-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
+                  id={`product-tab-${tab.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                   aria-selected={activeTab === tab}
                   aria-controls="product-tab-panel"
                   onClick={() => setActiveTab(tab)}
@@ -521,7 +517,7 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
             className="py-10 sm:py-14"
             id="product-tab-panel"
             role="tabpanel"
-            aria-labelledby={`product-tab-${activeTab.toLowerCase().replace(/\s+/g, '-')}`}
+            aria-labelledby={`product-tab-${activeTab.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
           >
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-8 max-w-[760px]">
@@ -635,12 +631,12 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               </div>
             )}
 
-            {activeTab === 'RETURNS' && (
-              // DEV-POLICY-01 / H-01: always the approved policy from the
-              // central module. custom.shipping_returns (vendorPolicyText,
-              // resolved above) supplies vendor-specific copy when a product
-              // has it; every other product still shows the approved general
-              // fallback (never empty, never invented).
+            {activeTab === 'VENDOR SHIPPING & RETURNS' && (
+              // P0.5 (Bilal, 2026-08-18): this tab only renders when
+              // vendorPolicyText exists (see the filtered tab list above),
+              // so resolveReturnPolicy always takes its 'vendor' branch here
+              // — the general fallback is never shown on this tab, only at
+              // /returns (DEV-POLICY-01).
               <ReturnPolicyContent
                 sections={resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections}
                 headingLevel="h3"

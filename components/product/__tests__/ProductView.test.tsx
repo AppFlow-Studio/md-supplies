@@ -99,23 +99,27 @@ describe('ProductView — manufacturer number vs internal SKU (AeroWalk)', () =>
   })
 })
 
-describe('ProductView — Vendor Shipping & Returns (H-01)', () => {
-  it('renders the vendor-specific return policy on the RETURNS tab when custom.shipping_returns is set', () => {
+// P0.5 (Bilal, 2026-08-18): renamed from "RETURNS" to "VENDOR SHIPPING &
+// RETURNS", and the tab is hidden entirely (not a generic-policy fallback)
+// when custom.shipping_returns is empty. The general policy still lives at
+// /returns (DEV-POLICY-01) — this tab is vendor-specific-only.
+describe('ProductView — Vendor Shipping & Returns (H-01/P0.5)', () => {
+  it('renders the vendor-specific return policy on the Vendor Shipping & Returns tab when custom.shipping_returns is set', () => {
     const richText = JSON.stringify({
       type: 'root',
       children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Ships via Drive Medical freight. Returns require a 30-day RGA.' }] }],
     })
     renderPDP(blueVariant, { shippingReturns: richText })
-    fireEvent.click(screen.getByRole('tab', { name: 'RETURNS' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'VENDOR SHIPPING & RETURNS' }))
     expect(screen.getByText('Drive Medical Return Policy')).toBeInTheDocument()
     expect(screen.getByText(/Ships via Drive Medical freight/)).toBeInTheDocument()
   })
 
-  it('falls back to the approved general return policy when custom.shipping_returns is empty', () => {
+  it('hides the Vendor Shipping & Returns tab entirely when custom.shipping_returns is empty', () => {
     renderPDP(blueVariant, { shippingReturns: null })
-    fireEvent.click(screen.getByRole('tab', { name: 'RETURNS' }))
+    expect(screen.queryByRole('tab', { name: 'VENDOR SHIPPING & RETURNS' })).not.toBeInTheDocument()
     expect(screen.queryByText('Drive Medical Return Policy')).not.toBeInTheDocument()
-    expect(screen.getByText('Return Authorization Required')).toBeInTheDocument()
+    expect(screen.queryByText('Return Authorization Required')).not.toBeInTheDocument()
   })
 })
 

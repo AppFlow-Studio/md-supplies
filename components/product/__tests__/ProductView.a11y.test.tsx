@@ -170,11 +170,11 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
     expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
   })
 
-  // DEV-SHIP-04 (final business rule): a future, valid ETA must NOT be
-  // appended to the text either — the boolean alone controls the label, and
-  // the label is always exactly "Backorder". Supersedes the old
-  // "appends the ship date" behavior.
-  it('shows exactly "Backorder" with no date, even with a valid future ETA', () => {
+  // Bilal, 2026-08-18: a valid, non-expired ETA IS appended to the text
+  // (supersedes DEV-SHIP-04's "always exactly Backorder" rule). The ETA is
+  // still never a trigger on its own — see the "absent" and "stale" cases
+  // above/below, which still show no label / plain "Backorder".
+  it('appends the ship date when the boolean is true and the ETA is a valid, non-expired date', () => {
     render(
       <ProductView
         product={{
@@ -187,9 +187,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
         complementaryProducts={[]}
       />,
     )
-    expect(screen.getByText('Backorder')).toBeInTheDocument()
-    expect(screen.queryByText(/2099-01-01/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+    expect(screen.getByText('Backorder, ships 2099-01-01')).toBeInTheDocument()
   })
 
   // Backorder is the merchant's own declaration, independent of real-time

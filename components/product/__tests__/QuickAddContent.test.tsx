@@ -149,18 +149,16 @@ describe('QuickAddContent — Backorder state', () => {
     expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
   })
 
-  // DEV-SHIP-04 (final business rule): the ETA must never be appended —
-  // the label is always exactly "Backorder", regardless of ETA.
-  it('shows exactly "Backorder" with no date, even with a valid future ETA', () => {
+  // Bilal, 2026-08-18: a valid, non-expired ETA IS appended (supersedes
+  // DEV-SHIP-04's "always exactly Backorder" rule).
+  it('appends the ship date when isBackordered is true and the ETA is a valid, non-expired date', () => {
     render(
       <QuickAddContent
         product={{ ...baseProduct, isBackordered: true, backorderRestockDate: '2099-01-01' }}
         titleId="t"
       />,
     )
-    expect(screen.getByText('Backorder')).toBeInTheDocument()
-    expect(screen.queryByText(/2099-01-01/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+    expect(screen.getByText('Backorder, ships 2099-01-01')).toBeInTheDocument()
   })
 })
 
