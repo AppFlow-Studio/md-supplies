@@ -116,6 +116,29 @@ describe('GET_PRODUCT variant-level packaging breakdown (LG-04)', () => {
   })
 })
 
+// LG-04 / H-01 (2026-08-14): confirmed by Izzy's field contract. Product-level
+// order_size/units_per_order are the fallback resolveVariantValue expects
+// when a variant carries no override — previously unselected, so the
+// fallback was silently always null despite 10,001/8,210 products having a
+// value. shipping_returns is the H-01 source, wired into the PDP Returns tab
+// via resolveReturnPolicy's vendorPolicyText.
+describe('GET_PRODUCT product-level metafield selections (2026-08-14 field contract)', () => {
+  it('requests custom.order_size twice — once per variant, once at product level (LG-04 fallback)', () => {
+    const matches = GET_PRODUCT.match(/orderSize:\s*metafield\(namespace: "custom", key: "order_size"\)/g) ?? []
+    expect(matches).toHaveLength(2)
+  })
+
+  it('requests custom.units_per_order twice — once per variant, once at product level (LG-04 fallback)', () => {
+    const matches = GET_PRODUCT.match(/unitsPerOrder:\s*metafield\(namespace: "custom", key: "units_per_order"\)/g) ?? []
+    expect(matches).toHaveLength(2)
+  })
+
+  it('requests custom.shipping_returns (H-01)', () => {
+    expect(GET_PRODUCT).toMatch(/shippingReturns:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "shipping_returns"')
+  })
+})
+
 /**
  * DEV-LAUNCH-07: every query built on the shared ProductCard fragment feeds
  * ShopifyProductCard (partner listings, PDP recommendations, homepage

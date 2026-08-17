@@ -100,17 +100,21 @@ describe('ProductView — manufacturer number vs internal SKU (AeroWalk)', () =>
 })
 
 describe('ProductView — Vendor Shipping & Returns (H-01)', () => {
-  it('shows the Vendor Shipping & Returns heading and text on the RETURNS tab when custom.shipping_returns is set', () => {
-    renderPDP(blueVariant, { shippingReturns: 'Ships via Drive Medical freight. Returns require a 30-day RGA.' })
+  it('renders the vendor-specific return policy on the RETURNS tab when custom.shipping_returns is set', () => {
+    const richText = JSON.stringify({
+      type: 'root',
+      children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Ships via Drive Medical freight. Returns require a 30-day RGA.' }] }],
+    })
+    renderPDP(blueVariant, { shippingReturns: richText })
     fireEvent.click(screen.getByRole('tab', { name: 'RETURNS' }))
-    expect(screen.getByText('Vendor Shipping & Returns')).toBeInTheDocument()
+    expect(screen.getByText('Drive Medical Return Policy')).toBeInTheDocument()
     expect(screen.getByText(/Ships via Drive Medical freight/)).toBeInTheDocument()
   })
 
-  it('hides the Vendor Shipping & Returns section when the field is empty, without hiding the general return policy', () => {
+  it('falls back to the approved general return policy when custom.shipping_returns is empty', () => {
     renderPDP(blueVariant, { shippingReturns: null })
     fireEvent.click(screen.getByRole('tab', { name: 'RETURNS' }))
-    expect(screen.queryByText('Vendor Shipping & Returns')).not.toBeInTheDocument()
+    expect(screen.queryByText('Drive Medical Return Policy')).not.toBeInTheDocument()
     expect(screen.getByText('Return Authorization Required')).toBeInTheDocument()
   })
 })
@@ -217,5 +221,23 @@ describe('ProductView — Variant Description supplement (no duplicate display)'
   it('renders nothing extra when the variant has no description', () => {
     renderPDP(blueVariant)
     expect(screen.queryByText('Variant Details')).not.toBeInTheDocument()
+  })
+
+  // Izzy's real 2026-08-15 AeroWalk QA write created custom.variant_description
+  // as a rich_text_field, not the plain multi-line text the field contract
+  // proposed — confirmed by querying live QA data (scripts/verify-aerowalk-pilot.ts),
+  // which returned Shopify's JSON AST verbatim in .value. Without flattening,
+  // this JSON would render as-is on the page.
+  it('flattens Shopify rich-text JSON instead of rendering it raw', () => {
+    const richTextVariant: ProductVariant = {
+      ...whiteVariant,
+      description: JSON.stringify({
+        type: 'root',
+        children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Blue frame with matching fork covers.' }] }],
+      }),
+    }
+    renderPDP(richTextVariant)
+    expect(screen.getByText('Blue frame with matching fork covers.')).toBeInTheDocument()
+    expect(screen.queryByText(/"type":"root"/)).not.toBeInTheDocument()
   })
 })

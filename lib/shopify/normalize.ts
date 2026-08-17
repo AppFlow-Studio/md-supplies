@@ -1,5 +1,4 @@
 import type { Product, ProductMetafields, ProductVariant, VariantMetafields } from '@/lib/shopify/types'
-import { richTextToPlainText } from '@/lib/product/rich-text-to-plain'
 
 // Shopify returns metafields as `{ value: string } | null`, not bare strings.
 // This type reflects the actual JSON shape before we normalize it.
@@ -28,8 +27,10 @@ export function normalizeVariant(raw: RawVariant): ProductVariant {
     unitsPerOrder:      mv(raw.unitsPerOrder),
     // custom.variant_description is a Shopify "Rich text" metafield (confirmed
     // live against the AeroWalk QA pilot, 2026-08-17) — its raw .value is
-    // JSON, not display text. See lib/product/rich-text-to-plain.ts.
-    description:        richTextToPlainText(mv(raw.description)),
+    // JSON, not display text. Kept raw here and flattened at render time by
+    // ProductView.tsx via lib/policy/rich-text.ts, same as shippingReturns
+    // below — one flattening implementation, not two.
+    description:        mv(raw.description),
     innerPackQuantity:  mv(raw.innerPackQuantity),
     packsPerCase:       mv(raw.packsPerCase),
     totalOrderQuantity: mv(raw.totalOrderQuantity),
@@ -43,7 +44,7 @@ export function normalizeVariant(raw: RawVariant): ProductVariant {
  * into ProductView (crashing spec rows / breaking the backorder date).
  */
 export function normalizeProduct(raw: RawProduct): Product {
-  const mv = (m: RawMetafield): string | null => m?.value ?? null
+  const mv = (m: RawMetafield | undefined): string | null => m?.value ?? null
   return {
     ...raw,
     variants:             { nodes: raw.variants.nodes.map(normalizeVariant) },
@@ -63,10 +64,10 @@ export function normalizeProduct(raw: RawProduct): Product {
     sizeLength:           mv(raw.sizeLength),
     estimatedRestockDate: mv(raw.estimatedRestockDate),
     backorderRestockEta:  mv(raw.backorderRestockEta),
-    // custom.shipping_returns is described as "rich text" in Bilal's
-    // launch-direction message — same JSON .value shape confirmed live for
-    // custom.variant_description. See lib/product/rich-text-to-plain.ts.
-    shippingReturns:      richTextToPlainText(mv(raw.shippingReturns)),
+    // custom.shipping_returns (H-01) is a rich_text_field, confirmed by
+    // Izzy's 2026-08-14 field contract — kept raw here, flattened at render
+    // time by ProductView.tsx's vendorPolicyText via lib/policy/rich-text.ts.
+    shippingReturns:      mv(raw.shippingReturns),
     testsFor:             mv(raw.testsFor),
     detectableDrugs:      mv(raw.detectableDrugs),
     adulterants:          mv(raw.adulterants),

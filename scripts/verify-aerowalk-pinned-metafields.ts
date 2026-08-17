@@ -3,7 +3,7 @@
 // "Pinned product metafields") on the same QA AeroWalk product, now that the
 // handle is known. In particular: has Izzy written real data to
 // custom.shipping_returns yet (H-01), and does it survive the rich-text fix
-// (lib/product/rich-text-to-plain.ts)? No writes.
+// (lib/policy/rich-text.ts)? No writes.
 import { loadEnvConfig } from '@next/env'
 loadEnvConfig(process.cwd())
 

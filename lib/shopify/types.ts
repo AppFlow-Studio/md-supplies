@@ -126,12 +126,14 @@ export type ProductMetafields = {
    * and must never itself appear in the ShippingDisplay type components render.
    */
   freeShipping?: { value: string } | null;
-  /** `custom.shipping_returns` (H-01). Per-product vendor shipping/returns
-      terms, rendered verbatim under "Vendor Shipping & Returns" on the PDP
-      RETURNS tab — hidden entirely when absent, never replaced with the
-      generic policy fallback (lib/policy/return-policy.ts, a separate,
-      still-unconfirmed field owned by IZ-05). */
-  shippingReturns: string | null;
+  /** `custom.shipping_returns` (H-01). Confirmed by Izzy's 2026-08-14 field
+   * contract: rich_text_field, PUBLIC_READ, populated on 10,001 products —
+   * the live theme's actual Vendor Shipping & Returns source. Raw rich-text
+   * JSON string; flatten with lib/policy/rich-text.ts before display. Not
+   * populated on every product, so optional like the other launch-era
+   * additions above.
+   */
+  shippingReturns?: string | null;
   testsFor: string | null;
   detectableDrugs: string | null;
   adulterants: string | null;

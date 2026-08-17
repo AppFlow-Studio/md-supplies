@@ -24,6 +24,7 @@ import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
+import { shopifyRichTextToPlainParagraphs } from '@/lib/policy/rich-text'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
@@ -211,10 +212,30 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // Variant Description supplements the product Description tab — never
   // shown if blank, never shown if it would just repeat the product
   // description verbatim (resolveVariantSupplement — Bilal's rule 3).
+  // custom.variant_description turned out to be a rich_text_field on Izzy's
+  // actual QA write (confirmed 2026-08-15 by querying the live AeroWalk
+  // data: .value is a JSON AST, same shape as custom.shipping_returns
+  // below), not the plain multi-line text the field contract proposed — flatten
+  // it the same way, or the JSON literally renders on the page. Falls back to
+  // the raw value when it isn't parseable rich-text JSON (shopifyRichTextToPlainParagraphs
+  // returns [] for non-JSON input, by design — see lib/policy/rich-text.ts),
+  // so a plain-text value keeps working if the definition type is ever changed.
+  const variantDescriptionParagraphs = shopifyRichTextToPlainParagraphs(selectedVariant.description)
+  const flattenedVariantDescription =
+    variantDescriptionParagraphs.length > 0
+      ? variantDescriptionParagraphs.join('\n\n')
+      : selectedVariant.description || null
   const variantDescriptionSupplement = resolveVariantSupplement(
-    selectedVariant.description,
+    flattenedVariantDescription,
     product.description,
   )
+
+  // H-01 — Vendor Shipping & Returns: custom.shipping_returns (rich text),
+  // confirmed by Izzy's 2026-08-14 field contract as the live theme's actual
+  // source. Flattened to plain paragraphs and handed to resolveReturnPolicy's
+  // vendorPolicyText below — the approved general fallback still renders
+  // when a product has no value (not every product carries this field).
+  const vendorPolicyText = shopifyRichTextToPlainParagraphs(product.shippingReturns).join('\n\n') || null
 
   return (
     <>
@@ -546,7 +567,7 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                 {variantDescriptionSupplement && (
                   <div>
                     <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Variant Details</h2>
-                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantDescriptionSupplement}</p>
+                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] whitespace-pre-line">{variantDescriptionSupplement}</p>
                   </div>
                 )}
 
@@ -615,30 +636,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
             )}
 
             {activeTab === 'RETURNS' && (
-              <div className="flex flex-col gap-8">
-                {/* H-01: custom.shipping_returns, verbatim per-product vendor
-                    terms — a distinct field from the general policy below.
-                    Hidden entirely when the merchant hasn't set it; never
-                    replaced with the generic fallback. */}
-                {product.shippingReturns && (
-                  <div>
-                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Vendor Shipping & Returns</h2>
-                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] whitespace-pre-line">
-                      {product.shippingReturns}
-                    </p>
-                  </div>
-                )}
-
-                {/* DEV-POLICY-01: always the approved policy from the central
-                    module — vendor-specific copy renders here once IZ-PROD-04
-                    populates the approved production source; until then every
-                    product shows the approved general fallback (never empty,
-                    never invented). */}
-                <ReturnPolicyContent
-                  sections={resolveReturnPolicy({ vendor: product.vendor }).sections}
-                  headingLevel="h3"
-                />
-              </div>
+              // DEV-POLICY-01 / H-01: always the approved policy from the
+              // central module. custom.shipping_returns (vendorPolicyText,
+              // resolved above) supplies vendor-specific copy when a product
+              // has it; every other product still shows the approved general
+              // fallback (never empty, never invented).
+              <ReturnPolicyContent
+                sections={resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections}
+                headingLevel="h3"
+              />
             )}
 
             {activeTab === 'REVIEWS' && (

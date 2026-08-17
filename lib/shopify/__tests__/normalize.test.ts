@@ -41,30 +41,24 @@ function rawProduct(overrides: Partial<RawProduct> = {}): RawProduct {
 }
 
 describe('normalizeProduct — custom.shipping_returns (H-01)', () => {
-  it('flattens the raw metafield into a plain string', () => {
-    const result = normalizeProduct(
-      rawProduct({ shippingReturns: { value: 'Ships freight. 30-day RGA required.' } }),
-    )
-    expect(result.shippingReturns).toBe('Ships freight. 30-day RGA required.')
-  })
-
-  it('normalizes an absent metafield to null, not an empty raw object', () => {
-    const result = normalizeProduct(rawProduct({ shippingReturns: null }))
-    expect(result.shippingReturns).toBeNull()
-  })
-
-  // Confirmed live 2026-08-17 against the QA store: custom.shipping_returns'
-  // sibling field custom.variant_description was created as Shopify's "Rich
-  // text" metafield type, whose raw .value is JSON, not display text. Bilal's
-  // launch-direction message calls shipping_returns "rich text" too, so the
-  // same parsing must apply here or the PDP will print raw JSON.
-  it('parses Shopify rich_text JSON into plain text', () => {
+  // custom.shipping_returns is a Shopify rich_text_field (confirmed by
+  // Izzy's 2026-08-14 field contract) — its raw .value is JSON, not display
+  // text. normalize.ts keeps it raw and unflattened deliberately:
+  // ProductView.tsx's vendorPolicyText flattens it at render time via
+  // lib/policy/rich-text.ts, the single shared flattening implementation
+  // (see lib/policy/__tests__/rich-text.test.ts for parsing coverage).
+  it('unwraps the raw metafield value without flattening it', () => {
     const raw = JSON.stringify({
       type: 'root',
       children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Ships via freight. 30-day RGA required.' }] }],
     })
     const result = normalizeProduct(rawProduct({ shippingReturns: { value: raw } }))
-    expect(result.shippingReturns).toBe('Ships via freight. 30-day RGA required.')
+    expect(result.shippingReturns).toBe(raw)
+  })
+
+  it('normalizes an absent metafield to null, not an empty raw object', () => {
+    const result = normalizeProduct(rawProduct({ shippingReturns: null }))
+    expect(result.shippingReturns).toBeNull()
   })
 })
 
@@ -85,14 +79,16 @@ describe('normalizeVariant — custom.variant_description rich_text (AeroWalk pi
   }
 
   // Confirmed live 2026-08-17: the QA AeroWalk Blue variant's raw
-  // custom.variant_description value is exactly this JSON shape.
-  it('parses the live AeroWalk QA rich_text value into plain text', () => {
+  // custom.variant_description value is exactly this JSON shape. Kept raw
+  // here (same reasoning as shipping_returns above) — ProductView.tsx
+  // flattens it at render time via lib/policy/rich-text.ts.
+  it('unwraps the raw metafield value without flattening it', () => {
     const raw = JSON.stringify({
       type: 'root',
       children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Blue frame with matching fork covers.' }] }],
     })
     const result = normalizeVariant({ ...baseRawVariant, description: { value: raw } })
-    expect(result.description).toBe('Blue frame with matching fork covers.')
+    expect(result.description).toBe(raw)
   })
 
   it('normalizes an absent description metafield to null', () => {
