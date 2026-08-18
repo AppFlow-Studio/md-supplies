@@ -233,6 +233,18 @@ export function proxy(request: NextRequest): Response {
     return withCsp(NextResponse.redirect(url, 301), nonce)
   }
 
+  // ── /collections/trocars-trocar-kits → /category/trocars-trocar-kits ──────
+  //
+  // Izzy confirmed this is the live Shopify collection URL (68 products, 41
+  // active) that customers have saved/linked externally. Preserves ?variant=
+  // and any other query string in one hop (Bilal's redirect rules, 2026-08-18).
+  if (pathname === '/collections/trocars-trocar-kits' || pathname.startsWith('/collections/trocars-trocar-kits/')) {
+    const newPath = pathname.replace('/collections/trocars-trocar-kits', '/category/trocars-trocar-kits')
+    const url = new URL(newPath, request.url)
+    url.search = request.nextUrl.search
+    return withCsp(NextResponse.redirect(url, 301), nonce)
+  }
+
   // ── Category query variants: no rewrite (twin route removed) ───────────────
   //
   // Historically /category/[slug] was statically generated and could not read

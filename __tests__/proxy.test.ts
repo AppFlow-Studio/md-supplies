@@ -312,6 +312,20 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     expect(res?.status).toBe(301)
     expect(res?.headers.get('Location')).toContain('/category/testing-screening')
   })
+
+  it('redirects the legacy Shopify collection URL to the canonical category route, preserving query params', () => {
+    const res = proxy(req('/collections/trocars-trocar-kits', '?variant=51633171923177'))
+    expect(res?.status).toBe(301)
+    const location = new URL(res!.headers.get('Location')!)
+    expect(location.pathname).toBe('/category/trocars-trocar-kits')
+    expect(location.searchParams.get('variant')).toBe('51633171923177')
+  })
+
+  it('redirects a nested path beneath the legacy collection URL in a single hop', () => {
+    const res = proxy(req('/collections/trocars-trocar-kits/some-product'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/trocars-trocar-kits/some-product')
+  })
 })
 
 describe('proxy — path normalization (pass-through for unknown)', () => {
