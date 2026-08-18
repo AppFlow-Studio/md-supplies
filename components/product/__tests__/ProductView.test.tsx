@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { ProductView } from '../ProductView'
-import type { Product, ProductVariant } from '@/lib/shopify/types'
+import type { Product, ProductVariant, CollectionProduct } from '@/lib/shopify/types'
 
 afterEach(cleanup)
 
@@ -243,5 +243,48 @@ describe('ProductView — Variant Description supplement (no duplicate display)'
     renderPDP(richTextVariant)
     expect(screen.getByText('Blue frame with matching fork covers.')).toBeInTheDocument()
     expect(screen.queryByText(/"type":"root"/)).not.toBeInTheDocument()
+  })
+})
+
+// Task 4 (2026-08-18): "You May Also Need" (the relatedProducts.slice(4)
+// overflow scroll row) hand-rolled bare <div> cards instead of reusing
+// RelatedProductCard like its two siblings ("Frequently Bought With" /
+// "You May Also Like") — no <Link>, no keyboard focus, no accessible name.
+describe('ProductView — You May Also Need cards are clickable (Task 4)', () => {
+  function collectionProduct(overrides: Partial<CollectionProduct> = {}): CollectionProduct {
+    return {
+      id: 'gid://shopify/Product/900',
+      title: 'Filler Item',
+      handle: 'filler-item',
+      vendor: 'AcmeMed',
+      availableForSale: true,
+      tags: [],
+      priceRange: { minVariantPrice: { amount: '5.00', currencyCode: 'USD' }, maxVariantPrice: { amount: '5.00', currencyCode: 'USD' } },
+      images: { nodes: [] },
+      variants: { nodes: [] },
+      ...overrides,
+    }
+  }
+
+  it('You May Also Need cards are real links to the product page', () => {
+    const relatedProducts: CollectionProduct[] = [
+      collectionProduct({ id: 'gid://shopify/Product/901', handle: 'item-1', title: 'Item 1' }),
+      collectionProduct({ id: 'gid://shopify/Product/902', handle: 'item-2', title: 'Item 2' }),
+      collectionProduct({ id: 'gid://shopify/Product/903', handle: 'item-3', title: 'Item 3' }),
+      collectionProduct({ id: 'gid://shopify/Product/904', handle: 'item-4', title: 'Item 4' }),
+      collectionProduct({ id: 'gid://shopify/Product/905', handle: 'extra-recommended-item', title: 'Extra Recommended Item' }),
+    ]
+    render(
+      <ProductView
+        product={product}
+        initialVariant={blueVariant}
+        relatedProducts={relatedProducts}
+        complementaryProducts={[]}
+      />,
+    )
+
+    const links = screen.getAllByRole('link', { name: /Extra Recommended Item/i })
+    expect(links.length).toBeGreaterThan(0)
+    expect(links[0]).toHaveAttribute('href', '/product/extra-recommended-item')
   })
 })

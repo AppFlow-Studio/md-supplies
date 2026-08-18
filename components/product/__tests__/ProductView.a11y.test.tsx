@@ -443,3 +443,61 @@ describe('ProductView — selected-variant identity sync (LG-03)', () => {
     expect(screen.getByRole('heading', { name: 'Nitrile Exam Gloves' })).toBeInTheDocument()
   })
 })
+
+// Task 4 (2026-08-18): the "You May Also Need — scrollable product list"
+// region's overflow cards (relatedProducts.slice(4)) hand-rolled bare <div>
+// cards instead of reusing RelatedProductCard — no <Link>, so nothing in
+// that region was in the tab order and nothing had an accessible name.
+// Note: this repo has no jest-axe/vitest-axe wired into the vitest suite
+// (only @axe-core/playwright, used by the Playwright e2e specs under e2e/) —
+// this file's existing a11y coverage is role/attribute/focus assertions via
+// Testing Library, not an axe() scan, so this test follows that same
+// pattern rather than introducing a new, unavailable dependency.
+describe('ProductView — You May Also Need region is keyboard-operable (Task 4)', () => {
+  function relatedProduct(overrides: Partial<CollectionProduct> = {}): CollectionProduct {
+    return {
+      id: 'gid://shopify/Product/999',
+      title: 'Related Product',
+      handle: 'related-product',
+      vendor: 'AcmeMed',
+      availableForSale: true,
+      tags: [],
+      priceRange: { minVariantPrice: { amount: '9.99', currencyCode: 'USD' }, maxVariantPrice: { amount: '9.99', currencyCode: 'USD' } },
+      images: { nodes: [] },
+      variants: { nodes: [] },
+      ...overrides,
+    }
+  }
+
+  it('exposes each overflow card as a focusable link with an accessible name and correct href, not an inert div', () => {
+    const relatedProducts: CollectionProduct[] = [
+      relatedProduct({ id: 'gid://shopify/Product/1', handle: 'item-1', title: 'Item 1' }),
+      relatedProduct({ id: 'gid://shopify/Product/2', handle: 'item-2', title: 'Item 2' }),
+      relatedProduct({ id: 'gid://shopify/Product/3', handle: 'item-3', title: 'Item 3' }),
+      relatedProduct({ id: 'gid://shopify/Product/4', handle: 'item-4', title: 'Item 4' }),
+      relatedProduct({ id: 'gid://shopify/Product/5', handle: 'need-item-five', title: 'Need Item Five' }),
+    ]
+    render(
+      <ProductView
+        product={product}
+        initialVariant={product.variants.nodes[0]}
+        relatedProducts={relatedProducts}
+        complementaryProducts={[]}
+      />,
+    )
+
+    const region = screen.getByRole('region', { name: 'You May Also Need — scrollable product list' })
+    const link = within(region).getByRole('link', { name: /Need Item Five/i })
+    expect(link).toHaveAttribute('href', '/product/need-item-five')
+
+    // Keyboard operability: the card must be a natively focusable element
+    // (an <a href>), not a bare, non-interactive <div> that swallows Tab/Enter.
+    link.focus()
+    expect(link).toHaveFocus()
+
+    // No nested interactive elements: RelatedProductCard's <Link> must not
+    // itself contain a <button> (standing constraint — see ProductView.tsx
+    // comment near RelatedProductCard's usage in this scroll row).
+    expect(within(link).queryByRole('button')).not.toBeInTheDocument()
+  })
+})

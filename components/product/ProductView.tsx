@@ -699,19 +699,20 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               role="region"
               aria-label="You May Also Need — scrollable product list"
             >
+              {/* Task 4 (2026-08-18): reuse RelatedProductCard (same component
+                  as "Frequently Bought With" / "You May Also Like") instead of
+                  hand-rolling bare, non-interactive <div> cards — those had no
+                  <Link>, no keyboard focus, and no accessible name. The
+                  wrapping <div> here only carries the fixed scroll-row width
+                  (RelatedProductCard's own flex-1/min-w is sized for a
+                  flex-wrap grid, not this fixed-width overflow row).
+                  Standing constraint: RelatedProductCard's root is a <Link> —
+                  if it ever grows an inner Quick Add <button>, that button
+                  must NOT be nested inside the <Link> (no interactive-in-
+                  interactive nesting). */}
               {relatedProducts.slice(4).map((item) => (
-                <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
-                  <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                    <ProductImage src={item.images.nodes[0]?.url} alt={cleanShopifyAlt(item.images.nodes[0]?.altText) ?? item.title} sizes="201px" />
-                  </div>
-                  <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
-                    <p className="text-black text-[14px] font-semibold leading-5 line-clamp-2">
-                      {item.title}
-                    </p>
-                    <span className="text-black text-[18px] font-bold">
-                      ${parseFloat(item.priceRange.minVariantPrice.amount).toFixed(2)}
-                    </span>
-                  </div>
+                <div key={item.id} className="w-[185px] sm:w-[201px] shrink-0">
+                  <RelatedProductCard product={item} />
                 </div>
               ))}
             </div>
