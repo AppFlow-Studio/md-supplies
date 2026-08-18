@@ -73,10 +73,10 @@ uncommitted docs from the prior 08-17 session sitting on it).
 
 | # | Task | Status | Commits | Review |
 |---|---|---|---|---|
-| 1 | Trocar filter-registry fix (`lib/filter-registry.ts`) | ✅ complete | `3ff3fa2` | clean |
-| 2 | `/collections/trocars-trocar-kits` → `/category/trocars-trocar-kits` redirect (`proxy.ts`) | ✅ complete | `5333f19` | clean |
+| 1 | Trocar filter-registry fix (`lib/filter-registry.ts`) | ✅ complete | `f04974e` | clean |
+| 2 | `/collections/trocars-trocar-kits` → `/category/trocars-trocar-kits` redirect (`proxy.ts`) | ✅ complete | `a1e5ae2` | clean |
 | 3 | Trocar nav quick-link / SEO-schema verification | ✅ complete (no-op) | none — verification only | clean |
-| 4 | Fix non-clickable "You May Also Need" cards (`ProductView.tsx`) | ✅ complete | `9d1e377` | clean |
+| 4 | Fix non-clickable "You May Also Need" cards (`ProductView.tsx`) | ✅ complete | `b5d2fcd` | clean |
 | 5 | Fix wrong variant image in cart popup/page | ⏳ not started | — | — |
 | 6 | Preserve bold formatting in Vendor Shipping & Returns | ⏳ not started | — | — |
 | 7 | Free Shipping display verification (7 surfaces) | ⏳ not started | — | — |
@@ -177,6 +177,25 @@ One commit on `catalog-cro-review-sardor-dev` (pushed) bundles:
   diffs 1-2 and 4 (Task 3 had no diff — verification only).
 
 Tasks 1, 2, 4's actual code changes were already committed individually by
-their implementer subagents (`3ff3fa2`, `5333f19`, `9d1e377`) before this
-handoff commit — those are separate, already-existing commits on this
-branch, not part of the handoff commit itself.
+their implementer subagents before this handoff commit — those are
+separate, already-existing commits on this branch, not part of the handoff
+commit itself.
+
+### Rebase note (read this if any SHA above looks unfamiliar)
+
+When pushing this handoff, `git push` was rejected: another session had
+pushed `7a6c276` ("P0.5 shipping copy cleanup, Vendor Shipping & Returns tab
+rename, Backorder ETA, AeroWalk redirect") directly on top of this branch's
+shared base, in parallel with this session's Tasks 1-4. That commit touches
+`proxy.ts` and `ProductView.tsx` — the same two files Tasks 2 and 4 changed.
+Rebased onto it (`git rebase origin/catalog-cro-review-sardor-dev`) rather
+than merging, per this session's git-safety norms. **The rebase applied with
+zero textual conflicts**, and — because a clean textual rebase doesn't
+guarantee semantic correctness on overlapping files — the full suite,
+`tsc --noEmit`, and a direct grep for both feature sets' key strings were
+re-run and confirmed passing/present before pushing (145 files/1497 tests
+green). All commit SHAs were rewritten by the rebase; the table above and
+the ledger use the current, correct, already-pushed SHAs. If you're
+reconciling against an old note or screenshot with `3ff3fa2`/`5333f19`/
+`9d1e377`/`75a92d8` in it, those are the pre-rebase hashes — `git log` on
+this branch is the source of truth now.

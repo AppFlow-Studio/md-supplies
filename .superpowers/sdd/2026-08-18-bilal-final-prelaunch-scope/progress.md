@@ -31,10 +31,21 @@
 
 ## Task log
 
-Task 1: complete (commits 75a92d8..3ff3fa2, review clean)
-Task 2: complete (commits 3ff3fa2..5333f19, review clean)
+Note (2026-08-19): `catalog-cro-review-sardor-dev` was rebased onto a
+concurrent push from another session (`7a6c276`, "P0.5 shipping copy
+cleanup, Vendor Shipping & Returns tab rename, Backorder ETA, AeroWalk
+redirect" — touched `proxy.ts` and `ProductView.tsx`, overlapping with Tasks
+2 and 4). The rebase applied cleanly with no textual conflicts; re-ran the
+full suite + `tsc` post-rebase (145 files/1497 tests green, both feature
+sets independently grepped and confirmed present) before pushing. All commit
+SHAs below and in the handoff doc were rewritten by the rebase — mapping:
+`3ff3fa2`→`f04974e` (Task 1), `5333f19`→`a1e5ae2` (Task 2), `9d1e377`→`b5d2fcd`
+(Task 4), base `75a92d8`→`7a6c276`. Corrected below.
+
+Task 1: complete (commits 7a6c276..f04974e, review clean)
+Task 2: complete (commits f04974e..a1e5ae2, review clean)
 Task 3: minor (deferred): nav entry is labeled "Surgery & Procedure" not "Trocar Supplies" — display name is client-approved copy (lib/category-tree.ts:52-56), a client-copy decision not a dev fix; the underlying destination/position are correct (verified: always-visible primary group, direct resolution to /category/trocars-trocar-kits, no alphabetical sort exists anywhere in the nav pipeline).
 Task 3: complete (no commits — verification only; brief's premise about which file builds the live nav was wrong, corrected and independently re-verified by reviewer; review clean)
 Task 4: minor (deferred): manual browser walkthrough (brief Step 5, both PDP routes/breakpoints) not performed — claude-in-chrome reported "not connected" in this environment. Automated RTL/a11y tests fully cover the link-swap behavior (role, href, focus, no nested button) per reviewer's judgment, but a human/tooled spot-check on a live PDP is still recommended before launch — carry into Task 12's evidence doc checklist.
 Task 4: minor (deferred): no axe/jest-axe wired into the vitest component suite for a11y testing (only Playwright e2e has @axe-core/playwright, e.g. e2e/axe.spec.ts) — brief assumed one existed. Worked around correctly with role/focus assertions matching the file's real existing idiom; wiring real axe into vitest is a separate backlog item, not this plan's scope.
-Task 4: complete (commits 5333f19..9d1e377, review clean)
+Task 4: complete (commits a1e5ae2..b5d2fcd, review clean)
