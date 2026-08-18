@@ -15,14 +15,13 @@ import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { ProductLabelBadges } from './ProductLabelBadges'
-import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
-import { shopifyRichTextToPlainParagraphs } from '@/lib/policy/rich-text'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans } from '@/lib/policy/rich-text'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
@@ -233,7 +232,14 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // source. Flattened to plain paragraphs and handed to resolveReturnPolicy's
   // vendorPolicyText below — the approved general fallback still renders
   // when a product has no value (not every product carries this field).
+  // vendorPolicyText still drives the tab's hidden-when-empty gate (below)
+  // and resolveReturnPolicy's "{vendor} Return Policy" heading — both are
+  // unchanged by Task 6. Only the tab's paragraph body renders from
+  // vendorPolicySpans now, so bold marks survive instead of being stripped
+  // by shopifyRichTextToPlainParagraphs (which is correct for every other
+  // caller — see lib/policy/rich-text.ts).
   const vendorPolicyText = shopifyRichTextToPlainParagraphs(product.shippingReturns).join('\n\n') || null
+  const vendorPolicySpans = shopifyRichTextToParagraphSpans(product.shippingReturns)
 
   return (
     <>
@@ -631,17 +637,34 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               </div>
             )}
 
-            {activeTab === 'VENDOR SHIPPING & RETURNS' && (
+            {activeTab === 'VENDOR SHIPPING & RETURNS' && (() => {
               // P0.5 (Bilal, 2026-08-18): this tab only renders when
               // vendorPolicyText exists (see the filtered tab list above),
               // so resolveReturnPolicy always takes its 'vendor' branch here
               // — the general fallback is never shown on this tab, only at
               // /returns (DEV-POLICY-01).
-              <ReturnPolicyContent
-                sections={resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections}
-                headingLevel="h3"
-              />
-            )}
+              // Task 6 (2026-08-19): the heading still comes from
+              // resolveReturnPolicy's shared "{vendor} Return Policy"
+              // convention, but the body paragraphs render from
+              // vendorPolicySpans instead of resolveReturnPolicy's flattened
+              // sections, so bold marks in custom.shipping_returns survive
+              // as <strong> rather than being stripped to plain text by
+              // shopifyRichTextToPlainParagraphs. Bold/plain spans only —
+              // never arbitrary/raw HTML.
+              const heading = resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections[0]?.heading
+              return (
+                <div className="flex flex-col gap-4 max-w-[760px]">
+                  {heading && (
+                    <h3 className="text-navy-900 text-[18px] font-semibold tracking-[0.36px] mt-2">{heading}</h3>
+                  )}
+                  {vendorPolicySpans.map((spans, i) => (
+                    <p key={i} className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                      {spans.map((s, j) => (s.bold ? <strong key={j}>{s.text}</strong> : <span key={j}>{s.text}</span>))}
+                    </p>
+                  ))}
+                </div>
+              )
+            })()}
 
             {activeTab === 'REVIEWS' && (
               <div className="flex flex-col gap-6 max-w-[760px]">

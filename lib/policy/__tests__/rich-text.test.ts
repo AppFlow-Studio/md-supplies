@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shopifyRichTextToPlainParagraphs } from '../rich-text'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans } from '../rich-text'
 
 describe('shopifyRichTextToPlainParagraphs', () => {
   it('returns [] for null/undefined/empty input', () => {
@@ -69,5 +69,34 @@ describe('shopifyRichTextToPlainParagraphs', () => {
       ],
     })
     expect(shopifyRichTextToPlainParagraphs(raw)).toEqual(['Real content.'])
+  })
+})
+
+describe('shopifyRichTextToParagraphSpans', () => {
+  it('preserves bold marks within a paragraph as separate spans', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'Returns accepted within ' },
+          { type: 'text', value: '30 days', bold: true },
+          { type: 'text', value: ' of delivery.' },
+        ],
+      }],
+    })
+    const paragraphs = shopifyRichTextToParagraphSpans(raw)
+    expect(paragraphs).toEqual([
+      [
+        { text: 'Returns accepted within ', bold: false },
+        { text: '30 days', bold: true },
+        { text: ' of delivery.', bold: false },
+      ],
+    ])
+  })
+
+  it('degrades malformed/non-JSON input to an empty array, matching the plain-text function', () => {
+    expect(shopifyRichTextToParagraphSpans('not json')).toEqual([])
+    expect(shopifyRichTextToParagraphSpans(null)).toEqual([])
   })
 })

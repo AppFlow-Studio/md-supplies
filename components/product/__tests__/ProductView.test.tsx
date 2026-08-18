@@ -121,6 +121,26 @@ describe('ProductView — Vendor Shipping & Returns (H-01/P0.5)', () => {
     expect(screen.queryByText('Drive Medical Return Policy')).not.toBeInTheDocument()
     expect(screen.queryByText('Return Authorization Required')).not.toBeInTheDocument()
   })
+
+  it('renders bold spans in the rich text as <strong>, leaving surrounding text unwrapped', () => {
+    const richText = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'Returns accepted within ' },
+          { type: 'text', value: '30 days', bold: true },
+          { type: 'text', value: ' of delivery.' },
+        ],
+      }],
+    })
+    renderPDP(blueVariant, { shippingReturns: richText })
+    fireEvent.click(screen.getByRole('tab', { name: 'VENDOR SHIPPING & RETURNS' }))
+    const bold = screen.getByText('30 days')
+    expect(bold.tagName).toBe('STRONG')
+    const plain = screen.getByText('Returns accepted within', { exact: false })
+    expect(plain.tagName).not.toBe('STRONG')
+  })
 })
 
 describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => {
