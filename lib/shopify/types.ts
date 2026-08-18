@@ -249,6 +249,11 @@ export type CartLine = {
     id: string;
     title: string;
     sku: string | null;
+    /** Shopify's own variant-media assignment — same field/shape as
+        ProductVariant.image. Null when the variant has no image of its own;
+        callers fall back to the product's shared gallery image only then,
+        never showing a sibling variant's assigned image. */
+    image?: ProductImage | null;
     /** The variant's own unit price -- distinct from `cost.totalAmount`
      * below, which a no-rate-for-destination line zeroes out while this
      * stays positive. See lib/shopify/cart-lines.ts. */
