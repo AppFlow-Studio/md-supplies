@@ -13,7 +13,7 @@ export function SearchBarForm({ defaultQuery }: Props) {
   return (
     <form method="GET" action="/search">
       <div className="flex gap-3 max-w-[600px]">
-        <div className="flex-1 flex items-center border border-gray-200 focus-within:border-navy-900 transition-colors px-4 gap-3 bg-white">
+        <div className="flex-1 min-w-0 flex items-center border border-gray-200 focus-within:border-navy-900 transition-colors px-4 gap-3 bg-white">
           <Search size={18} className="text-gray-500 shrink-0" />
           <input
             type="search"
@@ -21,7 +21,7 @@ export function SearchBarForm({ defaultQuery }: Props) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Search medical supplies…"
-            className="flex-1 h-[48px] text-[15px] text-navy-900 placeholder:text-gray-500 outline-none bg-transparent"
+            className="flex-1 min-w-0 h-[48px] text-[15px] text-navy-900 placeholder:text-gray-500 outline-none bg-transparent"
             // DEV-LAUNCH-13: autoFocus stole initial focus from the page's
             // skip link, which every other route relies on being the first
             // Tab stop (WCAG 2.4.1 Bypass Blocks) — see
