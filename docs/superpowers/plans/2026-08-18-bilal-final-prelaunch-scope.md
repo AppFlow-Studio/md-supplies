@@ -10,6 +10,12 @@
 
 **Spec:** Bilal's 2026-08-18 7:20 PM Slack message (pasted into the session) — the "@Sardor — storefront, landing page, interactions and deployment" section, items 1-6 plus "Final joint acceptance." Izzy's 2026-08-18 9:40 PM message supplies the Trocar filter registry data referenced throughout (`C:\Users\sarik\Downloads\TROCAR-REGISTRY-41-PRODUCTS.csv`).
 
+**Addendum spec (2026-08-19):** Bilal's follow-up Slack message ("final direction... complete the remaining work today") adds Sardor-relevant clarifications on top of the above, folded in as Tasks 13-14 below and as notes on existing tasks:
+- Free Shipping is confirmed a strict merchant-metafield-AND-resolver-$0 gate, unchanged from Task 7's scope — verify on PDPs, category/search cards, Quick Add, You May Also Need, cart popup, cart page (no new task; Task 7 already covers all 7).
+- The Trocar filter groups (Task 1) are "accepted" — but two new requirements ride along: (a) keep the single-value Features filter on the B9802 Combo product as-is, it is client-requested and NOT a data defect to "fix" — a no-touch note, not a task; (b) four products carry multiple Trocar categories and pipe-separated values must render as separate filter values, not one combined label — this is new scope, see Task 14.
+- Nav: keep the parent label "Surgery & Procedure," but add a clear, visible child/quick link labeled "Trocar Supplies" going straight to the dedicated page — Task 3 previously verified the *destination* was already correct and closed as a no-op, but this explicit visible-label requirement is new scope Task 3 did not cover — see Task 13.
+- "RX Only capitalization" appears in Bilal's "please finish or confirm" list. Investigated 2026-08-19: `lib/labels/labels.ts:48-51` already fixed this sitewide to "Rx Only" under H-04 (launch plan 2026-08-13), and no live component renders the all-caps form (confirmed via full-codebase grep, doc/plan files excluded). This is a **confirm-only** item for Task 12's evidence doc, not a new dev task.
+
 ## Global Constraints
 
 - **Do not write to Shopify.** No catalog, metafield, price, inventory, or product-status writes from this repo. Izzy's Admin-write tasks (LG-04 audit, Free Shipping metafield writes, bulk-op reconciliation) are explicitly out of scope for this plan — the Admin client in `lib/shopify/admin.ts` is comment-scoped to customer read/write only and has no product/metafield access.
@@ -739,3 +745,117 @@ Using `claude-in-chrome` or manual walkthrough against `next dev`/a fresh deploy
 - [ ] **Step 4: Present the evidence doc to the user for review before any push/PR/deploy action**
 
 No commit for this step beyond the doc itself — pushing and opening a PR remain gated on the user's explicit go-ahead per Global Constraints.
+
+---
+
+## Task 13: Visible "Trocar Supplies" nav quick-link under "Surgery & Procedure" (Bilal 2026-08-19 addendum)
+
+**Files:**
+- Modify: `components/layout/Header.tsx` (desktop mega-dropdown categories panel, ~lines 296-306; mobile categories panel, ~lines 510-519)
+- Test: `components/layout/__tests__/Header.test.tsx` (or wherever this component's existing test file lives — locate via Glob first)
+
+**Interfaces:**
+- Consumes: `buildCategoryTreeNav(collections)` (`lib/category-tree.ts:264-280`) — unchanged, still returns a flat `{ primary, more }` list of `{ displayName, href }`, no per-entry children
+- Consumes: `CATEGORY_TREE_L1` to resolve the Trocar entry's canonical slug (`getCategorySlug`), so the quick-link's href is derived the same way as every other nav href, never hardcoded
+
+Task 3 (complete, no-op) verified that "Surgery & Procedure" already resolves directly to `/category/trocars-trocar-kits` and that nav order needs no special-casing. Bilal's 2026-08-19 message is a stricter, distinct requirement on top of that: a second, explicitly labeled "Trocar Supplies" link must be visible next to/under "Surgery & Procedure" — not just relying on the parent label's destination. `buildCategoryTreeNav`'s flat `CategoryNavEntry[]` has no concept of a per-item child link, so this is rendered as a one-off in `Header.tsx`, not a `category-tree.ts` registry change (keep the registry generic, per this plan's established pattern of pinning one-off UI exceptions at the render site — see Task 3's Step 4 ruling).
+
+- [ ] **Step 1: Write the failing test**
+
+Locate `Header.tsx`'s existing test file (`Glob` for `**/Header.test.tsx` under `components/layout/__tests__/`). Read its existing render/fixture setup for `categoryNav`/`collections` props (it will need a `collections` fixture that includes `trocars-trocar-kits` so `buildCategoryTreeNav` includes the Surgery & Procedure entry). Add:
+
+```ts
+it('shows a visible "Trocar Supplies" quick link next to "Surgery & Procedure" in the desktop categories dropdown', async () => {
+  // render with the categories dropdown open (match this file's existing pattern for opening the mega-menu, e.g. hover/focus on the trigger)
+  const surgery = screen.getByRole('link', { name: 'Surgery & Procedure' })
+  const trocarLink = screen.getByRole('link', { name: 'Trocar Supplies' })
+  expect(trocarLink).toHaveAttribute('href', surgery.getAttribute('href'))
+})
+
+it('shows the "Trocar Supplies" quick link in the mobile categories panel too', async () => {
+  // match this file's existing pattern for opening the mobile drawer + categories panel
+  const trocarLinks = screen.getAllByRole('link', { name: 'Trocar Supplies' })
+  expect(trocarLinks.length).toBeGreaterThan(0)
+})
+```
+
+Adjust to the file's real fixture/open-menu idiom — do not invent a second render-setup pattern.
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run the Header test file. Expected: FAIL — no element with accessible name "Trocar Supplies" exists yet.
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `Header.tsx`, both the desktop mega-dropdown's primary-categories grid (~line 297) and the mobile categories panel (~line 510) map `categoryNav.primary` to a flat list of `<Link>`s. After the mapped list (or inline, immediately following the "Surgery & Procedure" entry — read the rendered order first, since `CATEGORY_TREE_L1`'s declared order puts it 10th), add one extra, clearly-styled link — visually distinguished (e.g. a small badge/pill or an indented "→ Trocar Supplies" sub-line), not just another same-weight grid tile, so it reads as a quick link rather than a duplicate category:
+
+```tsx
+{(() => {
+  const trocar = CATEGORY_TREE_L1.find((c) => c.tag === 'surgery-procedure')
+  if (!trocar || !validHandles.has(trocar.collectionHandle)) return null
+  return (
+    <Link
+      href={ROUTES.category(getCategorySlug(trocar))}
+      className="text-[13px] text-teal-500 font-semibold hover:text-ink-link transition-colors"
+    >
+      → Trocar Supplies
+    </Link>
+  )
+})()}
+```
+
+(Import `getCategorySlug` from `@/lib/category-tree` alongside the existing `buildCategoryTreeNav, CATEGORY_TREE_L1` import. Gate on `validHandles` the same way the rest of the nav fails closed when the live collection list is empty/stale — do not introduce an ungated link the rest of the nav doesn't have.) Place one instance in the desktop panel (near the primary-categories grid, visually set apart per the styling note above) and one in the mobile panel, both wrapped in `onClick={() => setMobileOpen(false)}` for the mobile instance to match sibling links' behavior.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run the Header test file. Expected: PASS.
+
+- [ ] **Step 5: Manual verification**
+
+Using `claude-in-chrome` (load via `ToolSearch`) or a manual walkthrough, open the desktop mega-menu and the mobile drawer, confirm "Trocar Supplies" is visible without scrolling past the fold in both, and that it navigates to `/category/trocars-trocar-kits`. Record the result in Task 12's evidence doc.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add components/layout/Header.tsx components/layout/__tests__/Header.test.tsx
+git commit -m "feat(nav): add visible Trocar Supplies quick link under Surgery & Procedure"
+```
+
+---
+
+## Task 14: Trocar multi-category products — split pipe-separated Category facet values (Bilal 2026-08-19 addendum)
+
+**Files:**
+- Investigate first (read-only, no guessing): write a small read-only check against the live Storefront API for the `trocars-trocar-kits` collection's `custom.customer_filter_category` facet — reuse the pattern of an existing `scripts/verify-*.ts`/`scripts/audit-*.ts` script (`Glob` for one that queries collection filters, e.g. `scripts/audit-industry-facet-coverage.ts`, and follow its auth/client setup) — to confirm whether any returned facet value's `label` actually contains a literal `|` (pipe) character today. **Do not implement a fix before this returns real evidence** — the current registry (Task 1) already renders `customerCategory` generically via `getAllowedFacets`, and if Search & Discovery / the metafield is genuinely `list.single_line_text_field`, Shopify already emits one facet value per list entry with no pipe in sight, and this task closes as a verified no-op (mirror Task 3's Step 1-vs-Step 2 investigation-gated shape).
+- If a real combined-label value is found: modify `lib/filter-registry.ts`'s `getAllowedFacets` (~line 386-415) to add a narrow, generically-named splitting step (not Trocar-specific — any facet value whose label contains ` | ` gets split into N display rows sharing the same `input`/`count`, since the Storefront filter's underlying equality match cannot be split functionally — see the plan's addendum note on this being a display-only fix, not a filtering-semantics fix)
+- Test: `lib/__tests__/filter-registry.test.ts`
+
+**Interfaces:**
+- Consumes: `CollectionFilterValue { id, label, count, input }` (`lib/shopify/types.ts:207-212`), unchanged shape
+- Produces: `getAllowedFacets` may emit more `CollectionFilterValue` entries per facet than the raw Storefront response for a facet with pipe-joined labels — count/input are duplicated across the split entries, not divided, since they describe the same underlying filter action
+
+- [ ] **Step 1: Confirm the real facet shape with a read-only query**
+
+Write/extend a read-only script (or reuse an existing verify script's collection-filter-fetching logic) to fetch `trocars-trocar-kits`'s filters and print every `custom.customer_filter_category` (or `filter.p.category`, whichever the live facet id actually is per Task 1's registry) value's raw `label`. Cross-reference against the "four products have multiple Trocar categories" claim. Record the exact live values (with or without pipes) in this task's notes before writing any code.
+
+- [ ] **Step 2: Write the failing test (only if Step 1 found a real combined-label value)**
+
+In `lib/__tests__/filter-registry.test.ts`, using the file's existing `facet(...)` fixture helper, add a facet value with a pipe-joined label (matching the exact separator format found in Step 1 — do not assume ` | ` without confirming) and assert `getAllowedFacets` returns it as two separate `CollectionFilterValue` entries, both carrying the original `input`/`count`, ordered per `orderFacetValues`'s natural-sort rule (Global Constraints: do not introduce a differently-ordered facet list).
+
+If Step 1 found no combined-label value (e.g. the metafield is already list-typed and Shopify already emits split values), skip to Step 5 and record this as a verified no-op in Task 12's evidence doc — do not write dead code for a case that doesn't occur in the live data.
+
+- [ ] **Step 3: Run test to verify it fails** (skip if Step 2 was skipped)
+
+Run: `npm test -- lib/__tests__/filter-registry.test.ts`. Expected: FAIL — no splitting logic exists yet.
+
+- [ ] **Step 4: Write minimal implementation** (skip if Step 2 was skipped)
+
+Add the splitting step inside `getAllowedFacets`, after `orderFacetValues` is applied to a facet's values (so split entries still inherit correct sort position) — or before, whichever keeps the natural-sort contract intact for the split labels too (decide based on Step 1's real label text, then verify natural-sort order still holds for the split output in the test).
+
+- [ ] **Step 5: Run test, verify pass (or confirm no-op), commit**
+
+```bash
+git add lib/filter-registry.ts lib/__tests__/filter-registry.test.ts
+git commit -m "fix(filters): split pipe-separated Trocar Category facet values into separate filter rows"
+```
+(Omit if Step 1/2 found a verified no-op — note the finding in Task 12's evidence doc instead, no commit.)
