@@ -34,7 +34,7 @@ const PRODUCT_REDIRECTS = new Map<string, string>(
 // never recreated. Matched on the live `/category/<slug>` route and any path
 // beneath it (the whole category subtree is gone). These slugs are also hidden
 // from nav/listings/sitemap via lib/excluded-categories.ts.
-const GONE_CATEGORY_SLUGS = new Set([
+export const GONE_CATEGORY_SLUGS = new Set([
   'pharmaceuticals',
   'beds',
   'bariatric-beds',
@@ -54,7 +54,7 @@ function isGoneCategory(pathname: string): boolean {
 //
 // 410s first (definitive removal), then 301s grouped by destination type.
 //
-const REDIRECT_ENTRIES: RedirectEntry[] = [
+export const REDIRECT_ENTRIES: RedirectEntry[] = [
 
   // ── 410 Gone (permanently removed — do not recreate) ──────────────────────
   // Pharmaceuticals retired: DEA/compliance exposure (41 products removed from catalog).
