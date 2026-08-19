@@ -168,6 +168,44 @@ describe('CartPageClient', () => {
     expect(screen.queryByText('Default Title')).toBeNull()
   })
 
+  // DEV-LAUNCH-13: the /cart page must show the selected variant's own
+  // image, not the product's first image — a Blue AeroWalk line showed
+  // whichever color happened to be the product's first image regardless of
+  // which color was actually added.
+  it("shows the selected variant's own image, not the product's first image", () => {
+    const lineWithVariantImage = {
+      ...mockLine,
+      merchandise: {
+        ...mockLine.merchandise,
+        title: 'Blue',
+        image: {
+          id: 'img-variant',
+          url: 'https://example.com/blue.jpg',
+          altText: 'Blue variant',
+          width: 100,
+          height: 100,
+        },
+        product: {
+          ...mockLine.merchandise.product,
+          images: {
+            nodes: [{
+              id: 'img-product',
+              url: 'https://example.com/grey.jpg',
+              altText: 'Grey (product default)',
+              width: 100,
+              height: 100,
+            }],
+          },
+        },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [lineWithVariantImage] } } })
+    render(<CartPageClient />)
+    const img = screen.getByAltText('Blue variant')
+    expect(img).toHaveAttribute('src', expect.stringContaining('blue.jpg'))
+    expect(screen.queryByAltText('Grey (product default)')).not.toBeInTheDocument()
+  })
+
   it('calls removeItem when remove button is clicked', () => {
     const removeItem = vi.fn()
     setupUseCart({ removeItem })

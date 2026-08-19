@@ -167,7 +167,7 @@ export function CartPopup() {
           ) : (
             <div className="flex flex-col divide-y divide-gray-200">
               {lines.map((line) => {
-                const image = line.merchandise.product.images.nodes[0]
+                const image = line.merchandise.image ?? line.merchandise.product.images.nodes[0]
                 const variantTitle = line.merchandise.title
                 const lineTotal = parseFloat(line.cost.totalAmount.amount)
 
