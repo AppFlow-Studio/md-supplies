@@ -222,6 +222,55 @@ describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => 
     expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
     expect(screen.queryByText('8')).not.toBeInTheDocument()
   })
+
+  // Task 8 (2026-08-19): Bilal's follow-up requires this specific case be
+  // proven, not just inferred from the "no stale carryover" test above —
+  // a variant with ZERO packaging fields (order size, units per order, and
+  // all three breakdown fields all blank, with no product-level fallback
+  // available either) must show the fallback copy, never a blank tab and
+  // never its sibling's values. NOTE: the fallback copy asserted here is
+  // the CURRENT production string. Bilal's 2026-08-19 message requests
+  // "Packaging information unavailable for this option." — that differs
+  // from what's shown ("Packaging information not available for this
+  // product."). This is flagged as an open question in the Task 12
+  // evidence doc; this test intentionally pins today's actual copy so it
+  // fails loudly if the string changes without that question being
+  // resolved first.
+  it('shows the fallback message — not the sibling variant\'s data, and not a blank tab — when the selected variant has zero packaging fields and its sibling has some', () => {
+    const dataVariant: ProductVariant = {
+      ...blueVariant,
+      orderSize: null,
+      unitsPerOrder: null,
+      innerPackQuantity: '50',
+      packsPerCase: '4',
+      totalOrderQuantity: null,
+    }
+    const blankVariant: ProductVariant = {
+      ...whiteVariant,
+      orderSize: null,
+      unitsPerOrder: null,
+      innerPackQuantity: null,
+      packsPerCase: null,
+      totalOrderQuantity: null,
+    }
+    renderPDP(dataVariant, {
+      orderSize: null,
+      unitsPerOrder: null,
+      quantityOfUnits: null,
+      variants: { nodes: [dataVariant, blankVariant] },
+    })
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.getByText('Inner Pack Quantity')).toBeInTheDocument()
+    expect(screen.getByText('50')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Color: White' }))
+
+    expect(screen.getByText('Packaging information not available for this product.')).toBeInTheDocument()
+    expect(screen.queryByText('Inner Pack Quantity')).not.toBeInTheDocument()
+    expect(screen.queryByText('50')).not.toBeInTheDocument()
+    expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
+    expect(screen.queryByText('4')).not.toBeInTheDocument()
+  })
 })
 
 describe('ProductView — variant-sourced order unit, above Add to Cart', () => {
