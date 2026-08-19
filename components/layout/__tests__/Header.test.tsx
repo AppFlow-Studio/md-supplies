@@ -165,6 +165,36 @@ describe('Header — mobile drawer a11y (NF9)', () => {
   })
 })
 
+describe('Header — Trocar Supplies quick link (Task 13)', () => {
+  // categoriesItem (the mega-dropdown + mobile categories panel) only renders
+  // when a menu item of type CATALOG is present — see Header.tsx's
+  // `categoriesItem = menuItems.find((item) => item.type === 'CATALOG')`.
+  const MENU_WITH_CATALOG: MenuItem[] = [
+    makeMenuItem({ id: 'gid://shopify/MenuItem/catalog', title: 'Categories', type: 'CATALOG' }),
+    ...MENU,
+  ]
+
+  const COLLECTIONS_WITH_TROCARS: SlimCollection[] = [
+    ...COLLECTIONS,
+    makeCollection('trocars-trocar-kits', 'Trocars & Trocar Kits'),
+  ]
+
+  it('shows a visible "Trocar Supplies" quick link next to "Surgery & Procedure" in the desktop categories dropdown', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    // The categories panel is always in the DOM (CSS-toggled, see NF7 above),
+    // so its links are queryable via hidden: true without simulating hover/focus.
+    const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
+    const [trocarLink] = screen.getAllByRole('link', { name: 'Trocar Supplies', hidden: true })
+    expect(trocarLink).toHaveAttribute('href', surgery.getAttribute('href'))
+  })
+
+  it('shows the "Trocar Supplies" quick link in the mobile categories panel too', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    const trocarLinks = screen.getAllByRole('link', { name: 'Trocar Supplies', hidden: true })
+    expect(trocarLinks.length).toBeGreaterThan(0)
+  })
+})
+
 describe('Header — menu slug validation (NF11)', () => {
   it('keeps hrefs whose slug matches a real collection handle', () => {
     render(<Header menuItems={MENU} collections={COLLECTIONS} />)

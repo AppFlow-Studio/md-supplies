@@ -15,7 +15,7 @@ import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
 import type { MenuItem } from '@/lib/shopify/types'
-import { buildCategoryTreeNav, CATEGORY_TREE_L1 } from '@/lib/category-tree'
+import { buildCategoryTreeNav, CATEGORY_TREE_L1, getCategorySlug } from '@/lib/category-tree'
 import { LOGO_PATH } from '@/lib/bunnycdn'
 import { approvedClaims, type ClaimKey } from '@/lib/claims'
 import { announcementBarClass } from '@/lib/announcement-visibility'
@@ -304,6 +304,24 @@ export function Header({ menuItems, collections }: HeaderProps) {
                           </Link>
                         ))}
                       </div>
+                      {/* Bilal 2026-08-19: a second, explicitly-labeled quick
+                          link to Trocar Supplies — visible on its own, not
+                          just implied by "Surgery & Procedure"'s destination.
+                          Badge-styled (not a same-weight grid tile) so it
+                          reads as a quick link, not a duplicate category. */}
+                      {(() => {
+                        const trocar = CATEGORY_TREE_L1.find((c) => c.tag === 'surgery-procedure')
+                        if (!trocar || !validHandles.has(trocar.collectionHandle)) return null
+                        return (
+                          <Link
+                            href={ROUTES.category(getCategorySlug(trocar))}
+                            className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full hover:bg-teal-100 transition-colors"
+                          >
+                            <span aria-hidden="true">→</span>
+                            Trocar Supplies
+                          </Link>
+                        )
+                      })()}
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-3">
@@ -517,6 +535,22 @@ export function Header({ menuItems, collections }: HeaderProps) {
                       {cat.displayName}
                     </Link>
                   ))}
+                  {/* Bilal 2026-08-19: explicit Trocar Supplies quick link —
+                      see matching desktop instance above for rationale. */}
+                  {(() => {
+                    const trocar = CATEGORY_TREE_L1.find((c) => c.tag === 'surgery-procedure')
+                    if (!trocar || !validHandles.has(trocar.collectionHandle)) return null
+                    return (
+                      <Link
+                        href={ROUTES.category(getCategorySlug(trocar))}
+                        onClick={() => setMobileOpen(false)}
+                        className="inline-flex w-fit items-center gap-1 mt-1 mb-1 text-xs font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full"
+                      >
+                        <span aria-hidden="true">→</span>
+                        Trocar Supplies
+                      </Link>
+                    )
+                  })()}
                   {categoryNav.more.map((cat) => (
                     <Link
                       key={cat.href}
