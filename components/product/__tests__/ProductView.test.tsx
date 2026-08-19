@@ -121,6 +121,29 @@ describe('ProductView — Vendor Shipping & Returns (H-01/P0.5)', () => {
     expect(screen.queryByText('Drive Medical Return Policy')).not.toBeInTheDocument()
     expect(screen.queryByText('Return Authorization Required')).not.toBeInTheDocument()
   })
+
+  // Task 6 (2026-08-19): custom.shipping_returns bold marks (Shopify
+  // rich_text_field `"bold": true` on the text leaf, confirmed against live
+  // QA data) must survive as <strong>, not be flattened to plain text.
+  it('renders bold spans in Vendor Shipping & Returns as <strong>, leaving surrounding text unwrapped', () => {
+    const richText = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'Returns accepted within ' },
+          { type: 'text', value: '30 days', bold: true },
+          { type: 'text', value: ' of delivery.' },
+        ],
+      }],
+    })
+    renderPDP(blueVariant, { shippingReturns: richText })
+    fireEvent.click(screen.getByRole('tab', { name: 'VENDOR SHIPPING & RETURNS' }))
+    const bold = screen.getByText('30 days')
+    expect(bold.tagName).toBe('STRONG')
+    const surrounding = screen.getByText(/Returns accepted within/)
+    expect(surrounding.tagName).not.toBe('STRONG')
+  })
 })
 
 describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => {

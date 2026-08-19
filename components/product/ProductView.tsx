@@ -15,14 +15,13 @@ import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { ProductLabelBadges } from './ProductLabelBadges'
-import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
-import { shopifyRichTextToPlainParagraphs } from '@/lib/policy/rich-text'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
@@ -234,6 +233,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // vendorPolicyText below — the approved general fallback still renders
   // when a product has no value (not every product carries this field).
   const vendorPolicyText = shopifyRichTextToPlainParagraphs(product.shippingReturns).join('\n\n') || null
+
+  // Bold-preserving companion to vendorPolicyText above (Task 6, 2026-08-19):
+  // resolveReturnPolicy/ReturnPolicyContent only carry plain-text paragraphs
+  // (DEV-POLICY-01's shared string-only contract with /returns), so the
+  // vendor-specific tab below renders these spans directly instead, while
+  // still reusing resolveReturnPolicy just for the "{Vendor} Return Policy"
+  // heading text so heading wording can't drift from the shared module.
+  const vendorPolicyParagraphs = shopifyRichTextToParagraphSpans(product.shippingReturns)
+  const vendorPolicyHeading = resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections[0]?.heading ?? null
 
   return (
     <>
@@ -637,10 +645,25 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               // so resolveReturnPolicy always takes its 'vendor' branch here
               // — the general fallback is never shown on this tab, only at
               // /returns (DEV-POLICY-01).
-              <ReturnPolicyContent
-                sections={resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections}
-                headingLevel="h3"
-              />
+              // Task 6 (2026-08-19): rendered directly here (not via the
+              // shared ReturnPolicyContent, which only knows plain-text
+              // paragraphs) so bold marks from custom.shipping_returns
+              // survive as <strong> — this is the only rich-text-safe
+              // rendering path (bold/italic only, never arbitrary HTML).
+              <div className="flex flex-col gap-4 max-w-[760px]">
+                {vendorPolicyHeading && (
+                  <h3 className="text-navy-900 text-[18px] font-semibold tracking-[0.36px] mt-2">
+                    {vendorPolicyHeading}
+                  </h3>
+                )}
+                {vendorPolicyParagraphs.map((spans, i) => (
+                  <p key={i} className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                    {spans.map((s: RichTextSpan, j) => (
+                      s.bold ? <strong key={j}>{s.text}</strong> : <span key={j}>{s.text}</span>
+                    ))}
+                  </p>
+                ))}
+              </div>
             )}
 
             {activeTab === 'REVIEWS' && (
