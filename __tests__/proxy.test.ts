@@ -404,6 +404,29 @@ describe('proxy — bulk product catalog 301s', () => {
       proxy(req('/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101')),
     )
   })
+
+  // Task 11 (2026-08-19): full redirect audit (scripts/audit-redirects.ts) confirmed
+  // the same dead-destination pattern Task 10 found and fixed for the hand-written
+  // Graham Drape Sheet White 40x60 entry above also exists for its three sibling
+  // rows in the BULK table (docs/redirects-ready.json), which Task 10 flagged but
+  // explicitly deferred to this task. Live Storefront API checks (direct handle
+  // lookup + title/vendor search for "drape sheet" / "Graham Medical") confirm
+  // none of the three Blue target handles exist, and the whole Drape Sheet line /
+  // Graham Medical vendor is absent from the catalog — same corroboration Task 10
+  // used, not just a single-handle 404. Falls back to /category/exam-room, the
+  // same no-live-handle pattern.
+  it('Task 11: Drape Sheet White 40x90/40x60/40x48 bulk rows → /category/exam-room (dead Blue target handles)', () => {
+    const rows = [
+      '/products/drape-sheets-40-x-90-2-ply-white-50-cs',
+      '/products/drape-sheets-40-x-60-2-ply-white-100-cs',
+      '/products/drape-sheets-40-x-48-2-ply-white-100-cs',
+    ]
+    for (const from of rows) {
+      const res = proxy(req(from))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/exam-room')
+    }
+  })
 })
 
 describe('proxy — full product redirect map (programmatic sweep)', () => {
