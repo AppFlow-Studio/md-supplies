@@ -80,23 +80,33 @@ have passed. This matches Bilal's strict AND-gate requirement exactly.
 This is case-sensitive (no `-i`), so it matches lowercase `shippingDisplay`
 and `freeShipping` but **not** the capitalized `ShippingDisplay` type name or
 identifiers built from it (`attachCardShippingDisplay`,
-`attachCartShippingDisplay`). It returned 76 hits across 22 files, all
+`attachCartShippingDisplay`). It returned 76 hits across 23 files, all
 listed under (a)/(b) below.
 
-That pattern gap meant three real call sites were silently invisible to the
-literal grep: `app/page.tsx`, `components/category/CategoryResults.tsx`, and
-`app/actions/cart.ts` each call `attachCardShippingDisplay`/
-`attachCartShippingDisplay` but contain no lowercase match for any of the
-four alternatives (confirmed by re-running the literal command in isolation
-— none of the three appear in its output). These three were found by a
-follow-up case-insensitive search, `grep -rin "shippingdisplay"
-components/ app/`, run specifically to close that gap after noticing the
-literal pattern couldn't match capital-S identifiers. They're marked
-**(follow-up)** below rather than presented as literal-grep hits.
-`lib/shipping-resolver/attach.ts` and `lib/shipping-resolver/cart.ts`
-themselves are outside both greps' scope (`lib/`, not `components/`/`app/`)
-— they were read directly, as the definitions of the functions the grep hits
-call into, not discovered by either grep.
+That pattern gap is per-**line**, not just per-file: several files have
+*some* literal-matching line (a comment, a type annotation, a destructured
+prop named `shippingDisplay`) but the actual `attachCardShippingDisplay(...)`/
+`attachCartShippingDisplay(...)` call-site line in that same file uses the
+capitalized identifier and does **not** literal-match, even though the file
+as a whole appears in the literal grep's output. Every citation below was
+re-checked line-by-line against the literal grep's actual output (not just
+"does this file appear anywhere in the list") before being tagged — three
+files fall entirely outside the literal grep (no line in them matches at
+all): `app/page.tsx`, `components/category/CategoryResults.tsx`, and
+`app/actions/cart.ts`. Additionally, three specific *lines* inside otherwise
+literal-grep-matched files are themselves capital-S-only and don't
+literal-match even though their file does: `app/search/page.tsx:133`,
+`app/partners/[partner-slug]/page.tsx:37`, and
+`app/product/[slug]/page.tsx:116-117`. All six of these (three whole files,
+three individual lines) were found via a follow-up case-insensitive search,
+`grep -rin "shippingdisplay" components/ app/`, run specifically to close
+this gap after noticing the literal pattern couldn't match capital-S
+identifiers, and are marked **(follow-up)** below rather than presented as
+literal-grep hits. `lib/shipping-resolver/attach.ts` and
+`lib/shipping-resolver/cart.ts` themselves are outside both greps' scope
+(`lib/`, not `components/`/`app/`) — they were read directly, as the
+definitions of the functions the grep hits call into, not discovered by
+either grep.
 
 **No bypass found** — every hit (from either search) is one of:
 
@@ -106,17 +116,17 @@ call into, not discovered by either grep.
 - `components/product/ProductView.tsx:62,99,365` — `RelatedProductCard` reads `product.shippingDisplay`; the PDP itself reads `variantShippingDisplays[selectedVariant.id]`, a map built by `gateFreeShippingClaims()` in the route (see below).
 - `components/store/ShopifyProductCard.tsx:115` — reads `product.shippingDisplay`.
 - `components/store/ShopifyQuickAddButton.tsx:40`, `components/product/QuickAddContent.tsx:210` — read `product.shippingDisplay`.
-- `components/store/CartPopup.tsx:215`, `components/store/CartPageClient.tsx:45,163` — read `line.shippingDisplay`. The cart-page whole-summary banner (`CartPageClient.tsx:43-45`) also only reads `line.shippingDisplay?.class === 'standard-free'`, never a raw field.
+- `components/store/CartPopup.tsx:215`, `components/store/CartPageClient.tsx:45,163` — read `line.shippingDisplay`. Line 45 is also the cart-page whole-summary banner's check (`lines.every((line) => line.shippingDisplay?.class === 'standard-free')`, spanning source lines 43-45 but with the literal-matching text only on line 45) — it too only reads `line.shippingDisplay`, never a raw field.
 - `components/home/PopularProducts.tsx:52,136`, `components/home/HeroSection.tsx:53`, `components/b2b/FeaturedProductCard.tsx:68` — all read `product.shippingDisplay`.
 
 **(b) Safe — the gate/attach infrastructure itself** (this is where `shippingDisplay` gets produced, correctly gated, not a bypass):
 - `lib/shipping-resolver/attach.ts` (`attachCardShippingDisplay`) — `gateFreeShippingClaim(resolveCardShippingDisplay(product.id), product.freeShipping)`. *(read directly, outside grep scope — see methodology note above)*
 - `lib/shipping-resolver/cart.ts` (`attachCartShippingDisplay`) — same gate, keyed per cart line's own product/variant. *(read directly, outside grep scope)*
-- `app/product/[slug]/page.tsx:110` and `app/category/[slug]/[product]/page.tsx:318` — `gateFreeShippingClaims(resolveVariantsForProduct(product.id), product.freeShipping)` for the PDP's per-variant map. *(literal-grep hits)*
-- `app/search/page.tsx:133`, `app/partners/[partner-slug]/page.tsx:37` — call `attachCardShippingDisplay(...)` before handing products to card components. *(literal-grep hits)*
-- `app/page.tsx:81,85`, `components/category/CategoryResults.tsx:115` — also call `attachCardShippingDisplay(...)` before handing products to card components. *(follow-up case-insensitive hits, not literal-grep hits — see methodology note above)*
-- `app/actions/cart.ts` (6 call sites: lines 42, 86, 131, 149, 161, 173) — every cart mutation returns `attachCartShippingDisplay(cart)`. *(follow-up case-insensitive hits, not literal-grep hits)*
-- `app/product/[slug]/page.tsx:116-117` — related/complementary ("You May Also Like"/"You May Also Need") products are run through `attachCardShippingDisplay` before reaching `ProductView`, same as every other card grid (this is the Task 4/DEV-SHIP-04 fix already committed — previously these carried no `shippingDisplay` at all, so they never showed a badge even when the product qualified; now they show the correctly-gated one). *(literal-grep hit)*
+- `app/product/[slug]/page.tsx:110` and `app/category/[slug]/[product]/page.tsx:318` — `gateFreeShippingClaims(resolveVariantsForProduct(product.id), product.freeShipping)` for the PDP's per-variant map. *(literal-grep hits — both lines literal-match on `product.freeShipping`.)*
+- `app/search/page.tsx:133` and `app/partners/[partner-slug]/page.tsx:37` — call `attachCardShippingDisplay(...)` before handing products to card components. *(follow-up case-insensitive hits, not literal-grep hits: each file has a different line elsewhere that literal-matches — `app/search/page.tsx:130`, a comment, and `app/partners/[partner-slug]/page.tsx:253`, a lowercase `shippingDisplay:` prop key — but the call-site lines cited here, 133 and 37, use the capitalized `attachCardShippingDisplay` identifier and do not literal-match themselves.)*
+- `app/page.tsx:81,85`, `components/category/CategoryResults.tsx:115` — also call `attachCardShippingDisplay(...)` before handing products to card components. *(follow-up case-insensitive hits, not literal-grep hits — these two files contain no literal-matching line at all, unlike the two above — see methodology note above)*
+- `app/actions/cart.ts` (6 call sites: lines 42, 86, 131, 149, 161, 173) — every cart mutation returns `attachCartShippingDisplay(cart)`. *(follow-up case-insensitive hits, not literal-grep hits — this file contains no literal-matching line at all)*
+- `app/product/[slug]/page.tsx:116-117` — related/complementary ("You May Also Like"/"You May Also Need") products are run through `attachCardShippingDisplay` before reaching `ProductView`, same as every other card grid (this is the Task 4/DEV-SHIP-04 fix already committed — previously these carried no `shippingDisplay` at all, so they never showed a badge even when the product qualified; now they show the correctly-gated one). *(follow-up case-insensitive hit, not a literal-grep hit: this file's literal-grep matches are lines 22, 105, 110, and 113 only — the two call-site lines cited here, 116-117, use the capitalized `attachCardShippingDisplay` identifier and don't literal-match themselves.)*
 
 **No occurrence of case (b-bug)** was found: no component or route reads
 `custom.free_shipping` (or a raw `freeShipping` field) and independently

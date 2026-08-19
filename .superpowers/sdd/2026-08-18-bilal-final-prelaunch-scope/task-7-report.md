@@ -3,7 +3,8 @@
 **Status: DONE_WITH_CONCERNS**
 **Commits:**
 - `f6a8ba8` — "docs(shipping): verify Free Shipping AND-gate across all 7 display surfaces" (findings doc)
-- follow-up commit — "docs(shipping): correct Step 2 grep-methodology description, add task report" (post-review fixes: Step 2 methodology accuracy, this report)
+- `bdac253` — "docs(shipping): correct Step 2 grep-methodology description, add task report" (round 1 post-review fixes: partial Step 2 methodology correction, added this report)
+- this commit — round 2 post-review fixes: completed the Step 2 methodology correction (see "Post-review fixes" below) after a re-review found round 1 incomplete
 
 **Docs-only task — no code or test files were changed.** No bypass of the
 AND-gate was found anywhere, so there was nothing to fix.
@@ -78,8 +79,8 @@ repo. Flagged as a follow-up for Bilal/Izzy directly.
 
 ## Post-review fixes (this commit)
 
-1. **Step 2 methodology accuracy** — the original doc presented several
-   file:line citations (`app/search/page.tsx:133`, `app/page.tsx:81,85`,
+1. **Step 2 methodology accuracy (round 1)** — the original doc presented
+   several file:line citations (`app/search/page.tsx:133`, `app/page.tsx:81,85`,
    `components/category/CategoryResults.tsx:115`,
    `app/partners/[partner-slug]/page.tsx:37`, `app/actions/cart.ts`) as if
    they all came from running the brief's literal case-sensitive grep. A
@@ -88,15 +89,36 @@ repo. Flagged as a follow-up for Bilal/Izzy directly.
    **not** appear in its output — they use capital-S `ShippingDisplay`
    naming (`attachCardShippingDisplay`/`attachCartShippingDisplay`), which
    the lowercase literal pattern doesn't match. Re-ran the literal grep
-   myself to confirm (76 hits / 22 files, none of those three included),
-   then edited Step 2 to state the actual two-pass methodology (literal
-   grep, then a case-insensitive follow-up specifically for `ShippingDisplay`
-   to close that gap) and marked every citation as *(literal-grep hit)* or
-   *(follow-up hit)* accordingly. The underlying conclusion (no bypass
-   exists) was independently re-verified as correct and did not change —
-   only the doc's description of how it was found.
-2. **This report** — was missing; every prior task (1-6) in this ledger has
-   a `task-N-report.md`, Task 7 did not. Added now.
+   myself to confirm (76 hits / 23 files — see round 2 below for the
+   corrected file count), then edited Step 2 to state the two-pass
+   methodology (literal grep, then a case-insensitive follow-up specifically
+   for `ShippingDisplay` to close that gap) and marked every citation as
+   *(literal-grep hit)* or *(follow-up hit)* accordingly.
+2. **Step 2 methodology accuracy (round 2)** — round 1's relabeling was
+   itself incomplete: it correctly moved the 3 whole-file cases
+   (`app/page.tsx`, `CategoryResults.tsx`, `app/actions/cart.ts`, none of
+   which literal-match at all) but missed that `app/search/page.tsx:133`
+   and `app/partners/[partner-slug]/page.tsx:37` were still tagged
+   *(literal-grep hits)* — the reviewer confirmed the literal grep does
+   match elsewhere in each of those two files (`:130` and `:253`
+   respectively) but not at the cited call-site line. Doing a full re-check
+   of every citation against the literal grep's exact per-line output
+   (rather than "does this file appear in the list") also caught a **third**
+   mislabeled citation the reviewer hadn't flagged yet:
+   `app/product/[slug]/page.tsx:116-117` was tagged literal-grep-hit but
+   that file's literal matches are lines 22, 105, 110, 113 only — 116-117
+   (the actual `attachCardShippingDisplay` calls) are capital-S-only, same
+   root cause. Also corrected the file count from 22 to the actual 23
+   (recounted via `grep -rln ... | wc -l`) and tightened one imprecise line
+   range (`CartPageClient.tsx:43-45` → clarified only line 45 literal-matches,
+   43-44 are source context for the same expression). Every citation in
+   Step 2 was re-verified line-by-line against the literal grep's raw output
+   before this pass was called done. The underlying conclusion (no bypass
+   exists anywhere) has not changed at any point — only the doc's
+   description of which search found which citation.
+3. **This report** — was missing after the original commit; every prior
+   task (1-6) in this ledger has a `task-N-report.md`, Task 7 did not.
+   Added in round 1's commit, updated here for round 2.
 
 ## Files changed
 
