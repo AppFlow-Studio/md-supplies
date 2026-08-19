@@ -237,6 +237,29 @@ describe('proxy — AeroWalk color-neutral handle migration (P0.7)', () => {
     const res = proxy(req('/product/aerowalk-ultra-lite-rollator-rolling-walker-blue/'))
     expect(res?.status).toBe(301)
   })
+
+  // Task 10 (2026-08-19): investigated whether the legacy old-store White/Grey
+  // AeroWalk product pages (distinct from the Blue-handle QA pilot above) had
+  // a redirect gap. They don't — docs/redirects-ready.json already carries
+  // /products/aerowalk-ultra-lite-rollator-rolling-walker-white and -grey
+  // rows, both mapping to /products/aerowalk-ultra-lite-rollator-rolling-walker,
+  // which PRODUCT_REDIRECTS (the bulk map built from that file) rewrites to
+  // the live singular route. That's the same neutral handle confirmed live
+  // above and via scripts/verify-aerowalk-qa-pilot.ts (product 9365094531305).
+  // These two assertions are regression coverage for an already-correct path,
+  // not a fix.
+  it('legacy White/Grey product pages already resolve via the bulk PRODUCT_REDIRECTS map (no gap)', () => {
+    const white = proxy(req('/products/aerowalk-ultra-lite-rollator-rolling-walker-white'))
+    const grey = proxy(req('/products/aerowalk-ultra-lite-rollator-rolling-walker-grey'))
+    expect(white?.status).toBe(301)
+    expect(white?.headers.get('Location')).toBe(
+      'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
+    )
+    expect(grey?.status).toBe(301)
+    expect(grey?.headers.get('Location')).toBe(
+      'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
+    )
+  })
 })
 
 describe('proxy — new 301 entries (backlink recovery)', () => {
@@ -295,10 +318,20 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     expect(res?.headers.get('Location')).toContain('/category/wound-care')
   })
 
-  it('row 19: Graham Drape Sheet → /product/drape-sheets-40-x-60-2-ply-blue-100-cs', () => {
+  // Task 10 (2026-08-19): the ACTION comment at proxy.ts flagged
+  // /product/drape-sheets-40-x-60-2-ply-blue-100-cs as needing a pre-deploy
+  // 200 check. Live Storefront API query confirms that handle does not
+  // exist (no "Drape Sheet" or "Graham Medical"-vendor product remains in
+  // the catalog at all — the whole line was discontinued, not just
+  // recolored). Redirects to /category/exam-room instead, matching the
+  // established no-live-handle fallback pattern used elsewhere in this file
+  // (Feather Surgical Blades / Emergency Trauma Dressings / Triangular
+  // Bandages → /category/wound-care). /category/exam-room verified live via
+  // GET_COLLECTION_META against the QA store.
+  it('row 19: Graham Drape Sheet White → /category/exam-room (dead product handle replaced)', () => {
     const res = proxy(req('/medical-supplies-Graham+Medical-Drape+Sheet+White+40+x+60+2-Ply-XVUAKHW2KF.html'))
     expect(res?.status).toBe(301)
-    expect(res?.headers.get('Location')).toContain('/product/drape-sheets-40-x-60-2-ply-blue-100-cs')
+    expect(res?.headers.get('Location')).toContain('/category/exam-room')
   })
 
   it('row 20: Triangular Bandages (++ double-space) → /category/wound-care', () => {

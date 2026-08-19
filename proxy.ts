@@ -105,10 +105,17 @@ const REDIRECT_ENTRIES: RedirectEntry[] = [
   { from: '/medical-supplies-Feather-Sterile Surgical Blades 11-2ULXL3BIJK.html',                     to: '/category/wound-care',                            status: 301 },
   { from: '/medical-supply-store/Wound  Skin Care/Elastic Bandages/Triangular Bandages-ATPW8HKJSB.html', to: '/category/wound-care',                         status: 301 },
 
-  // Consolidated product redirect — white 40×60 2-ply variant maps to blue master
-  // (verified in docs/redirects-ready.json lines 4855–4856). Single hop; no chain.
-  // ACTION: verify /product/drape-sheets-40-x-60-2-ply-blue-100-cs returns 200 before deploy.
-  { from: '/medical-supplies-Graham Medical-Drape Sheet White 40 x 60 2-Ply-XVUAKHW2KF.html',         to: '/product/drape-sheets-40-x-60-2-ply-blue-100-cs', status: 301 },
+  // Drape Sheet White 40x60 2-Ply (Task 10, 2026-08-19): the ACTION item this
+  // entry previously carried — verify /product/drape-sheets-40-x-60-2-ply-blue-100-cs
+  // returns 200 before deploy — was checked against the live Storefront API and
+  // FAILED: that handle does not exist. A title/vendor search confirms the
+  // whole Drape Sheet line (and Graham Medical as a vendor) is gone from the
+  // catalog, not just recolored, so no product-level destination exists to
+  // redirect to. Falls back to /category/exam-room (live, verified via
+  // GET_COLLECTION_META), the same no-live-handle pattern used elsewhere in
+  // this file (Feather Surgical Blades / Emergency Trauma Dressings /
+  // Triangular Bandages → /category/wound-care).
+  { from: '/medical-supplies-Graham Medical-Drape Sheet White 40 x 60 2-Ply-XVUAKHW2KF.html',         to: '/category/exam-room',                             status: 301 },
 
   // Testing & Screening — verified handle is testing-screening, not "testing"
   { from: '/medical-supply-store/Testing-and-Screening/Diagnostic-Tests/Lipid-Glucose-Testing-Z2IP7J6EF7.html', to: '/category/testing-screening',            status: 301 },
