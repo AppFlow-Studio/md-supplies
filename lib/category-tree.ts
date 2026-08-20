@@ -67,15 +67,18 @@ export type L1CategoryDef = {
    * source the L2 subcategory pages and the /categories tile counts already
    * use, so the page finally agrees with its own count.
    *
-   * The four 'tag' entries below are the Phase 2 fix this file's comment
+   * The three 'tag' entries below are the Phase 2 fix this file's comment
    * deferred. Measured live 2026-08-12 (audit/live/tag-vs-collection.json),
    * tag total vs collection total:
-   *   surgery-procedure 319 vs  41 (trocars-trocar-kits)
    *   room-furniture    512 vs   8 (seating)
    *   apparel           152 vs  34 (capes-gowns)
    *   face-masks         35 vs   1 (face-coverings)
-   * The other 21 agree within normal drift and stay on their collection, which
+   * The other 22 agree within normal drift and stay on their collection, which
    * keeps their richer sort keys (Query.search accepts only RELEVANCE/PRICE).
+   *
+   * surgery-procedure (Trocar) WAS a fourth 'tag' entry (319 tag vs 41
+   * collection) but Bilal reversed that specifically for this category on
+   * 2026-08-20 — see the inline comment on that entry below for why.
    */
   productSet?: 'collection' | 'tag'
 }
@@ -93,7 +96,12 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'respiratory', displayName: 'Respiratory', collectionHandle: 'respiratory', navGroup: 'primary', shortDescription: 'Respiratory-care supplies for oxygen delivery, nebulization, airway support, and routine patient treatment.' },
   { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility', navGroup: 'primary', shortDescription: 'Wheelchairs, walkers, canes, rollators, and mobility accessories for patient support and daily movement.' },
   { tag: 'patient-therapy-rehab', displayName: 'Patient Therapy & Rehab', collectionHandle: 'patient-therapy-rehab', navGroup: 'primary', shortDescription: 'Therapy, rehabilitation, exercise, and positioning products that support recovery and patient mobility.' },
-  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', productSet: 'tag', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
+  // Bilal, 2026-08-20: reversed the 2026-08-12 tag-sourced fix for THIS
+  // category only — the Trocar page must show Izzy's verified 41 active
+  // products (the trocars-trocar-kits collection), not the 319-product
+  // category:surgery-procedure tag set, which mixes in unrelated/archived
+  // Surgery products. apparel/room-furniture/face-masks below are untouched.
+  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
   { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', productSet: 'tag', navGroup: 'primary', shortDescription: 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.' },
   { tag: 'hygiene', displayName: 'Hygiene', collectionHandle: 'hygiene', navGroup: 'primary', shortDescription: 'Personal-hygiene and patient-care products for bathing, oral care, grooming, and everyday cleanliness.' },
   { tag: 'disinfectants', displayName: 'Disinfectants', collectionHandle: 'disinfectants', navGroup: 'primary', shortDescription: 'Cleaning and disinfection products for surfaces, equipment, hands, and infection-control routines.' },
