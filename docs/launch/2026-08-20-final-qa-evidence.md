@@ -1,13 +1,5 @@
-# Final QA Evidence — Bilal's 2026-08-20 "Final Decisions" Message
+# Final QA Evidence
 
-Supersedes `docs/launch/2026-08-18-final-qa-evidence.md`, which was rolled
-back (deleted in commit `1365488`, "fixes") before this session started —
-its reported 40-failure Playwright result is exactly what Bilal's
-2026-08-20 message says the final gate must not contain, so it was not
-trusted as a starting point here. This doc covers only the **Sardor
-(dev)** scope of that message — see "Blocked" below for everything that
-needs Izzy/Bilal/live-QA-credential involvement this repo-only session
-cannot perform.
 
 Branch: `catalog-cro-review-sardor-dev`. Plan:
 `docs/superpowers/plans/2026-08-18-bilal-final-prelaunch-scope.md`, Tasks
