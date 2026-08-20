@@ -115,3 +115,62 @@ Task 14: complete (commits 5304619..be922f0, review clean — verified no-op, no
 13-14 are new and independent of the others' shared files — 13 touches
 Header.tsx only, 14 touches filter-registry.ts only, both already-audited
 clean of conflicts in the original scan).
+
+## Plan amendment (2026-08-20)
+
+Bilal sent a further "final decisions" Slack message reversing two prior
+rulings (RX Only capitalization, Trocar productSet) and adding three new
+items (badge contrast, AeroWalk category-route redirect, final packaging
+copy). Task 12's evidence doc was never actually completed in this ledger
+(a `docs/launch/2026-08-18-final-qa-evidence.md` existed briefly at commit
+ff9f2ab but was deleted in `1365488` "fixes" before this session — its
+40-failure result is explicitly what Bilal's new message says the final
+gate must not contain, so it is not trusted as ground truth here). Folded
+in as new Tasks 15-19 (code fixes) + Task 20 (supersedes the old Task 12 —
+full gate + evidence doc, output renamed to
+`docs/launch/2026-08-20-final-qa-evidence.md`). Ruling: append rather than
+redo Task 12, same rationale as the 13-14 addendum — keeps this ledger's
+existing completion lines valid.
+
+Pre-flight conflict check for 15-20: Task 15 touches `Header.tsx` +
+`e2e/contrast.spec.ts` only (Task 13 also touched `Header.tsx`, already
+committed/merged — no live conflict, this is a further edit on top).
+Task 16 touches `proxy.ts` + `__tests__/proxy.test.ts` only (same files as
+Tasks 2/10/11, all already committed — editing their now-stable state, not
+a concurrent conflict). Task 17 touches `ProductView.tsx` + its test only
+(Tasks 4/6/8 also touched this file, all committed). Task 18 touches
+`category-tree.ts` + its test only — no other task in this plan touches
+that file. Task 19 touches `labels.ts` + `ProductBadges.tsx` + a wide set
+of test files that read the `RX_ONLY_LABEL_TEXT` constant — no other task
+in this plan writes to any of them. Task 20 is docs/verification only,
+depends on 15-19, runs last. No true conflicts — all safe in stated order,
+same "preserve plan order" ruling as the original scan.
+
+Decision: executing inline (controller-driven, no subagent dispatch) —
+scope is 6 tasks of already-well-specified, mechanical TDD work in files
+the controller has already read in full this session; subagent context-cold-start
+would not add value here the way it did for the original 14-task plan's
+broader unknowns.
+
+Task 15: complete (commit a357cec, review not yet dispatched — controller-executed, verified via full contrast.spec.ts run: 12/12 passing)
+Task 16: complete (commit 255e9f0 — proxy.test.ts 85/85 passing; audit-redirects.ts re-run against QA confirms all 30 hand-written entries incl. all 3 AeroWalk legacy handles resolve 200/0 broken)
+Task 17: complete (commit f1f9ea3 — ProductView.test.tsx 17/17 passing)
+Task 18: complete (commit 3c16f8c — category-tree.test.ts 44/44 passing; full suite 1513/1513 passing, no regression)
+Task 19: complete (commit b64697c — full suite 1514/1514 passing, tsc --noEmit clean, e2e/rx-states.spec.ts 2/2 passing)
+Task 20: complete (no code commit for the gate itself — commit 8d760dd
+refreshed 10 pre-existing visual baselines drifted by live QA data,
+verified NOT caused by Tasks 15-19 via a temporary worktree at 1365488
+reproducing the same failure pre-session; evidence doc at
+docs/launch/2026-08-20-final-qa-evidence.md). Full gate: npm test
+1514/1514, tsc --noEmit clean, eslint clean of anything touched this
+session, test:e2e chromium 266/0/21 mobile-chromium 265/0/22 (skips
+documented, both driven by missing QA customer-session credentials and
+QA-data-shape gaps, not code). Blocked items (guest checkout, QA
+password, production-side re-checks, PRODUCTION-TO-QA-ID-MAP cross-check,
+118218/118220 resolution) listed explicitly in the evidence doc rather
+than guessed at.
+
+## PLAN COMPLETE — all 20 tasks (14 original + 6 addendum) done. User has
+not yet been asked about push/PR — remains gated per Global Constraints.
+Next: report results to user; ask about superpowers:finishing-a-development-branch
+only if/when they want to move toward merge.
