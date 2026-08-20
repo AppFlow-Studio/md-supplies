@@ -63,6 +63,14 @@ const HOSTILE_FACETS: CollectionFilter[] = [
   facet('filter.p.m.custom.brand_name', 'Brand name'),
   facet('filter.p.m.custom.sterility', 'Sterility'),
   facet('filter.p.m.custom.type', 'Type'),
+  // Approved metafields that were missing from this fixture, so no test could
+  // observe them being ordered or gated. All three are returned by the live
+  // Storefront API (customer_filter_category on every sampled collection,
+  // color on surgery-procedure, certification on gloves) — their absence here
+  // meant the "hostile" response was quietly narrower than the real one.
+  facet('filter.p.m.custom.customer_filter_category', 'Category'),
+  facet('filter.p.m.custom.color', 'Color'),
+  facet('filter.p.m.custom.certification', 'Certification'),
   facet('filter.p.m.internal.ops_flag', 'Ops flag'),
   facet('filter.v.m.internal.ops_flag', 'Ops flag (variant)'),
 ]
@@ -206,9 +214,65 @@ describe('page-specific facet sets', () => {
     expect(ids).not.toContain('filter.v.option.color')
   })
 
+  // ── P0.5/P0.6: the two Surgery routes have DIFFERENT, exact whitelists ────
+  //
+  // Both lists below were read off the live Storefront filter response on
+  // 2026-08-20, not copied from a sibling registry entry.
+  it('Surgery & Procedure exposes its own broader approved set, in registry order', () => {
+    const ids = getAllowedFacets('surgery-procedure', HOSTILE_FACETS).map((f) => f.id)
+    expect(ids).toEqual([
+      'filter.p.m.custom.customer_filter_category',
+      'filter.p.m.custom.type',
+      'filter.p.m.custom.material',
+      'filter.p.m.custom.glove_size',
+      'filter.p.m.custom.size_length_',
+      'filter.p.m.custom.features',
+      'filter.p.m.custom.other_features',
+      'filter.p.m.custom.sterility',
+      'filter.p.m.custom.use',
+      'filter.p.m.custom.color',
+      'filter.p.m.custom.order_size',
+      'filter.p.m.custom.brand_name',
+      'filter.v.price',
+      'filter.p.m.custom.certification',
+    ])
+    // Never the raw-tag or vendor facets, however hostile the response.
+    expect(ids).not.toContain('filter.p.tag')
+    expect(ids).not.toContain('filter.p.vendor')
+    // Irrelevant surgical/needle facets stay out.
+    expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
+    expect(ids).not.toContain('filter.p.m.custom.needle_length')
+  })
+
+  it('the Surgery parent is strictly broader than Trocars, and neither inherits the other', () => {
+    const surgery = getAllowedFacets('surgery-procedure', HOSTILE_FACETS).map((f) => f.id)
+    const trocars = getAllowedFacets('trocars-trocar-kits', HOSTILE_FACETS).map((f) => f.id)
+
+    expect(surgery).not.toEqual(trocars)
+    // Type / Sterility / Color exist on the parent's product set only.
+    for (const parentOnly of [
+      'filter.p.m.custom.type',
+      'filter.p.m.custom.sterility',
+      'filter.p.m.custom.color',
+    ]) {
+      expect(surgery).toContain(parentOnly)
+      expect(trocars).not.toContain(parentOnly)
+    }
+    // Everything Trocars allows is also allowed on the parent.
+    for (const id of trocars) expect(surgery).toContain(id)
+  })
+
   it('unlisted collections fall back to availability/price only', () => {
     const ids = getAllowedFacets('some-unlisted-collection', HOSTILE_FACETS).map((f) => f.id)
     expect(ids.sort()).toEqual(['filter.v.availability', 'filter.v.price'])
+  })
+
+  it('the Surgery parent no longer falls through to the bare default set', () => {
+    // Before P0.5 this route had no registry entry at all, so 323 products got
+    // Availability + Price and nothing else.
+    const ids = getAllowedFacets('surgery-procedure', HOSTILE_FACETS).map((f) => f.id)
+    expect(ids.sort()).not.toEqual(['filter.v.availability', 'filter.v.price'])
+    expect(ids.length).toBeGreaterThan(10)
   })
 })
 

@@ -214,34 +214,192 @@ test('semantic ink tokens resolve to their documented, compliant values', async 
   })
 })
 
-test('Trocar Supplies quick-link badge meets WCAG AA contrast (desktop + mobile)', async ({ page }) => {
-  // The route-scan tests above never catch this: the badge's wrapper is
-  // CSS-toggled with `hidden` (display:none) until the dropdown/drawer is
-  // opened, and measure() only visits elements the browser actually renders.
+// Was "Trocar Supplies quick-link badge …". P0.2 (2026-08-20) removed that
+// detached badge: it pointed at the Surgery & Procedure URL under a second
+// name. The nested "Trocars & Trocar Kits" child link replaces it, and needs
+// the same coverage — it is `text-ink-link` on white inside the panel, and the
+// route-scan tests above still cannot reach it, for the original reason: the
+// panel is CSS-toggled with `hidden` (display:none) until opened, and measure()
+// only visits elements the browser actually renders.
+const NESTED_TROCAR_LINK = 'Trocars & Trocar Kits'
+
+test('nested Trocars nav link meets WCAG AA contrast (desktop + mobile)', async ({ page }) => {
   // xl: is a 1280px breakpoint; the default chromium viewport can land right
   // on that boundary (scrollbar included in the width calc) and hide the
   // desktop nav in favor of the mobile hamburger. Go wider to be unambiguous.
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/', { waitUntil: 'domcontentloaded' })
-  await page.waitForLoadState('networkidle').catch(() => {})
+  await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
 
-  // Desktop: hover-reveal the categories mega-dropdown. The link's text comes
+  // Desktop: hover-reveal the categories mega-dropdown. The toggle's text comes
   // from the live Shopify menu item (title "Catalog" on this shop), not a
   // hardcoded "Categories" string — match the submenu toggle button instead,
   // which is stable regardless of the live menu's exact wording.
   await page.getByRole('button', { name: /submenu/i }).first().hover()
-  await page.getByRole('link', { name: 'Trocar Supplies' }).first().waitFor({ state: 'visible' })
+  await page.getByRole('link', { name: NESTED_TROCAR_LINK }).first().waitFor({ state: 'visible' })
   const desktopViolations = await measure(page)
-  const desktopBadge = desktopViolations.filter((v) => v.includes('Trocar Supplies'))
-  expect(desktopBadge, 'desktop Trocar Supplies badge: contrast below WCAG AA').toEqual([])
+  const desktopLink = desktopViolations.filter((v) => v.includes(NESTED_TROCAR_LINK))
+  expect(desktopLink, 'desktop nested Trocars link: contrast below WCAG AA').toEqual([])
 
   // Mobile: open the hamburger drawer, then expand its Catalog accordion.
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.getByRole('button', { name: 'Toggle menu' }).click()
-  await page.getByRole('button', { name: 'Catalog' }).click()
-  await page.getByRole('link', { name: 'Trocar Supplies' }).first().waitFor({ state: 'visible' })
+  // Targeted by the panel it controls, not by name: the drawer's categories
+  // toggle is labelled from the LIVE Shopify menu item title, which is
+  // "Catalog" on the QA shop and "Categories" on production — a hardcoded name
+  // makes this test shop-specific.
+  await page.locator('button[aria-controls="mobile-panel-categories"]').click()
+  await page.getByRole('link', { name: NESTED_TROCAR_LINK }).first().waitFor({ state: 'visible' })
   const mobileViolations = await measure(page)
-  const mobileBadge = mobileViolations.filter((v) => v.includes('Trocar Supplies'))
-  expect(mobileBadge, 'mobile Trocar Supplies badge: contrast below WCAG AA').toEqual([])
+  const mobileLink = mobileViolations.filter((v) => v.includes(NESTED_TROCAR_LINK))
+  expect(mobileLink, 'mobile nested Trocars link: contrast below WCAG AA').toEqual([])
+})
+
+test('the Trocars subcategory pill on Surgery & Procedure meets WCAG AA contrast', async ({ page }) => {
+  // The pinned route pill in the category tab row (teal-500 on teal-50) is a
+  // new colour pairing introduced by P0.5, on a route the scan list above does
+  // not cover.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/category/surgery-procedure', { waitUntil: 'domcontentloaded' })
+  await page
+    .getByRole('navigation', { name: /Surgery & Procedure categories/i })
+    .getByRole('link', { name: NESTED_TROCAR_LINK })
+    .waitFor({ state: 'visible' })
+
+  const violations = await measure(page)
+  const pill = violations.filter((v) => v.includes(NESTED_TROCAR_LINK))
+  expect(pill, 'Trocars subcategory pill: contrast below WCAG AA').toEqual([])
+})
+
+// ── Changed surfaces from the Surgery/Trocar repair (2026-08-20) ────────────
+//
+// A separate describe, kept out of the ROUTES sweep above on purpose: that
+// sweep is one heavy full-page scan per route and already saturates a local
+// server talking to live Shopify, so adding six more routes to it makes the
+// whole file time out instead of reporting. These run as their own small
+// batch (`--grep "repaired surfaces"`).
+//
+// Product handles are resolved from the live collection rather than hardcoded,
+// so this survives catalog changes.
+test.describe('repaired surfaces meet WCAG AA contrast', () => {
+  const SURGERY = '/category/surgery-procedure'
+  const TROCARS = '/category/trocars-trocar-kits'
+
+  /**
+   * Product hrefs inside a category grid, in DOM order.
+   *
+   * Cards on a category page link to the CATEGORY-SCOPED PDP route
+   * (`/category/<slug>/<handle>`), not `/product/<handle>` — ShopifyProductCard
+   * builds the former whenever it is given a categorySlug. Matching on
+   * `a[href^="/product/"]` finds nothing here.
+   */
+  async function productHrefs(page: Page, category: string): Promise<string[]> {
+    await page.goto(category, { waitUntil: 'domcontentloaded' })
+    const grid = page.locator('[data-testid="product-grid"]')
+    await grid.waitFor({ state: 'attached', timeout: 30_000 })
+    const hrefs = await grid
+      .locator(`a[href^="${category}/"]`)
+      .evaluateAll((els) => els.map((e) => e.getAttribute('href')!))
+    return Array.from(new Set(hrefs))
+  }
+
+  for (const [name, path] of [
+    ['Surgery & Procedure', SURGERY],
+    ['Trocars & Trocar Kits', TROCARS],
+  ] as const) {
+    test(`${name} meets AA`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 })
+      await page.goto(path, { waitUntil: 'domcontentloaded' })
+      expect(await measure(page), `${path}: contrast below WCAG AA`).toEqual([])
+    })
+  }
+
+  /**
+   * PRE-EXISTING, NOT PART OF THIS REPAIR — and deliberately not suppressed.
+   *
+   * /categories ends with <ShopByIndustry />, whose cards lay white text over
+   * industry photography served from /api/bunny/industries/*. Those assets
+   * return 404 in this environment, so the image never paints, the text lands
+   * on the near-white section panel, and the scan reports ~1.05:1. The same
+   * failure shows on the homepage, which this repair did not touch either.
+   *
+   * Rather than skip the route (which would stop guarding the Popular
+   * Categories strip this repair DID change), the assertion is inverted: every
+   * violation must be one of the known industry-card ones. A regression
+   * anywhere else on the page — including the strip — still fails here.
+   */
+  const INDUSTRY_CARD_SIGNATURE = /absolute bottom-5 left-5 text-white/
+
+  test('categories hub has no contrast violation outside the known industry-card issue', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/categories', { waitUntil: 'domcontentloaded' })
+    const violations = await measure(page)
+
+    const unexpected = violations.filter((v) => !INDUSTRY_CARD_SIGNATURE.test(v))
+    expect(unexpected, '/categories: NEW contrast violation outside ShopByIndustry').toEqual([])
+  })
+
+  test('a Trocar PDP meets AA', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const [href] = await productHrefs(page, TROCARS)
+    expect(href, 'no products found on the Trocar page').toBeTruthy()
+    await page.goto(href, { waitUntil: 'domcontentloaded' })
+    expect(await measure(page), `${href}: contrast below WCAG AA`).toEqual([])
+  })
+
+  test('a non-Trocar Surgery PDP meets AA', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const hrefs = await productHrefs(page, SURGERY)
+    // Compare on the HANDLE only: every href on this page begins
+    // "/category/surgery-procedure/", so testing the whole string for "trocar"
+    // would be checking the route prefix, not the product.
+    const href = hrefs.find((h) => !/trocar/i.test(h.split('/').pop() ?? ''))
+    expect(href, 'no non-Trocar product found on the Surgery page').toBeTruthy()
+    await page.goto(href!, { waitUntil: 'domcontentloaded' })
+    expect(await measure(page), `${href}: contrast below WCAG AA`).toEqual([])
+  })
+
+  test('a PDP carrying "You May Also Need" meets AA', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/product/aerowalk-ultra-lite-rollator-rolling-walker', { waitUntil: 'domcontentloaded' })
+    const row = page.getByRole('region', { name: 'You May Also Need — scrollable product list' })
+    // Waited for, not count()-ed immediately: the recommendation sections are
+    // below the fold and settle after the initial paint, so a bare count() races
+    // them and silently skips a test that should have run.
+    await row.waitFor({ state: 'attached', timeout: 20_000 }).catch(() => {})
+    if ((await row.count()) === 0) test.skip(true, 'this PDP has 4 or fewer recommendations today')
+    await row.scrollIntoViewIfNeeded()
+    expect(await measure(page), 'You May Also Need: contrast below WCAG AA').toEqual([])
+  })
+
+  test('category search with an active query meets AA', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto(TROCARS, { waitUntil: 'domcontentloaded' })
+    await page.getByRole('searchbox', { name: /Search within/i }).fill('kit')
+    await page.waitForURL(/[?&]q=kit/)
+    await page.getByRole('button', { name: /clear search/i }).waitFor({ state: 'visible' })
+    expect(await measure(page), 'active category search: contrast below WCAG AA').toEqual([])
+  })
+
+  test('desktop filter rail meets AA', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto(TROCARS, { waitUntil: 'domcontentloaded' })
+    const rail = page.locator('aside').first()
+    await rail.getByRole('button').first().waitFor({ state: 'visible', timeout: 30_000 })
+    // Open a collapsed group so its values are measured too, not just headings.
+    const brand = rail.getByRole('button', { name: /Brand Name/i }).first()
+    if ((await brand.getAttribute('aria-expanded')) === 'false') await brand.click()
+    expect(await measure(page), 'desktop filter rail: contrast below WCAG AA').toEqual([])
+  })
+
+  test('mobile filter drawer meets AA', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(TROCARS, { waitUntil: 'domcontentloaded' })
+    const open = page.getByRole('button', { name: /^Filters/i }).first()
+    await open.waitFor({ state: 'visible', timeout: 30_000 })
+    await open.click()
+    await page.waitForTimeout(600)
+    expect(await measure(page), 'mobile filter drawer: contrast below WCAG AA').toEqual([])
+  })
 })

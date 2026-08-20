@@ -165,7 +165,7 @@ describe('Header — mobile drawer a11y (NF9)', () => {
   })
 })
 
-describe('Header — Trocar Supplies quick link (Task 13)', () => {
+describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
   // categoriesItem (the mega-dropdown + mobile categories panel) only renders
   // when a menu item of type CATALOG is present — see Header.tsx's
   // `categoriesItem = menuItems.find((item) => item.type === 'CATALOG')`.
@@ -174,24 +174,66 @@ describe('Header — Trocar Supplies quick link (Task 13)', () => {
     ...MENU,
   ]
 
+  // Both handles must be live: the parent nav entry is gated on
+  // `surgery-procedure` and the nested child on `trocars-trocar-kits`.
   const COLLECTIONS_WITH_TROCARS: SlimCollection[] = [
     ...COLLECTIONS,
+    makeCollection('surgery-procedure', 'Surgery & Procedure'),
     makeCollection('trocars-trocar-kits', 'Trocars & Trocar Kits'),
   ]
 
-  it('shows a visible "Trocar Supplies" quick link next to "Surgery & Procedure" in the desktop categories dropdown', () => {
+  // Replaces the Task 13 "Trocar Supplies quick link" pair. Those asserted the
+  // detached badge — a second link to the SAME href as the Surgery & Procedure
+  // tile, labelled differently, sitting at the foot of the panel. P0.2 removes
+  // it: Trocars is now a distinct route nested under its parent.
+
+  it('renders parent and child as two DISTINCT links, each to its own route (desktop)', () => {
     render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
     // The categories panel is always in the DOM (CSS-toggled, see NF7 above),
     // so its links are queryable via hidden: true without simulating hover/focus.
     const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
-    const [trocarLink] = screen.getAllByRole('link', { name: 'Trocar Supplies', hidden: true })
-    expect(trocarLink).toHaveAttribute('href', surgery.getAttribute('href'))
+    const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
+
+    expect(surgery).toHaveAttribute('href', '/category/surgery-procedure')
+    expect(trocars).toHaveAttribute('href', '/category/trocars-trocar-kits')
+    // The exact defect being guarded: one page under two names.
+    expect(trocars.getAttribute('href')).not.toBe(surgery.getAttribute('href'))
   })
 
-  it('shows the "Trocar Supplies" quick link in the mobile categories panel too', () => {
+  it('nests the child inside its parent list item, not as a sibling of the category grid', () => {
     render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
-    const trocarLinks = screen.getAllByRole('link', { name: 'Trocar Supplies', hidden: true })
-    expect(trocarLinks.length).toBeGreaterThan(0)
+    const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
+    const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
+
+    // Structural containment is what makes the relationship real for a screen
+    // reader rather than implied by visual proximity.
+    const parentItem = surgery.closest('li')
+    expect(parentItem).not.toBeNull()
+    expect(parentItem!.contains(trocars)).toBe(true)
+  })
+
+  it('no longer renders the detached "Trocar Supplies" badge anywhere', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    expect(screen.queryAllByRole('link', { name: 'Trocar Supplies', hidden: true })).toHaveLength(0)
+    expect(screen.queryAllByRole('link', { name: /Trocar Supplies/, hidden: true })).toHaveLength(0)
+  })
+
+  it('renders the same parent/child pair in the mobile categories panel', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    // Desktop panel + mobile drawer both render the pair, so each label
+    // resolves to exactly two links — one per breakpoint's markup.
+    expect(screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })).toHaveLength(2)
+    expect(screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })).toHaveLength(2)
+  })
+
+  it('omits the child when its collection is not live, without dropping the parent', () => {
+    const withoutTrocars: SlimCollection[] = [
+      ...COLLECTIONS,
+      makeCollection('surgery-procedure', 'Surgery & Procedure'),
+    ]
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={withoutTrocars} />)
+    expect(screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true }).length).toBeGreaterThan(0)
+    expect(screen.queryAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })).toHaveLength(0)
   })
 })
 

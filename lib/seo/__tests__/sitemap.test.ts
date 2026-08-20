@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getSitemapUrls } from '../sitemap'
+import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES } from '@/lib/category-tree'
 
 vi.mock('@/lib/shopify/storefront', () => ({
   storefrontFetch: vi.fn(),
@@ -262,17 +263,25 @@ describe('getSitemapUrls', () => {
     const urls = entries.map((e) => e.url)
     expect(urls).toContain('https://mdsupplies.com/')
 
-    // The 25 approved category routes come from the REGISTRY, not from the
+    // The approved category routes come from the REGISTRY, not from the
     // Storefront collection list, so an empty or failed collection fetch costs
     // freshness rather than the entries themselves. This test previously
     // asserted the opposite — that no /category/ URL survived — which is
     // exactly the failure mode that left 8 of 25 live categories out of the
     // production sitemap when the unpaginated `first: 250` collection query
     // did not reach them.
+    //
+    // 26 = the 25 CATEGORY_TREE_L1 routes + 1 FEATURED_SUBCATEGORIES route
+    // (trocars-trocar-kits). Both registries are static, so both survive a
+    // total Storefront failure.
     const l1 = urls.filter((u) => /\/category\/[^/]+$/.test(u))
-    expect(l1).toHaveLength(25)
+    expect(l1).toHaveLength(CATEGORY_TREE_L1.length + FEATURED_SUBCATEGORIES.length)
     expect(l1).toContain('https://mdsupplies.com/category/needles-syringes')
     expect(l1).toContain('https://mdsupplies.com/category/pharmacy-products')
+    // P0.5/P0.6: the broad parent and its featured subcategory are two
+    // distinct indexable routes, not one page wearing two names.
+    expect(l1).toContain('https://mdsupplies.com/category/surgery-procedure')
+    expect(l1).toContain('https://mdsupplies.com/category/trocars-trocar-kits')
 
     // With no collection data there is no real updatedAt, so no lastmod is
     // stamped — a synthesized "now" on every URL is exactly the fake-freshness

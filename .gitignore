@@ -82,6 +82,11 @@ docs/audits/2026-08-08-dev-launch-05/screenshots/
 # Regenerate: E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/responsive.spec.ts
 docs/audits/2026-08-10-dev-launch-11/screenshots/
 
+# Surgery/Trocar repair visual-audit evidence — ~12MB of regenerable PNGs.
+# The README.md beside them IS versioned, matching every audit above.
+# Regenerate: CAPTURE_EVIDENCE=1 E2E_BASE_URL=http://localhost:3000 npx playwright test e2e/evidence-capture.spec.ts --project=chromium --workers=1
+docs/audits/2026-08-20-surgery-trocar-repair/screenshots/
+
 # Phase 8 bulk migration evidence — ~81k lines, regenerable from
 # scripts/industries-mapping-dryrun.mjs + the dated catalog export.
 # Committed instead: summary, unmapped, rollback SCHEMA, sha256 checksums.

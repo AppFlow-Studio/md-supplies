@@ -389,4 +389,74 @@ describe('ProductView — You May Also Need cards are clickable (Task 4)', () =>
     expect(links.length).toBeGreaterThan(0)
     expect(links[0]).toHaveAttribute('href', '/product/extra-recommended-item')
   })
+
+  // ── P0.1: the row is a spaced CARD row, not a merged slab ─────────────────
+  //
+  // The scroll row carried `gap-0`, so each card's neutral-50 panel butted
+  // straight against its neighbour's. With no border or radius on the card,
+  // adjacent panels fused into one grey block and the row read as loose images
+  // and text rather than products.
+  describe('P0.1 — card layout matches the sibling recommendation rows', () => {
+    const FIVE: CollectionProduct[] = [1, 2, 3, 4, 5].map((n) =>
+      collectionProduct({
+        id: `gid://shopify/Product/90${n}`,
+        handle: `item-${n}`,
+        title: `Item ${n}`,
+      }),
+    )
+
+    function renderRow() {
+      render(
+        <ProductView
+          product={product}
+          initialVariant={blueVariant}
+          relatedProducts={FIVE}
+          complementaryProducts={[]}
+        />,
+      )
+      return screen.getByRole('region', { name: 'You May Also Need — scrollable product list' })
+    }
+
+    it('separates the cards with a real gutter', () => {
+      const row = renderRow()
+      expect(row.className).not.toMatch(/(^|\s)gap-0(\s|$)/)
+      expect(row.className).toMatch(/gap-\[23px\]/)
+    })
+
+    it('uses the same gutter token as "You May Also Like"', () => {
+      renderRow()
+      const alsoLike = screen.getByText('You May Also Like').parentElement!
+      const alsoLikeRow = alsoLike.querySelector('div.flex')!
+      const needRow = screen.getByRole('region', {
+        name: 'You May Also Need — scrollable product list',
+      })
+      const gutter = /gap-\[23px\]/
+      expect(alsoLikeRow.className).toMatch(gutter)
+      expect(needRow.className).toMatch(gutter)
+    })
+
+    it('keeps the cards a consistent width so the row cannot go ragged', () => {
+      const row = renderRow()
+      const widths = new Set(
+        Array.from(row.children).map((c) => (c as HTMLElement).className),
+      )
+      expect(widths.size).toBe(1)
+      expect([...widths][0]).toMatch(/w-\[185px\]/)
+    })
+
+    it('reuses the shared card — every item is one link, with no nested interactive element', () => {
+      const row = renderRow()
+      // relatedProducts.slice(4) → exactly one card in this row.
+      const links = row.querySelectorAll('a')
+      expect(links).toHaveLength(1)
+      // A <button> inside an <a> is invalid and breaks keyboard semantics.
+      expect(links[0].querySelector('button')).toBeNull()
+      expect(links[0].querySelector('a')).toBeNull()
+    })
+
+    it('gives the card a visible focus indicator', () => {
+      const row = renderRow()
+      expect(row.querySelector('a')!.className).toMatch(/focus-visible:outline-2/)
+    })
+  })
 })

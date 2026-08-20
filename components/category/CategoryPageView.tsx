@@ -21,6 +21,8 @@ import {
   humanizeTag,
   CATEGORY_TREE_L1,
   getCategorySlug,
+  getFeaturedSubcategoryBySlug,
+  getFeaturedSubcategoriesForParent,
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { CatalogHero } from '@/components/category/CatalogHero'
@@ -129,7 +131,8 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
     // schema all use the display name, so metadata must too or the page's
     // title disagrees with every link pointing at it.
     const l1 = getL1ByCollectionHandle(shopifyHandle)
-    const displayName = l1?.displayName ?? data.collection.title
+    const featured = l1 ? undefined : getFeaturedSubcategoryBySlug(shopifyHandle)
+    const displayName = l1?.displayName ?? featured?.displayName ?? data.collection.title
 
     // A tag-sourced category must NOT inherit its proxy collection's SEO
     // fields. /category/trocars-trocar-kits now serves all 319 Surgery &
@@ -139,14 +142,22 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
     // set. Same for Room Furniture ("Stools & Seating") and Apparel. Those
     // routes take the registry's name and approved description instead.
     const isProxyCollection = l1?.productSet === 'tag'
-    const metaTitle = (isProxyCollection ? undefined : seo?.title) || displayName
+    // Featured subcategories are held to the same rule as proxy collections,
+    // for the second half of the reason above rather than the first. The scope
+    // problem is gone (this route now serves exactly the 41 products the
+    // Trocar collection's seo.title describes) but the CLAIM is not: that
+    // title asserts "FDA Registered", an uncontrolled regulatory statement
+    // from the merchandising team that this codebase cannot verify. The
+    // registry name and approved description are used instead.
+    const useRegistryCopy = isProxyCollection || Boolean(featured)
+    const metaTitle = (useRegistryCopy ? undefined : seo?.title) || displayName
     // Shopify-sourced descriptions are UNCONTROLLED copy from the merchandising
     // team, so both the SEO field and the body description get clamped. Exam
     // Room's Shopify seo.description is 314 characters — over twice what a SERP
     // shows — and it was being emitted whole because only the body-description
     // fallback was trimmed.
-    const metaDescription = isProxyCollection
-      ? l1!.shortDescription
+    const metaDescription = useRegistryCopy
+      ? (l1?.shortDescription ?? featured!.shortDescription)
       : trimDescription(seo?.description || description || '', 155) || undefined
 
     if (isFiltered) {
@@ -231,6 +242,15 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   const shopifyHandle = getShopifyHandle(slug)
 
   const l1 = getL1ByCollectionHandle(shopifyHandle)
+  // A featured subcategory (e.g. Trocars & Trocar Kits) is a real collection
+  // page with an L1 parent — it has no CATEGORY_TREE_L1 row, so without this
+  // it would fall back to the raw Shopify collection title and a one-level
+  // breadcrumb. Resolved only when `l1` missed, so an L1 can never be
+  // shadowed by a subcategory entry.
+  const featured = l1 ? undefined : getFeaturedSubcategoryBySlug(shopifyHandle)
+  const featuredParent = featured
+    ? CATEGORY_TREE_L1.find((c) => c.tag === featured.parentTag)
+    : undefined
 
   const [data, summaries] = await Promise.all([
     storefrontFetch<{ collection: CollectionHero | null }>(
@@ -261,13 +281,44 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   // title: the collection behind Face Masks is titled "Face Coverings" and the
   // one behind Room Furniture is "Stools & Seating", neither of which is the
   // approved public name used in nav, breadcrumbs, tiles and metadata.
-  const displayName = l1?.displayName ?? collection.title
+  const displayName = l1?.displayName ?? featured?.displayName ?? collection.title
+
+  // Breadcrumb: a featured subcategory sits under its L1 parent
+  // (Home › Surgery & Procedure › Trocars & Trocar Kits); everything else is a
+  // single level below Home, which the Breadcrumb component supplies.
+  const breadcrumb: { label: string; href?: string }[] =
+    featured && featuredParent
+      ? [
+          { label: featuredParent.displayName, href: ROUTES.category(getCategorySlug(featuredParent)) },
+          { label: displayName },
+        ]
+      : [{ label: displayName }]
+
+  // Route-level subcategory links pinned ahead of the Category facet pills.
+  // These NAVIGATE (they are their own collection pages) rather than filter, so
+  // they are passed separately from the facet the tab row is a view over.
+  const featuredChildren = l1
+    ? getFeaturedSubcategoriesForParent(l1.tag).map((s) => ({
+        label: s.displayName,
+        href: ROUTES.category(s.slug),
+      }))
+    : []
 
   // Four categories' collections are narrow artwork proxies rather than the
   // category itself (see L1CategoryDef.productSet). Those browse the
   // `category:` tag so the page shows what its own tile promises; the rest keep
   // the collection source and its richer sort keys.
   const isProxyCollection = l1?.productSet === 'tag'
+
+  // What CollectionPage schema may say about this route. Featured
+  // subcategories and tag-sourced proxies both take the approved registry copy
+  // rather than the uncontrolled Shopify collection description.
+  const schemaDescription = featured
+    ? featured.shortDescription
+    : isProxyCollection
+      ? l1!.shortDescription
+      : collection.description
+
   const productSource: ProductSource =
     l1?.productSet === 'tag'
       ? { kind: 'tag', query: `tag:"category:${l1.tag}"`, title: displayName, slug }
@@ -276,6 +327,14 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           handle: shopifyHandle,
           // Registry-backed L1s scope text search by their category tag
           // (the same membership source the L2 pages are built on).
+          //
+          // A featured subcategory deliberately gets NO tag scope. Its products
+          // carry the PARENT's tag (every Trocar product is
+          // `category:surgery-procedure`), so a tag scope would widen search on
+          // this page from 41 products to 323 — searching "trocar" inside
+          // Trocars would surface scalpels. Falling through to the collection
+          // ID-intersection path makes membership the collection itself, which
+          // is the page's actual identity.
           searchScope: l1 ? `tag:"category:${l1.tag}"` : undefined,
         }
 
@@ -290,13 +349,17 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
       <CatalogHero
-        breadcrumb={[{ label: displayName }]}
+        breadcrumb={breadcrumb}
         title={seoData ? seoData.h1 : displayName}
         // The COMPLETE approved description from the route registry, shown in
         // full on every breakpoint. `shortDescription` is the client-approved
         // copy table; the Shopify collection description is the fallback for
         // anything not in the registry (e.g. OCC sub-collections).
-        description={l1?.shortDescription ?? (isProxyCollection ? undefined : collection.description ?? undefined)}
+        description={
+          l1?.shortDescription ??
+          featured?.shortDescription ??
+          (isProxyCollection ? undefined : collection.description ?? undefined)
+        }
         eyebrow="CERTIFIED MEDICAL SUPPLIER"
         image={{ path: banner.path, alt: banner.alt, focalPosition: banner.focalPosition }}
       />
@@ -332,6 +395,7 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           searchQuery={searchQuery}
           searchScopeTitle={displayName}
           tabsAllLabel={`All ${displayName}`}
+          tabsLeadingLinks={featuredChildren}
         />
       </div>
 
@@ -453,8 +517,11 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           proxy collection (trocars, stools, capes & gowns), not the category
           the page now serves, and on the trocars collection it carries an
           FDA-registration claim that does not hold for all 319 Surgery &
-          Procedure products. Better no About block than a wrong one. */}
-      {!isProxyCollection && collection.descriptionHtml && (
+          Procedure products. Better no About block than a wrong one.
+          Featured subcategories are suppressed on the claim grounds alone —
+          their scope is exact, but the regulatory assertion in the Shopify
+          copy is still unverifiable here (see the metadata comment above). */}
+      {!isProxyCollection && !featured && collection.descriptionHtml && (
         <section className="bg-navy-900 py-16 sm:py-20">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 text-center">
             <h2 className="text-white text-[36px] sm:text-[50px] font-semibold leading-[1.2] tracking-[-0.01em] mb-8">
@@ -480,7 +547,14 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
                 buildCollectionPageSchema({
                   name: displayName,
                   url: `${SITE_URL}/category/${slug}`,
-                  ...(collection.description ? { description: collection.description } : {}),
+                  // Structured data is customer-facing (it feeds rich results),
+                  // so it follows the SAME copy rule as the title, meta
+                  // description and About block — a featured subcategory does
+                  // not emit the Shopify collection description, whose Trocar
+                  // text asserts "FDA-registered". Suppressing that claim in
+                  // three places and then shipping it in the fourth would have
+                  // published it anyway.
+                  ...(schemaDescription ? { description: schemaDescription } : {}),
                   ...(collection.image?.url ? { image: collection.image.url } : {}),
                 }),
               ),
@@ -493,7 +567,9 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
                 buildBreadcrumbListSchema(
-                  [{ label: displayName }],
+                  // Same array the visible trail renders, so the structured
+                  // data can never claim a different hierarchy than the page.
+                  breadcrumb,
                   `${SITE_URL}/category/${slug}`,
                 ),
               ),
