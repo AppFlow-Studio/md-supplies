@@ -315,7 +315,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
                         return (
                           <Link
                             href={ROUTES.category(getCategorySlug(trocar))}
-                            className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full hover:bg-teal-100 transition-colors"
+                            className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-teal-500 bg-teal-50 px-2.5 py-1 rounded-full hover:bg-teal-100 transition-colors"
                           >
                             <span aria-hidden="true">→</span>
                             Trocar Supplies
@@ -544,7 +544,7 @@ export function Header({ menuItems, collections }: HeaderProps) {
                       <Link
                         href={ROUTES.category(getCategorySlug(trocar))}
                         onClick={() => setMobileOpen(false)}
-                        className="inline-flex w-fit items-center gap-1 mt-1 mb-1 text-xs font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full"
+                        className="inline-flex w-fit items-center gap-1 mt-1 mb-1 text-xs font-semibold text-teal-500 bg-teal-50 px-2.5 py-1 rounded-full"
                       >
                         <span aria-hidden="true">→</span>
                         Trocar Supplies

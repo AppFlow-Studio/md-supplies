@@ -213,3 +213,35 @@ test('semantic ink tokens resolve to their documented, compliant values', async 
     separator: '#8a8a8a',
   })
 })
+
+test('Trocar Supplies quick-link badge meets WCAG AA contrast (desktop + mobile)', async ({ page }) => {
+  // The route-scan tests above never catch this: the badge's wrapper is
+  // CSS-toggled with `hidden` (display:none) until the dropdown/drawer is
+  // opened, and measure() only visits elements the browser actually renders.
+  // xl: is a 1280px breakpoint; the default chromium viewport can land right
+  // on that boundary (scrollbar included in the width calc) and hide the
+  // desktop nav in favor of the mobile hamburger. Go wider to be unambiguous.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await page.waitForLoadState('networkidle').catch(() => {})
+
+  // Desktop: hover-reveal the categories mega-dropdown. The link's text comes
+  // from the live Shopify menu item (title "Catalog" on this shop), not a
+  // hardcoded "Categories" string — match the submenu toggle button instead,
+  // which is stable regardless of the live menu's exact wording.
+  await page.getByRole('button', { name: /submenu/i }).first().hover()
+  await page.getByRole('link', { name: 'Trocar Supplies' }).first().waitFor({ state: 'visible' })
+  const desktopViolations = await measure(page)
+  const desktopBadge = desktopViolations.filter((v) => v.includes('Trocar Supplies'))
+  expect(desktopBadge, 'desktop Trocar Supplies badge: contrast below WCAG AA').toEqual([])
+
+  // Mobile: open the hamburger drawer, then expand its Catalog accordion.
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: 'Toggle menu' }).click()
+  await page.getByRole('button', { name: 'Catalog' }).click()
+  await page.getByRole('link', { name: 'Trocar Supplies' }).first().waitFor({ state: 'visible' })
+  const mobileViolations = await measure(page)
+  const mobileBadge = mobileViolations.filter((v) => v.includes('Trocar Supplies'))
+  expect(mobileBadge, 'mobile Trocar Supplies badge: contrast below WCAG AA').toEqual([])
+})
