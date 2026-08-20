@@ -228,14 +228,9 @@ describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => 
   // a variant with ZERO packaging fields (order size, units per order, and
   // all three breakdown fields all blank, with no product-level fallback
   // available either) must show the fallback copy, never a blank tab and
-  // never its sibling's values. NOTE: the fallback copy asserted here is
-  // the CURRENT production string. Bilal's 2026-08-19 message requests
-  // "Packaging information unavailable for this option." — that differs
-  // from what's shown ("Packaging information not available for this
-  // product."). This is flagged as an open question in the Task 12
-  // evidence doc; this test intentionally pins today's actual copy so it
-  // fails loudly if the string changes without that question being
-  // resolved first.
+  // never its sibling's values. Copy finalized by Bilal, 2026-08-20:
+  // "Packaging information unavailable for this option." (Task 8 had left
+  // this as an open question against the older production string.)
   it('shows the fallback message — not the sibling variant\'s data, and not a blank tab — when the selected variant has zero packaging fields and its sibling has some', () => {
     const dataVariant: ProductVariant = {
       ...blueVariant,
@@ -265,7 +260,7 @@ describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => 
 
     fireEvent.click(screen.getByRole('button', { name: 'Color: White' }))
 
-    expect(screen.getByText('Packaging information not available for this product.')).toBeInTheDocument()
+    expect(screen.getByText('Packaging information unavailable for this option.')).toBeInTheDocument()
     expect(screen.queryByText('Inner Pack Quantity')).not.toBeInTheDocument()
     expect(screen.queryByText('50')).not.toBeInTheDocument()
     expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()

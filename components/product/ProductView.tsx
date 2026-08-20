@@ -633,7 +633,7 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                   </table>
                 ) : (
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                    Packaging information not available for this product.
+                    Packaging information unavailable for this option.
                   </p>
                 )}
               </div>
