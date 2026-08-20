@@ -21,6 +21,27 @@ describe('resolveVariantValue', () => {
   })
 })
 
+// Bilal, 2026-08-20 (code review on #64): "Product-level Units per Order may
+// be used only when it safely applies to every variant. If packaging differs
+// and the selected variant lacks its own value, do not display another
+// variant's quantity." Reproduces the pen-needle-4mm-depth-32g-x-5-32-box-9543
+// case: product-level unitsPerOrder is 100/Box (from the UltiGuard variants),
+// UltiCare variants are 50/Box — a blank UltiCare variant must not inherit
+// UltiGuard's 100/Box just because it's the product-level value.
+describe('resolveVariantValue — cross-variant packaging conflicts', () => {
+  it('does not fall back to the product value when a sibling variant explicitly disagrees with it', () => {
+    expect(resolveVariantValue(null, '100/Box', ['50/Box', '100/Box', null])).toBeNull()
+  })
+
+  it('still falls back to the product value when every sibling that has a value agrees with it', () => {
+    expect(resolveVariantValue(null, '100/Box', ['100/Box', null, '100/Box'])).toBe('100/Box')
+  })
+
+  it('falls back to the product value when no sibling values are given at all', () => {
+    expect(resolveVariantValue(null, '100/Box')).toBe('100/Box')
+  })
+})
+
 describe('resolveVariantSupplement', () => {
   it('returns the variant value when it differs from the primary value', () => {
     expect(resolveVariantSupplement('Ships in a padded mailer', 'A rollator.')).toBe('Ships in a padded mailer')

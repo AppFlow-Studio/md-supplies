@@ -266,6 +266,41 @@ describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => 
     expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
     expect(screen.queryByText('4')).not.toBeInTheDocument()
   })
+
+  // Bilal, 2026-08-20 (code review on #64): "Product-level Units per Order
+  // may be used only when it safely applies to every variant. If packaging
+  // differs and the selected variant lacks its own value, do not display
+  // another variant's quantity." Reproduces
+  // pen-needle-4mm-depth-32g-x-5-32-box-9543: product-level unitsPerOrder is
+  // 100/Box (from the UltiGuard variants); UltiCare variants are 50/Box. A
+  // blank UltiCare variant must show the safe fallback, never UltiGuard's
+  // 100/Box just because it's the product-level value.
+  it('shows the fallback message, not the product-level value, when a blank variant belongs to a product whose variants disagree on packaging', () => {
+    const ultiGuardVariant: ProductVariant = {
+      ...blueVariant,
+      orderSize: null, unitsPerOrder: '100/Box',
+      innerPackQuantity: null, packsPerCase: null, totalOrderQuantity: null,
+    }
+    const ultiCareWithValue: ProductVariant = {
+      ...whiteVariant,
+      orderSize: null, unitsPerOrder: '50/Box',
+      innerPackQuantity: null, packsPerCase: null, totalOrderQuantity: null,
+    }
+    const ultiCareBlank: ProductVariant = {
+      ...blueVariant, id: 'gid://shopify/ProductVariant/3', title: 'Care Blank',
+      selectedOptions: [{ name: 'Color', value: 'CareBlank' }],
+      manufacturerNumber: '10277CB',
+      orderSize: null, unitsPerOrder: null,
+      innerPackQuantity: null, packsPerCase: null, totalOrderQuantity: null,
+    }
+    renderPDP(ultiCareBlank, {
+      orderSize: null, unitsPerOrder: '100/Box', quantityOfUnits: null,
+      variants: { nodes: [ultiGuardVariant, ultiCareWithValue, ultiCareBlank] },
+    })
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.getByText('Packaging information unavailable for this option.')).toBeInTheDocument()
+    expect(screen.queryByText('100/Box')).not.toBeInTheDocument()
+  })
 })
 
 describe('ProductView — variant-sourced order unit, above Add to Cart', () => {

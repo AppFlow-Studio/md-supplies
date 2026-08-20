@@ -192,10 +192,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // (resolveVariantValue — Bilal's rule 2). Used identically by the
   // above-the-fold block and the ORDER PACKAGING tab, so they can never show
   // two different totals for the same selection (LG-04 acceptance).
-  const resolvedOrderSize = resolveVariantValue(selectedVariant.orderSize, product.orderSize)
+  const resolvedOrderSize = resolveVariantValue(
+    selectedVariant.orderSize,
+    product.orderSize,
+    product.variants.nodes.map((v) => v.orderSize),
+  )
   const resolvedUnitsPerOrder = resolveVariantValue(
     selectedVariant.unitsPerOrder,
     product.unitsPerOrder ?? product.quantityOfUnits,
+    product.variants.nodes.map((v) => v.unitsPerOrder),
   )
   // LG-04 packaging breakdown (2026-08-17): variant-only, no product-level
   // fallback (unlike orderSize/unitsPerOrder above) — Izzy only writes a
