@@ -26,6 +26,28 @@ const PRODUCT_REDIRECTS = new Map<string, string>(
   ]),
 )
 
+// ─── Legacy AeroWalk color-handle migration (P0.7, extended 2026-08-20) ──────
+//
+// Izzy migrated all three AeroWalk colors onto one color-neutral handle in
+// QA; each old color-suffixed handle must 301 to it wherever it's hit — the
+// canonical /product/<handle> route, AND the nested /category/<slug>/<handle>
+// route this app also serves (app/category/[slug]/[product]/page.tsx). One
+// reusable map + matcher instead of a hand-copied entry per route shape, so a
+// future migration only adds one map row.
+export const LEGACY_PRODUCT_HANDLES = new Map<string, string>([
+  ['aerowalk-ultra-lite-rollator-rolling-walker-blue', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+  ['aerowalk-ultra-lite-rollator-rolling-walker-white', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+  ['aerowalk-ultra-lite-rollator-rolling-walker-grey', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+])
+
+function redirectLegacyProductHandle(pathname: string, request: NextRequest, nonce: string): Response | null {
+  const match = pathname.match(/^\/(?:product|category\/[^/]+)\/([^/]+)$/)
+  if (!match) return null
+  const canonical = LEGACY_PRODUCT_HANDLES.get(match[1])
+  if (!canonical) return null
+  return withCsp(NextResponse.redirect(new URL(`/product/${canonical}`, request.url), 301), nonce)
+}
+
 // ─── Category-level 410s (§4.3) ───────────────────────────────────────────────
 //
 // Categories permanently removed from the new taxonomy. A direct hit (or a
@@ -34,7 +56,7 @@ const PRODUCT_REDIRECTS = new Map<string, string>(
 // never recreated. Matched on the live `/category/<slug>` route and any path
 // beneath it (the whole category subtree is gone). These slugs are also hidden
 // from nav/listings/sitemap via lib/excluded-categories.ts.
-const GONE_CATEGORY_SLUGS = new Set([
+export const GONE_CATEGORY_SLUGS = new Set([
   'pharmaceuticals',
   'beds',
   'bariatric-beds',
@@ -54,7 +76,7 @@ function isGoneCategory(pathname: string): boolean {
 //
 // 410s first (definitive removal), then 301s grouped by destination type.
 //
-const REDIRECT_ENTRIES: RedirectEntry[] = [
+export const REDIRECT_ENTRIES: RedirectEntry[] = [
 
   // ── 410 Gone (permanently removed — do not recreate) ──────────────────────
   // Pharmaceuticals retired: DEA/compliance exposure (41 products removed from catalog).
@@ -105,10 +127,17 @@ const REDIRECT_ENTRIES: RedirectEntry[] = [
   { from: '/medical-supplies-Feather-Sterile Surgical Blades 11-2ULXL3BIJK.html',                     to: '/category/wound-care',                            status: 301 },
   { from: '/medical-supply-store/Wound  Skin Care/Elastic Bandages/Triangular Bandages-ATPW8HKJSB.html', to: '/category/wound-care',                         status: 301 },
 
-  // Consolidated product redirect — white 40×60 2-ply variant maps to blue master
-  // (verified in docs/redirects-ready.json lines 4855–4856). Single hop; no chain.
-  // ACTION: verify /product/drape-sheets-40-x-60-2-ply-blue-100-cs returns 200 before deploy.
-  { from: '/medical-supplies-Graham Medical-Drape Sheet White 40 x 60 2-Ply-XVUAKHW2KF.html',         to: '/product/drape-sheets-40-x-60-2-ply-blue-100-cs', status: 301 },
+  // Drape Sheet White 40x60 2-Ply (Task 10, 2026-08-19): the ACTION item this
+  // entry previously carried — verify /product/drape-sheets-40-x-60-2-ply-blue-100-cs
+  // returns 200 before deploy — was checked against the live Storefront API and
+  // FAILED: that handle does not exist. A title/vendor search confirms the
+  // whole Drape Sheet line (and Graham Medical as a vendor) is gone from the
+  // catalog, not just recolored, so no product-level destination exists to
+  // redirect to. Falls back to /category/exam-room (live, verified via
+  // GET_COLLECTION_META), the same no-live-handle pattern used elsewhere in
+  // this file (Feather Surgical Blades / Emergency Trauma Dressings /
+  // Triangular Bandages → /category/wound-care).
+  { from: '/medical-supplies-Graham Medical-Drape Sheet White 40 x 60 2-Ply-XVUAKHW2KF.html',         to: '/category/exam-room',                             status: 301 },
 
   // Testing & Screening — verified handle is testing-screening, not "testing"
   { from: '/medical-supply-store/Testing-and-Screening/Diagnostic-Tests/Lipid-Glucose-Testing-Z2IP7J6EF7.html', to: '/category/testing-screening',            status: 301 },
@@ -123,15 +152,10 @@ const REDIRECT_ENTRIES: RedirectEntry[] = [
   // It is retired in favor of a single wholesale entry point at /contact.
   { from: '/b2b',                                                                                       to: '/contact',                                        status: 301 },
 
-  // P0.7 AeroWalk color-neutral handle migration pilot (Bilal, 2026-08-18):
-  // Izzy renamed the product from the Blue-suffixed handle to a
-  // color-neutral one in QA (all three colors now live as variants under
-  // the neutral handle, selected via ?variant=). This redirect is the
-  // acceptance bar Bilal set for the pilot — without it, every existing
-  // bookmark/backlink to the old Blue handle 404s in this headless app
-  // (Shopify's own native redirects don't apply to a custom Storefront-API
-  // route). Single hop, same pattern as the bulk product redirects above.
-  { from: '/product/aerowalk-ultra-lite-rollator-rolling-walker-blue',                                 to: '/product/aerowalk-ultra-lite-rollator-rolling-walker', status: 301 },
+  // Note: legacy AeroWalk color-handle redirects (P0.7, extended 2026-08-20)
+  // are handled by redirectLegacyProductHandle() below — a reusable
+  // map+matcher covering both /product/ and /category/<slug>/, not a flat
+  // entry here.
 ]
 
 // Stamps the enforcing + parallel Report-Only CSP headers (M10) onto every
@@ -185,6 +209,9 @@ export function proxy(request: NextRequest): Response {
   // Definitive removal first: permanently-gone categories (§4.3).
   if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), nonce)
 
+  const legacyHandleRedirect = redirectLegacyProductHandle(pathname, request, nonce)
+  if (legacyHandleRedirect) return legacyHandleRedirect
+
   // Face Masks canonical alias: Shopify collection handle is face-coverings; canonical
   // public URL is /category/face-masks. Subtree redirect so both the category root and
   // nested product paths (e.g. /category/face-coverings/n95-mask) arrive in one hop.
@@ -229,6 +256,18 @@ export function proxy(request: NextRequest): Response {
   // equity and confusing shoppers.
   if (pathname === '/category/occ' || pathname === '/category/occ/') {
     const url = new URL('/solutions/occ', request.url)
+    url.search = request.nextUrl.search
+    return withCsp(NextResponse.redirect(url, 301), nonce)
+  }
+
+  // ── /collections/trocars-trocar-kits → /category/trocars-trocar-kits ──────
+  //
+  // Izzy confirmed this is the live Shopify collection URL (68 products, 41
+  // active) that customers have saved/linked externally. Preserves ?variant=
+  // and any other query string in one hop (Bilal's redirect rules, 2026-08-18).
+  if (pathname === '/collections/trocars-trocar-kits' || pathname.startsWith('/collections/trocars-trocar-kits/')) {
+    const newPath = pathname.replace('/collections/trocars-trocar-kits', '/category/trocars-trocar-kits')
+    const url = new URL(newPath, request.url)
     url.search = request.nextUrl.search
     return withCsp(NextResponse.redirect(url, 301), nonce)
   }

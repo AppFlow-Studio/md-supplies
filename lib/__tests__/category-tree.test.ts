@@ -95,6 +95,18 @@ describe('CATEGORY_TREE_L1 short descriptions (DEV-LAUNCH-03)', () => {
   })
 })
 
+describe('CATEGORY_TREE_L1 productSet (Bilal, 2026-08-20 — Trocar reversal)', () => {
+  it('surgery-procedure (Trocar) is collection-sourced, not tag-sourced — shows Izzy\'s verified 41 active products, not the 319-product tag set', () => {
+    const trocar = CATEGORY_TREE_L1.find((c) => c.tag === 'surgery-procedure')
+    expect(trocar?.productSet).not.toBe('tag')
+  })
+
+  it('the other three productSet:"tag" categories are unchanged by the Trocar reversal', () => {
+    const stillTagSourced = CATEGORY_TREE_L1.filter((c) => c.productSet === 'tag').map((c) => c.tag)
+    expect(stillTagSourced.sort()).toEqual(['apparel', 'face-masks', 'room-furniture'])
+  })
+})
+
 import { resolveCanonicalCategory, buildL1Tiles } from '../category-tree'
 
 describe('resolveCanonicalCategory', () => {

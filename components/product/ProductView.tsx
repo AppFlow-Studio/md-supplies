@@ -15,14 +15,13 @@ import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
 import { ProductLabelBadges } from './ProductLabelBadges'
-import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
-import { shopifyRichTextToPlainParagraphs } from '@/lib/policy/rich-text'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
@@ -193,10 +192,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // (resolveVariantValue — Bilal's rule 2). Used identically by the
   // above-the-fold block and the ORDER PACKAGING tab, so they can never show
   // two different totals for the same selection (LG-04 acceptance).
-  const resolvedOrderSize = resolveVariantValue(selectedVariant.orderSize, product.orderSize)
+  const resolvedOrderSize = resolveVariantValue(
+    selectedVariant.orderSize,
+    product.orderSize,
+    product.variants.nodes.map((v) => v.orderSize),
+  )
   const resolvedUnitsPerOrder = resolveVariantValue(
     selectedVariant.unitsPerOrder,
     product.unitsPerOrder ?? product.quantityOfUnits,
+    product.variants.nodes.map((v) => v.unitsPerOrder),
   )
   // LG-04 packaging breakdown (2026-08-17): variant-only, no product-level
   // fallback (unlike orderSize/unitsPerOrder above) — Izzy only writes a
@@ -234,6 +238,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // vendorPolicyText below — the approved general fallback still renders
   // when a product has no value (not every product carries this field).
   const vendorPolicyText = shopifyRichTextToPlainParagraphs(product.shippingReturns).join('\n\n') || null
+
+  // Bold-preserving companion to vendorPolicyText above (Task 6, 2026-08-19):
+  // resolveReturnPolicy/ReturnPolicyContent only carry plain-text paragraphs
+  // (DEV-POLICY-01's shared string-only contract with /returns), so the
+  // vendor-specific tab below renders these spans directly instead, while
+  // still reusing resolveReturnPolicy just for the "{Vendor} Return Policy"
+  // heading text so heading wording can't drift from the shared module.
+  const vendorPolicyParagraphs = shopifyRichTextToParagraphSpans(product.shippingReturns)
+  const vendorPolicyHeading = resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections[0]?.heading ?? null
 
   return (
     <>
@@ -625,7 +638,7 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                   </table>
                 ) : (
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                    Packaging information not available for this product.
+                    Packaging information unavailable for this option.
                   </p>
                 )}
               </div>
@@ -637,10 +650,25 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               // so resolveReturnPolicy always takes its 'vendor' branch here
               // — the general fallback is never shown on this tab, only at
               // /returns (DEV-POLICY-01).
-              <ReturnPolicyContent
-                sections={resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections}
-                headingLevel="h3"
-              />
+              // Task 6 (2026-08-19): rendered directly here (not via the
+              // shared ReturnPolicyContent, which only knows plain-text
+              // paragraphs) so bold marks from custom.shipping_returns
+              // survive as <strong> — this is the only rich-text-safe
+              // rendering path (bold/italic only, never arbitrary HTML).
+              <div className="flex flex-col gap-4 max-w-[760px]">
+                {vendorPolicyHeading && (
+                  <h3 className="text-navy-900 text-[18px] font-semibold tracking-[0.36px] mt-2">
+                    {vendorPolicyHeading}
+                  </h3>
+                )}
+                {vendorPolicyParagraphs.map((spans, i) => (
+                  <p key={i} className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                    {spans.map((s: RichTextSpan, j) => (
+                      s.bold ? <strong key={j}>{s.text}</strong> : <span key={j}>{s.text}</span>
+                    ))}
+                  </p>
+                ))}
+              </div>
             )}
 
             {activeTab === 'REVIEWS' && (
@@ -699,19 +727,20 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               role="region"
               aria-label="You May Also Need — scrollable product list"
             >
+              {/* Task 4 (2026-08-18): reuse RelatedProductCard (same component
+                  as "Frequently Bought With" / "You May Also Like") instead of
+                  hand-rolling bare, non-interactive <div> cards — those had no
+                  <Link>, no keyboard focus, and no accessible name. The
+                  wrapping <div> here only carries the fixed scroll-row width
+                  (RelatedProductCard's own flex-1/min-w is sized for a
+                  flex-wrap grid, not this fixed-width overflow row).
+                  Standing constraint: RelatedProductCard's root is a <Link> —
+                  if it ever grows an inner Quick Add <button>, that button
+                  must NOT be nested inside the <Link> (no interactive-in-
+                  interactive nesting). */}
               {relatedProducts.slice(4).map((item) => (
-                <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
-                  <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                    <ProductImage src={item.images.nodes[0]?.url} alt={cleanShopifyAlt(item.images.nodes[0]?.altText) ?? item.title} sizes="201px" />
-                  </div>
-                  <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
-                    <p className="text-black text-[14px] font-semibold leading-5 line-clamp-2">
-                      {item.title}
-                    </p>
-                    <span className="text-black text-[18px] font-bold">
-                      ${parseFloat(item.priceRange.minVariantPrice.amount).toFixed(2)}
-                    </span>
-                  </div>
+                <div key={item.id} className="w-[185px] sm:w-[201px] shrink-0">
+                  <RelatedProductCard product={item} />
                 </div>
               ))}
             </div>

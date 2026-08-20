@@ -57,6 +57,12 @@ const HOSTILE_FACETS: CollectionFilter[] = [
   facet('filter.p.m.custom.order_size', 'Order size'),
   facet('filter.p.m.custom.weight', 'Weight'),
   facet('filter.p.m.custom.size_length_', 'Size'),
+  facet('filter.p.m.custom.features', 'Features'),
+  facet('filter.p.m.custom.other_features', 'Other features'),
+  facet('filter.p.m.custom.use', 'Use'),
+  facet('filter.p.m.custom.brand_name', 'Brand name'),
+  facet('filter.p.m.custom.sterility', 'Sterility'),
+  facet('filter.p.m.custom.type', 'Type'),
   facet('filter.p.m.internal.ops_flag', 'Ops flag'),
   facet('filter.v.m.internal.ops_flag', 'Ops flag (variant)'),
 ]
@@ -176,6 +182,28 @@ describe('page-specific facet sets', () => {
       ]),
     )
     expect(ids).not.toContain('filter.p.m.custom.glove_size')
+  })
+
+  it('Trocar Supplies shows Izzy\'s 8 approved groups only — no type/needle/length/sterility/color', () => {
+    const ids = getAllowedFacets('trocars-trocar-kits', HOSTILE_FACETS).map((f) => f.id)
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'filter.p.m.custom.material',
+        'filter.p.m.custom.glove_size',
+        'filter.p.m.custom.size_length_',
+        'filter.p.m.custom.features',
+        'filter.p.m.custom.other_features',
+        'filter.p.m.custom.use',
+        'filter.p.m.custom.order_size',
+        'filter.p.m.custom.brand_name',
+        'filter.v.price',
+      ]),
+    )
+    expect(ids).not.toContain('filter.p.m.custom.type')
+    expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
+    expect(ids).not.toContain('filter.p.m.custom.needle_length')
+    expect(ids).not.toContain('filter.p.m.custom.sterility')
+    expect(ids).not.toContain('filter.v.option.color')
   })
 
   it('unlisted collections fall back to availability/price only', () => {

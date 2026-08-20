@@ -25,7 +25,7 @@ export function PopularCategories() {
           </h2>
           <Link
               href={ROUTES.categories}
-              className="group text-[15px] font-semibold text-gray-500 hover:text-navy-900 transition-colors whitespace-nowrap inline-flex items-center gap-1"
+              className="group text-[15px] font-semibold text-gray-500 hover:text-navy-900 transition-colors inline-flex items-center gap-1"
           >
             Browse all categories <AnimatedArrow size={14} />
           </Link>

@@ -242,7 +242,13 @@ export const filterRegistry: Record<string, FacetRule[]> = {
 
   // Surgery & Procedure. Keyed on the live collection handle because that is
   // the public route slug.
-  'trocars-trocar-kits': cat(M.type, M.material, M.size, M.needleGauge, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+  // Corrected 2026-08-18 per Izzy's verified Trocar registry (41 active
+  // products): custom.material, custom.glove_size, custom.size_length_,
+  // custom.features, custom.other_features, custom.use are the only
+  // populated metafields on this collection — type/needle_gauge/
+  // needle_length/sterility/color never existed on Trocar products; this
+  // entry previously copied the needles-syringes template by mistake.
+  'trocars-trocar-kits': cat(M.material, M.gloveSize, M.size, M.features, M.otherFeatures, M.use),
 
   // Apparel.
   'capes-gowns': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),

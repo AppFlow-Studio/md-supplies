@@ -16,6 +16,7 @@ const CART_FRAGMENT = `#graphql
             id
             title
             sku
+            image { id url altText width height }
             # The variant's own unit price, distinct from this line's cost
             # below: a no-rate-for-destination line still carries a positive
             # price here even though its cost.totalAmount is zeroed out. This

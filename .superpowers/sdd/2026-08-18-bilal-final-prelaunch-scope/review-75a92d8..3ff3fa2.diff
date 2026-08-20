@@ -1,0 +1,118 @@
+# Review package: 75a92d8b36d98bc94a1857b9fd93017734fc9d93..3ff3fa21c1958da86b0d0d0e3e2cb482da342bd5
+
+## Commits
+3ff3fa2 fix(filters): correct Trocar Supplies facet registry to Izzy's verified metafields
+
+## Files changed
+ lib/__tests__/filter-registry.test.ts | 28 ++++++++++++++++++++++++++++
+ lib/filter-registry.ts                |  8 +++++++-
+ 2 files changed, 35 insertions(+), 1 deletion(-)
+
+## Diff
+diff --git a/lib/__tests__/filter-registry.test.ts b/lib/__tests__/filter-registry.test.ts
+index dcbec6d..8ef393e 100644
+--- a/lib/__tests__/filter-registry.test.ts
++++ b/lib/__tests__/filter-registry.test.ts
+@@ -50,20 +50,26 @@ const HOSTILE_FACETS: CollectionFilter[] = [
+   facet('filter.v.option.size', 'Size'),
+   facet('filter.v.option.color', 'Color'),
+   facet('filter.p.m.custom.material', 'Material'),
+   facet('filter.p.m.custom.glove_size', 'Glove size'),
+   facet('filter.p.m.custom.needle_gauge', 'Needle gauge'),
+   facet('filter.p.m.custom.needle_length', 'Length'),
+   facet('filter.p.m.custom.volume', 'Volume'),
+   facet('filter.p.m.custom.order_size', 'Order size'),
+   facet('filter.p.m.custom.weight', 'Weight'),
+   facet('filter.p.m.custom.size_length_', 'Size'),
++  facet('filter.p.m.custom.features', 'Features'),
++  facet('filter.p.m.custom.other_features', 'Other features'),
++  facet('filter.p.m.custom.use', 'Use'),
++  facet('filter.p.m.custom.brand_name', 'Brand name'),
++  facet('filter.p.m.custom.sterility', 'Sterility'),
++  facet('filter.p.m.custom.type', 'Type'),
+   facet('filter.p.m.internal.ops_flag', 'Ops flag'),
+   facet('filter.v.m.internal.ops_flag', 'Ops flag (variant)'),
+ ]
+ 
+ const EVERY_COLLECTION = [...Object.keys(filterRegistry), 'some-unlisted-collection']
+ 
+ describe('filter registry guard: no blocked source can ever render', () => {
+   for (const handle of EVERY_COLLECTION) {
+     it(`${handle}: never renders the raw-tag facet or unapproved sources`, () => {
+       const rendered = getAllowedFacets(handle, HOSTILE_FACETS)
+@@ -171,20 +177,42 @@ describe('page-specific facet sets', () => {
+       expect.arrayContaining([
+         'filter.p.m.custom.needle_gauge',
+         'filter.p.m.custom.needle_length',
+         'filter.p.m.custom.size_length_',
+         'filter.p.m.custom.order_size',
+       ]),
+     )
+     expect(ids).not.toContain('filter.p.m.custom.glove_size')
+   })
+ 
++  it('Trocar Supplies shows Izzy\'s 8 approved groups only — no type/needle/length/sterility/color', () => {
++    const ids = getAllowedFacets('trocars-trocar-kits', HOSTILE_FACETS).map((f) => f.id)
++    expect(ids).toEqual(
++      expect.arrayContaining([
++        'filter.p.m.custom.material',
++        'filter.p.m.custom.glove_size',
++        'filter.p.m.custom.size_length_',
++        'filter.p.m.custom.features',
++        'filter.p.m.custom.other_features',
++        'filter.p.m.custom.use',
++        'filter.p.m.custom.order_size',
++        'filter.p.m.custom.brand_name',
++        'filter.v.price',
++      ]),
++    )
++    expect(ids).not.toContain('filter.p.m.custom.type')
++    expect(ids).not.toContain('filter.p.m.custom.needle_gauge')
++    expect(ids).not.toContain('filter.p.m.custom.needle_length')
++    expect(ids).not.toContain('filter.p.m.custom.sterility')
++    expect(ids).not.toContain('filter.v.option.color')
++  })
++
+   it('unlisted collections fall back to availability/price only', () => {
+     const ids = getAllowedFacets('some-unlisted-collection', HOSTILE_FACETS).map((f) => f.id)
+     expect(ids.sort()).toEqual(['filter.v.availability', 'filter.v.price'])
+   })
+ })
+ 
+ // Before industryFilterRegistry existed, every industry page (facetKey =
+ // Industry.collectionHandle) fell through to DEFAULT_FACET_RULES because none
+ // of these five handles were registered anywhere — the same "filters don't
+ // cover the product range" gap the category audit fixed, just never extended
+diff --git a/lib/filter-registry.ts b/lib/filter-registry.ts
+index fbd9c11..02c1b98 100644
+--- a/lib/filter-registry.ts
++++ b/lib/filter-registry.ts
+@@ -235,21 +235,27 @@ export const filterRegistry: Record<string, FacetRule[]> = {
+   'exam-room': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+ 
+   respiratory: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use),
+ 
+   mobility: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+ 
+   'patient-therapy-rehab': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+ 
+   // Surgery & Procedure. Keyed on the live collection handle because that is
+   // the public route slug.
+-  'trocars-trocar-kits': cat(M.type, M.material, M.size, M.needleGauge, M.length, M.features, M.otherFeatures, M.sterility, M.use, M.color),
++  // Corrected 2026-08-18 per Izzy's verified Trocar registry (41 active
++  // products): custom.material, custom.glove_size, custom.size_length_,
++  // custom.features, custom.other_features, custom.use are the only
++  // populated metafields on this collection — type/needle_gauge/
++  // needle_length/sterility/color never existed on Trocar products; this
++  // entry previously copied the needles-syringes template by mistake.
++  'trocars-trocar-kits': cat(M.material, M.gloveSize, M.size, M.features, M.otherFeatures, M.use),
+ 
+   // Apparel.
+   'capes-gowns': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+ 
+   hygiene: cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+ 
+   disinfectants: cat(M.type, M.size, M.features, M.otherFeatures, M.use),
+ 
+   'home-care': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
+ 

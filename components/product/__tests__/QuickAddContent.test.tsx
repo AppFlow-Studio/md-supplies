@@ -118,14 +118,14 @@ describe('QuickAddContent — purchasability (DEV-LAUNCH-07)', () => {
 // though `product.isRx` was already computed by ShopifyQuickAddButton's
 // toCardData() via the same tag ∪ custom.is_rx_only union the card/PDP use.
 describe('QuickAddContent — RX state (DEV-LAUNCH-08)', () => {
-  it('shows an Rx Only badge when the product is RX', () => {
+  it('shows an RX Only badge when the product is RX', () => {
     render(<QuickAddContent product={{ ...baseProduct, isRx: true }} titleId="t" />)
-    expect(screen.getByText('Rx Only')).toBeInTheDocument()
+    expect(screen.getByText('RX Only')).toBeInTheDocument()
   })
 
   it('shows no RX badge for a non-RX product', () => {
     render(<QuickAddContent product={{ ...baseProduct, isRx: false }} titleId="t" />)
-    expect(screen.queryByText('Rx Only')).not.toBeInTheDocument()
+    expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
   })
 })
 
