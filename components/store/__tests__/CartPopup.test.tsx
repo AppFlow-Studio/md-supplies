@@ -139,6 +139,68 @@ describe('CartPopup', () => {
     })
   })
 
+  // DEV-LAUNCH-13: the cart popup must show the selected variant's own
+  // image, not the product's first image — a Blue AeroWalk line showed
+  // whichever color happened to be the product's first image regardless of
+  // which color was actually added.
+  describe('line item image', () => {
+    function cartWithVariantAndProductImages() {
+      return {
+        id: 'cart-1',
+        checkoutUrl: 'https://shop.example.com/checkout',
+        totalQuantity: 1,
+        lines: {
+          nodes: [{
+            id: 'line-1',
+            quantity: 1,
+            merchandise: {
+              id: 'variant-1',
+              title: 'Blue',
+              sku: 'SKU-1',
+              image: {
+                id: 'img-variant',
+                url: 'https://example.com/blue.jpg',
+                altText: 'Blue variant',
+                width: 100,
+                height: 100,
+              },
+              price: { amount: '19.99', currencyCode: 'USD' },
+              selectedOptions: [{ name: 'Color', value: 'Blue' }],
+              product: {
+                id: 'prod-1',
+                title: 'Xylocaine Injection',
+                handle: 'xylocaine',
+                images: {
+                  nodes: [{
+                    id: 'img-product',
+                    url: 'https://example.com/grey.jpg',
+                    altText: 'Grey (product default)',
+                    width: 100,
+                    height: 100,
+                  }],
+                },
+              },
+            },
+            cost: { totalAmount: { amount: '19.99', currencyCode: 'USD' } },
+          }],
+        },
+        cost: {
+          subtotalAmount: { amount: '19.99', currencyCode: 'USD' },
+          totalAmount: { amount: '19.99', currencyCode: 'USD' },
+          totalTaxAmount: null,
+        },
+      }
+    }
+
+    it("shows the selected variant's own image, not the product's first image", () => {
+      mockCart(true, { cart: cartWithVariantAndProductImages() })
+      render(<CartPopup />)
+      const img = screen.getByAltText('Blue variant')
+      expect(img).toHaveAttribute('src', expect.stringContaining('blue.jpg'))
+      expect(screen.queryByAltText('Grey (product default)')).not.toBeInTheDocument()
+    })
+  })
+
   // DEV-SHIP-02: the cart popup reads line.shippingDisplay exactly as
   // attachCartShippingDisplay attached it (custom.free_shipping ANDed with
   // the resolver's own confirmation) — the popup never re-derives a claim.

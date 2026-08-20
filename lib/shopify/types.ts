@@ -40,6 +40,37 @@ export type ProductOption = {
   values: string[];
 };
 
+export type VariantMetafields = {
+  /** `custom.manufacturer_item_number` (variant-owned, proposed — see
+      docs/launch/2026-08-14-variant-field-contract.md). No product-level
+      fallback: every variant carries its own value directly. Optional/null
+      until Izzy's AeroWalk pilot write lands. */
+  manufacturerNumber?: string | null;
+  /** `custom.order_size` (variant-owned, reuses the existing product-level
+      key/name — see contract doc). Falls back to `Product.orderSize` when
+      blank via lib/product/resolve-variant-value.ts. */
+  orderSize?: string | null;
+  /** `custom.units_per_order` (variant-owned). Falls back to
+      `Product.unitsPerOrder` / `Product.quantityOfUnits` when blank. */
+  unitsPerOrder?: string | null;
+  /** `custom.variant_description` (variant-owned, proposed). Only ever
+      rendered as a supplement to `Product.description`, and only when it
+      differs from it — see resolveVariantSupplement. */
+  description?: string | null;
+  /** `custom.inner_pack_quantity` (LG-04, variant-owned, Number integer).
+      No product-level fallback. Blank means no data, not zero — Izzy only
+      writes this when the source states it outright. */
+  innerPackQuantity?: string | null;
+  /** `custom.packs_per_case` (LG-04, variant-owned, Number integer). Same
+      no-fallback, blank-means-no-data rule as innerPackQuantity. */
+  packsPerCase?: string | null;
+  /** `custom.total_order_quantity` (LG-04, variant-owned, Number integer).
+      Stored only where Izzy's source states a total outright — never derived
+      from innerPackQuantity * packsPerCase, since Each/Bag families don't
+      decompose into two multiplicands. */
+  totalOrderQuantity?: string | null;
+};
+
 export type ProductVariant = {
   id: string;
   title: string;
@@ -51,7 +82,13 @@ export type ProductVariant = {
   selectedOptions: SelectedOption[];
   price: Money;
   compareAtPrice: Money | null;
-};
+  /** Shopify's own variant-media assignment (native field, not a metafield).
+      Null/absent when the variant has no assigned image — callers fall back
+      to the product's shared gallery rather than inferring color from
+      filename/text. Optional so existing variant fixtures/queries that don't
+      select it still type-check. */
+  image?: ProductImage | null;
+} & VariantMetafields;
 
 export type ProductMetafields = {
   brandName: string | null;
@@ -89,6 +126,14 @@ export type ProductMetafields = {
    * and must never itself appear in the ShippingDisplay type components render.
    */
   freeShipping?: { value: string } | null;
+  /** `custom.shipping_returns` (H-01). Confirmed by Izzy's 2026-08-14 field
+   * contract: rich_text_field, PUBLIC_READ, populated on 10,001 products —
+   * the live theme's actual Vendor Shipping & Returns source. Raw rich-text
+   * JSON string; flatten with lib/policy/rich-text.ts before display. Not
+   * populated on every product, so optional like the other launch-era
+   * additions above.
+   */
+  shippingReturns?: string | null;
   testsFor: string | null;
   detectableDrugs: string | null;
   adulterants: string | null;
@@ -151,7 +196,11 @@ export type CollectionProduct = {
   freeShipping?: { value: string } | null;
   priceRange: { minVariantPrice: Money; maxVariantPrice: Money };
   images: { nodes: ProductImage[] };
-  variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable'>[] };
+  // 'image' added so Quick Add (fed by this type) can switch its gallery on
+  // variant selection instead of always showing the product's first image
+  // regardless of which color is picked — the same defect LG-03 fixed on the
+  // PDP, present here too because this type never carried variant media.
+  variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable' | 'image'>[] };
   shippingDisplay?: ShippingDisplay | null;
 };
 
@@ -200,6 +249,11 @@ export type CartLine = {
     id: string;
     title: string;
     sku: string | null;
+    /** Shopify's own variant-media assignment — same field/shape as
+        ProductVariant.image. Null when the variant has no image of its own;
+        callers fall back to the product's shared gallery image only then,
+        never showing a sibling variant's assigned image. */
+    image?: ProductImage | null;
     /** The variant's own unit price -- distinct from `cost.totalAmount`
      * below, which a no-rate-for-destination line zeroes out while this
      * stays positive. See lib/shopify/cart-lines.ts. */

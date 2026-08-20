@@ -54,6 +54,17 @@ export const CATEGORY_IMAGE_FALLBACK: CategoryImageEntry = {
   alt: 'Assorted medical supplies',
 }
 
+/**
+ * The Surgery & Procedure artwork file, referenced by name rather than
+ * duplicated as a string literal: /category/trocars-trocar-kits deliberately
+ * REUSES this exact asset (the Trocar Shopify collection carries no image of
+ * its own — verified against the Storefront API on 2026-08-20, and no approved
+ * Trocar photography exists in the repo or the CDN zone). Sharing the constant
+ * means an approved Trocar asset later is a one-line change in one place, and
+ * the two entries can never silently drift onto different files.
+ */
+const SURGERY_PROCEDURE_IMAGE_FILE = 'surgery-procedure-placeholder.jpeg'
+
 export const CATEGORY_IMAGE_CONFIG: Record<string, CategoryImageEntry> = {
   'gloves':                  { file: 'gloves-placeholder.jpeg',                  alt: 'Disposable exam gloves' },
   'wound-care':              { file: 'wound-care-placeholder.jpeg',              alt: 'Wound care dressings and bandages' },
@@ -64,7 +75,12 @@ export const CATEGORY_IMAGE_CONFIG: Record<string, CategoryImageEntry> = {
   'respiratory':             { file: 'respiratory-placeholder.jpeg',             alt: 'Respiratory care supplies' },
   'mobility':                { file: 'mobility-placeholder.jpeg',                alt: 'Mobility aids and equipment' },
   'patient-therapy-rehab':   { file: 'patient-therapy-rehab-placeholder.jpeg',   alt: 'Patient therapy and rehab equipment' },
-  'surgery-procedure':       { file: 'surgery-procedure-placeholder.jpeg',       alt: 'Surgery and procedure instruments' },
+  'surgery-procedure':       { file: SURGERY_PROCEDURE_IMAGE_FILE,               alt: 'Surgery and procedure instruments' },
+  // Featured subcategory (lib/category-tree.ts FEATURED_SUBCATEGORIES). Keyed
+  // on the collection handle so lib/bunnycdn.ts resolves it directly instead of
+  // inheriting the Surgery & Procedure entry — same artwork file, but truthful
+  // alt text for the page it actually labels.
+  'trocars-trocar-kits':     { file: SURGERY_PROCEDURE_IMAGE_FILE,               alt: 'Trocars and trocar kits' },
   'apparel':                 { file: 'apparel-placeholder.jpeg',                 alt: 'Medical apparel and scrubs' },
   'hygiene':                 { file: 'hygiene-placeholder.jpeg',                 alt: 'Hygiene products' },
   'disinfectants':           { file: 'disinfectants-placeholder.jpeg',           alt: 'Disinfectants and cleaning solutions' },

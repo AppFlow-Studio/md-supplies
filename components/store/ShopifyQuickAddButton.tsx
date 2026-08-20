@@ -53,6 +53,9 @@ function toCardData(product: CollectionProduct): ProductCardData {
         ? Math.round(parseFloat(v.compareAtPrice.amount) * 100)
         : undefined,
       available: v.availableForSale,
+      image: v.image
+        ? { url: v.image.url, altText: cleanShopifyAlt(v.image.altText) ?? product.title, width: v.image.width, height: v.image.height }
+        : null,
     })),
   }
 }

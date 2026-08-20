@@ -46,11 +46,96 @@ describe('GET_PRODUCT metafield selections', () => {
     expect(GET_PRODUCT).toContain('key: "free_shipping"')
   })
 
+  // H-01: source for the PDP's "Vendor Shipping & Returns" section. Distinct
+  // from IZ-05's still-unconfirmed return-policy metafield (resolveReturnPolicy)
+  // — this key is the one Bilal's launch direction confirmed.
+  it('requests custom.shipping_returns, the source for the PDP Vendor Shipping & Returns section', () => {
+    expect(GET_PRODUCT).toMatch(/shippingReturns:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "shipping_returns"')
+  })
+
   it('is still a single parseable template literal', () => {
     // A backtick inside a comment in this file terminated the template literal
     // once already. Cheap check that the query survived editing.
     expect(GET_PRODUCT).toContain('query GetProduct')
     expect(GET_PRODUCT.split('{').length).toBe(GET_PRODUCT.split('}').length)
+  })
+})
+
+// AeroWalk pilot (2026-08-14): variant-level manufacturer number, order
+// size, units per order and description. Proposed contract —
+// docs/launch/2026-08-14-variant-field-contract.md. If Izzy's actual
+// namespace/key differs, this test (and only the query string below) needs
+// to change; every other consumer reads the already-normalized field name.
+describe('GET_PRODUCT variant-level metafield selections (AeroWalk pilot)', () => {
+  it('requests custom.manufacturer_item_number on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/manufacturerNumber:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "manufacturer_item_number"')
+  })
+
+  it('requests custom.order_size on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/orderSize:\s*metafield\(/)
+  })
+
+  it('requests custom.units_per_order on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/unitsPerOrder:\s*metafield\(/)
+  })
+
+  it('requests custom.variant_description on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/description:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "variant_description"')
+  })
+
+  it('is still a single parseable template literal', () => {
+    expect(GET_PRODUCT.split('{').length).toBe(GET_PRODUCT.split('}').length)
+  })
+})
+
+// LG-04 packaging breakdown (2026-08-17): Izzy created these three as Number
+// (integer), variant-scoped, PUBLIC_READ, confirmed live in QA — 458 values
+// across 117 products. Additive to order_size/units_per_order, not a
+// replacement; no product-level fallback exists for any of the three.
+describe('GET_PRODUCT variant-level packaging breakdown (LG-04)', () => {
+  it('requests custom.inner_pack_quantity on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/innerPackQuantity:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "inner_pack_quantity"')
+  })
+
+  it('requests custom.packs_per_case on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/packsPerCase:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "packs_per_case"')
+  })
+
+  it('requests custom.total_order_quantity on each variant', () => {
+    expect(GET_PRODUCT).toMatch(/totalOrderQuantity:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "total_order_quantity"')
+  })
+
+  it('is still a single parseable template literal', () => {
+    expect(GET_PRODUCT.split('{').length).toBe(GET_PRODUCT.split('}').length)
+  })
+})
+
+// LG-04 / H-01 (2026-08-14): confirmed by Izzy's field contract. Product-level
+// order_size/units_per_order are the fallback resolveVariantValue expects
+// when a variant carries no override — previously unselected, so the
+// fallback was silently always null despite 10,001/8,210 products having a
+// value. shipping_returns is the H-01 source, wired into the PDP Returns tab
+// via resolveReturnPolicy's vendorPolicyText.
+describe('GET_PRODUCT product-level metafield selections (2026-08-14 field contract)', () => {
+  it('requests custom.order_size twice — once per variant, once at product level (LG-04 fallback)', () => {
+    const matches = GET_PRODUCT.match(/orderSize:\s*metafield\(namespace: "custom", key: "order_size"\)/g) ?? []
+    expect(matches).toHaveLength(2)
+  })
+
+  it('requests custom.units_per_order twice — once per variant, once at product level (LG-04 fallback)', () => {
+    const matches = GET_PRODUCT.match(/unitsPerOrder:\s*metafield\(namespace: "custom", key: "units_per_order"\)/g) ?? []
+    expect(matches).toHaveLength(2)
+  })
+
+  it('requests custom.shipping_returns (H-01)', () => {
+    expect(GET_PRODUCT).toMatch(/shippingReturns:\s*metafield\(/)
+    expect(GET_PRODUCT).toContain('key: "shipping_returns"')
   })
 })
 
@@ -90,6 +175,24 @@ describe('ProductCard fragment metafield selections', () => {
 // built on must request custom.free_shipping, or attachCardShippingDisplay /
 // attachCartShippingDisplay silently gate the claim closed everywhere
 // (the AND-gate treats a missing metafield exactly like an explicit false).
+//
+// Quick Add gap (2026-08-14): ShopifyQuickAddButton/QuickAddContent read
+// CollectionProduct.variants.nodes[].image (types.ts) to switch the modal's
+// gallery per selected variant — but no card-grid query has ever selected
+// it, so the field was always undefined and Quick Add always showed the
+// product's first image regardless of which variant was picked. Not
+// AeroWalk-specific: every multi-color product had this gap.
+describe('variant.image selected on every card-grid query (Quick Add fix)', () => {
+  it('the shared ProductCard fragment (GET_PRODUCTS_BY_VENDOR, GET_PRODUCT_RECS) requests it', () => {
+    expect(GET_PRODUCTS_BY_VENDOR).toMatch(/variants\(first: 1\) \{\s*nodes \{[\s\S]*?image \{/)
+    expect(GET_PRODUCT_RECS).toMatch(/variants\(first: 1\) \{\s*nodes \{[\s\S]*?image \{/)
+  })
+
+  it('SEARCH_PRODUCTS_BY_TAG (L2/industry/OCC grids) requests it', () => {
+    expect(SEARCH_PRODUCTS_BY_TAG).toMatch(/variants\(first: 10\) \{\s*nodes \{[\s\S]*?image \{/)
+  })
+})
+
 describe('custom.free_shipping selected on every surface query', () => {
   it('SEARCH_PRODUCTS_BY_TAG (L2/industry/OCC card grids) requests it', () => {
     expect(SEARCH_PRODUCTS_BY_TAG).toMatch(/freeShipping:\s*metafield\(/)

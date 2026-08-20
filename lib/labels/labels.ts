@@ -11,12 +11,12 @@
 //    this label.
 //  - Backorder: gated on the `custom.backorder` boolean ALONE — the merchant's
 //    own declaration (mirrored from Juliette's Fordeer list via Izzy), not an
-//    inventory inference. DEV-SHIP-04 (final business rule): the ETA fields
-//    (`custom.backorder_restock_eta`, `custom.estimated_back_order_restock_
-//    date`) are queried and normalized for compatibility/live-theme use only —
-//    the custom storefront never displays, announces, or infers anything from
-//    them. `resolveBackorderLabel` always renders the fixed text "Backorder"
-//    when the boolean is true, regardless of what either ETA field contains.
+//    inventory inference. Bilal, 2026-08-18 (supersedes DEV-SHIP-04's "always
+//    exactly Backorder" rule): `custom.estimated_back_order_restock_date` is
+//    appended to the text ONLY when it is a valid, non-expired date — a
+//    missing, stale, or unparseable ETA falls back to the plain "Backorder"
+//    text. The ETA never creates or shapes Backorder status by itself; the
+//    boolean is checked first and independently.
 //
 // Fordeer: no supported headless retrieval path is proven yet (see
 // lib/labels/fordeer-provider.ts). When one is, its provider output
@@ -45,11 +45,15 @@ const RX_LABEL_TAGS = ['rx-required', 'compliance:rx-only']
 // surface (e.g. quick add) that only has the boolean `isRx` flag rather than
 // the raw tags/metafield this function reads, so the wording can never drift
 // between surfaces (DEV-LAUNCH-08).
+// Bilal, 2026-08-20 final decision: exact customer-facing capitalization is
+// "RX Only" (not "Rx Only") — reverses H-04 (launch plan 2026-08-13).
+// Applies to cards, PDP, Quick Add, and cart; the screen-reader text below
+// is unrelated to this capitalization question and is unchanged.
 export const RX_ONLY_LABEL_TEXT = 'RX Only'
 export const RX_ONLY_ACCESSIBLE_TEXT = 'Prescription required'
 
 /**
- * The "RX Only" badge renders from RX POLICY, not from tags alone and never
+ * The "Rx Only" badge renders from RX POLICY, not from tags alone and never
  * from a client-authored label metaobject. `isRxOnly` is the store's own
  * `custom.is_rx_only` declaration; passing it makes this agree with the
  * tag ∪ metafield union that lib/rx-gate.ts uses to gate checkout. Omitting it
@@ -86,20 +90,28 @@ export function isBackorderedMetafield(
   return ['true', '1', 'yes'].includes((v ?? '').trim().toLowerCase())
 }
 
+/** A parseable date more than 36h in the past — a stale/expired ETA never renders. */
+function isValidNonExpiredEta(value: string, now?: Date): boolean {
+  const parsed = new Date(value)
+  if (isNaN(parsed.getTime())) return false
+  // 36-hour grace past the parsed instant: covers a date-only value (which
+  // parses as UTC midnight) staying valid through that calendar day in any
+  // merchant/customer timezone, without local-timezone math.
+  const GRACE_MS = 36 * 60 * 60 * 1000
+  return parsed.getTime() + GRACE_MS >= (now ?? new Date()).getTime()
+}
+
 /**
  * Backorder label. The `custom.backorder` boolean is the SOLE trigger — the
  * merchant's own declaration (Juliette's Fordeer list, mirrored by Izzy),
  * never an availability/inventory inference and never influenced by an ETA.
  *
- * DEV-SHIP-04 (final business rule, supersedes the earlier ETA-appending
- * behavior): text and accessibleText are always the fixed string "Backorder"
- * when the boolean is true — no date, no "ships", no "estimated", no
- * "available" wording, ever. `estimatedRestockDate`/`now` remain accepted
- * parameters purely so existing callers that still pass ETA data (queried
- * and normalized for live-theme/internal compatibility — see
- * lib/shopify/queries/products.ts) don't need to change their call sites;
- * both are deliberately ignored here. A date must never by itself create or
- * shape Backorder status.
+ * Bilal, 2026-08-18 (supersedes DEV-SHIP-04's "always exactly Backorder"
+ * rule): once the boolean is true, a valid, non-expired
+ * `estimatedRestockDate` IS appended to the text; a missing, stale, or
+ * unparseable one falls back to the plain "Backorder" text. A date must
+ * never by itself create or shape Backorder status — the boolean gate above
+ * runs first and independently.
  */
 export function resolveBackorderLabel(input: {
   isBackordered?: { value: string } | string | boolean | null
@@ -108,12 +120,14 @@ export function resolveBackorderLabel(input: {
 }): ProductLabel | null {
   if (!isBackorderedMetafield(input.isBackordered)) return null
 
+  const value = input.estimatedRestockDate?.trim()
+  const eta = value && isValidNonExpiredEta(value, input.now) ? value : null
+
   return {
     type: 'backorder',
     // "Backorder", not "Back-ordered" (Bilal's spec / Juliette's guide).
-    // Fixed text — no ETA ever appended (DEV-SHIP-04).
-    text: 'Backorder',
-    accessibleText: 'Backorder',
+    text: eta ? `Backorder, ships ${eta}` : 'Backorder',
+    accessibleText: eta ? `Backorder, ships ${eta}` : 'Backorder',
     priority: 20,
     source: 'metafield',
   }

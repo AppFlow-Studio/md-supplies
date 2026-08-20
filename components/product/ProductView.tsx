@@ -14,17 +14,17 @@ import { VariantSelector } from './VariantSelector'
 import { AddToCartButton } from './AddToCartButton'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import type { ShippingDisplay } from '@/lib/shipping-resolver/resolve'
-import { SHIPPING_FALLBACK_MESSAGE } from '@/lib/shipping-resolver/copy'
-import { ShippingBlock } from './ShippingBlock'
 import { ProductLabelBadges } from './ProductLabelBadges'
-import { ReturnPolicyContent } from '@/components/policy/ReturnPolicyContent'
 import { resolveReturnPolicy } from '@/lib/policy/return-policy'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
-import { hasUsablePrice, getDefaultVariant } from '@/lib/purchasability'
+import { hasUsablePrice } from '@/lib/purchasability'
+import { useSelectedVariant } from './useSelectedVariant'
+import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
 
-type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'RETURNS' | 'REVIEWS'
-const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'RETURNS', 'REVIEWS']
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const price = parseFloat(
@@ -33,7 +33,14 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const image = product.images.nodes[0]
 
   return (
-    <Link href={`/product/${product.handle}`} className="group flex flex-col bg-neutral-50 flex-1 min-w-[160px]">
+    // focus-visible outline added 2026-08-20: the card's root is the link, and
+    // it carried only a `group` hover hook — a keyboard user tabbing through
+    // any of the three recommendation rows got no visible focus indicator at
+    // all. Same 2px navy outline the category tiles and tab pills use.
+    <Link
+      href={`/product/${product.handle}`}
+      className="group flex flex-col bg-neutral-50 flex-1 min-w-[160px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
+    >
       <div className="relative overflow-hidden bg-neutral-50 aspect-square">
         <ProductImage src={image?.url} alt={cleanShopifyAlt(image?.altText) ?? product.title} />
       </div>
@@ -76,6 +83,10 @@ interface BreadcrumbItem {
 
 interface Props {
   product: Product
+  /** Server-resolved from `?variant=` (or the default) — see
+      lib/product/resolve-variant.ts — so the initial render, ProductSchema
+      and this component's client state can never disagree (LG-03). */
+  initialVariant: ProductVariant
   relatedProducts: CollectionProduct[]
   complementaryProducts: CollectionProduct[]
   breadcrumbs?: BreadcrumbItem[]
@@ -83,19 +94,17 @@ interface Props {
   variantShippingDisplays?: Record<string, ShippingDisplay>
 }
 
-export function ProductView({ product, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
+export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
   // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
   // Medchain, …) and must never be presented as a brand — when brand_name is
   // absent the brand line, spec row, and analytics item_brand are all omitted.
   // Declared before the analytics effect that reads it.
   const brandDisplay = publicBrand(product)
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
-    () => getDefaultVariant(product.variants.nodes),
-  )
+  const { selectedVariant, select: selectVariant, galleryImages, activeImg, setActiveImg } =
+    useSelectedVariant(product, initialVariant)
   const shippingDisplay = variantShippingDisplays[selectedVariant.id] ?? null
   const [orderQty, setOrderQty] = useState(1)
-  const [activeImg, setActiveImg] = useState(0)
   const [activeTab, setActiveTab] = useState<Tab>('SPECIFICATIONS')
 
   useEffect(() => {
@@ -123,7 +132,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
   const compareAt = selectedVariant.compareAtPrice
     ? parseFloat(selectedVariant.compareAtPrice.amount)
     : null
-  const images = product.images.nodes
+  const images = galleryImages
   const savePct =
     compareAt && compareAt > price
       ? Math.round(((compareAt - price) / compareAt) * 100)
@@ -151,6 +160,19 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
   const variantSku = selectedVariant.sku || (selectedVariant.id.split('/').pop() ?? '')
 
+  // LG-03: a color-neutral parent title must still show which color is
+  // selected, so the H1/breadcrumb can't contradict the SKU/image the
+  // shopper just picked. Only a genuine multi-value color dimension carries
+  // this identity risk — a single-color product or an Each/Case selection
+  // doesn't rename the product, so those get no suffix.
+  const isMultiColor = product.options.some(
+    (o) => o.name.toLowerCase() === 'color' && o.values.length > 1,
+  )
+  const selectedColor = isMultiColor
+    ? selectedVariant.selectedOptions.find((o) => o.name.toLowerCase() === 'color')?.value
+    : undefined
+  const displayTitle = selectedColor ? `${product.title} — ${selectedColor}` : product.title
+
   const SPEC_ROWS: { label: string; value: string | null }[] = [
     { label: 'Material',         value: product.material },
     { label: 'Color',            value: product.color },
@@ -169,9 +191,69 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
     { label: 'Adulterants',      value: product.adulterants },
   ].filter((r) => r.value != null)
 
-  const hasPackaging = product.unitsPerOrder || product.orderSize || product.quantityOfUnits
   const hasOptions = product.options.length > 0 &&
     !(product.options.length === 1 && product.options[0].values.length === 1)
+
+  // AeroWalk pilot: variant-specific order unit overrides the shared product
+  // value; falls back to it only when the variant's own field is blank
+  // (resolveVariantValue — Bilal's rule 2). Used identically by the
+  // above-the-fold block and the ORDER PACKAGING tab, so they can never show
+  // two different totals for the same selection (LG-04 acceptance).
+  const resolvedOrderSize = resolveVariantValue(
+    selectedVariant.orderSize,
+    product.orderSize,
+    product.variants.nodes.map((v) => v.orderSize),
+  )
+  const resolvedUnitsPerOrder = resolveVariantValue(
+    selectedVariant.unitsPerOrder,
+    product.unitsPerOrder ?? product.quantityOfUnits,
+    product.variants.nodes.map((v) => v.unitsPerOrder),
+  )
+  // LG-04 packaging breakdown (2026-08-17): variant-only, no product-level
+  // fallback (unlike orderSize/unitsPerOrder above) — Izzy only writes a
+  // value when the source states it outright, so each is independently
+  // optional and never derived from the other two.
+  const { innerPackQuantity, packsPerCase, totalOrderQuantity } = selectedVariant
+  const resolvedHasPackaging = Boolean(
+    resolvedOrderSize || resolvedUnitsPerOrder || innerPackQuantity || packsPerCase || totalOrderQuantity,
+  )
+
+  // Variant Description supplements the product Description tab — never
+  // shown if blank, never shown if it would just repeat the product
+  // description verbatim (resolveVariantSupplement — Bilal's rule 3).
+  // custom.variant_description turned out to be a rich_text_field on Izzy's
+  // actual QA write (confirmed 2026-08-15 by querying the live AeroWalk
+  // data: .value is a JSON AST, same shape as custom.shipping_returns
+  // below), not the plain multi-line text the field contract proposed — flatten
+  // it the same way, or the JSON literally renders on the page. Falls back to
+  // the raw value when it isn't parseable rich-text JSON (shopifyRichTextToPlainParagraphs
+  // returns [] for non-JSON input, by design — see lib/policy/rich-text.ts),
+  // so a plain-text value keeps working if the definition type is ever changed.
+  const variantDescriptionParagraphs = shopifyRichTextToPlainParagraphs(selectedVariant.description)
+  const flattenedVariantDescription =
+    variantDescriptionParagraphs.length > 0
+      ? variantDescriptionParagraphs.join('\n\n')
+      : selectedVariant.description || null
+  const variantDescriptionSupplement = resolveVariantSupplement(
+    flattenedVariantDescription,
+    product.description,
+  )
+
+  // H-01 — Vendor Shipping & Returns: custom.shipping_returns (rich text),
+  // confirmed by Izzy's 2026-08-14 field contract as the live theme's actual
+  // source. Flattened to plain paragraphs and handed to resolveReturnPolicy's
+  // vendorPolicyText below — the approved general fallback still renders
+  // when a product has no value (not every product carries this field).
+  const vendorPolicyText = shopifyRichTextToPlainParagraphs(product.shippingReturns).join('\n\n') || null
+
+  // Bold-preserving companion to vendorPolicyText above (Task 6, 2026-08-19):
+  // resolveReturnPolicy/ReturnPolicyContent only carry plain-text paragraphs
+  // (DEV-POLICY-01's shared string-only contract with /returns), so the
+  // vendor-specific tab below renders these spans directly instead, while
+  // still reusing resolveReturnPolicy just for the "{Vendor} Return Policy"
+  // heading text so heading wording can't drift from the shared module.
+  const vendorPolicyParagraphs = shopifyRichTextToParagraphSpans(product.shippingReturns)
+  const vendorPolicyHeading = resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections[0]?.heading ?? null
 
   return (
     <>
@@ -180,7 +262,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
         <Breadcrumb
           items={[
             ...(breadcrumbs ?? []),
-            { label: product.title },
+            { label: displayTitle },
           ]}
         />
       </div>
@@ -195,7 +277,7 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
               <ProductImage
                 key={images[activeImg]?.id ?? activeImg}
                 src={images[activeImg]?.url}
-                alt={cleanShopifyAlt(images[activeImg]?.altText) ?? product.title}
+                alt={cleanShopifyAlt(images[activeImg]?.altText) ?? displayTitle}
                 sizes="(max-width: 1024px) 100vw, 52vw"
                 priority
               />
@@ -245,13 +327,23 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
             {/* Title */}
             <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
-              {product.title}
+              {displayTitle}
             </h1>
 
-            {/* SKU */}
-            <p className="text-gray-500 text-[13px] tracking-[0.26px]">
-              SKU: {variantSku}
-            </p>
+            {/* SKU + Manufacturer Item Number — kept as two separately-
+                labeled values (never conflated): the plan's Figure 3
+                requirement, previously violated by the Specifications tab
+                (see below), now consistent site-wide. */}
+            <div className="flex flex-col gap-0.5">
+              <p className="text-gray-500 text-[13px] tracking-[0.26px]">
+                SKU: {variantSku}
+              </p>
+              {selectedVariant.manufacturerNumber && (
+                <p className="text-gray-500 text-[13px] tracking-[0.26px]">
+                  Mfr #: {selectedVariant.manufacturerNumber}
+                </p>
+              )}
+            </div>
 
             {/* Availability — negative states only. No "In stock" claim:
                 vendor inventory is not real time (DEV-CATALOG-01), so an
@@ -284,13 +376,13 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 ProductLabelBadges. */}
             <ProductLabelBadges labels={labels} shippingDisplay={shippingDisplay} size="md" />
 
-            {/* Always rendered, never blank. Anything the resolver did not
-                classify for the selected variant, including every product when
-                the resolver is disabled, falls back to the neutral copy. */}
-            <p data-testid="shipping-message" className="text-gray-600 text-[13px] tracking-[0.26px]">
-              {shippingDisplay?.message ?? SHIPPING_FALLBACK_MESSAGE}
-            </p>
-
+            {/* P0.5 (Bilal, 2026-08-18): the near-price "Shipping calculated
+                at checkout" line and the standalone Shipping section below
+                were both removed as generic PDP presentation. The Free
+                Shipping badge above (via ProductLabelBadges/ShippingBadge)
+                is the only shipping claim shown here — the resolver, its
+                fallback copy, and every other surface (cards/cart/checkout)
+                are untouched. */}
             <div className="h-px bg-gray-200" />
 
             {/* Variant selector */}
@@ -299,8 +391,43 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 options={product.options}
                 variants={product.variants.nodes}
                 selectedVariant={selectedVariant}
-                onSelect={setSelectedVariant}
+                onSelect={selectVariant}
               />
+            )}
+
+            {/* UNIT / QUANTITY — variant-sourced, positioned directly below
+                the selector and above Add to Cart per Bilal (2026-08-14):
+                "Populate variant-specific order units/packaging and display
+                them clearly above Add to Cart." Reads the same resolved
+                values as the ORDER PACKAGING tab — never a second
+                computation (LG-04). */}
+            {resolvedHasPackaging && (
+              <div className="border border-[rgba(102,102,100,0.5)]">
+                <div className="bg-navy-900 flex">
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">UNIT</p>
+                  </div>
+                  <div className="flex-1 px-4 py-3">
+                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">QUANTITY</p>
+                  </div>
+                </div>
+                <div className="flex">
+                  <div className="flex-1 px-4 py-3">
+                    {resolvedOrderSize && (
+                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                        {resolvedOrderSize}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex-1 px-4 py-3">
+                    {resolvedUnitsPerOrder && (
+                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
+                        {resolvedUnitsPerOrder}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Price. A zero/missing price is a quote-only item, not a $0
@@ -326,36 +453,6 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                 </span>
               )}
             </div>
-
-            {/* UNIT / QUANTITY table */}
-            {hasPackaging && (
-              <div className="border border-[rgba(102,102,100,0.5)]">
-                <div className="bg-navy-900 flex">
-                  <div className="flex-1 px-4 py-3">
-                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">UNIT</p>
-                  </div>
-                  <div className="flex-1 px-4 py-3">
-                    <p className="text-white text-[15px] font-bold tracking-[0.3px]">QUANTITY</p>
-                  </div>
-                </div>
-                <div className="flex">
-                  <div className="flex-1 px-4 py-3">
-                    {product.orderSize && (
-                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
-                        {product.orderSize}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex-1 px-4 py-3">
-                    {(product.unitsPerOrder || product.quantityOfUnits) && (
-                      <p className="text-gray-500 text-[15px] font-medium tracking-[0.3px]">
-                        {product.unitsPerOrder ?? product.quantityOfUnits}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Qty + Add to cart */}
             <div className="flex gap-3 flex-wrap sm:flex-nowrap">
@@ -406,23 +503,21 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
         </div>
       </section>
 
-      {shippingDisplay && (
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
-          <ShippingBlock shippingDisplay={shippingDisplay} />
-        </div>
-      )}
-
       {/* Tabs */}
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14">
           <div className="border-b border-gray-200">
             <div className="flex overflow-x-auto scrollbar-hide" role="tablist" aria-label="Product information">
-              {TABS.map((tab) => (
+              {/* P0.5 (Bilal, 2026-08-18): the tab is hidden entirely — not
+                  replaced with the general return policy — when the product
+                  carries no custom.shipping_returns value. The general
+                  policy still lives at /returns. */}
+              {TABS.filter((tab) => tab !== 'VENDOR SHIPPING & RETURNS' || vendorPolicyText).map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   role="tab"
-                  id={`product-tab-${tab.toLowerCase().replace(/\s+/g, '-')}`}
+                  id={`product-tab-${tab.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                   aria-selected={activeTab === tab}
                   aria-controls="product-tab-panel"
                   onClick={() => setActiveTab(tab)}
@@ -442,13 +537,24 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             className="py-10 sm:py-14"
             id="product-tab-panel"
             role="tabpanel"
-            aria-labelledby={`product-tab-${activeTab.toLowerCase().replace(/\s+/g, '-')}`}
+            aria-labelledby={`product-tab-${activeTab.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
           >
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-8 max-w-[760px]">
-                {/* Item Number */}
+                {/* Manufacturer Item Number and Internal SKU — kept as two
+                    separate, separately-labeled rows. Previously this tab
+                    showed one heading, "Item Number", over `variantSku` (the
+                    INTERNAL sku) — silently conflating the two identifiers
+                    the launch plan's non-negotiable rule requires kept
+                    apart (Figure 3). */}
+                {selectedVariant.manufacturerNumber && (
+                  <div>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Manufacturer Item Number</h2>
+                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{selectedVariant.manufacturerNumber}</p>
+                  </div>
+                )}
                 <div>
-                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Item Number</h2>
+                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Internal SKU</h2>
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantSku}</p>
                 </div>
 
@@ -468,6 +574,16 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                       className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] prose max-w-none prose-p:mb-4 prose-ul:pl-5 prose-li:mb-1"
                       dangerouslySetInnerHTML={{ __html: product.descriptionHtml || product.description }}
                     />
+                  </div>
+                )}
+
+                {/* Variant Details — supplements the description above only
+                    when the archived source had genuinely variant-specific
+                    content; never a duplicate of it (resolveVariantSupplement). */}
+                {variantDescriptionSupplement && (
+                  <div>
+                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Variant Details</h2>
+                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] whitespace-pre-line">{variantDescriptionSupplement}</p>
                   </div>
                 )}
 
@@ -508,13 +624,15 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
 
             {activeTab === 'ORDER PACKAGING' && (
               <div className="flex flex-col gap-6 max-w-[760px]">
-                {hasPackaging ? (
+                {resolvedHasPackaging ? (
                   <table className="w-full max-w-[500px]">
                     <tbody>
                       {[
-                        { label: 'Order Size', value: product.orderSize },
-                        { label: 'Units Per Order', value: product.unitsPerOrder },
-                        { label: 'Quantity of Units', value: product.quantityOfUnits },
+                        { label: 'Order Size', value: resolvedOrderSize },
+                        { label: 'Units Per Order', value: resolvedUnitsPerOrder },
+                        { label: 'Inner Pack Quantity', value: innerPackQuantity },
+                        { label: 'Packs Per Case', value: packsPerCase },
+                        { label: 'Total Order Quantity', value: totalOrderQuantity },
                       ]
                         .filter((r) => r.value != null)
                         .map(({ label, value }, i) => (
@@ -527,22 +645,37 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
                   </table>
                 ) : (
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                    Packaging information not available for this product.
+                    Packaging information unavailable for this option.
                   </p>
                 )}
               </div>
             )}
 
-            {activeTab === 'RETURNS' && (
-              // DEV-POLICY-01: always the approved policy from the central
-              // module — vendor-specific copy renders here once IZ-PROD-04
-              // populates the approved production source; until then every
-              // product shows the approved general fallback (never empty,
-              // never invented).
-              <ReturnPolicyContent
-                sections={resolveReturnPolicy({ vendor: product.vendor }).sections}
-                headingLevel="h3"
-              />
+            {activeTab === 'VENDOR SHIPPING & RETURNS' && (
+              // P0.5 (Bilal, 2026-08-18): this tab only renders when
+              // vendorPolicyText exists (see the filtered tab list above),
+              // so resolveReturnPolicy always takes its 'vendor' branch here
+              // — the general fallback is never shown on this tab, only at
+              // /returns (DEV-POLICY-01).
+              // Task 6 (2026-08-19): rendered directly here (not via the
+              // shared ReturnPolicyContent, which only knows plain-text
+              // paragraphs) so bold marks from custom.shipping_returns
+              // survive as <strong> — this is the only rich-text-safe
+              // rendering path (bold/italic only, never arbitrary HTML).
+              <div className="flex flex-col gap-4 max-w-[760px]">
+                {vendorPolicyHeading && (
+                  <h3 className="text-navy-900 text-[18px] font-semibold tracking-[0.36px] mt-2">
+                    {vendorPolicyHeading}
+                  </h3>
+                )}
+                {vendorPolicyParagraphs.map((spans, i) => (
+                  <p key={i} className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                    {spans.map((s: RichTextSpan, j) => (
+                      s.bold ? <strong key={j}>{s.text}</strong> : <span key={j}>{s.text}</span>
+                    ))}
+                  </p>
+                ))}
+              </div>
             )}
 
             {activeTab === 'REVIEWS' && (
@@ -595,25 +728,34 @@ export function ProductView({ product, relatedProducts, complementaryProducts, b
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
+            {/* gap-[23px] is the same gutter "Frequently Bought With" and
+                "You May Also Like" use, so all three recommendation rows read
+                as one card system. It was gap-0, which butted every card's
+                neutral-50 panel against its neighbour: with no border or radius
+                on the card, adjacent panels merged into a single grey slab and
+                the row lost its card structure entirely.
+                py-1/-my-1 keeps the 2px focus-visible outline from being
+                clipped by the scroll container without adding visible space. */}
             <div
-              className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch"
+              className="flex gap-3 sm:gap-[23px] overflow-x-auto scrollbar-hide items-stretch py-1 -my-1"
               tabIndex={0}
               role="region"
               aria-label="You May Also Need — scrollable product list"
             >
+              {/* Task 4 (2026-08-18): reuse RelatedProductCard (same component
+                  as "Frequently Bought With" / "You May Also Like") instead of
+                  hand-rolling bare, non-interactive <div> cards — those had no
+                  <Link>, no keyboard focus, and no accessible name. The
+                  wrapping <div> here only carries the fixed scroll-row width
+                  (RelatedProductCard's own flex-1/min-w is sized for a
+                  flex-wrap grid, not this fixed-width overflow row).
+                  Standing constraint: RelatedProductCard's root is a <Link> —
+                  if it ever grows an inner Quick Add <button>, that button
+                  must NOT be nested inside the <Link> (no interactive-in-
+                  interactive nesting). */}
               {relatedProducts.slice(4).map((item) => (
-                <div key={item.id} className="flex flex-col bg-neutral-50 w-[185px] sm:w-[201px] shrink-0">
-                  <div className="relative bg-neutral-50 h-[160px] sm:h-[185px] overflow-hidden flex items-center justify-center">
-                    <ProductImage src={item.images.nodes[0]?.url} alt={cleanShopifyAlt(item.images.nodes[0]?.altText) ?? item.title} sizes="201px" />
-                  </div>
-                  <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
-                    <p className="text-black text-[14px] font-semibold leading-5 line-clamp-2">
-                      {item.title}
-                    </p>
-                    <span className="text-black text-[18px] font-bold">
-                      ${parseFloat(item.priceRange.minVariantPrice.amount).toFixed(2)}
-                    </span>
-                  </div>
+                <div key={item.id} className="w-[185px] sm:w-[201px] shrink-0">
+                  <RelatedProductCard product={item} />
                 </div>
               ))}
             </div>

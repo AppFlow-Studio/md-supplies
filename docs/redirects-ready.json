@@ -3509,11 +3509,11 @@
  },
  {
   "from": "/products/aerowalk-ultra-lite-rollator-rolling-walker-white",
-  "to": "/products/aerowalk-ultra-lite-rollator-rolling-walker-blue"
+  "to": "/products/aerowalk-ultra-lite-rollator-rolling-walker"
  },
  {
   "from": "/products/aerowalk-ultra-lite-rollator-rolling-walker-grey",
-  "to": "/products/aerowalk-ultra-lite-rollator-rolling-walker-blue"
+  "to": "/products/aerowalk-ultra-lite-rollator-rolling-walker"
  },
  {
   "from": "/products/nitro-sprint-rollator-rolling-walker-hemi-height-blue",
@@ -4849,15 +4849,15 @@
  },
  {
   "from": "/products/drape-sheets-40-x-90-2-ply-white-50-cs",
-  "to": "/products/drape-sheets-40-x-90-2-ply-blue-50-cs"
+  "to": "/category/exam-room"
  },
  {
   "from": "/products/drape-sheets-40-x-60-2-ply-white-100-cs",
-  "to": "/products/drape-sheets-40-x-60-2-ply-blue-100-cs"
+  "to": "/category/exam-room"
  },
  {
   "from": "/products/drape-sheets-40-x-48-2-ply-white-100-cs",
-  "to": "/products/drape-sheets-40-x-48-2-ply-blue-100-cs"
+  "to": "/category/exam-room"
  },
  {
   "from": "/products/exam-cape-t-p-t-universal-white-100-cs",

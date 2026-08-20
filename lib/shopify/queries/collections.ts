@@ -109,6 +109,7 @@ export const GET_COLLECTION = `#graphql
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale
+              image { id url altText width height }
             }
           }
         }
