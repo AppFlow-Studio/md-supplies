@@ -306,7 +306,7 @@ describe('CartPageClient', () => {
 
   // DEV-LAUNCH-08: RX state must be visible on the cart page, not just
   // inferred from the blocking panel — same union the checkout gate uses.
-  it('shows an Rx Only badge on a line whose product carries the RX tag', () => {
+  it('shows an RX Only badge on a line whose product carries the RX tag', () => {
     vi.mocked(getRxGateStatus).mockResolvedValue({
       cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
     })
@@ -319,10 +319,10 @@ describe('CartPageClient', () => {
     }
     setupUseCart({ cart: { ...mockCart, lines: { nodes: [rxLine] } } })
     render(<CartPageClient />)
-    expect(screen.getByText('Rx Only')).toBeInTheDocument()
+    expect(screen.getByText('RX Only')).toBeInTheDocument()
   })
 
-  it('shows an Rx Only badge for a metafield-only RX product (no tag)', () => {
+  it('shows an RX Only badge for a metafield-only RX product (no tag)', () => {
     vi.mocked(getRxGateStatus).mockResolvedValue({
       cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
     })
@@ -335,13 +335,13 @@ describe('CartPageClient', () => {
     }
     setupUseCart({ cart: { ...mockCart, lines: { nodes: [rxLine] } } })
     render(<CartPageClient />)
-    expect(screen.getByText('Rx Only')).toBeInTheDocument()
+    expect(screen.getByText('RX Only')).toBeInTheDocument()
   })
 
   it('shows no RX badge for a non-RX line', () => {
     setupUseCart()
     render(<CartPageClient />)
-    expect(screen.queryByText('Rx Only')).not.toBeInTheDocument()
+    expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
   })
 
   // DEV-LABEL-01: the /cart page reads custom.backorder off the line's

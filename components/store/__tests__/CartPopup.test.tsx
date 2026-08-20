@@ -95,28 +95,28 @@ describe('CartPopup', () => {
   // DEV-LAUNCH-08: RX state must be visible in the cart popup, not just
   // inferred from the blocking panel — same union the checkout gate uses.
   describe('RX badge', () => {
-    it('shows an Rx Only badge for a tag-only RX line', () => {
+    it('shows an RX Only badge for a tag-only RX line', () => {
       vi.mocked(getRxGateStatus).mockResolvedValue({
         cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
       })
       mockCart(true, { cart: cartWithLineProduct({ tags: ['compliance:rx-only'] }) })
       render(<CartPopup />)
-      expect(screen.getByText('Rx Only')).toBeInTheDocument()
+      expect(screen.getByText('RX Only')).toBeInTheDocument()
     })
 
-    it('shows an Rx Only badge for a metafield-only RX line (no tag)', () => {
+    it('shows an RX Only badge for a metafield-only RX line (no tag)', () => {
       vi.mocked(getRxGateStatus).mockResolvedValue({
         cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
       })
       mockCart(true, { cart: cartWithLineProduct({ tags: [], isRxOnly: { value: 'true' } }) })
       render(<CartPopup />)
-      expect(screen.getByText('Rx Only')).toBeInTheDocument()
+      expect(screen.getByText('RX Only')).toBeInTheDocument()
     })
 
     it('shows no RX badge for a non-RX line', () => {
       mockCart(true, { cart: cartWithLineProduct({ tags: [] }) })
       render(<CartPopup />)
-      expect(screen.queryByText('Rx Only')).not.toBeInTheDocument()
+      expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
     })
   })
 
