@@ -33,7 +33,14 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const image = product.images.nodes[0]
 
   return (
-    <Link href={`/product/${product.handle}`} className="group flex flex-col bg-neutral-50 flex-1 min-w-[160px]">
+    // focus-visible outline added 2026-08-20: the card's root is the link, and
+    // it carried only a `group` hover hook — a keyboard user tabbing through
+    // any of the three recommendation rows got no visible focus indicator at
+    // all. Same 2px navy outline the category tiles and tab pills use.
+    <Link
+      href={`/product/${product.handle}`}
+      className="group flex flex-col bg-neutral-50 flex-1 min-w-[160px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
+    >
       <div className="relative overflow-hidden bg-neutral-50 aspect-square">
         <ProductImage src={image?.url} alt={cleanShopifyAlt(image?.altText) ?? product.title} />
       </div>
@@ -721,8 +728,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
+            {/* gap-[23px] is the same gutter "Frequently Bought With" and
+                "You May Also Like" use, so all three recommendation rows read
+                as one card system. It was gap-0, which butted every card's
+                neutral-50 panel against its neighbour: with no border or radius
+                on the card, adjacent panels merged into a single grey slab and
+                the row lost its card structure entirely.
+                py-1/-my-1 keeps the 2px focus-visible outline from being
+                clipped by the scroll container without adding visible space. */}
             <div
-              className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch"
+              className="flex gap-3 sm:gap-[23px] overflow-x-auto scrollbar-hide items-stretch py-1 -my-1"
               tabIndex={0}
               role="region"
               aria-label="You May Also Need — scrollable product list"

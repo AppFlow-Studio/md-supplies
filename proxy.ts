@@ -48,6 +48,34 @@ function redirectLegacyProductHandle(pathname: string, request: NextRequest, non
   return withCsp(NextResponse.redirect(new URL(`/product/${canonical}`, request.url), 301), nonce)
 }
 
+// ─── Legacy /collections/<handle> URLs (P0.7) ────────────────────────────────
+//
+// The old Shopify storefront served categories at /collections/<handle>; this
+// site serves them at /category/<handle>. Both handles below are live Shopify
+// collections whose URLs customers have saved or linked externally, verified
+// against the Storefront API on 2026-08-20:
+//   trocars-trocar-kits   41 active products
+//   surgery-procedure    323 active products
+//
+// The route slug equals the collection handle for both, so one rewrite rule
+// covers them. A handle whose public slug DIVERGES from its Shopify handle
+// (face-coverings → face-masks) must not be added here — it has its own
+// subtree rule below, and adding it in both places would create a two-hop
+// chain.
+export const LEGACY_COLLECTION_HANDLES = new Set([
+  'trocars-trocar-kits',
+  'surgery-procedure',
+])
+
+function redirectLegacyCollection(pathname: string, request: NextRequest, nonce: string): Response | null {
+  const match = pathname.match(/^\/collections\/([^/]+)(\/.*)?$/)
+  if (!match) return null
+  if (!LEGACY_COLLECTION_HANDLES.has(match[1])) return null
+  const url = new URL(`/category/${match[1]}${match[2] ?? ''}`, request.url)
+  url.search = request.nextUrl.search
+  return withCsp(NextResponse.redirect(url, 301), nonce)
+}
+
 // ─── Category-level 410s (§4.3) ───────────────────────────────────────────────
 //
 // Categories permanently removed from the new taxonomy. A direct hit (or a
@@ -260,17 +288,16 @@ export function proxy(request: NextRequest): Response {
     return withCsp(NextResponse.redirect(url, 301), nonce)
   }
 
-  // ── /collections/trocars-trocar-kits → /category/trocars-trocar-kits ──────
+  // ── /collections/<handle> → /category/<handle> ────────────────────────────
   //
-  // Izzy confirmed this is the live Shopify collection URL (68 products, 41
-  // active) that customers have saved/linked externally. Preserves ?variant=
-  // and any other query string in one hop (Bilal's redirect rules, 2026-08-18).
-  if (pathname === '/collections/trocars-trocar-kits' || pathname.startsWith('/collections/trocars-trocar-kits/')) {
-    const newPath = pathname.replace('/collections/trocars-trocar-kits', '/category/trocars-trocar-kits')
-    const url = new URL(newPath, request.url)
-    url.search = request.nextUrl.search
-    return withCsp(NextResponse.redirect(url, 301), nonce)
-  }
+  // Legacy Shopify storefront collection URLs that customers have saved or
+  // linked externally. One matcher over LEGACY_COLLECTION_HANDLES instead of a
+  // hand-copied if-block per handle: adding a collection is a one-line change
+  // to that set (P0.7 — a second entry, surgery-procedure, is exactly why this
+  // was generalized). Preserves ?variant= and any other query string, and
+  // lands in ONE hop on the canonical category route.
+  const collectionRedirect = redirectLegacyCollection(pathname, request, nonce)
+  if (collectionRedirect) return collectionRedirect
 
   // ── Category query variants: no rewrite (twin route removed) ───────────────
   //

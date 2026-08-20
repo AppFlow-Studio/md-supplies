@@ -58,6 +58,12 @@ interface Props {
   cacheTags?: string[]
   /** "All Gloves" — when set, the Category-facet tab row renders above results. */
   tabsAllLabel?: string
+  /**
+   * Route links pinned to the front of the tab row, ahead of the facet pills
+   * (e.g. Trocars & Trocar Kits on Surgery & Procedure). These navigate to
+   * their own category page rather than filtering this one.
+   */
+  tabsLeadingLinks?: { label: string; href: string }[]
 }
 
 export async function CategoryResults({
@@ -76,6 +82,7 @@ export async function CategoryResults({
   pageSize = DEFAULT_PAGE_SIZE,
   cacheTags = ['shopify', 'products'],
   tabsAllLabel,
+  tabsLeadingLinks,
 }: Props) {
   const nonce = await getNonce()
   const searchText = searchQuery?.trim() || undefined
@@ -203,6 +210,7 @@ export async function CategoryResults({
             currentSort={sortParam}
             q={searchText}
             pageSize={pageSize}
+            leadingLinks={tabsLeadingLinks}
           />
         </Suspense>
       )}
@@ -301,18 +309,14 @@ export async function CategoryResults({
             </div>
           </div>
 
-          {/* Active search chip — mirrors the filter chips below */}
-          {searchText && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              <Link
-                href={clearSearchUrl}
-                className="flex items-center gap-1 bg-navy-900 text-white text-[12px] font-medium px-3 h-[28px] hover:bg-navy-950 transition-colors"
-              >
-                Search: {searchText}
-                <X size={11} />
-              </Link>
-            </div>
-          )}
+          {/* No "Search: …" chip here. It duplicated the search field's own
+              clear button — same action, same X glyph, two controls — which is
+              half of the reported duplicate-clear defect (the other half was
+              the browser's native cancel button, suppressed in globals.css).
+              The active query is still surfaced, informationally: the result
+              count above reads `… for “{searchText}”` and is aria-live, so the
+              state is announced without offering a second way to undo it.
+              `clearSearchUrl` survives as the empty-results recovery link. */}
 
           {/* Active filter chips */}
           {activeFilterStrings.length > 0 && (

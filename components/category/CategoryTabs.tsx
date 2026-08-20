@@ -94,6 +94,18 @@ interface Props {
   currentSort?: string
   q?: string
   pageSize: PageSize
+  /**
+   * Route links pinned between the "All …" pill and the facet pills — featured
+   * subcategories that have their OWN collection page (Trocars & Trocar Kits
+   * under Surgery & Procedure).
+   *
+   * They are deliberately not facet values: they navigate to a different route
+   * rather than filtering this one, so they get an ordinary <Link> with no
+   * click interception and never participate in selected-state maths. Pinned
+   * ahead of the values so the most important child category is reachable
+   * without scrolling the rail or opening More.
+   */
+  leadingLinks?: { label: string; href: string }[]
 }
 
 export function CategoryTabs({
@@ -104,6 +116,7 @@ export function CategoryTabs({
   currentSort,
   q,
   pageSize,
+  leadingLinks = [],
 }: Props) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -128,9 +141,17 @@ export function CategoryTabs({
     return () => window.removeEventListener('resize', onResize)
   }, [facet?.values.length])
 
-  if (!facet) return null
+  // The row still earns its place when the Category facet is absent but this
+  // route has featured subcategory links to offer.
+  if (!facet && leadingLinks.length === 0) return null
 
-  const categoryInputs = new Set(facet.values.map((v) => v.input))
+  const facetValues = facet?.values ?? []
+  // The More panel below is gated on facetValues being non-empty, so a facet
+  // necessarily exists wherever this label is read — but that is a runtime
+  // invariant TypeScript cannot see through, and a fallback is cheaper than
+  // threading a non-null assertion through the JSX.
+  const facetLabel = facet?.label ?? 'Category'
+  const categoryInputs = new Set(facetValues.map((v) => v.input))
   const selectedCategoryInputs = activeFilters.filter((f) => categoryInputs.has(f))
   const allActive = selectedCategoryInputs.length === 0
 
@@ -164,7 +185,7 @@ export function CategoryTabs({
 
   // A zero-count value is noise unless it is currently selected, in which case
   // hiding it would strand the shopper with no way to remove it.
-  const visible = facet.values.filter((v) => v.count > 0 || selectedCategoryInputs.includes(v.input))
+  const visible = facetValues.filter((v) => v.count > 0 || selectedCategoryInputs.includes(v.input))
   const searchable = needsFacetSearch(visible.length)
   const filtered = query.trim() ? visible.filter((v) => facetValueMatches(v.label, query)) : visible
 
@@ -201,6 +222,24 @@ export function CategoryTabs({
           <li className="shrink-0">
             <Pill href={allHref} active={allActive} label={allLabel} onNavigate={onPill} />
           </li>
+          {/* Featured subcategory routes, pinned ahead of the facet values.
+              Plain <Link> — no onPill interception and no aria-current, because
+              activating one LEAVES this page for another category rather than
+              changing this page's filter state. Given the teal treatment so it
+              reads as a destination rather than a filter toggle. `teal-500` is
+              the AA-corrected token (#006d92 — 5.8:1 on white, 4.8:1 on the
+              light-blue chips), NOT the 3.1:1 cyan it replaced sitewide, so
+              this pairing clears 4.5:1 on teal-50. */}
+          {leadingLinks.map((link) => (
+            <li key={link.href} className="shrink-0">
+              <Link
+                href={link.href}
+                className="relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-teal-500 bg-teal-50 px-4 min-h-[44px] text-[15px] font-semibold text-teal-500 transition-colors motion-reduce:transition-none hover:bg-teal-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
           {visible.map((value) => (
             <li key={value.input} className="shrink-0">
               <Pill
@@ -249,8 +288,8 @@ export function CategoryTabs({
                         type="search"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={`Search ${facet.label.toLowerCase()}`}
-                        aria-label={`Search ${facet.label} options`}
+                        placeholder={`Search ${facetLabel.toLowerCase()}`}
+                        aria-label={`Search ${facetLabel} options`}
                         className="w-full min-h-[44px] pl-9 pr-9 border border-gray-200 text-[16px] text-navy-900 focus:outline-none focus:border-navy-900"
                       />
                       {query && (

@@ -390,6 +390,50 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     expect(res?.status).toBe(301)
     expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/trocars-trocar-kits/some-product')
   })
+
+  // ── P0.7: the Surgery & Procedure collection URL ──────────────────────────
+  // /category/surgery-procedure did not exist before P0.5, so this legacy URL
+  // had nowhere to land and was falling through to a 404.
+  it('redirects /collections/surgery-procedure to the canonical category route', () => {
+    const res = proxy(req('/collections/surgery-procedure'))
+    expect(res?.status).toBe(301)
+    expect(new URL(res!.headers.get('Location')!).pathname).toBe('/category/surgery-procedure')
+  })
+
+  it('preserves the query string on the Surgery collection redirect', () => {
+    const res = proxy(req('/collections/surgery-procedure', '?sort=PRICE_ASC&page=2'))
+    expect(res?.status).toBe(301)
+    const location = new URL(res!.headers.get('Location')!)
+    expect(location.pathname).toBe('/category/surgery-procedure')
+    expect(location.searchParams.get('sort')).toBe('PRICE_ASC')
+    expect(location.searchParams.get('page')).toBe('2')
+  })
+
+  it('redirects a nested path beneath the Surgery collection URL in one hop', () => {
+    const res = proxy(req('/collections/surgery-procedure/some-product'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/surgery-procedure/some-product')
+  })
+
+  it('stamps CSP on collection redirects like every other response path', () => {
+    for (const path of ['/collections/surgery-procedure', '/collections/trocars-trocar-kits']) {
+      const res = proxy(req(path))
+      expect(res?.headers.get('Content-Security-Policy'), path).toBeTruthy()
+    }
+  })
+
+  it('leaves unlisted /collections/<handle> URLs alone rather than inventing a route', () => {
+    // The generalized matcher is an allowlist, not a blanket rewrite: a
+    // /collections/ URL with no corresponding category route must not 301 into
+    // a 404.
+    expectPassThrough(proxy(req('/collections/not-a-real-collection')))
+  })
+
+  it('never redirects the canonical destinations back out (no loop)', () => {
+    for (const target of ['/category/surgery-procedure', '/category/trocars-trocar-kits']) {
+      expectPassThrough(proxy(req(target)))
+    }
+  })
 })
 
 describe('proxy — path normalization (pass-through for unknown)', () => {
