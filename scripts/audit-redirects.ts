@@ -28,7 +28,7 @@ loadEnvConfig(process.cwd())
 
 import { writeFileSync } from 'fs'
 import productRedirects from '../docs/redirects-ready.json'
-import { REDIRECT_ENTRIES, GONE_CATEGORY_SLUGS } from '../proxy'
+import { REDIRECT_ENTRIES, GONE_CATEGORY_SLUGS, LEGACY_PRODUCT_HANDLES } from '../proxy'
 import { storefrontFetch } from '../lib/shopify/storefront'
 import { GET_ALL_PRODUCT_HANDLES } from '../lib/shopify/queries/products'
 import { GET_ALL_COLLECTION_HANDLES } from '../lib/shopify/queries/collections'
@@ -211,6 +211,27 @@ async function main() {
     })
   }
 
+  // Legacy AeroWalk color-handle redirects (proxy.ts#LEGACY_PRODUCT_HANDLES,
+  // extended 2026-08-20) — a reusable map, not a REDIRECT_ENTRIES row, so it
+  // needs its own loop here to stay covered by this audit. One representative
+  // /product/<oldHandle> row per legacy handle is sufficient: destination
+  // correctness does not vary by which route shape (/product/ vs
+  // /category/<slug>/) the request arrived on — that routing behavior is
+  // covered by __tests__/proxy.test.ts, not by this live-destination audit.
+  for (const [oldHandle, canonicalHandle] of LEGACY_PRODUCT_HANDLES) {
+    const destination = `/product/${canonicalHandle}`
+    const { status, detail } = resolveDestination(destination, liveProductHandles, liveCollectionHandles)
+    rows.push({
+      source: `/product/${oldHandle}`,
+      destination,
+      status,
+      detail,
+      singleHop: !fromSet.has(destination),
+      canonicalMatch: canonicalMatches(destination),
+      group: 'hand-written',
+    })
+  }
+
   // Bulk redirects-ready.json entries (all /products/<handle> destinations, rewritten to singular)
   for (const row of PRODUCT_ROWS) {
     const destination = row.to.replace(/^\/products\//, '/product/')
@@ -227,6 +248,7 @@ async function main() {
   }
 
   // ─── Report ───
+  const handWrittenTotal = REDIRECT_ENTRIES.length + LEGACY_PRODUCT_HANDLES.size
   const failures = rows.filter((r) => r.status !== 200 && r.status !== 410)
   const handWrittenFailures = failures.filter((r) => r.group === 'hand-written')
   const bulkFailures = failures.filter((r) => r.group === 'bulk')
@@ -256,7 +278,7 @@ async function main() {
   lines.push('genuinely-live production redirects into wrong destinations — the opposite of this audit\'s purpose.')
   lines.push('')
   lines.push('**What this means for the numbers below:**')
-  lines.push('- The **hand-written `proxy.ts` entries (28 total)** were checked 100% and are trustworthy at face value —')
+  lines.push(`- The **hand-written \`proxy.ts\` entries (${handWrittenTotal} total)** were checked 100% and are trustworthy at face value —`)
   lines.push('  this is the small, human-curated set the brief requires 100% coverage on, and none of its destinations')
   lines.push('  depend on QA carrying a large fraction of the catalog to be checkable (categories, static routes, and')
   lines.push('  one product handle already confirmed live).')
@@ -279,11 +301,11 @@ async function main() {
 
   lines.push('## Summary')
   lines.push('')
-  lines.push(`- Total entries checked: **${rows.length}** (${REDIRECT_ENTRIES.length} hand-written in \`proxy.ts\` + ${PRODUCT_ROWS.length} bulk rows in \`docs/redirects-ready.json\`)`)
+  lines.push(`- Total entries checked: **${rows.length}** (${handWrittenTotal} hand-written in \`proxy.ts\` [${REDIRECT_ENTRIES.length} REDIRECT_ENTRIES + ${LEGACY_PRODUCT_HANDLES.size} LEGACY_PRODUCT_HANDLES] + ${PRODUCT_ROWS.length} bulk rows in \`docs/redirects-ready.json\`)`)
   lines.push(`- Live product handles in the queried store: **${liveProductHandles.size}**`)
   lines.push(`- Live collection handles in the queried store: **${liveCollectionHandles.size}**`)
   lines.push(`- Resolved 200/410 (pass): **${rows.length - failures.length}**`)
-  lines.push(`- Hand-written (\`proxy.ts\`) entries broken: **${handWrittenFailures.length}** of ${REDIRECT_ENTRIES.length} — confirmed, 100% checked`)
+  lines.push(`- Hand-written (\`proxy.ts\`) entries broken: **${handWrittenFailures.length}** of ${handWrittenTotal} — confirmed, 100% checked`)
   lines.push(`- Bulk-file (\`redirects-ready.json\`) entries reporting 404 against the QA store: **${bulkFailures.length}** of ${PRODUCT_ROWS.length} — see environment caveat above; only the 3 Drape Sheet siblings are independently corroborated and fixed`)
   lines.push(`- Chained (destination is itself a \`from\` key): **${chained.length}**`)
   lines.push(`- Canonical URL mismatches: **${canonicalMismatches.length}**`)

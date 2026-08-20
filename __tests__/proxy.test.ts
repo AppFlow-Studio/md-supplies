@@ -260,6 +260,37 @@ describe('proxy — AeroWalk color-neutral handle migration (P0.7)', () => {
       'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
     )
   })
+
+  // Bilal, 2026-08-20: extend the Blue-handle redirect to the nested
+  // /category/<slug>/<handle> route too (app/category/[slug]/[product]/page.tsx
+  // serves products there as well as at /product/<handle>) — via one reusable
+  // rule covering all three legacy colors under both route shapes, not a
+  // hand-copied entry per shape.
+  it('redirects the legacy Blue handle under a nested /category/<slug>/ route too, not just /product/', () => {
+    const res = proxy(req('/category/mobility/aerowalk-ultra-lite-rollator-rolling-walker-blue'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe(
+      'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
+    )
+  })
+
+  it('redirects the legacy White and Grey handles under both /product/ and /category/<slug>/', () => {
+    for (const color of ['white', 'grey']) {
+      const underProduct = proxy(req(`/product/aerowalk-ultra-lite-rollator-rolling-walker-${color}`))
+      const underCategory = proxy(req(`/category/mobility/aerowalk-ultra-lite-rollator-rolling-walker-${color}`))
+      for (const res of [underProduct, underCategory]) {
+        expect(res?.status).toBe(301)
+        expect(res?.headers.get('Location')).toBe(
+          'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
+        )
+      }
+    }
+  })
+
+  it('does not redirect an unrelated /category/<slug>/<handle> pair (no false-positive match)', () => {
+    const res = proxy(req('/category/mobility/some-real-product-handle'))
+    expectPassThrough(res as Response)
+  })
 })
 
 describe('proxy — new 301 entries (backlink recovery)', () => {

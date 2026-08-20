@@ -1,6 +1,6 @@
 # Full Pre-Launch Redirect Audit
 
-Generated: 2026-08-19T15:27:58.828Z
+Generated: 2026-08-20T09:51:11.964Z
 
 ## ⚠ CRITICAL ENVIRONMENT CAVEAT — read before trusting the bulk-file numbers below
 
@@ -11,7 +11,7 @@ production domain (`daebb2-76.myshopify.com`) as "Never a permitted target on th
 script — like every other live-verification pass in this launch effort (DEV-LAUNCH-02/06/07/08/09/12/13)
 — cannot and does not query production.
 
-This QA store carries only **1088 live products** (5 pages via GET_ALL_PRODUCT_HANDLES),
+This QA store carries only **1111 live products** (5 pages via GET_ALL_PRODUCT_HANDLES),
 while a prior audit (`docs/launch/2026-08-14-status-and-screenshot-checklist.md`) puts the real catalog
 at 10,001+ products. Practically: a `to` handle from `docs/redirects-ready.json` resolving 404 against
 THIS store very often means "not part of the QA fixture subset," not "dead in production." Treating every
@@ -19,7 +19,7 @@ such 404 as a confirmed break and category-fallback-fixing all of them would ver
 genuinely-live production redirects into wrong destinations — the opposite of this audit's purpose.
 
 **What this means for the numbers below:**
-- The **hand-written `proxy.ts` entries (28 total)** were checked 100% and are trustworthy at face value —
+- The **hand-written `proxy.ts` entries (30 total)** were checked 100% and are trustworthy at face value —
   this is the small, human-curated set the brief requires 100% coverage on, and none of its destinations
   depend on QA carrying a large fraction of the catalog to be checkable (categories, static routes, and
   one product handle already confirmed live).
@@ -41,12 +41,12 @@ genuinely-live production redirects into wrong destinations — the opposite of 
 
 ## Summary
 
-- Total entries checked: **1313** (28 hand-written in `proxy.ts` + 1285 bulk rows in `docs/redirects-ready.json`)
-- Live product handles in the queried store: **1088**
+- Total entries checked: **1315** (30 hand-written in `proxy.ts` [27 REDIRECT_ENTRIES + 3 LEGACY_PRODUCT_HANDLES] + 1285 bulk rows in `docs/redirects-ready.json`)
+- Live product handles in the queried store: **1111**
 - Live collection handles in the queried store: **695**
-- Resolved 200/410 (pass): **162**
-- Hand-written (`proxy.ts`) entries broken: **0** of 28 — confirmed, 100% checked
-- Bulk-file (`redirects-ready.json`) entries reporting 404 against the QA store: **1151** of 1285 — see environment caveat above; only the 3 Drape Sheet siblings are independently corroborated and fixed
+- Resolved 200/410 (pass): **173**
+- Hand-written (`proxy.ts`) entries broken: **0** of 30 — confirmed, 100% checked
+- Bulk-file (`redirects-ready.json`) entries reporting 404 against the QA store: **1142** of 1285 — see environment caveat above; only the 3 Drape Sheet siblings are independently corroborated and fixed
 - Chained (destination is itself a `from` key): **0**
 - Canonical URL mismatches: **0**
 
@@ -99,6 +99,8 @@ strategies, which are the only ones that would diverge from self-referencing).
 | hand-written | `/articles/types-of-needles.html` | `/category/needles-syringes` | 200 | yes | yes | live collection (handle=needles-syringes) |
 | hand-written | `/b2b` | `/contact` | 200 | yes | yes | static route (app/contact/page.tsx) |
 | hand-written | `/product/aerowalk-ultra-lite-rollator-rolling-walker-blue` | `/product/aerowalk-ultra-lite-rollator-rolling-walker` | 200 | yes | yes | live product handle |
+| hand-written | `/product/aerowalk-ultra-lite-rollator-rolling-walker-white` | `/product/aerowalk-ultra-lite-rollator-rolling-walker` | 200 | yes | yes | live product handle |
+| hand-written | `/product/aerowalk-ultra-lite-rollator-rolling-walker-grey` | `/product/aerowalk-ultra-lite-rollator-rolling-walker` | 200 | yes | yes | live product handle |
 | bulk | `/products/8-mil-nitrile-industrial-gloves-diamond-textured-green-xl-8104` | `/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101` | 200 | yes | yes | live product handle |
 | bulk | `/products/8-mil-nitrile-industrial-gloves-diamond-textured-green-large-8103` | `/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101` | 200 | yes | yes | live product handle |
 | bulk | `/products/8-mil-nitrile-industrial-gloves-diamond-textured-green-medium-8102` | `/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101` | 200 | yes | yes | live product handle |
@@ -1006,8 +1008,8 @@ strategies, which are the only ones that would diverge from self-referencing).
 | bulk | `/products/stool-w-bck-alum-bse-navy-navy` | `/product/stool-w-bck-alum-bse-blue-blue` | 404 | yes | yes | NO live product with this handle |
 | bulk | `/products/pediatric-walker-large-390-p` | `/product/pediatric-walker-small-330-p` | 404 | yes | yes | NO live product with this handle |
 | bulk | `/products/pediatric-walker-medium-360-p` | `/product/pediatric-walker-small-330-p` | 404 | yes | yes | NO live product with this handle |
-| bulk | `/products/4-5mm-stainless-steel-disposable-trocar-kit-medium-gloves-case-of-16-19245mg` | `/product/4-5mm-stainless-steel-disposable-trocar-kit-small-gloves-case-of-16-19245sg` | 404 | yes | yes | NO live product with this handle |
-| bulk | `/products/4-5mm-stainless-steel-disposable-trocar-kit-large-gloves-case-of-16-19245` | `/product/4-5mm-stainless-steel-disposable-trocar-kit-small-gloves-case-of-16-19245sg` | 404 | yes | yes | NO live product with this handle |
+| bulk | `/products/4-5mm-stainless-steel-disposable-trocar-kit-medium-gloves-case-of-16-19245mg` | `/product/4-5mm-stainless-steel-disposable-trocar-kit-small-gloves-case-of-16-19245sg` | 200 | yes | yes | live product handle |
+| bulk | `/products/4-5mm-stainless-steel-disposable-trocar-kit-large-gloves-case-of-16-19245` | `/product/4-5mm-stainless-steel-disposable-trocar-kit-small-gloves-case-of-16-19245sg` | 200 | yes | yes | live product handle |
 | bulk | `/products/3-2mm-stainless-steel-disposable-trocar-kit-medium-gloves-19130mg` | `/product/3-2mm-stainless-steel-disposable-trocar-kit-small-gloves-19130sg` | 200 | yes | yes | live product handle |
 | bulk | `/products/3-2mm-stainless-steel-disposable-trocar-kit-large-gloves-19130` | `/product/3-2mm-stainless-steel-disposable-trocar-kit-small-gloves-19130sg` | 200 | yes | yes | live product handle |
 | bulk | `/products/4-5mm-abs-plastic-disposable-trocar-kit-medium-gloves-case-of-16-19200mg` | `/product/4-5mm-abs-plastic-disposable-trocar-kit-small-gloves-case-of-16-19200sg` | 200 | yes | yes | live product handle |
@@ -1211,7 +1213,7 @@ strategies, which are the only ones that would diverge from self-referencing).
 | bulk | `/products/adjustable-lightweight-folding-cane-with-gel-hand-grip-red-crackle` | `/product/adjustable-lightweight-folding-cane-with-gel-hand-grip-blue-crackle` | 200 | yes | yes | live product handle |
 | bulk | `/products/adjustable-height-offset-handle-cane-with-gel-hand-grip-red-crackle` | `/product/adjustable-height-offset-handle-cane-with-gel-hand-grip-blue-crackle` | 200 | yes | yes | live product handle |
 | bulk | `/products/bellavita-comfort-cover-white` | `/product/bellavita-comfort-cover-blue` | 200 | yes | yes | live product handle |
-| bulk | `/products/complete-hormone-pellet-insertion-kit-without-trocar-wrapped-kit-large-gloves-b8473` | `/product/complete-hormone-pellet-insertion-kit-without-trocar-wrapped-kit-medium-gloves-b8474` | 404 | yes | yes | NO live product with this handle |
+| bulk | `/products/complete-hormone-pellet-insertion-kit-without-trocar-wrapped-kit-large-gloves-b8473` | `/product/complete-hormone-pellet-insertion-kit-without-trocar-wrapped-kit-medium-gloves-b8474` | 200 | yes | yes | live product handle |
 | bulk | `/products/bulk-adult-socks-mens-size-10-13-2370361` | `/product/bulk-adult-socks-mens-size-10-13-2369631` | 404 | yes | yes | NO live product with this handle |
 | bulk | `/products/bigbox-stick-pens-blue-1200-per-case-2374684` | `/product/bigbox-stick-pens-black-1200-per-case-2374685` | 200 | yes | yes | live product handle |
 | bulk | `/products/w-c-dlx-trans-ch-12rwl-alum-19-blue-celeste-300-lb-e-j` | `/product/dlx-trans-w-c-12rwhl-alum-19-black-300-lb-e-j` | 404 | yes | yes | NO live product with this handle |
@@ -1374,13 +1376,13 @@ strategies, which are the only ones that would diverge from self-referencing).
 | bulk | `/products/pre-bent-dispensing-tips-20-gauge-yellow` | `/product/pre-bent-dispensing-tips-20-gauge-black` | 404 | yes | yes | NO live product with this handle |
 | bulk | `/products/air-water-syringe-sleeves-2-1-2-x-10-clear` | `/product/air-water-syringe-sleeves-2-1-2-x-10-blue` | 200 | yes | yes | live product handle |
 | bulk | `/products/non-sterile-latex-cohesive-bandage-2-x-5-yds-tan` | `/product/non-sterile-latex-cohesive-bandage-2-x-5-yds-dark-blue` | 404 | yes | yes | NO live product with this handle |
-| bulk | `/products/non-sterile-cohesive-bandage-1-x-5-yd-white` | `/product/non-sterile-cohesive-bandage-1-x-5-yd-tan` | 404 | yes | yes | NO live product with this handle |
+| bulk | `/products/non-sterile-cohesive-bandage-1-x-5-yd-white` | `/product/non-sterile-cohesive-bandage-1-x-5-yd-tan` | 200 | yes | yes | live product handle |
 | bulk | `/products/hair-brush-ivory-hb01` | `/product/hair-brush-gray-hb02` | 200 | yes | yes | live product handle |
-| bulk | `/products/soap-box-hinged-lid-clear-sb01c` | `/product/soap-box-hinged-lid-clear-sb01` | 404 | yes | yes | NO live product with this handle |
-| bulk | `/products/4-5mm-stainless-steel-trocar-tray-kit-with-antiseptic-large-gloves-b1363` | `/product/4-5mm-stainless-steel-trocar-tray-kit-with-antiseptic-medium-gloves-b1365` | 404 | yes | yes | NO live product with this handle |
-| bulk | `/products/4-5mm-stainless-steel-sharp-wrapped-kit-with-antiseptic-large-glove-b8123` | `/product/4-5mm-stainless-steel-sharp-wrapped-kit-with-antiseptic-medium-glove-b8124` | 404 | yes | yes | NO live product with this handle |
-| bulk | `/products/4-5mm-resin-trocar-wrapped-kit-with-antiseptic-large-glove-b8119` | `/product/4-5mm-resin-trocar-wrapped-kit-with-antiseptic-medium-glove-b8120` | 404 | yes | yes | NO live product with this handle |
-| bulk | `/products/4-5mm-resin-trocar-tray-kit-with-antiseptic-large-gloves-b1360` | `/product/4-5mm-resin-trocar-tray-kit-with-antiseptic-medium-gloves-b1362` | 404 | yes | yes | NO live product with this handle |
+| bulk | `/products/soap-box-hinged-lid-clear-sb01c` | `/product/soap-box-hinged-lid-clear-sb01` | 200 | yes | yes | live product handle |
+| bulk | `/products/4-5mm-stainless-steel-trocar-tray-kit-with-antiseptic-large-gloves-b1363` | `/product/4-5mm-stainless-steel-trocar-tray-kit-with-antiseptic-medium-gloves-b1365` | 200 | yes | yes | live product handle |
+| bulk | `/products/4-5mm-stainless-steel-sharp-wrapped-kit-with-antiseptic-large-glove-b8123` | `/product/4-5mm-stainless-steel-sharp-wrapped-kit-with-antiseptic-medium-glove-b8124` | 200 | yes | yes | live product handle |
+| bulk | `/products/4-5mm-resin-trocar-wrapped-kit-with-antiseptic-large-glove-b8119` | `/product/4-5mm-resin-trocar-wrapped-kit-with-antiseptic-medium-glove-b8120` | 200 | yes | yes | live product handle |
+| bulk | `/products/4-5mm-resin-trocar-tray-kit-with-antiseptic-large-gloves-b1360` | `/product/4-5mm-resin-trocar-tray-kit-with-antiseptic-medium-gloves-b1362` | 200 | yes | yes | live product handle |
 | bulk | `/products/4-5mm-disposable-stainless-steel-diamond-tip-trocar-tray-kit-large-gloves-b1559` | `/product/4-5mm-disposable-stainless-steel-diamond-tip-trocar-tray-kit-medium-gloves-b1560` | 200 | yes | yes | live product handle |
 | bulk | `/products/3-5mm-stainless-steel-diamond-tip-trocar-tray-kit-with-antiseptic-large-glove-b1547` | `/product/3-5mm-stainless-steel-diamond-tip-trocar-tray-kit-with-antiseptic-medium-glove-b1555` | 200 | yes | yes | live product handle |
 | bulk | `/products/3-2mm-resin-trocar-wrapped-kit-with-chlorascrub-tegaderm-large-glove-b7345` | `/product/3-2mm-resin-trocar-wrapped-kit-with-chlorascrub-tegaderm-medium-glove-b9743` | 200 | yes | yes | live product handle |

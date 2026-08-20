@@ -26,6 +26,28 @@ const PRODUCT_REDIRECTS = new Map<string, string>(
   ]),
 )
 
+// ─── Legacy AeroWalk color-handle migration (P0.7, extended 2026-08-20) ──────
+//
+// Izzy migrated all three AeroWalk colors onto one color-neutral handle in
+// QA; each old color-suffixed handle must 301 to it wherever it's hit — the
+// canonical /product/<handle> route, AND the nested /category/<slug>/<handle>
+// route this app also serves (app/category/[slug]/[product]/page.tsx). One
+// reusable map + matcher instead of a hand-copied entry per route shape, so a
+// future migration only adds one map row.
+export const LEGACY_PRODUCT_HANDLES = new Map<string, string>([
+  ['aerowalk-ultra-lite-rollator-rolling-walker-blue', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+  ['aerowalk-ultra-lite-rollator-rolling-walker-white', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+  ['aerowalk-ultra-lite-rollator-rolling-walker-grey', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+])
+
+function redirectLegacyProductHandle(pathname: string, request: NextRequest, nonce: string): Response | null {
+  const match = pathname.match(/^\/(?:product|category\/[^/]+)\/([^/]+)$/)
+  if (!match) return null
+  const canonical = LEGACY_PRODUCT_HANDLES.get(match[1])
+  if (!canonical) return null
+  return withCsp(NextResponse.redirect(new URL(`/product/${canonical}`, request.url), 301), nonce)
+}
+
 // ─── Category-level 410s (§4.3) ───────────────────────────────────────────────
 //
 // Categories permanently removed from the new taxonomy. A direct hit (or a
@@ -130,15 +152,10 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
   // It is retired in favor of a single wholesale entry point at /contact.
   { from: '/b2b',                                                                                       to: '/contact',                                        status: 301 },
 
-  // P0.7 AeroWalk color-neutral handle migration pilot (Bilal, 2026-08-18):
-  // Izzy renamed the product from the Blue-suffixed handle to a
-  // color-neutral one in QA (all three colors now live as variants under
-  // the neutral handle, selected via ?variant=). This redirect is the
-  // acceptance bar Bilal set for the pilot — without it, every existing
-  // bookmark/backlink to the old Blue handle 404s in this headless app
-  // (Shopify's own native redirects don't apply to a custom Storefront-API
-  // route). Single hop, same pattern as the bulk product redirects above.
-  { from: '/product/aerowalk-ultra-lite-rollator-rolling-walker-blue',                                 to: '/product/aerowalk-ultra-lite-rollator-rolling-walker', status: 301 },
+  // Note: legacy AeroWalk color-handle redirects (P0.7, extended 2026-08-20)
+  // are handled by redirectLegacyProductHandle() below — a reusable
+  // map+matcher covering both /product/ and /category/<slug>/, not a flat
+  // entry here.
 ]
 
 // Stamps the enforcing + parallel Report-Only CSP headers (M10) onto every
@@ -191,6 +208,9 @@ export function proxy(request: NextRequest): Response {
 
   // Definitive removal first: permanently-gone categories (§4.3).
   if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), nonce)
+
+  const legacyHandleRedirect = redirectLegacyProductHandle(pathname, request, nonce)
+  if (legacyHandleRedirect) return legacyHandleRedirect
 
   // Face Masks canonical alias: Shopify collection handle is face-coverings; canonical
   // public URL is /category/face-masks. Subtree redirect so both the category root and
