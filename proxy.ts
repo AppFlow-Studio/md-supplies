@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import productRedirects from './docs/redirects-ready.json'
 import { buildCsp, generateNonce } from '@/lib/csp'
 import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE_SECONDS, serializeAttribution } from '@/lib/analytics/attribution'
+import { CATEGORY_TREE_L1, getCategorySlug, type L1CategoryDef } from '@/lib/category-tree'
 
 type Redirect301 = { from: string; to: string; status: 301 }
 type Gone410    = { from: string; status: 410 }
@@ -39,6 +40,48 @@ export const LEGACY_PRODUCT_HANDLES = new Map<string, string>([
   ['aerowalk-ultra-lite-rollator-rolling-walker-white', 'aerowalk-ultra-lite-rollator-rolling-walker'],
   ['aerowalk-ultra-lite-rollator-rolling-walker-grey', 'aerowalk-ultra-lite-rollator-rolling-walker'],
 ])
+
+// ─── Legacy Shopify /collections/<handle> URLs → canonical /category/<slug> ──
+//
+// Shopify's own auto-generated sitemap (sitemap_collections_N.xml, distinct
+// from this app's app/sitemap.ts) still lists /collections/<handle> URLs;
+// external backlinks use them too. This app only ever serves /category/<slug>
+// (2026-08-21 SEO audit triage, Finding 3). Keyed by BOTH `tag` and
+// `collectionHandle` because the live crawl hit both forms for the same
+// category (e.g. /collections/apparel AND /collections/capes-gowns both
+// resolve to the one Apparel page) — resolving through getCategorySlug()
+// rather than a raw rename is what correctly sends the "apparel" tag-name
+// hit to /category/capes-gowns instead of a nonexistent /category/apparel
+// (see lib/category-tree.ts's own doc comment on getCategorySlug, and the
+// 2026-08-12 audit's Finding F3 for why a naive rename is the wrong fix here).
+// Generalizes (and replaces) the single hand-written trocars-trocar-kits
+// rule this file carried since 2026-08-18.
+const L1_BY_LEGACY_COLLECTION_HANDLE = new Map<string, L1CategoryDef>()
+for (const l1 of CATEGORY_TREE_L1) {
+  L1_BY_LEGACY_COLLECTION_HANDLE.set(l1.collectionHandle, l1)
+  L1_BY_LEGACY_COLLECTION_HANDLE.set(l1.tag, l1)
+}
+
+function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, nonce: string): Response | null {
+  const match = pathname.match(/^\/collections\/([^/]+)(\/.*)?$/)
+  if (!match) return null
+  const [, handle, rest] = match
+
+  // OCC is browsed like a category but has one canonical route outside
+  // /category/*, same decision the existing /category/occ rule below encodes.
+  if (handle === 'occ') {
+    const url = new URL('/solutions/occ', request.url)
+    url.search = request.nextUrl.search
+    return withCsp(NextResponse.redirect(url, 301), nonce)
+  }
+
+  const l1 = L1_BY_LEGACY_COLLECTION_HANDLE.get(handle)
+  if (!l1) return null // subcategory-level collection — not resolved here, see Global Constraints
+
+  const url = new URL(`/category/${getCategorySlug(l1)}${rest ?? ''}`, request.url)
+  url.search = request.nextUrl.search
+  return withCsp(NextResponse.redirect(url, 301), nonce)
+}
 
 function redirectLegacyProductHandle(pathname: string, request: NextRequest, nonce: string): Response | null {
   const match = pathname.match(/^\/(?:product|category\/[^/]+)\/([^/]+)$/)
@@ -260,17 +303,9 @@ export function proxy(request: NextRequest): Response {
     return withCsp(NextResponse.redirect(url, 301), nonce)
   }
 
-  // ── /collections/trocars-trocar-kits → /category/trocars-trocar-kits ──────
-  //
-  // Izzy confirmed this is the live Shopify collection URL (68 products, 41
-  // active) that customers have saved/linked externally. Preserves ?variant=
-  // and any other query string in one hop (Bilal's redirect rules, 2026-08-18).
-  if (pathname === '/collections/trocars-trocar-kits' || pathname.startsWith('/collections/trocars-trocar-kits/')) {
-    const newPath = pathname.replace('/collections/trocars-trocar-kits', '/category/trocars-trocar-kits')
-    const url = new URL(newPath, request.url)
-    url.search = request.nextUrl.search
-    return withCsp(NextResponse.redirect(url, 301), nonce)
-  }
+  // ── /collections/<handle> → /category/<slug> (2026-08-21 audit Finding 3) ──
+  const legacyCollectionRedirect = redirectLegacyCollectionUrl(pathname, request, nonce)
+  if (legacyCollectionRedirect) return legacyCollectionRedirect
 
   // ── Category query variants: no rewrite (twin route removed) ───────────────
   //

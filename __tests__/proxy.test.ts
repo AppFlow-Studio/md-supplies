@@ -377,6 +377,9 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     expect(res?.headers.get('Location')).toContain('/category/testing-screening')
   })
 
+})
+
+describe('proxy — legacy Shopify /collections/<handle> → /category/<slug> (2026-08-21 audit Finding 3)', () => {
   it('redirects the legacy Shopify collection URL to the canonical category route, preserving query params', () => {
     const res = proxy(req('/collections/trocars-trocar-kits', '?variant=51633171923177'))
     expect(res?.status).toBe(301)
@@ -389,6 +392,48 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     const res = proxy(req('/collections/trocars-trocar-kits/some-product'))
     expect(res?.status).toBe(301)
     expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/trocars-trocar-kits/some-product')
+  })
+
+  it('redirects a plain collection handle that matches its own canonical slug', () => {
+    const res = proxy(req('/collections/gloves'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/gloves')
+  })
+
+  it('resolves a tag-name collection URL to its divergent canonical slug (Apparel: tag "apparel", collection "capes-gowns")', () => {
+    const res = proxy(req('/collections/apparel'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/capes-gowns')
+  })
+
+  it('resolves the raw collection-handle form of the same divergent category', () => {
+    const res = proxy(req('/collections/capes-gowns'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/capes-gowns')
+  })
+
+  it('resolves Face Masks through the existing face-coverings → face-masks canonical slug mapping', () => {
+    const res = proxy(req('/collections/face-masks'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/face-masks')
+  })
+
+  it('preserves query params on a fresh (non-trocars) collection redirect', () => {
+    const res = proxy(req('/collections/gloves', '?sort_by=price-ascending'))
+    expect(res?.status).toBe(301)
+    const location = new URL(res!.headers.get('Location')!)
+    expect(location.pathname).toBe('/category/gloves')
+    expect(location.searchParams.get('sort_by')).toBe('price-ascending')
+  })
+
+  it('redirects /collections/occ to the single canonical OCC route, mirroring /category/occ', () => {
+    const res = proxy(req('/collections/occ'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/solutions/occ')
+  })
+
+  it('does NOT guess a redirect for a subcategory-level Shopify collection not in the L1 registry', () => {
+    expectPassThrough(proxy(req('/collections/25g-hypodermic-needles')))
   })
 })
 
