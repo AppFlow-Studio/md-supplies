@@ -72,13 +72,15 @@ function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, non
   // "products" segment before the handle, under ANY collection handle
   // (known L1 or not) — this app has no /category/<slug>/products/<handle>
   // route, so there is no "preserve the collection" destination to send it
-  // to. Resolve the handle through the exact same chain the root
-  // /products/<handle> rules already use (PRODUCT_REDIRECTS, then
-  // LEGACY_PRODUCT_HANDLES, then the bare handle) and land on the canonical
-  // /product/<handle> route directly — checked before the occ/registry
-  // lookups below since it doesn't depend on either. (Gap found in the
-  // 2026-08-21 final review of the /collections/ generalization — inherited
-  // unchanged from the old trocars-only rule, not introduced by that change.)
+  // to. Resolve the handle through the same maps the root /products/<handle>
+  // rules use (PRODUCT_REDIRECTS, then the bare handle) — with
+  // LEGACY_PRODUCT_HANDLES folded in here so a color-handle hit lands in ONE
+  // hop, rather than the two the root flow takes via redirectLegacyProductHandle
+  // — and land on the canonical /product/<handle> route directly — checked
+  // before the occ/registry lookups below since it doesn't depend on either.
+  // (Gap found in the 2026-08-21 final review of the /collections/
+  // generalization — inherited unchanged from the old trocars-only rule, not
+  // introduced by that change.)
   const productMatch = rest?.match(/^\/products\/([^/]+)$/)
   if (productMatch) {
     const productHandle = productMatch[1]

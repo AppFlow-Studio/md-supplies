@@ -465,6 +465,12 @@ describe('proxy — legacy Shopify /collections/<handle> → /category/<slug> (2
     expect(location.searchParams.get('variant')).toBe('123')
   })
 
+  it('resolves a nested product URL under a collection handle that is NOT in the L1 registry, since the shape does not depend on the collection resolving', () => {
+    const res = proxy(req('/collections/25g-hypodermic-needles/products/some-handle'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/product/some-handle')
+  })
+
   it('every L1 tag AND collection handle redirects to that L1s canonical slug', () => {
     for (const l1 of CATEGORY_TREE_L1) {
       for (const key of [l1.tag, l1.collectionHandle]) {
