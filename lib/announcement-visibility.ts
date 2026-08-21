@@ -1,13 +1,19 @@
 /**
  * Where the top announcement carousel is allowed to appear.
  *
- * Rule (spec §14): visible on the mobile HOMEPAGE only; hidden at phone widths
- * on every other route; desktop behaviour unchanged everywhere.
+ * Rule: hidden at phone widths on EVERY route, including the homepage; desktop
+ * behaviour unchanged everywhere.
  *
- * Kept as a pure function rather than inline JSX logic so the route matching is
- * testable on its own — the edge cases (trailing slash, query string, nested
- * paths that merely start with "/") are exactly the ones a hand-written check
- * in a component gets wrong.
+ * This used to keep the bar on the mobile homepage (spec §14). Phone viewports
+ * have no vertical budget for it: the bar cost 54px of a ~72px header stack
+ * before the shopper saw a single product, and it pushed the search field and
+ * the first row of content below the fold on a 360–430px screen. Desktop keeps
+ * it because there the same 54px is free real estate.
+ *
+ * `isHomeRoute` is retained (and still tested) because the route-normalisation
+ * edge cases it encodes — trailing slash, query string, nested paths that
+ * merely start with "/" — are the ones any future route-gated header element
+ * would otherwise get wrong.
  */
 
 /**
@@ -32,13 +38,16 @@ export function isHomeRoute(pathname: string | null | undefined): boolean {
 /**
  * Tailwind classes for the announcement bar's outer element.
  *
- * The bar stays in the DOM on inner routes because the SAME HTML serves phones
- * and desktops, and desktop must keep it on every route — so visibility is a
- * breakpoint decision, not a render decision. `hidden md:flex` removes it from
- * layout flow entirely at phone widths (no empty spacer, no reserved height, no
- * header-offset drift), and because it is a static class rather than
- * client-measured state there is no hydration flash.
+ * The bar stays in the DOM because the SAME HTML serves phones and desktops,
+ * and desktop must keep it on every route — so visibility is a breakpoint
+ * decision, not a render decision. `hidden md:flex` removes it from layout flow
+ * entirely below 768px (no empty spacer, no reserved height, no header-offset
+ * drift, no CLS), and because it is a static class rather than client-measured
+ * state there is no hydration flash and no route-dependent branch.
+ *
+ * Takes no argument on purpose: the rule is now route-independent, and a
+ * parameter that no longer changes the result is a trap for the next reader.
  */
-export function announcementBarClass(pathname: string | null | undefined): string {
-  return isHomeRoute(pathname) ? 'flex' : 'hidden md:flex'
+export function announcementBarClass(): string {
+  return 'hidden md:flex'
 }

@@ -8,7 +8,39 @@ const BASE = 'https://mdsupplies.com'
 describe('buildMetadata — title patterns', () => {
   it('homepage: fixed title', () => {
     const m = buildMetadata({ pageType: 'homepage' })
-    expect(m.title).toBe('MDSupplies — Medical & Dental Supplies')
+    expect(m.title).toBe('Medical Supplies Online | Healthcare Supplies | MDSupplies')
+  })
+
+  it('homepage title leads with the primary query and fits the SERP budget', () => {
+    const title = buildMetadata({ pageType: 'homepage' }).title as string
+    // Leads with the commercial concept, not the brand.
+    expect(title.toLowerCase().startsWith('medical supplies')).toBe(true)
+    expect(title).toContain('Medical Supplies Online')
+    expect(title).toContain('MDSupplies')
+    // Google truncates around 60 characters.
+    expect(title.length).toBeLessThanOrEqual(60)
+  })
+
+  it('homepage description targets medical supplies without stuffing', () => {
+    const desc = buildMetadata({ pageType: 'homepage' }).description as string
+    expect(desc.toLowerCase()).toContain('medical supplies online')
+    // Names who the store serves and what it sells.
+    for (const term of ['clinics', 'wound care', 'gloves', 'syringes']) {
+      expect(desc.toLowerCase(), term).toContain(term)
+    }
+    expect(desc.length).toBeLessThanOrEqual(180)
+    // Not stuffed: the exact head term must not be repeated.
+    const hits = desc.toLowerCase().match(/medical supplies/g) ?? []
+    expect(hits.length).toBe(1)
+  })
+
+  it('homepage does NOT retarget the sitewide fallback used by other pages', () => {
+    // Guards the reason HOMEPAGE_* exist: a category page with no title of its
+    // own must still get the generic brand title, not the homepage's.
+    const fallback = buildMetadata({ pageType: 'category' }).title as string
+    expect(fallback).toBe('MDSupplies — Medical & Dental Supplies')
+    expect(buildMetadata({ pageType: 'category' }).description)
+      .not.toContain('Shop medical supplies online')
   })
 
   it('categories-hub: fixed title', () => {

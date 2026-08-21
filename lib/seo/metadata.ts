@@ -1,5 +1,12 @@
 import type { Metadata } from 'next'
-import { SITE_NAME, DEFAULT_DESCRIPTION, DEFAULT_TITLE } from './constants'
+import {
+  SITE_NAME,
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  HOMEPAGE_TITLE,
+  HOMEPAGE_DESCRIPTION,
+  HOMEPAGE_OG_TITLE,
+} from './constants'
 import { buildCanonical } from './canonical'
 import { buildRobots, STAGING_GUARD } from './robots'
 import { buildOg } from './og'
@@ -62,7 +69,10 @@ function resolveTitle(pageType: PageType, title?: string, parentSlug?: string): 
 
   switch (pageType) {
     case 'homepage':
-      return DEFAULT_TITLE
+      // Targets the primary commercial query ("medical supplies online")
+      // rather than reusing the sitewide fallback title, which led with the
+      // brand and buried the category the store actually competes for.
+      return HOMEPAGE_TITLE
     case 'categories-hub':
       return `All Categories${suffix}`
     case 'category':
@@ -119,13 +129,19 @@ export function buildMetadata(input: MetadataInput): Metadata {
   } = input
 
   const resolvedTitle = resolveTitle(pageType, title, parentSlug)
-  const resolvedDescription = description?.trim() || DEFAULT_DESCRIPTION
+  // The homepage has its own default description for the same reason it has its
+  // own title: DEFAULT_DESCRIPTION is the fallback every other page type shares.
+  const homepageDefault = pageType === 'homepage' ? HOMEPAGE_DESCRIPTION : DEFAULT_DESCRIPTION
+  const resolvedDescription = description?.trim() || homepageDefault
   const path = resolvePath(pageType, slug, parentSlug)
   const canonical = input.canonical ?? buildCanonical({ path, strategy: 'self' })
   const robots = buildRobots({ pageType, noIndex, isStaging: STAGING_GUARD })
   const og = buildOg({
     pageType,
     title: resolvedTitle,
+    // Social cards have no 60-char SERP budget to respect, but they DO get
+    // truncated harder in a feed, so the homepage drops the middle qualifier.
+    ogTitle: pageType === 'homepage' ? HOMEPAGE_OG_TITLE : undefined,
     description: resolvedDescription,
     url: canonical,
     image,
