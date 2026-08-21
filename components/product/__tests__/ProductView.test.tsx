@@ -122,7 +122,10 @@ describe('ProductView — Vendor Shipping & Returns (H-01/P0.5)', () => {
     expect(screen.queryByText('Return Authorization Required')).not.toBeInTheDocument()
   })
 
-  it('renders bold spans in the rich text as <strong>, leaving surrounding text unwrapped', () => {
+  // Task 6 (2026-08-19): custom.shipping_returns bold marks (Shopify
+  // rich_text_field `"bold": true` on the text leaf, confirmed against live
+  // QA data) must survive as <strong>, not be flattened to plain text.
+  it('renders bold spans in Vendor Shipping & Returns as <strong>, leaving surrounding text unwrapped', () => {
     const richText = JSON.stringify({
       type: 'root',
       children: [{
@@ -138,8 +141,8 @@ describe('ProductView — Vendor Shipping & Returns (H-01/P0.5)', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'VENDOR SHIPPING & RETURNS' }))
     const bold = screen.getByText('30 days')
     expect(bold.tagName).toBe('STRONG')
-    const plain = screen.getByText('Returns accepted within', { exact: false })
-    expect(plain.tagName).not.toBe('STRONG')
+    const surrounding = screen.getByText(/Returns accepted within/)
+    expect(surrounding.tagName).not.toBe('STRONG')
   })
 })
 
@@ -218,6 +221,85 @@ describe('ProductView — ORDER PACKAGING breakdown (LG-04, 2026-08-17)', () => 
     expect(screen.queryByText('100')).not.toBeInTheDocument()
     expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
     expect(screen.queryByText('8')).not.toBeInTheDocument()
+  })
+
+  // Task 8 (2026-08-19): Bilal's follow-up requires this specific case be
+  // proven, not just inferred from the "no stale carryover" test above —
+  // a variant with ZERO packaging fields (order size, units per order, and
+  // all three breakdown fields all blank, with no product-level fallback
+  // available either) must show the fallback copy, never a blank tab and
+  // never its sibling's values. Copy finalized by Bilal, 2026-08-20:
+  // "Packaging information unavailable for this option." (Task 8 had left
+  // this as an open question against the older production string.)
+  it('shows the fallback message — not the sibling variant\'s data, and not a blank tab — when the selected variant has zero packaging fields and its sibling has some', () => {
+    const dataVariant: ProductVariant = {
+      ...blueVariant,
+      orderSize: null,
+      unitsPerOrder: null,
+      innerPackQuantity: '50',
+      packsPerCase: '4',
+      totalOrderQuantity: null,
+    }
+    const blankVariant: ProductVariant = {
+      ...whiteVariant,
+      orderSize: null,
+      unitsPerOrder: null,
+      innerPackQuantity: null,
+      packsPerCase: null,
+      totalOrderQuantity: null,
+    }
+    renderPDP(dataVariant, {
+      orderSize: null,
+      unitsPerOrder: null,
+      quantityOfUnits: null,
+      variants: { nodes: [dataVariant, blankVariant] },
+    })
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.getByText('Inner Pack Quantity')).toBeInTheDocument()
+    expect(screen.getByText('50')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Color: White' }))
+
+    expect(screen.getByText('Packaging information unavailable for this option.')).toBeInTheDocument()
+    expect(screen.queryByText('Inner Pack Quantity')).not.toBeInTheDocument()
+    expect(screen.queryByText('50')).not.toBeInTheDocument()
+    expect(screen.queryByText('Packs Per Case')).not.toBeInTheDocument()
+    expect(screen.queryByText('4')).not.toBeInTheDocument()
+  })
+
+  // Bilal, 2026-08-20 (code review on #64): "Product-level Units per Order
+  // may be used only when it safely applies to every variant. If packaging
+  // differs and the selected variant lacks its own value, do not display
+  // another variant's quantity." Reproduces
+  // pen-needle-4mm-depth-32g-x-5-32-box-9543: product-level unitsPerOrder is
+  // 100/Box (from the UltiGuard variants); UltiCare variants are 50/Box. A
+  // blank UltiCare variant must show the safe fallback, never UltiGuard's
+  // 100/Box just because it's the product-level value.
+  it('shows the fallback message, not the product-level value, when a blank variant belongs to a product whose variants disagree on packaging', () => {
+    const ultiGuardVariant: ProductVariant = {
+      ...blueVariant,
+      orderSize: null, unitsPerOrder: '100/Box',
+      innerPackQuantity: null, packsPerCase: null, totalOrderQuantity: null,
+    }
+    const ultiCareWithValue: ProductVariant = {
+      ...whiteVariant,
+      orderSize: null, unitsPerOrder: '50/Box',
+      innerPackQuantity: null, packsPerCase: null, totalOrderQuantity: null,
+    }
+    const ultiCareBlank: ProductVariant = {
+      ...blueVariant, id: 'gid://shopify/ProductVariant/3', title: 'Care Blank',
+      selectedOptions: [{ name: 'Color', value: 'CareBlank' }],
+      manufacturerNumber: '10277CB',
+      orderSize: null, unitsPerOrder: null,
+      innerPackQuantity: null, packsPerCase: null, totalOrderQuantity: null,
+    }
+    renderPDP(ultiCareBlank, {
+      orderSize: null, unitsPerOrder: '100/Box', quantityOfUnits: null,
+      variants: { nodes: [ultiGuardVariant, ultiCareWithValue, ultiCareBlank] },
+    })
+    fireEvent.click(screen.getByRole('tab', { name: 'ORDER PACKAGING' }))
+    expect(screen.getByText('Packaging information unavailable for this option.')).toBeInTheDocument()
+    expect(screen.queryByText('100/Box')).not.toBeInTheDocument()
   })
 })
 
@@ -306,5 +388,75 @@ describe('ProductView — You May Also Need cards are clickable (Task 4)', () =>
     const links = screen.getAllByRole('link', { name: /Extra Recommended Item/i })
     expect(links.length).toBeGreaterThan(0)
     expect(links[0]).toHaveAttribute('href', '/product/extra-recommended-item')
+  })
+
+  // ── P0.1: the row is a spaced CARD row, not a merged slab ─────────────────
+  //
+  // The scroll row carried `gap-0`, so each card's neutral-50 panel butted
+  // straight against its neighbour's. With no border or radius on the card,
+  // adjacent panels fused into one grey block and the row read as loose images
+  // and text rather than products.
+  describe('P0.1 — card layout matches the sibling recommendation rows', () => {
+    const FIVE: CollectionProduct[] = [1, 2, 3, 4, 5].map((n) =>
+      collectionProduct({
+        id: `gid://shopify/Product/90${n}`,
+        handle: `item-${n}`,
+        title: `Item ${n}`,
+      }),
+    )
+
+    function renderRow() {
+      render(
+        <ProductView
+          product={product}
+          initialVariant={blueVariant}
+          relatedProducts={FIVE}
+          complementaryProducts={[]}
+        />,
+      )
+      return screen.getByRole('region', { name: 'You May Also Need — scrollable product list' })
+    }
+
+    it('separates the cards with a real gutter', () => {
+      const row = renderRow()
+      expect(row.className).not.toMatch(/(^|\s)gap-0(\s|$)/)
+      expect(row.className).toMatch(/gap-\[23px\]/)
+    })
+
+    it('uses the same gutter token as "You May Also Like"', () => {
+      renderRow()
+      const alsoLike = screen.getByText('You May Also Like').parentElement!
+      const alsoLikeRow = alsoLike.querySelector('div.flex')!
+      const needRow = screen.getByRole('region', {
+        name: 'You May Also Need — scrollable product list',
+      })
+      const gutter = /gap-\[23px\]/
+      expect(alsoLikeRow.className).toMatch(gutter)
+      expect(needRow.className).toMatch(gutter)
+    })
+
+    it('keeps the cards a consistent width so the row cannot go ragged', () => {
+      const row = renderRow()
+      const widths = new Set(
+        Array.from(row.children).map((c) => (c as HTMLElement).className),
+      )
+      expect(widths.size).toBe(1)
+      expect([...widths][0]).toMatch(/w-\[185px\]/)
+    })
+
+    it('reuses the shared card — every item is one link, with no nested interactive element', () => {
+      const row = renderRow()
+      // relatedProducts.slice(4) → exactly one card in this row.
+      const links = row.querySelectorAll('a')
+      expect(links).toHaveLength(1)
+      // A <button> inside an <a> is invalid and breaks keyboard semantics.
+      expect(links[0].querySelector('button')).toBeNull()
+      expect(links[0].querySelector('a')).toBeNull()
+    })
+
+    it('gives the card a visible focus indicator', () => {
+      const row = renderRow()
+      expect(row.querySelector('a')!.className).toMatch(/focus-visible:outline-2/)
+    })
   })
 })

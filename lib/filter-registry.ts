@@ -199,13 +199,14 @@ function cat(...head: FacetRule[]): FacetRule[] {
 // shared tail.
 const OCC_RULES: FacetRule[] = cat()
 
-// The 25 approved CATEGORY routes, keyed by the public route slug.
+// The 25 approved CATEGORY routes plus the featured subcategory routes
+// (lib/category-tree.ts FEATURED_SUBCATEGORIES), keyed by the public route slug.
 //
-// getAllowedFacets is called with the route slug, which for 24 of the 25 is
-// also the Shopify collection handle; the exceptions (testing-screening,
-// trocars-trocar-kits, capes-gowns, seating, face-coverings) are keyed on the
-// handle for the same reason, because that IS the public slug — see the route
-// table in lib/route-registry.ts.
+// getAllowedFacets is called with the route slug, which for most is also the
+// Shopify collection handle; the exceptions (testing-screening, capes-gowns,
+// seating, face-coverings) are keyed on the handle for the same reason,
+// because that IS the public slug — see the route table in
+// lib/route-registry.ts.
 export const filterRegistry: Record<string, FacetRule[]> = {
   occ: OCC_RULES,
   'hygiene-kits': OCC_RULES,
@@ -240,14 +241,32 @@ export const filterRegistry: Record<string, FacetRule[]> = {
 
   'patient-therapy-rehab': cat(M.type, M.material, M.size, M.features, M.otherFeatures, M.use, M.color),
 
-  // Surgery & Procedure. Keyed on the live collection handle because that is
-  // the public route slug.
+  // Surgery & Procedure — the BROAD parent collection (323 active products).
+  // Added 2026-08-20 (P0.5): this route had no entry at all, because the
+  // registry's Surgery row pointed at the Trocar collection, so the parent page
+  // did not exist. Without an entry it would fall through to
+  // DEFAULT_FACET_RULES (Availability + Price only) — two facets over 323
+  // products across scalpels, drapes, sponges, forceps and trays.
+  //
+  // Every group below was READ OFF the live Storefront filter response for
+  // this collection on 2026-08-20, not copied from a sibling: Category (44
+  // values), Type (4), Material (6), Glove Size (3), Size (42), Features (1),
+  // Other Features (14), Sterility (2), Use (2), Color (2), Order Size (5),
+  // Brand Name (25), Price. Certification rides the shared TAIL and is not
+  // returned for this collection, so the relevance gate keeps it invisible.
+  'surgery-procedure': cat(M.type, M.material, M.gloveSize, M.size, M.features, M.otherFeatures, M.sterility, M.use, M.color),
+
+  // Trocars & Trocar Kits — the FEATURED SUBCATEGORY under Surgery & Procedure
+  // (lib/category-tree.ts FEATURED_SUBCATEGORIES), keyed on the live collection
+  // handle because that is the public route slug.
   // Corrected 2026-08-18 per Izzy's verified Trocar registry (41 active
   // products): custom.material, custom.glove_size, custom.size_length_,
   // custom.features, custom.other_features, custom.use are the only
   // populated metafields on this collection — type/needle_gauge/
   // needle_length/sterility/color never existed on Trocar products; this
   // entry previously copied the needles-syringes template by mistake.
+  // Re-verified live 2026-08-20: the collection returns exactly these 10
+  // groups, and its Category facet exactly the 7 approved values.
   'trocars-trocar-kits': cat(M.material, M.gloveSize, M.size, M.features, M.otherFeatures, M.use),
 
   // Apparel.

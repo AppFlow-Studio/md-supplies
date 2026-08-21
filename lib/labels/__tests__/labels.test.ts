@@ -19,6 +19,11 @@ describe('resolveRxLabel', () => {
     expect(resolveRxLabel(undefined)).toBeNull()
   })
 
+  // Bilal, 2026-08-20 final decision: "RX Only", not "Rx Only" — reverses H-04.
+  it('renders the exact approved capitalization "RX Only"', () => {
+    expect(resolveRxLabel(['rx-required'])?.text).toBe('RX Only')
+  })
+
   // The badge must render from RX POLICY (tag ∪ custom.is_rx_only), matching
   // the checkout gate. Tag-only detection missed 40 ACTIVE prescription
   // products in the 2026-08-02 catalog audit.

@@ -109,7 +109,7 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             estimatedRestockDate: product.estimatedRestockDate?.value ?? null,
             // Same tag ∪ custom.is_rx_only union as the PDP and the cart gate:
             // without it the 40 ACTIVE metafield-only RX products carry no
-            // "Rx Only" badge on any grid.
+            // "RX Only" badge on any grid.
             isRxOnly: product.isRxOnly ?? null,
           })}
           shippingDisplay={product.shippingDisplay}

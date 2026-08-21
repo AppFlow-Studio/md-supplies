@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { buildMetadata } from '@/lib/seo'
 import { buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
-import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
+import { fetchAllCollectionHandles, type CollectionHandle } from '@/lib/shopify/collection-handles.server'
 import { ROUTES } from '@/lib/routes'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { ShopByIndustry } from '@/components/home/ShopByIndustry'
@@ -13,6 +12,7 @@ import {
   buildL1Tiles,
   CATEGORY_TREE_L1,
   getCategorySlug,
+  getFeaturedSubcategoriesForParent,
   type ProductTagSummary,
 } from '@/lib/category-tree'
 import { getNonce } from '@/lib/csp-nonce'
@@ -24,14 +24,6 @@ export const metadata = buildMetadata({
   pageType: 'categories-hub',
   description: 'Browse all medical supply categories — gloves, wound care, needles, IV therapy, and more. Serving clinics, urgent care, and B2B buyers.',
 })
-
-type CollectionNode = {
-  id: string
-  handle: string
-  title: string
-  description: string
-  image: { url: string; altText: string | null } | null
-}
 
 export default async function CategoriesPage() {
   const nonce = await getNonce()
@@ -49,12 +41,20 @@ export default async function CategoriesPage() {
   // "Categories"/"Home page" collections — the trocar-size top-level
   // tiles came from getAllowedHandles() flattening synthesized sub-handles
   // (e.g. the 4 trocar-size collections) into one flat allowlist set.
-  let allCollections: CollectionNode[] = []
+  // MUST be the COMPLETE handle list, not one 250-row page. The store has ~695
+  // collections; `GET_COLLECTIONS { first: 250 }` returned a truncated window
+  // in which 9 of the 25 registry L1 handles (needles-syringes,
+  // surgical-sutures, respiratory, disinfectants, iv-therapy, urology-ostomy,
+  // sterilization, pharmacy-products and surgery-procedure itself) simply did
+  // not appear — so `liveHandles.has(...)` reported live categories as
+  // non-existent and silently dropped them from the Popular strip. Same
+  // truncation bug DEV-NAV-01 already fixed for the header nav, and the same
+  // paginated helper is the fix here.
+  let allCollections: CollectionHandle[] = []
   try {
-    const data = await storefrontFetch<{ collections: { nodes: CollectionNode[] } }>(GET_COLLECTIONS, { first: 250 })
-    allCollections = data.collections.nodes
+    allCollections = await fetchAllCollectionHandles()
   } catch {
-    // degrade gracefully — Popular strip and tile artwork render without images
+    // degrade gracefully — Popular strip falls back to rendering nothing
   }
 
   let summaries: ProductTagSummary[] = []
@@ -76,9 +76,43 @@ export default async function CategoriesPage() {
   // "Testing". It also linked by raw handle, which is the redirecting URL for
   // Face Masks.
   const liveHandles = new Set(allCollections.map((c) => c.handle))
-  const popularCategories = CATEGORY_TREE_L1
+
+  // Popular strip entries share one shape whether they come from the L1
+  // registry or the featured-subcategory registry, so the card markup below
+  // stays a single loop.
+  type PopularEntry = { key: string; href: string; bannerHandle: string; displayName: string }
+
+  const popularL1: PopularEntry[] = CATEGORY_TREE_L1
     .filter((c) => c.navGroup === 'primary' && liveHandles.has(c.collectionHandle))
-    .slice(0, 8)
+    .map((c) => ({
+      key: c.tag,
+      href: ROUTES.category(getCategorySlug(c)),
+      bannerHandle: c.collectionHandle,
+      displayName: c.displayName,
+    }))
+
+  // Featured subcategories are inserted directly AFTER their parent so the
+  // strip reads Surgery & Procedure → Trocars & Trocar Kits, rather than
+  // appending Trocars to the end where it would read as unrelated.
+  const popularAll: PopularEntry[] = popularL1.flatMap((entry) => [
+    entry,
+    ...getFeaturedSubcategoriesForParent(entry.key)
+      .filter((s) => liveHandles.has(s.collectionHandle))
+      .map((s) => ({
+        key: s.slug,
+        href: ROUTES.category(s.slug),
+        bannerHandle: s.collectionHandle,
+        displayName: s.displayName,
+      })),
+  ])
+
+  // 12, not 8. The grid is 2-up on phones and 4-up from sm, so the count has to
+  // stay a common multiple or the last row is a short, orphaned fragment — the
+  // exact failure mode adding a 9th card would have produced (4+4+1). 12 fills
+  // three complete rows at 4-up and six at 2-up, and is the smallest such count
+  // that still reaches Surgery & Procedure and Trocars, which sit at positions
+  // 10 and 11 in the primary registry order.
+  const popularCategories = popularAll.slice(0, 12)
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -105,11 +139,15 @@ export default async function CategoriesPage() {
             <h2 className="text-navy-900 text-[22px] font-semibold mb-7">Popular Categories</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-[1px] border border-[rgba(0,0,0,0.08)] bg-[rgba(0,0,0,0.08)]">
               {popularCategories.map((cat) => {
-                const banner = getCategoryBannerConfig(cat.collectionHandle)
+                const banner = getCategoryBannerConfig(cat.bannerHandle)
                 return (
                   <Link
-                    key={cat.tag}
-                    href={ROUTES.category(getCategorySlug(cat))}
+                    key={cat.key}
+                    href={cat.href}
+                    // The card's visible text is the bare category name; the
+                    // accessible name says what activating it does, matching
+                    // the pattern used by the grid tiles below.
+                    aria-label={`Shop ${cat.displayName}`}
                     className="group bg-white transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy-900 flex flex-col items-center justify-center gap-4 py-8 px-4 h-full"
                   >
                     <div className="relative w-[50px] h-[50px] rounded-xl overflow-hidden bg-[rgba(0,193,255,0.15)] group-hover:bg-[rgba(0,193,255,0.25)] transition-colors">

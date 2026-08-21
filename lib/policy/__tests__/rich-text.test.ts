@@ -99,4 +99,29 @@ describe('shopifyRichTextToParagraphSpans', () => {
     expect(shopifyRichTextToParagraphSpans('not json')).toEqual([])
     expect(shopifyRichTextToParagraphSpans(null)).toEqual([])
   })
+
+  it('splits into separate paragraphs on a blank line within a single AST paragraph node, matching resolveReturnPolicy\'s plain-text split (real custom.shipping_returns QA data stores two logical paragraphs this way, confirmed 2026-08-19)', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'Shipping Policy: ', bold: true },
+          { type: 'text', value: 'Free ground shipping.\n\n' },
+          { type: 'text', value: 'Return Policy:', bold: true },
+          { type: 'text', value: '\nCustomer pays return freight.' },
+        ],
+      }],
+    })
+    expect(shopifyRichTextToParagraphSpans(raw)).toEqual([
+      [
+        { text: 'Shipping Policy: ', bold: true },
+        { text: 'Free ground shipping.', bold: false },
+      ],
+      [
+        { text: 'Return Policy:', bold: true },
+        { text: '\nCustomer pays return freight.', bold: false },
+      ],
+    ])
+  })
 })

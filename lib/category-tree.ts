@@ -33,10 +33,10 @@ export type L1CategoryDef = {
   displayName: string
   // Shopify collection handle used for tile artwork (image/description) AND
   // as the Phase 1 navigation target (`/category/<collectionHandle>`). For
-  // most L1s this handle matches the category well, but 5 are narrower
+  // most L1s this handle matches the category well, but 4 are narrower
   // "representative" sub-collections chosen for their image (e.g.
-  // surgery-procedure -> trocars-trocar-kits, room-furniture -> seating,
-  // testing -> testing-screening, apparel -> capes-gowns, face-masks ->
+  // room-furniture -> seating, testing -> testing-screening, apparel ->
+  // capes-gowns, face-masks ->
   // face-coverings) — clicking those tiles currently lands on a narrower
   // collection than the tile's label promises. Tag-scoped category landing
   // (making the destination match the tag-derived product set exactly) is
@@ -67,15 +67,20 @@ export type L1CategoryDef = {
    * source the L2 subcategory pages and the /categories tile counts already
    * use, so the page finally agrees with its own count.
    *
-   * The four 'tag' entries below are the Phase 2 fix this file's comment
+   * The three 'tag' entries below are the Phase 2 fix this file's comment
    * deferred. Measured live 2026-08-12 (audit/live/tag-vs-collection.json),
    * tag total vs collection total:
-   *   surgery-procedure 319 vs  41 (trocars-trocar-kits)
    *   room-furniture    512 vs   8 (seating)
    *   apparel           152 vs  34 (capes-gowns)
    *   face-masks         35 vs   1 (face-coverings)
-   * The other 21 agree within normal drift and stay on their collection, which
+   * The other 22 agree within normal drift and stay on their collection, which
    * keeps their richer sort keys (Query.search accepts only RELEVANCE/PRICE).
+   *
+   * surgery-procedure WAS a fourth 'tag' entry (319 tag vs 41 collection) but
+   * Bilal reversed that on 2026-08-20. That reversal is now moot for this
+   * category: the row points at the real `surgery-procedure` collection (323
+   * products), so collection and category finally denote the same thing and
+   * there is nothing for a tag override to correct.
    */
   productSet?: 'collection' | 'tag'
 }
@@ -93,7 +98,21 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'respiratory', displayName: 'Respiratory', collectionHandle: 'respiratory', navGroup: 'primary', shortDescription: 'Respiratory-care supplies for oxygen delivery, nebulization, airway support, and routine patient treatment.' },
   { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility', navGroup: 'primary', shortDescription: 'Wheelchairs, walkers, canes, rollators, and mobility accessories for patient support and daily movement.' },
   { tag: 'patient-therapy-rehab', displayName: 'Patient Therapy & Rehab', collectionHandle: 'patient-therapy-rehab', navGroup: 'primary', shortDescription: 'Therapy, rehabilitation, exercise, and positioning products that support recovery and patient mobility.' },
-  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', productSet: 'tag', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
+  // 2026-08-20 (P0.5): this entry used to carry collectionHandle
+  // 'trocars-trocar-kits', which made ONE registry row do the work of two
+  // pages. Because `collectionHandle` is simultaneously the route slug, the
+  // hero artwork key and the product source, that single value meant:
+  //   · /category/surgery-procedure did not exist at all, and
+  //   · /category/trocars-trocar-kits rendered an H1, description and
+  //     breadcrumb reading "Surgery & Procedure" over the 41-product Trocar
+  //     collection.
+  // The broad parent now points at its own live collection (`surgery-procedure`,
+  // 323 active products, verified against the Storefront API on 2026-08-20).
+  // Trocars keeps its own page via FEATURED_SUBCATEGORIES below — it is a
+  // subcategory of this one, not a 26th L1, so it is deliberately NOT a row
+  // here: CATEGORY_TREE_L1 membership is `category:` tag-derived, and there is
+  // no `category:trocars-trocar-kits` tag.
+  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'surgery-procedure', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
   { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', productSet: 'tag', navGroup: 'primary', shortDescription: 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.' },
   { tag: 'hygiene', displayName: 'Hygiene', collectionHandle: 'hygiene', navGroup: 'primary', shortDescription: 'Personal-hygiene and patient-care products for bathing, oral care, grooming, and everyday cleanliness.' },
   { tag: 'disinfectants', displayName: 'Disinfectants', collectionHandle: 'disinfectants', navGroup: 'primary', shortDescription: 'Cleaning and disinfection products for surfaces, equipment, hands, and infection-control routines.' },
@@ -110,6 +129,67 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'face-masks', displayName: 'Face Masks', collectionHandle: 'face-coverings', productSet: 'tag', navGroup: 'more', shortDescription: 'Procedure masks, respirators, and face coverings for clinical, facility, and everyday protective use.' },
   { tag: 'pharmacy-products', displayName: 'Pharmacy Products', collectionHandle: 'pharmacy-products', navGroup: 'more', shortDescription: 'Dispensing, labeling, packaging, counting, and patient-use supplies for pharmacy operations.' },
 ] as const
+
+/**
+ * A collection-backed category page that sits UNDER an L1 rather than beside
+ * it — a real Shopify collection with its own route, hero, facets and
+ * breadcrumb, whose parent is one of the 25 `category:` tags above.
+ *
+ * This exists because Trocars & Trocar Kits needs a full category page but is
+ * not a 26th top-level category. CATEGORY_TREE_L1 membership is derived from
+ * `category:` product tags, and there is no `category:trocars-trocar-kits`
+ * tag — every Trocar product carries `category:surgery-procedure`. Forcing a
+ * row into CATEGORY_TREE_L1 would have double-counted that tag on the
+ * /categories tile grid and promoted a subcategory to a peer of Gloves.
+ *
+ * One registry, consumed by the route, the nav, the hub strip and the sitemap,
+ * so a second featured subcategory is one row here rather than a special case
+ * in four files.
+ */
+export type FeaturedSubcategoryDef = {
+  /** Public URL slug AND Shopify collection handle (they match today). */
+  slug: string
+  collectionHandle: string
+  /** Customer-facing name — used for H1, breadcrumb, nav and tab labels. */
+  displayName: string
+  /** `tag` of the CATEGORY_TREE_L1 row this page belongs under. */
+  parentTag: string
+  /** Hero/description copy, same contract as L1CategoryDef.shortDescription. */
+  shortDescription: string
+  /**
+   * Alt text for the hero image. Required rather than inherited: this page
+   * reuses the Surgery & Procedure artwork (the Trocar collection carries no
+   * image of its own on Shopify — verified 2026-08-20), and reusing the
+   * parent's alt would describe the page as "Surgery and procedure
+   * instruments", which is not what the page shows.
+   */
+  imageAlt: string
+}
+
+export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
+  {
+    slug: 'trocars-trocar-kits',
+    collectionHandle: 'trocars-trocar-kits',
+    displayName: 'Trocars & Trocar Kits',
+    parentTag: 'surgery-procedure',
+    // Grounded in the live collection's own facet values (verified 2026-08-20:
+    // Disposable/Reusable 3.2mm, 3.5mm, 4.5mm plus Kit without Trocar) and its
+    // Material facet. Deliberately carries no FDA/regulatory, shipping or
+    // clinical-outcome claim — the Shopify collection's seo.title does, and
+    // that claim is not ours to restate.
+    shortDescription:
+      'Disposable and reusable trocars in 3.2mm, 3.5mm, and 4.5mm, plus trocar kits and kit-without-trocar options for clinical and procedural use.',
+    imageAlt: 'Trocars and trocar kits',
+  },
+] as const
+
+export function getFeaturedSubcategoryBySlug(slug: string): FeaturedSubcategoryDef | undefined {
+  return FEATURED_SUBCATEGORIES.find((s) => s.slug === slug || s.collectionHandle === slug)
+}
+
+export function getFeaturedSubcategoriesForParent(parentTag: string): FeaturedSubcategoryDef[] {
+  return FEATURED_SUBCATEGORIES.filter((s) => s.parentTag === parentTag)
+}
 
 // Confirmed live on 2026-07-16 (see plan Global Constraints) — 3 of the 5
 // products the spec calls out are dual-tagged today; the 2 Universal

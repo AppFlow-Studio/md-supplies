@@ -95,28 +95,28 @@ describe('CartPopup', () => {
   // DEV-LAUNCH-08: RX state must be visible in the cart popup, not just
   // inferred from the blocking panel — same union the checkout gate uses.
   describe('RX badge', () => {
-    it('shows an Rx Only badge for a tag-only RX line', () => {
+    it('shows an RX Only badge for a tag-only RX line', () => {
       vi.mocked(getRxGateStatus).mockResolvedValue({
         cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
       })
       mockCart(true, { cart: cartWithLineProduct({ tags: ['compliance:rx-only'] }) })
       render(<CartPopup />)
-      expect(screen.getByText('Rx Only')).toBeInTheDocument()
+      expect(screen.getByText('RX Only')).toBeInTheDocument()
     })
 
-    it('shows an Rx Only badge for a metafield-only RX line (no tag)', () => {
+    it('shows an RX Only badge for a metafield-only RX line (no tag)', () => {
       vi.mocked(getRxGateStatus).mockResolvedValue({
         cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
       })
       mockCart(true, { cart: cartWithLineProduct({ tags: [], isRxOnly: { value: 'true' } }) })
       render(<CartPopup />)
-      expect(screen.getByText('Rx Only')).toBeInTheDocument()
+      expect(screen.getByText('RX Only')).toBeInTheDocument()
     })
 
     it('shows no RX badge for a non-RX line', () => {
       mockCart(true, { cart: cartWithLineProduct({ tags: [] }) })
       render(<CartPopup />)
-      expect(screen.queryByText('Rx Only')).not.toBeInTheDocument()
+      expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
     })
   })
 
@@ -136,6 +136,68 @@ describe('CartPopup', () => {
       })
       render(<CartPopup />)
       expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
+    })
+  })
+
+  // DEV-LAUNCH-13: the cart popup must show the selected variant's own
+  // image, not the product's first image — a Blue AeroWalk line showed
+  // whichever color happened to be the product's first image regardless of
+  // which color was actually added.
+  describe('line item image', () => {
+    function cartWithVariantAndProductImages() {
+      return {
+        id: 'cart-1',
+        checkoutUrl: 'https://shop.example.com/checkout',
+        totalQuantity: 1,
+        lines: {
+          nodes: [{
+            id: 'line-1',
+            quantity: 1,
+            merchandise: {
+              id: 'variant-1',
+              title: 'Blue',
+              sku: 'SKU-1',
+              image: {
+                id: 'img-variant',
+                url: 'https://example.com/blue.jpg',
+                altText: 'Blue variant',
+                width: 100,
+                height: 100,
+              },
+              price: { amount: '19.99', currencyCode: 'USD' },
+              selectedOptions: [{ name: 'Color', value: 'Blue' }],
+              product: {
+                id: 'prod-1',
+                title: 'Xylocaine Injection',
+                handle: 'xylocaine',
+                images: {
+                  nodes: [{
+                    id: 'img-product',
+                    url: 'https://example.com/grey.jpg',
+                    altText: 'Grey (product default)',
+                    width: 100,
+                    height: 100,
+                  }],
+                },
+              },
+            },
+            cost: { totalAmount: { amount: '19.99', currencyCode: 'USD' } },
+          }],
+        },
+        cost: {
+          subtotalAmount: { amount: '19.99', currencyCode: 'USD' },
+          totalAmount: { amount: '19.99', currencyCode: 'USD' },
+          totalTaxAmount: null,
+        },
+      }
+    }
+
+    it("shows the selected variant's own image, not the product's first image", () => {
+      mockCart(true, { cart: cartWithVariantAndProductImages() })
+      render(<CartPopup />)
+      const img = screen.getByAltText('Blue variant')
+      expect(img).toHaveAttribute('src', expect.stringContaining('blue.jpg'))
+      expect(screen.queryByAltText('Grey (product default)')).not.toBeInTheDocument()
     })
   })
 

@@ -21,7 +21,7 @@ import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
-import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans } from '@/lib/policy/rich-text'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
@@ -33,7 +33,14 @@ function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const image = product.images.nodes[0]
 
   return (
-    <Link href={`/product/${product.handle}`} className="group flex flex-col bg-neutral-50 flex-1 min-w-[160px]">
+    // focus-visible outline added 2026-08-20: the card's root is the link, and
+    // it carried only a `group` hover hook — a keyboard user tabbing through
+    // any of the three recommendation rows got no visible focus indicator at
+    // all. Same 2px navy outline the category tiles and tab pills use.
+    <Link
+      href={`/product/${product.handle}`}
+      className="group flex flex-col bg-neutral-50 flex-1 min-w-[160px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900"
+    >
       <div className="relative overflow-hidden bg-neutral-50 aspect-square">
         <ProductImage src={image?.url} alt={cleanShopifyAlt(image?.altText) ?? product.title} />
       </div>
@@ -192,10 +199,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // (resolveVariantValue — Bilal's rule 2). Used identically by the
   // above-the-fold block and the ORDER PACKAGING tab, so they can never show
   // two different totals for the same selection (LG-04 acceptance).
-  const resolvedOrderSize = resolveVariantValue(selectedVariant.orderSize, product.orderSize)
+  const resolvedOrderSize = resolveVariantValue(
+    selectedVariant.orderSize,
+    product.orderSize,
+    product.variants.nodes.map((v) => v.orderSize),
+  )
   const resolvedUnitsPerOrder = resolveVariantValue(
     selectedVariant.unitsPerOrder,
     product.unitsPerOrder ?? product.quantityOfUnits,
+    product.variants.nodes.map((v) => v.unitsPerOrder),
   )
   // LG-04 packaging breakdown (2026-08-17): variant-only, no product-level
   // fallback (unlike orderSize/unitsPerOrder above) — Izzy only writes a
@@ -232,14 +244,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // source. Flattened to plain paragraphs and handed to resolveReturnPolicy's
   // vendorPolicyText below — the approved general fallback still renders
   // when a product has no value (not every product carries this field).
-  // vendorPolicyText still drives the tab's hidden-when-empty gate (below)
-  // and resolveReturnPolicy's "{vendor} Return Policy" heading — both are
-  // unchanged by Task 6. Only the tab's paragraph body renders from
-  // vendorPolicySpans now, so bold marks survive instead of being stripped
-  // by shopifyRichTextToPlainParagraphs (which is correct for every other
-  // caller — see lib/policy/rich-text.ts).
   const vendorPolicyText = shopifyRichTextToPlainParagraphs(product.shippingReturns).join('\n\n') || null
-  const vendorPolicySpans = shopifyRichTextToParagraphSpans(product.shippingReturns)
+
+  // Bold-preserving companion to vendorPolicyText above (Task 6, 2026-08-19):
+  // resolveReturnPolicy/ReturnPolicyContent only carry plain-text paragraphs
+  // (DEV-POLICY-01's shared string-only contract with /returns), so the
+  // vendor-specific tab below renders these spans directly instead, while
+  // still reusing resolveReturnPolicy just for the "{Vendor} Return Policy"
+  // heading text so heading wording can't drift from the shared module.
+  const vendorPolicyParagraphs = shopifyRichTextToParagraphSpans(product.shippingReturns)
+  const vendorPolicyHeading = resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections[0]?.heading ?? null
 
   return (
     <>
@@ -631,40 +645,38 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                   </table>
                 ) : (
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                    Packaging information not available for this product.
+                    Packaging information unavailable for this option.
                   </p>
                 )}
               </div>
             )}
 
-            {activeTab === 'VENDOR SHIPPING & RETURNS' && (() => {
+            {activeTab === 'VENDOR SHIPPING & RETURNS' && (
               // P0.5 (Bilal, 2026-08-18): this tab only renders when
               // vendorPolicyText exists (see the filtered tab list above),
               // so resolveReturnPolicy always takes its 'vendor' branch here
               // — the general fallback is never shown on this tab, only at
               // /returns (DEV-POLICY-01).
-              // Task 6 (2026-08-19): the heading still comes from
-              // resolveReturnPolicy's shared "{vendor} Return Policy"
-              // convention, but the body paragraphs render from
-              // vendorPolicySpans instead of resolveReturnPolicy's flattened
-              // sections, so bold marks in custom.shipping_returns survive
-              // as <strong> rather than being stripped to plain text by
-              // shopifyRichTextToPlainParagraphs. Bold/plain spans only —
-              // never arbitrary/raw HTML.
-              const heading = resolveReturnPolicy({ vendor: product.vendor, vendorPolicyText }).sections[0]?.heading
-              return (
-                <div className="flex flex-col gap-4 max-w-[760px]">
-                  {heading && (
-                    <h3 className="text-navy-900 text-[18px] font-semibold tracking-[0.36px] mt-2">{heading}</h3>
-                  )}
-                  {vendorPolicySpans.map((spans, i) => (
-                    <p key={i} className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
-                      {spans.map((s, j) => (s.bold ? <strong key={j}>{s.text}</strong> : <span key={j}>{s.text}</span>))}
-                    </p>
-                  ))}
-                </div>
-              )
-            })()}
+              // Task 6 (2026-08-19): rendered directly here (not via the
+              // shared ReturnPolicyContent, which only knows plain-text
+              // paragraphs) so bold marks from custom.shipping_returns
+              // survive as <strong> — this is the only rich-text-safe
+              // rendering path (bold/italic only, never arbitrary HTML).
+              <div className="flex flex-col gap-4 max-w-[760px]">
+                {vendorPolicyHeading && (
+                  <h3 className="text-navy-900 text-[18px] font-semibold tracking-[0.36px] mt-2">
+                    {vendorPolicyHeading}
+                  </h3>
+                )}
+                {vendorPolicyParagraphs.map((spans, i) => (
+                  <p key={i} className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">
+                    {spans.map((s: RichTextSpan, j) => (
+                      s.bold ? <strong key={j}>{s.text}</strong> : <span key={j}>{s.text}</span>
+                    ))}
+                  </p>
+                ))}
+              </div>
+            )}
 
             {activeTab === 'REVIEWS' && (
               <div className="flex flex-col gap-6 max-w-[760px]">
@@ -716,8 +728,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
+            {/* gap-[23px] is the same gutter "Frequently Bought With" and
+                "You May Also Like" use, so all three recommendation rows read
+                as one card system. It was gap-0, which butted every card's
+                neutral-50 panel against its neighbour: with no border or radius
+                on the card, adjacent panels merged into a single grey slab and
+                the row lost its card structure entirely.
+                py-1/-my-1 keeps the 2px focus-visible outline from being
+                clipped by the scroll container without adding visible space. */}
             <div
-              className="flex gap-0 overflow-x-auto scrollbar-hide items-stretch"
+              className="flex gap-3 sm:gap-[23px] overflow-x-auto scrollbar-hide items-stretch py-1 -my-1"
               tabIndex={0}
               role="region"
               aria-label="You May Also Need — scrollable product list"

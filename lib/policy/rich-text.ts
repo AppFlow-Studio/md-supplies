@@ -1,8 +1,8 @@
 type ShopifyRichTextNode = {
   type?: string
   value?: string
-  bold?: boolean
   children?: ShopifyRichTextNode[]
+  bold?: boolean
 }
 
 function extractText(node: ShopifyRichTextNode): string {
@@ -54,6 +54,29 @@ function extractSpans(node: ShopifyRichTextNode): RichTextSpan[] {
 }
 
 /**
+ * Real custom.shipping_returns QA data (confirmed live 2026-08-19 via
+ * scripts/verify-aerowalk-pinned-metafields.ts) stores what's visually two
+ * paragraphs — a bold "Shipping Policy:" section and a bold "Return
+ * Policy:" section — as literal blank lines inside ONE rich-text AST
+ * paragraph node, not as two separate paragraph nodes. resolveReturnPolicy's
+ * plain-text path already splits its flattened string on blank lines
+ * (`text.split(/\n\s*\n/)`) for exactly this reason. Mirror that here on the
+ * span level so bold spans still land in visually separate <p> blocks
+ * instead of collapsing into one run-together paragraph.
+ */
+function splitSpansOnBlankLines(spans: RichTextSpan[]): RichTextSpan[][] {
+  const groups: RichTextSpan[][] = [[]]
+  for (const span of spans) {
+    const pieces = span.text.split(/\n\s*\n/)
+    pieces.forEach((piece, i) => {
+      if (i > 0) groups.push([])
+      if (piece) groups[groups.length - 1].push({ text: piece, bold: span.bold })
+    })
+  }
+  return groups.filter((g) => g.some((s) => s.text.trim()))
+}
+
+/**
  * Same paragraph/list-item flattening as shopifyRichTextToPlainParagraphs,
  * but preserves bold marks as spans instead of discarding them — for the one
  * caller (Vendor Shipping & Returns) that needs safe bold rendering.
@@ -76,7 +99,7 @@ export function shopifyRichTextToParagraphSpans(raw: string | null | undefined):
       return
     }
     const spans = extractSpans(node)
-    if (spans.some((s) => s.text.trim())) paragraphs.push(spans)
+    paragraphs.push(...splitSpansOnBlankLines(spans))
   }
   root.children?.forEach(walk)
   return paragraphs

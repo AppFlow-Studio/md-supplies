@@ -10,6 +10,20 @@
 
 **Spec:** Bilal's 2026-08-18 7:20 PM Slack message (pasted into the session) — the "@Sardor — storefront, landing page, interactions and deployment" section, items 1-6 plus "Final joint acceptance." Izzy's 2026-08-18 9:40 PM message supplies the Trocar filter registry data referenced throughout (`C:\Users\sarik\Downloads\TROCAR-REGISTRY-41-PRODUCTS.csv`).
 
+**Addendum spec (2026-08-19):** Bilal's follow-up Slack message ("final direction... complete the remaining work today") adds Sardor-relevant clarifications on top of the above, folded in as Tasks 13-14 below and as notes on existing tasks:
+- Free Shipping is confirmed a strict merchant-metafield-AND-resolver-$0 gate, unchanged from Task 7's scope — verify on PDPs, category/search cards, Quick Add, You May Also Need, cart popup, cart page (no new task; Task 7 already covers all 7).
+- The Trocar filter groups (Task 1) are "accepted" — but two new requirements ride along: (a) keep the single-value Features filter on the B9802 Combo product as-is, it is client-requested and NOT a data defect to "fix" — a no-touch note, not a task; (b) four products carry multiple Trocar categories and pipe-separated values must render as separate filter values, not one combined label — this is new scope, see Task 14.
+- Nav: keep the parent label "Surgery & Procedure," but add a clear, visible child/quick link labeled "Trocar Supplies" going straight to the dedicated page — Task 3 previously verified the *destination* was already correct and closed as a no-op, but this explicit visible-label requirement is new scope Task 3 did not cover — see Task 13.
+- "RX Only capitalization" appears in Bilal's "please finish or confirm" list. Investigated 2026-08-19: `lib/labels/labels.ts:48-51` already fixed this sitewide to "Rx Only" under H-04 (launch plan 2026-08-13), and no live component renders the all-caps form (confirmed via full-codebase grep, doc/plan files excluded). This is a **confirm-only** item for Task 12's evidence doc, not a new dev task.
+
+**Addendum spec (2026-08-20):** Bilal's final-decisions Slack message ("Here are the final decisions and remaining launch requirements") reverses/extends five items from the above. Folded in as Tasks 15-19:
+- **Reverses** the 2026-08-19 RX Only ruling above: final capitalization is "RX Only", not "Rx Only" — see Task 19.
+- **Reverses** the 2026-08-12 `productSet: 'tag'` fix for `surgery-procedure` specifically (`lib/category-tree.ts:96`): the Trocar page must show Izzy's verified 41-product collection, not the 319-product tag set — see Task 18. The other three `productSet: 'tag'` entries (`apparel`, `room-furniture`, `face-masks`) are untouched; this reversal is Trocar-only.
+- New: fix the sitewide Trocar Supplies nav badge's WCAG AA contrast failure (`components/layout/Header.tsx`) — see Task 15.
+- New: extend the AeroWalk legacy-handle redirect to also work under `/category/<slug>/<handle>`, not just `/product/<handle>` — see Task 16.
+- Resolves Task 8's deferred copy question: the approved fallback string is "Packaging information unavailable for this option." — see Task 17.
+- Final joint acceptance: full automated gate must be green (no re-statement of a specific failure count to chase — Task 20 runs the real gate and reports actual numbers, since the prior evidence doc reporting 40 failures was rolled back before this addendum and cannot be trusted as ground truth).
+
 ## Global Constraints
 
 - **Do not write to Shopify.** No catalog, metafield, price, inventory, or product-status writes from this repo. Izzy's Admin-write tasks (LG-04 audit, Free Shipping metafield writes, bulk-op reconciliation) are explicitly out of scope for this plan — the Admin client in `lib/shopify/admin.ts` is comment-scoped to customer read/write only and has no product/metafield access.
@@ -739,3 +753,526 @@ Using `claude-in-chrome` or manual walkthrough against `next dev`/a fresh deploy
 - [ ] **Step 4: Present the evidence doc to the user for review before any push/PR/deploy action**
 
 No commit for this step beyond the doc itself — pushing and opening a PR remain gated on the user's explicit go-ahead per Global Constraints.
+
+---
+
+## Task 13: Visible "Trocar Supplies" nav quick-link under "Surgery & Procedure" (Bilal 2026-08-19 addendum)
+
+**Files:**
+- Modify: `components/layout/Header.tsx` (desktop mega-dropdown categories panel, ~lines 296-306; mobile categories panel, ~lines 510-519)
+- Test: `components/layout/__tests__/Header.test.tsx` (or wherever this component's existing test file lives — locate via Glob first)
+
+**Interfaces:**
+- Consumes: `buildCategoryTreeNav(collections)` (`lib/category-tree.ts:264-280`) — unchanged, still returns a flat `{ primary, more }` list of `{ displayName, href }`, no per-entry children
+- Consumes: `CATEGORY_TREE_L1` to resolve the Trocar entry's canonical slug (`getCategorySlug`), so the quick-link's href is derived the same way as every other nav href, never hardcoded
+
+Task 3 (complete, no-op) verified that "Surgery & Procedure" already resolves directly to `/category/trocars-trocar-kits` and that nav order needs no special-casing. Bilal's 2026-08-19 message is a stricter, distinct requirement on top of that: a second, explicitly labeled "Trocar Supplies" link must be visible next to/under "Surgery & Procedure" — not just relying on the parent label's destination. `buildCategoryTreeNav`'s flat `CategoryNavEntry[]` has no concept of a per-item child link, so this is rendered as a one-off in `Header.tsx`, not a `category-tree.ts` registry change (keep the registry generic, per this plan's established pattern of pinning one-off UI exceptions at the render site — see Task 3's Step 4 ruling).
+
+- [ ] **Step 1: Write the failing test**
+
+Locate `Header.tsx`'s existing test file (`Glob` for `**/Header.test.tsx` under `components/layout/__tests__/`). Read its existing render/fixture setup for `categoryNav`/`collections` props (it will need a `collections` fixture that includes `trocars-trocar-kits` so `buildCategoryTreeNav` includes the Surgery & Procedure entry). Add:
+
+```ts
+it('shows a visible "Trocar Supplies" quick link next to "Surgery & Procedure" in the desktop categories dropdown', async () => {
+  // render with the categories dropdown open (match this file's existing pattern for opening the mega-menu, e.g. hover/focus on the trigger)
+  const surgery = screen.getByRole('link', { name: 'Surgery & Procedure' })
+  const trocarLink = screen.getByRole('link', { name: 'Trocar Supplies' })
+  expect(trocarLink).toHaveAttribute('href', surgery.getAttribute('href'))
+})
+
+it('shows the "Trocar Supplies" quick link in the mobile categories panel too', async () => {
+  // match this file's existing pattern for opening the mobile drawer + categories panel
+  const trocarLinks = screen.getAllByRole('link', { name: 'Trocar Supplies' })
+  expect(trocarLinks.length).toBeGreaterThan(0)
+})
+```
+
+Adjust to the file's real fixture/open-menu idiom — do not invent a second render-setup pattern.
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run the Header test file. Expected: FAIL — no element with accessible name "Trocar Supplies" exists yet.
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `Header.tsx`, both the desktop mega-dropdown's primary-categories grid (~line 297) and the mobile categories panel (~line 510) map `categoryNav.primary` to a flat list of `<Link>`s. After the mapped list (or inline, immediately following the "Surgery & Procedure" entry — read the rendered order first, since `CATEGORY_TREE_L1`'s declared order puts it 10th), add one extra, clearly-styled link — visually distinguished (e.g. a small badge/pill or an indented "→ Trocar Supplies" sub-line), not just another same-weight grid tile, so it reads as a quick link rather than a duplicate category:
+
+```tsx
+{(() => {
+  const trocar = CATEGORY_TREE_L1.find((c) => c.tag === 'surgery-procedure')
+  if (!trocar || !validHandles.has(trocar.collectionHandle)) return null
+  return (
+    <Link
+      href={ROUTES.category(getCategorySlug(trocar))}
+      className="text-[13px] text-teal-500 font-semibold hover:text-ink-link transition-colors"
+    >
+      → Trocar Supplies
+    </Link>
+  )
+})()}
+```
+
+(Import `getCategorySlug` from `@/lib/category-tree` alongside the existing `buildCategoryTreeNav, CATEGORY_TREE_L1` import. Gate on `validHandles` the same way the rest of the nav fails closed when the live collection list is empty/stale — do not introduce an ungated link the rest of the nav doesn't have.) Place one instance in the desktop panel (near the primary-categories grid, visually set apart per the styling note above) and one in the mobile panel, both wrapped in `onClick={() => setMobileOpen(false)}` for the mobile instance to match sibling links' behavior.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run the Header test file. Expected: PASS.
+
+- [ ] **Step 5: Manual verification**
+
+Using `claude-in-chrome` (load via `ToolSearch`) or a manual walkthrough, open the desktop mega-menu and the mobile drawer, confirm "Trocar Supplies" is visible without scrolling past the fold in both, and that it navigates to `/category/trocars-trocar-kits`. Record the result in Task 12's evidence doc.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add components/layout/Header.tsx components/layout/__tests__/Header.test.tsx
+git commit -m "feat(nav): add visible Trocar Supplies quick link under Surgery & Procedure"
+```
+
+---
+
+## Task 14: Trocar multi-category products — split pipe-separated Category facet values (Bilal 2026-08-19 addendum)
+
+**Files:**
+- Investigate first (read-only, no guessing): write a small read-only check against the live Storefront API for the `trocars-trocar-kits` collection's `custom.customer_filter_category` facet — reuse the pattern of an existing `scripts/verify-*.ts`/`scripts/audit-*.ts` script (`Glob` for one that queries collection filters, e.g. `scripts/audit-industry-facet-coverage.ts`, and follow its auth/client setup) — to confirm whether any returned facet value's `label` actually contains a literal `|` (pipe) character today. **Do not implement a fix before this returns real evidence** — the current registry (Task 1) already renders `customerCategory` generically via `getAllowedFacets`, and if Search & Discovery / the metafield is genuinely `list.single_line_text_field`, Shopify already emits one facet value per list entry with no pipe in sight, and this task closes as a verified no-op (mirror Task 3's Step 1-vs-Step 2 investigation-gated shape).
+- If a real combined-label value is found: modify `lib/filter-registry.ts`'s `getAllowedFacets` (~line 386-415) to add a narrow, generically-named splitting step (not Trocar-specific — any facet value whose label contains ` | ` gets split into N display rows sharing the same `input`/`count`, since the Storefront filter's underlying equality match cannot be split functionally — see the plan's addendum note on this being a display-only fix, not a filtering-semantics fix)
+- Test: `lib/__tests__/filter-registry.test.ts`
+
+**Interfaces:**
+- Consumes: `CollectionFilterValue { id, label, count, input }` (`lib/shopify/types.ts:207-212`), unchanged shape
+- Produces: `getAllowedFacets` may emit more `CollectionFilterValue` entries per facet than the raw Storefront response for a facet with pipe-joined labels — count/input are duplicated across the split entries, not divided, since they describe the same underlying filter action
+
+- [ ] **Step 1: Confirm the real facet shape with a read-only query**
+
+Write/extend a read-only script (or reuse an existing verify script's collection-filter-fetching logic) to fetch `trocars-trocar-kits`'s filters and print every `custom.customer_filter_category` (or `filter.p.category`, whichever the live facet id actually is per Task 1's registry) value's raw `label`. Cross-reference against the "four products have multiple Trocar categories" claim. Record the exact live values (with or without pipes) in this task's notes before writing any code.
+
+- [ ] **Step 2: Write the failing test (only if Step 1 found a real combined-label value)**
+
+In `lib/__tests__/filter-registry.test.ts`, using the file's existing `facet(...)` fixture helper, add a facet value with a pipe-joined label (matching the exact separator format found in Step 1 — do not assume ` | ` without confirming) and assert `getAllowedFacets` returns it as two separate `CollectionFilterValue` entries, both carrying the original `input`/`count`, ordered per `orderFacetValues`'s natural-sort rule (Global Constraints: do not introduce a differently-ordered facet list).
+
+If Step 1 found no combined-label value (e.g. the metafield is already list-typed and Shopify already emits split values), skip to Step 5 and record this as a verified no-op in Task 12's evidence doc — do not write dead code for a case that doesn't occur in the live data.
+
+- [ ] **Step 3: Run test to verify it fails** (skip if Step 2 was skipped)
+
+Run: `npm test -- lib/__tests__/filter-registry.test.ts`. Expected: FAIL — no splitting logic exists yet.
+
+- [ ] **Step 4: Write minimal implementation** (skip if Step 2 was skipped)
+
+Add the splitting step inside `getAllowedFacets`, after `orderFacetValues` is applied to a facet's values (so split entries still inherit correct sort position) — or before, whichever keeps the natural-sort contract intact for the split labels too (decide based on Step 1's real label text, then verify natural-sort order still holds for the split output in the test).
+
+- [ ] **Step 5: Run test, verify pass (or confirm no-op), commit**
+
+```bash
+git add lib/filter-registry.ts lib/__tests__/filter-registry.test.ts
+git commit -m "fix(filters): split pipe-separated Trocar Category facet values into separate filter rows"
+```
+(Omit if Step 1/2 found a verified no-op — note the finding in Task 12's evidence doc instead, no commit.)
+
+---
+
+## Task 15: Fix the sitewide Trocar Supplies nav badge's WCAG AA contrast failure
+
+**Files:**
+- Modify: `components/layout/Header.tsx:318` (desktop mega-dropdown pill), `components/layout/Header.tsx:547` (mobile drawer pill)
+- Modify: `e2e/contrast.spec.ts` (add an interactive test — the existing route-scan tests never open this element, see below)
+
+**Interfaces:**
+- Consumes: `--color-teal-500` (`app/globals.css:9`, `#006d92`, already documented "5.8:1 on white, 4.8:1 on the light-blue chips") — the codebase's own established accessible-chip color, reused as-is, no new token
+
+The Task 13 "Trocar Supplies" quick-link pill (added 2026-08-19) uses `text-teal-600 bg-teal-50` — both unstyled, stock Tailwind v4 defaults (`app/globals.css` only overrides `--color-teal-500` and `--color-teal-300`, not `600`/`50`). Stock `teal-600` (#0d9488) on stock `teal-50` (#f0fdfa) measures **3.59:1**, below the 4.5:1 AA floor for this 12-13px text. It renders in the `<Header>` component, which mounts on every route — "sitewide" per Bilal's message. `e2e/contrast.spec.ts` never catches this today because the pill's wrapper is `className={isOpen ? 'block' : 'hidden'}` (`Header.tsx:409`/`495`-equivalent for the categories panel) — `hidden` is `display:none`, and `measure()` only visits elements the browser actually renders, so the existing 9-route scan sails past a badge that's always closed at page load.
+
+- [ ] **Step 1: Write the failing test**
+
+Add to `e2e/contrast.spec.ts`, after the last `test(...)` block (after the `semantic ink tokens` test, before EOF):
+
+```ts
+test('Trocar Supplies quick-link badge meets WCAG AA contrast (desktop + mobile)', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await page.waitForLoadState('networkidle').catch(() => {})
+
+  // Desktop: hover-reveal the categories mega-dropdown.
+  await page.getByRole('link', { name: 'Categories', exact: false }).first().hover().catch(async () => {
+    await page.locator('button, a').filter({ hasText: /^Categories$/ }).first().hover()
+  })
+  await page.getByRole('link', { name: 'Trocar Supplies' }).first().waitFor({ state: 'visible' })
+  const desktopViolations = await measure(page)
+  const desktopBadge = desktopViolations.filter((v) => v.includes('Trocar Supplies'))
+  expect(desktopBadge, 'desktop Trocar Supplies badge: contrast below WCAG AA').toEqual([])
+
+  // Mobile: open the hamburger drawer.
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /menu/i }).click()
+  await page.getByRole('link', { name: 'Trocar Supplies' }).first().waitFor({ state: 'visible' })
+  const mobileViolations = await measure(page)
+  const mobileBadge = mobileViolations.filter((v) => v.includes('Trocar Supplies'))
+  expect(mobileBadge, 'mobile Trocar Supplies badge: contrast below WCAG AA').toEqual([])
+})
+```
+
+(Read `Header.tsx`'s actual accessible names/roles for the desktop categories trigger and the mobile menu button first — match the real markup rather than guessing; adjust the locators above if the trigger isn't literally named "Categories" or the menu button isn't literally named "menu".)
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npm run test:e2e -- e2e/contrast.spec.ts -g "Trocar Supplies"`
+Expected: FAIL — both assertions report a `~3.59:1` violation string containing "Trocar Supplies".
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `components/layout/Header.tsx`, both occurrences (desktop ~line 318, mobile ~line 547):
+
+```diff
+-                            className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full hover:bg-teal-100 transition-colors"
++                            className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-teal-500 bg-teal-50 px-2.5 py-1 rounded-full hover:bg-teal-100 transition-colors"
+```
+
+```diff
+-                        className="inline-flex w-fit items-center gap-1 mt-1 mb-1 text-xs font-semibold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full"
++                        className="inline-flex w-fit items-center gap-1 mt-1 mb-1 text-xs font-semibold text-teal-500 bg-teal-50 px-2.5 py-1 rounded-full"
+```
+
+`text-teal-500` resolves to this codebase's `--color-teal-500` (#006d92, ~5.6:1 on `teal-50`'s #f0fdfa) — passes AA with margin, keeps the pill's visual identity (still a teal chip), and reuses a color already audited elsewhere in the app rather than inventing a new one.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npm run test:e2e -- e2e/contrast.spec.ts -g "Trocar Supplies"`
+Expected: PASS. Then run the full file (`npm run test:e2e -- e2e/contrast.spec.ts`) to confirm no other route regressed.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add components/layout/Header.tsx e2e/contrast.spec.ts
+git commit -m "fix(a11y): correct sitewide Trocar Supplies badge WCAG AA contrast failure"
+```
+
+---
+
+## Task 16: Extend the AeroWalk legacy-handle redirect to the `/category/<slug>/` route, via one reusable rule
+
+**Files:**
+- Modify: `proxy.ts` (remove the single hand-written AeroWalk entry at line 141; add a reusable legacy-handle redirect map + check)
+- Test: `__tests__/proxy.test.ts`
+
+**Interfaces:**
+- Produces: `LEGACY_PRODUCT_HANDLES: Map<string, string>` and `redirectLegacyProductHandle(pathname, request): Response | null` in `proxy.ts` — matches any legacy handle whether reached at `/product/<handle>` or `/category/<any-slug>/<handle>`
+
+Today, only `/product/aerowalk-ultra-lite-rollator-rolling-walker-blue` redirects (a flat `REDIRECT_ENTRIES` exact-match entry). This app also serves products nested under a category at `/category/<slug>/<handle>` (`app/category/[slug]/[product]/page.tsx`) — a legacy color-suffixed handle hit at that nested path today 404s inside the category shell, since nothing in `proxy.ts` matches the `/category/<slug>/<handle>` shape for these handles. White and Grey have never had a `/product/` or `/category/` entry at all (only old-CMS plural `/products/aerowalk-...-white`/`-grey` rows in the bulk `docs/redirects-ready.json` map, unaffected by this task). Bilal wants one reusable rule, not three hand-copied redirect blocks, covering all three colors under both route shapes.
+
+- [ ] **Step 1: Write the failing test**
+
+Read `__tests__/proxy.test.ts`'s existing `describe('proxy — AeroWalk color-neutral handle migration (P0.7)', ...)` block (~line 227) to match its `req(pathname)` helper usage, then add inside it:
+
+```ts
+it('redirects the legacy Blue handle under a nested /category/<slug>/ route too, not just /product/', () => {
+  const res = proxy(req('/category/mobility/aerowalk-ultra-lite-rollator-rolling-walker-blue'))
+  expect(res?.status).toBe(301)
+  expect(res?.headers.get('Location')).toBe(
+    'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
+  )
+})
+
+it('redirects the legacy White and Grey handles under both /product/ and /category/<slug>/', () => {
+  for (const color of ['white', 'grey']) {
+    const underProduct = proxy(req(`/product/aerowalk-ultra-lite-rollator-rolling-walker-${color}`))
+    const underCategory = proxy(req(`/category/mobility/aerowalk-ultra-lite-rollator-rolling-walker-${color}`))
+    for (const res of [underProduct, underCategory]) {
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe(
+        'https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker',
+      )
+    }
+  }
+})
+
+it('does not redirect an unrelated /category/<slug>/<handle> pair (no false-positive match)', () => {
+  const res = proxy(req('/category/mobility/some-real-product-handle'))
+  expect(res?.status).toBe(200)
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npm test -- __tests__/proxy.test.ts`
+Expected: FAIL — the nested `/category/mobility/...` cases fall through to pass-through (200), and the `/product/...-white`/`-grey` cases also 200 today (no entry exists for them under the live singular route).
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `proxy.ts`, remove the single hand-written entry from `REDIRECT_ENTRIES` (delete line 141, the `'/product/aerowalk-ultra-lite-rollator-rolling-walker-blue'` row and its preceding P0.7 comment block, lines 133-141) and add, after the `PRODUCT_REDIRECTS` map definition (after line 27, before the "Category-level 410s" section):
+
+```ts
+// ─── Legacy AeroWalk color-handle migration (P0.7, extended 2026-08-20) ──────
+//
+// Izzy migrated all three AeroWalk colors onto one color-neutral handle in
+// QA; each old color-suffixed handle must 301 to it wherever it's hit — the
+// canonical /product/<handle> route, AND the nested /category/<slug>/<handle>
+// route this app also serves (app/category/[slug]/[product]/page.tsx). A
+// single reusable map + matcher instead of one hand-copied entry per route
+// shape, so a future migration only adds one map row, not two redirect blocks.
+const LEGACY_PRODUCT_HANDLES = new Map<string, string>([
+  ['aerowalk-ultra-lite-rollator-rolling-walker-blue', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+  ['aerowalk-ultra-lite-rollator-rolling-walker-white', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+  ['aerowalk-ultra-lite-rollator-rolling-walker-grey', 'aerowalk-ultra-lite-rollator-rolling-walker'],
+])
+
+function redirectLegacyProductHandle(pathname: string, request: NextRequest, nonce: string): Response | null {
+  const match = pathname.match(/^\/(?:product|category\/[^/]+)\/([^/]+)$/)
+  if (!match) return null
+  const canonical = LEGACY_PRODUCT_HANDLES.get(match[1])
+  if (!canonical) return null
+  return withCsp(NextResponse.redirect(new URL(`/product/${canonical}`, request.url), 301), nonce)
+}
+```
+
+Then call it early in `proxy()`, right after the `isGoneCategory` check (after line 193, before the Face Masks alias block):
+
+```ts
+  const legacyHandleRedirect = redirectLegacyProductHandle(pathname, request, nonce)
+  if (legacyHandleRedirect) return legacyHandleRedirect
+```
+
+(`withCsp` and `nonce` are already in scope at that point in `proxy()`; the helper takes `nonce` as a parameter since it's defined outside `proxy()`.)
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npm test -- __tests__/proxy.test.ts`
+Expected: PASS, including the two pre-existing Blue/`/product/` tests (now served by the new function instead of the deleted `REDIRECT_ENTRIES` row — same observable behavior).
+
+- [ ] **Step 5: Re-run the redirect audit**
+
+Run: `NODE_OPTIONS=--conditions=react-server npx tsx scripts/audit-redirects.ts` (Task 11's script). Confirm the AeroWalk rows still resolve 200 at their destination and no new broken entry appears. Append a one-line note to `docs/launch/2026-08-18-redirect-audit-report.md` recording the re-run date and result (do not rewrite the whole report — this is a targeted re-verification, not a new full audit).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add proxy.ts __tests__/proxy.test.ts docs/launch/2026-08-18-redirect-audit-report.md
+git commit -m "feat(redirects): extend AeroWalk legacy-handle redirect to /category/<slug>/ via one reusable rule"
+```
+
+---
+
+## Task 17: Finalize the packaging-unavailable fallback copy to Bilal's approved string
+
+**Files:**
+- Modify: `components/product/ProductView.tsx:636`
+- Modify: `components/product/__tests__/ProductView.test.tsx:268` (and the surrounding comment at lines 233-234 that already anticipated this exact change)
+
+**Interfaces:**
+- Produces: no new interface — literal JSX text only
+
+Task 8 (2026-08-19) found and deliberately did not resolve a copy mismatch: the code renders "Packaging information not available for this product." while Bilal's message asked for "Packaging information unavailable for this option." — flagged as an open question rather than guessed. Bilal's 2026-08-20 message resolves it explicitly: "Packaging information unavailable for this option." is final.
+
+- [ ] **Step 1: Update the failing/anticipating test**
+
+`components/product/__tests__/ProductView.test.tsx:233-234` already carries a comment anticipating this string; line 268 asserts the old copy. Change:
+
+```diff
+-    expect(screen.getByText('Packaging information not available for this product.')).toBeInTheDocument()
++    expect(screen.getByText('Packaging information unavailable for this option.')).toBeInTheDocument()
+```
+
+Also update the now-stale anticipatory comment at lines 233-234 (delete it or reduce it to a one-line note that the copy question is resolved — do not leave a comment describing a discrepancy that no longer exists).
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npm test -- components/product/__tests__/ProductView.test.tsx`
+Expected: FAIL — the rendered text still reads the old copy.
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `components/product/ProductView.tsx:636`:
+
+```diff
+-                    Packaging information not available for this product.
++                    Packaging information unavailable for this option.
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npm test -- components/product/__tests__/ProductView.test.tsx`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add components/product/ProductView.tsx components/product/__tests__/ProductView.test.tsx
+git commit -m "fix(pdp): finalize packaging-unavailable fallback copy to Bilal's approved string"
+```
+
+---
+
+## Task 18: Switch the Trocar page from the 319-product tag set to Izzy's verified 41-product collection
+
+**Files:**
+- Modify: `lib/category-tree.ts:96` (remove `productSet: 'tag'` from the `surgery-procedure` entry only)
+- Test: `lib/__tests__/category-tree.test.ts`
+
+**Interfaces:**
+- Consumes/affects: `components/category/CategoryPageView.tsx:141,270-280` (`isProxyCollection = l1?.productSet === 'tag'`) — no code change needed there, it already branches correctly on whatever the registry says; flipping the registry value is the entire fix
+
+This is a direct reversal of the 2026-08-12 CRO/SEO fix that added `productSet: 'tag'` to `surgery-procedure` (`lib/category-tree.ts:70-79` documents the measured 319-tag-vs-41-collection gap that motivated it). Bilal's 2026-08-20 message explicitly wants the opposite for this one category: the Trocar page must show only Izzy's verified 41 active products (the `trocars-trocar-kits` collection), never the broader 319-product `category:surgery-procedure` tag set, which mixes in unrelated/archived Surgery products. The other three `productSet: 'tag'` entries (`apparel`, `room-furniture`, `face-masks`) are untouched — this is Trocar-only, per Bilal's message (he did not mention the other three).
+
+- [ ] **Step 1: Write the failing test**
+
+Read `lib/__tests__/category-tree.test.ts` first to match its existing assertion style (it already has a `shortDescription` table test at ~line 58). Add:
+
+```ts
+it('surgery-procedure (Trocar) is collection-sourced, not tag-sourced — shows Izzy\'s verified 41 active products, not the 319-product tag set', () => {
+  const trocar = CATEGORY_TREE_L1.find((c) => c.tag === 'surgery-procedure')
+  expect(trocar?.productSet).not.toBe('tag')
+})
+
+it('the other three productSet:"tag" categories are unchanged by the Trocar reversal', () => {
+  const stillTagSourced = CATEGORY_TREE_L1.filter((c) => c.productSet === 'tag').map((c) => c.tag)
+  expect(stillTagSourced.sort()).toEqual(['apparel', 'face-masks', 'room-furniture'])
+})
+```
+
+(Import `CATEGORY_TREE_L1` the same way the rest of the file already does — check the existing import line rather than adding a second one.)
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npm test -- lib/__tests__/category-tree.test.ts`
+Expected: FAIL — `trocar?.productSet` is currently `'tag'`, and the second test currently sees 4 tag-sourced categories, not 3.
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `lib/category-tree.ts:96`:
+
+```diff
+-  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', productSet: 'tag', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
++  // Bilal, 2026-08-20: reversed the 2026-08-12 tag-sourced fix for THIS
++  // category only — the Trocar page must show Izzy's verified 41 active
++  // products (the trocars-trocar-kits collection), not the 319-product
++  // category:surgery-procedure tag set, which mixes in unrelated/archived
++  // Surgery products. apparel/room-furniture/face-masks below are untouched.
++  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'trocars-trocar-kits', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
+```
+
+(Omitting `productSet` defaults it to `'collection'` per the type's own doc comment at `lib/category-tree.ts:62` — do not write `productSet: 'collection'` explicitly if every other collection-sourced entry in the array omits it; match the file's existing convention.)
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npm test -- lib/__tests__/category-tree.test.ts`
+Expected: PASS. Then run `npm test` in full — `CategoryPageView.tsx`'s `isProxyCollection` branch now evaluates `false` for this category, which changes its SEO title/description source (it will now use the `trocars-trocar-kits` collection's own `seo.title`/`seo.description`/`description` instead of the registry's generic Surgery & Procedure copy — this is expected and correct, since the collection's copy describes exactly the 41-product set now being shown). Confirm no existing test hard-coded the old tag-sourced SEO behavior for this specific category; if one does, update its fixture/expectation to match — this is the intended behavior change, not a regression to work around.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/category-tree.ts lib/__tests__/category-tree.test.ts
+git commit -m "fix(catalog): Trocar page shows Izzy's verified 41-product collection, not the 319-product tag set"
+```
+
+---
+
+## Task 19: Reverse RX Only capitalization sitewide to "RX Only"
+
+**Files:**
+- Modify: `lib/labels/labels.ts:48-51` (the single source of truth)
+- Modify: `components/product/ProductBadges.tsx:27` (a hardcoded duplicate that does not read the constant)
+- Modify: `lib/labels/__tests__/labels.test.ts`, `lib/labels/__tests__/shopify-labels.test.ts`, `lib/__tests__/rx-compliance-regression.test.ts`, `components/product/__tests__/ProductLabelBadges.test.tsx`, `components/product/__tests__/QuickAddContent.test.tsx`, `components/store/__tests__/CartPopup.test.tsx`, `components/store/__tests__/CartPageClient.test.tsx`, `components/b2b/__tests__/FeaturedProductCard.test.tsx` — any test asserting the literal string `'Rx Only'`
+- Modify: `e2e/rx-states.spec.ts:21`
+
+**Interfaces:**
+- Produces: `RX_ONLY_LABEL_TEXT = 'RX Only'` (unchanged export name/type — `string`) — every consumer (`ShopifyProductCard.tsx`, `QuickAddContent.tsx`, `ProductLabelBadges.tsx`, cart components) already reads this constant via `resolveProductLabels`/`resolveRxLabel`, so changing its value is the whole fix for those surfaces
+
+This is a direct reversal of the 2026-08-13 H-04 decision (`lib/labels/labels.ts:48-51`'s comment cites it) that made "Rx Only" the approved capitalization. Bilal's 2026-08-20 message is explicit: "RX Only", not "Rx Only." One hardcoded duplicate exists outside the centralized constant: `components/product/ProductBadges.tsx:27` renders the literal JSX text `Rx Only` directly rather than importing `RX_ONLY_LABEL_TEXT` — it must be fixed by hand since changing the constant alone won't reach it. (`RX_ONLY_ACCESSIBLE_TEXT = 'Prescription required'`, the screen-reader text, is unrelated to this capitalization question and stays unchanged.)
+
+- [ ] **Step 1: Write the failing tests**
+
+In `lib/labels/__tests__/labels.test.ts`, add (or extend an existing `resolveRxLabel` test) an assertion on the literal text:
+
+```ts
+it('renders the exact approved capitalization "RX Only"', () => {
+  expect(resolveRxLabel(['rx-required'])?.text).toBe('RX Only')
+})
+```
+
+Then grep every test file listed above for the literal string `'Rx Only'` (`grep -rn "Rx Only" lib components e2e`) and change each occurrence to `'RX Only'` — these are pre-existing tests asserting the old copy; treat each as a test that must now fail for the right reason before the implementation step, not as new tests to invent.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `npm test -- lib/labels components/product/__tests__/ProductLabelBadges.test.tsx components/product/__tests__/QuickAddContent.test.tsx components/store/__tests__/CartPopup.test.tsx components/store/__tests__/CartPageClient.test.tsx components/b2b/__tests__/FeaturedProductCard.test.tsx lib/__tests__/rx-compliance-regression.test.ts`
+Expected: FAIL everywhere the test now expects `'RX Only'` but the implementation still produces `'Rx Only'`.
+
+- [ ] **Step 3: Write minimal implementation**
+
+In `lib/labels/labels.ts:48-51`:
+
+```diff
+-// H-04: exact customer-facing capitalization is "Rx Only" (not "RX Only") —
+-// launch plan 2026-08-13, applies to cards, PDP, Quick Add, cart, and
+-// accessibility copy.
+-export const RX_ONLY_LABEL_TEXT = 'Rx Only'
++// Bilal, 2026-08-20 final decision: exact customer-facing capitalization is
++// "RX Only" (not "Rx Only") — reverses H-04 (launch plan 2026-08-13).
++// Applies to cards, PDP, Quick Add, and cart; the screen-reader text below
++// is unrelated to this capitalization question and is unchanged.
++export const RX_ONLY_LABEL_TEXT = 'RX Only'
+```
+
+In `components/product/ProductBadges.tsx`, import and use the constant instead of the hardcoded literal:
+
+```diff
++import { RX_ONLY_LABEL_TEXT } from '@/lib/labels/labels'
++
+ interface Props {
+```
+
+```diff
+         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-amber-700 text-white">
+-          Rx Only
++          {RX_ONLY_LABEL_TEXT}
+         </span>
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `npm test` (full suite — this touches a shared constant many files import, run everything rather than the narrow file list from Step 2). Expected: PASS. Then `npm run test:e2e -- e2e/rx-states.spec.ts`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/labels/labels.ts components/product/ProductBadges.tsx lib/labels/__tests__ components/product/__tests__ components/store/__tests__ components/b2b/__tests__ lib/__tests__/rx-compliance-regression.test.ts e2e/rx-states.spec.ts
+git commit -m "fix(labels): reverse RX Only capitalization sitewide to \"RX Only\" per Bilal's 2026-08-20 final decision"
+```
+
+---
+
+## Task 20: Final automated gate — full suite, diff review, valid baseline updates, evidence doc
+
+**Files:**
+- Output: `docs/launch/2026-08-20-final-qa-evidence.md`
+
+This supersedes the rolled-back `docs/launch/2026-08-18-final-qa-evidence.md` (deleted in commit `1365488`, whose 40-failure Playwright result is exactly what Bilal's message says the final gate "should not contain"). Tasks 15-19 above are the code-level fixes; this task is the read-only verification and reporting pass, mirroring Task 12's structure but scoped to Bilal's 2026-08-20 message plus a fresh run of everything Tasks 1-19 touched.
+
+- [ ] **Step 1: Run the full automated gate**
+
+```bash
+npm test
+npx tsc --noEmit
+npx eslint .
+npm run test:e2e
+```
+
+Record exact pass/fail counts for each. Do not round or summarize away a failure.
+
+- [ ] **Step 2: Review Playwright visual diffs; update only valid baselines**
+
+For every visual-regression test that fails, open its diff image/report (`npx playwright show-report` after the run, or the `test-results/` diff artifacts). For each failure, classify it as either (a) a real regression — a bug, do not update its baseline, fix the underlying issue and re-run instead, or (b) an intentional, reviewed UI change from Tasks 15-19 (e.g., the Trocar badge color change from Task 15, or a layout shift from Task 18's SEO-copy swap if it's visually rendered) — only these get `npx playwright test --update-snapshots` applied, one file/test at a time, never a blanket update across the whole suite. Record which snapshots were updated and why, one line each, in the evidence doc.
+
+- [ ] **Step 3: Document intentional skips separately**
+
+Any `test.skip(...)` currently in the e2e suite (e.g. the fixture-gated skips already in `e2e/contrast.spec.ts`'s route loop) must be listed by name and reason in its own section of the evidence doc — never folded into the pass count, per Bilal's instruction to document skips separately from the pass/fail gate.
+
+- [ ] **Step 4: Write the evidence doc**
+
+`docs/launch/2026-08-20-final-qa-evidence.md` — structure:
+- Exact pass/fail/skip counts for `npm test`, `tsc --noEmit`, `eslint`, `npm run test:e2e`, quoting the real command output, not a paraphrase.
+- One row per Task 15-19 item: what changed, commit SHA, verification status.
+- Snapshot-baseline updates from Step 2, one line each with justification.
+- Skips from Step 3, one line each with reason.
+- A **"Blocked — needs Bilal/Izzy, not a dev gap"** section listing every item from Bilal's 2026-08-20 message that requires live QA-store credentials, a deployed preview URL, or human coordination this repo-only session cannot perform: guest checkout through the payment step, the QA password itself, live cross-checks against `PRODUCTION-TO-QA-ID-MAP.csv`/`TROCAR-REGISTRY-41-PRODUCTS.csv`, the 118218/118220 unresolved-SKU display verification (needs Izzy's confirmation of which state QA is actually in right now), and any production-environment read-only check that needs a live production URL this branch is not deployed to. Do not attempt to guess or fake results for these — list them as open, with exactly what's needed to close each one.
+
+- [ ] **Step 5: Present the evidence doc to the user for review before any push/PR/deploy action**
+
+No commit beyond the doc itself unless the user asks for one — pushing, opening a PR, and deploying remain gated on the user's explicit go-ahead per Global Constraints (unchanged from the original plan).

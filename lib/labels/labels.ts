@@ -45,10 +45,11 @@ const RX_LABEL_TAGS = ['rx-required', 'compliance:rx-only']
 // surface (e.g. quick add) that only has the boolean `isRx` flag rather than
 // the raw tags/metafield this function reads, so the wording can never drift
 // between surfaces (DEV-LAUNCH-08).
-// H-04: exact customer-facing capitalization is "Rx Only" (not "RX Only") —
-// launch plan 2026-08-13, applies to cards, PDP, Quick Add, cart, and
-// accessibility copy.
-export const RX_ONLY_LABEL_TEXT = 'Rx Only'
+// Bilal, 2026-08-20 final decision: exact customer-facing capitalization is
+// "RX Only" (not "Rx Only") — reverses H-04 (launch plan 2026-08-13).
+// Applies to cards, PDP, Quick Add, and cart; the screen-reader text below
+// is unrelated to this capitalization question and is unchanged.
+export const RX_ONLY_LABEL_TEXT = 'RX Only'
 export const RX_ONLY_ACCESSIBLE_TEXT = 'Prescription required'
 
 /**

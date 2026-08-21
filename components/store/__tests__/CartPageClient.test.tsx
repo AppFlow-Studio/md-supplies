@@ -168,6 +168,44 @@ describe('CartPageClient', () => {
     expect(screen.queryByText('Default Title')).toBeNull()
   })
 
+  // DEV-LAUNCH-13: the /cart page must show the selected variant's own
+  // image, not the product's first image — a Blue AeroWalk line showed
+  // whichever color happened to be the product's first image regardless of
+  // which color was actually added.
+  it("shows the selected variant's own image, not the product's first image", () => {
+    const lineWithVariantImage = {
+      ...mockLine,
+      merchandise: {
+        ...mockLine.merchandise,
+        title: 'Blue',
+        image: {
+          id: 'img-variant',
+          url: 'https://example.com/blue.jpg',
+          altText: 'Blue variant',
+          width: 100,
+          height: 100,
+        },
+        product: {
+          ...mockLine.merchandise.product,
+          images: {
+            nodes: [{
+              id: 'img-product',
+              url: 'https://example.com/grey.jpg',
+              altText: 'Grey (product default)',
+              width: 100,
+              height: 100,
+            }],
+          },
+        },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [lineWithVariantImage] } } })
+    render(<CartPageClient />)
+    const img = screen.getByAltText('Blue variant')
+    expect(img).toHaveAttribute('src', expect.stringContaining('blue.jpg'))
+    expect(screen.queryByAltText('Grey (product default)')).not.toBeInTheDocument()
+  })
+
   it('calls removeItem when remove button is clicked', () => {
     const removeItem = vi.fn()
     setupUseCart({ removeItem })
@@ -268,7 +306,7 @@ describe('CartPageClient', () => {
 
   // DEV-LAUNCH-08: RX state must be visible on the cart page, not just
   // inferred from the blocking panel — same union the checkout gate uses.
-  it('shows an Rx Only badge on a line whose product carries the RX tag', () => {
+  it('shows an RX Only badge on a line whose product carries the RX tag', () => {
     vi.mocked(getRxGateStatus).mockResolvedValue({
       cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
     })
@@ -281,10 +319,10 @@ describe('CartPageClient', () => {
     }
     setupUseCart({ cart: { ...mockCart, lines: { nodes: [rxLine] } } })
     render(<CartPageClient />)
-    expect(screen.getByText('Rx Only')).toBeInTheDocument()
+    expect(screen.getByText('RX Only')).toBeInTheDocument()
   })
 
-  it('shows an Rx Only badge for a metafield-only RX product (no tag)', () => {
+  it('shows an RX Only badge for a metafield-only RX product (no tag)', () => {
     vi.mocked(getRxGateStatus).mockResolvedValue({
       cartHasRx: true, signedIn: false, hasDocument: false, verified: false, blocked: true,
     })
@@ -297,13 +335,13 @@ describe('CartPageClient', () => {
     }
     setupUseCart({ cart: { ...mockCart, lines: { nodes: [rxLine] } } })
     render(<CartPageClient />)
-    expect(screen.getByText('Rx Only')).toBeInTheDocument()
+    expect(screen.getByText('RX Only')).toBeInTheDocument()
   })
 
   it('shows no RX badge for a non-RX line', () => {
     setupUseCart()
     render(<CartPageClient />)
-    expect(screen.queryByText('Rx Only')).not.toBeInTheDocument()
+    expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
   })
 
   // DEV-LABEL-01: the /cart page reads custom.backorder off the line's
