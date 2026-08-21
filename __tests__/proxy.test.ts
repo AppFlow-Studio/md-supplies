@@ -437,6 +437,34 @@ describe('proxy — legacy Shopify /collections/<handle> → /category/<slug> (2
     expectPassThrough(proxy(req('/collections/25g-hypodermic-needles')))
   })
 
+  it('redirects the real Shopify product-within-collection URL shape straight to the canonical /product/<handle>, not a broken 3-segment /category/ path', () => {
+    const res = proxy(req('/collections/mobility/products/some-surviving-handle-not-in-any-map'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/product/some-surviving-handle-not-in-any-map')
+  })
+
+  it('resolves a consolidated/renamed product handle nested under a collection through PRODUCT_REDIRECTS, same as the root /products/<handle> rule', () => {
+    const res = proxy(req('/collections/gloves/products/8-mil-nitrile-industrial-gloves-diamond-textured-green-xl-8104'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe(
+      'https://mdsupplies.com/product/8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101',
+    )
+  })
+
+  it('resolves a legacy AeroWalk color handle nested under a collection through LEGACY_PRODUCT_HANDLES', () => {
+    const res = proxy(req('/collections/mobility/products/aerowalk-ultra-lite-rollator-rolling-walker-blue'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker')
+  })
+
+  it('preserves query params on a nested product-within-collection redirect', () => {
+    const res = proxy(req('/collections/gloves/products/some-handle', '?variant=123'))
+    expect(res?.status).toBe(301)
+    const location = new URL(res!.headers.get('Location')!)
+    expect(location.pathname).toBe('/product/some-handle')
+    expect(location.searchParams.get('variant')).toBe('123')
+  })
+
   it('every L1 tag AND collection handle redirects to that L1s canonical slug', () => {
     for (const l1 of CATEGORY_TREE_L1) {
       for (const key of [l1.tag, l1.collectionHandle]) {

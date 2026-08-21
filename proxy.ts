@@ -67,6 +67,29 @@ function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, non
   if (!match) return null
   const [, handle, rest] = match
 
+  // Shopify's real product-within-collection URL shape
+  // (/collections/<collection>/products/<handle>) carries an explicit
+  // "products" segment before the handle, under ANY collection handle
+  // (known L1 or not) — this app has no /category/<slug>/products/<handle>
+  // route, so there is no "preserve the collection" destination to send it
+  // to. Resolve the handle through the exact same chain the root
+  // /products/<handle> rules already use (PRODUCT_REDIRECTS, then
+  // LEGACY_PRODUCT_HANDLES, then the bare handle) and land on the canonical
+  // /product/<handle> route directly — checked before the occ/registry
+  // lookups below since it doesn't depend on either. (Gap found in the
+  // 2026-08-21 final review of the /collections/ generalization — inherited
+  // unchanged from the old trocars-only rule, not introduced by that change.)
+  const productMatch = rest?.match(/^\/products\/([^/]+)$/)
+  if (productMatch) {
+    const productHandle = productMatch[1]
+    const consolidated = PRODUCT_REDIRECTS.get(`/products/${productHandle}`)
+    const renamed = LEGACY_PRODUCT_HANDLES.get(productHandle)
+    const targetPath = consolidated ?? (renamed ? `/product/${renamed}` : `/product/${productHandle}`)
+    const url = new URL(targetPath, request.url)
+    url.search = request.nextUrl.search
+    return withCsp(NextResponse.redirect(url, 301), nonce)
+  }
+
   // OCC is browsed like a category but has one canonical route outside
   // /category/*, same decision the existing /category/occ rule below encodes.
   if (handle === 'occ') {
