@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="MDSupplies">
+  <!-- MDSupplies brand mark, simplified for favicon sizes: the wordmark is
+       dropped (illegible under ~64px) and the cross's two-tone fold is reduced
+       to a single vertical gradient, so the silhouette still reads at 16px.
+       Colours sampled from public/images/logo.png — badge #23347c, cross
+       #03b5d3 → #0c91bc. -->
+  <defs>
+    <linearGradient id="cross" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#03b5d3"/>
+      <stop offset="1" stop-color="#0c91bc"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="#23347c"/>
+  <path
+    fill="url(#cross)"
+    d="M39.5 17h21v22h22v21h-22v22h-21V60h-22V39h22z"
+  />
+</svg>
