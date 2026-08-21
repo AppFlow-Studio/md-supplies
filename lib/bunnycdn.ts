@@ -36,6 +36,14 @@ function findRoadmapCategory(handle: string) {
 }
 
 function resolveEntry(handle: string): CategoryImageEntry {
+  // An exact per-handle entry wins over the roadmap lookup. Without this a
+  // handle can only inherit its roadmap category's artwork AND its alt text,
+  // so /category/trocars-trocar-kits (which shares the Surgery & Procedure
+  // image file on purpose) could not carry its own truthful alt text —
+  // findRoadmapCategory matches it to Surgery & Procedure by design.
+  const direct = CATEGORY_IMAGE_CONFIG[handle]
+  if (direct) return direct
+
   const category = findRoadmapCategory(handle)
   if (!category) return CATEGORY_IMAGE_FALLBACK
   return CATEGORY_IMAGE_CONFIG[category.placeholderSlug] ?? CATEGORY_IMAGE_FALLBACK

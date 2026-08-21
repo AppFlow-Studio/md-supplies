@@ -74,6 +74,43 @@ body {
   font-family: var(--font-sans), sans-serif;
 }
 
+/* ── Search inputs: one clear control, never two ──────────────────────────────
+   `input[type="search"]` renders a browser-native clear affordance of its own —
+   ::-webkit-search-cancel-button in Chrome/Safari/Edge, and the legacy
+   ::-ms-clear in IE/older Edge. Every search field in this app already supplies
+   its own accessible "Clear search" button (a real <button> with an aria-label,
+   a focus ring and a 44px-class touch target), so the native control is a
+   second, unlabelled X sitting beside ours inside the same input — which is
+   exactly the duplicate-clear defect reported on category search.
+
+   Suppressed globally rather than per-component so a future search field cannot
+   quietly reintroduce the pair. Removing the native control loses nothing: it
+   was never keyboard-reachable and never had an accessible name.
+
+   `display: none` is load-bearing and must not be "tidied" away in favour of
+   the appearance pair below. Declaring only
+   `-webkit-appearance: none; appearance: none` does NOT work in a production
+   build: Lightning CSS treats the prefixed longhand as redundant next to the
+   standard property and emits `…::-webkit-search-cancel-button{appearance:none}`
+   alone — but this legacy shadow pseudo-element responds to
+   `-webkit-appearance` only, so the minified rule is a no-op and Chrome keeps
+   painting its X beside ours. That is why the duplicate survived the first fix
+   and was still visible in a real browser while headless Chromium (which does
+   not paint the native control at all) showed a single X. `display: none`
+   cannot be collapsed into a no-op, so it holds through minification.
+   The appearance declarations are kept for Safari, which honours them. */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  display: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="search"]::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* ── Price range slider ── */
 input[type="range"] {
   -webkit-appearance: none;

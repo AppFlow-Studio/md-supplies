@@ -44,6 +44,35 @@ describe('category asset coverage', () => {
   })
 })
 
+// ── P0.3 / P0.6: Trocars reuses the Surgery artwork, not its alt text ────────
+describe('featured subcategory artwork (Trocars & Trocar Kits)', () => {
+  const surgery = getCategoryBannerConfig('surgery-procedure')
+  const trocars = getCategoryBannerConfig('trocars-trocar-kits')
+
+  it('reuses the EXACT Surgery & Procedure CDN path, rather than a copied or new asset', () => {
+    expect(trocars.path).toBe(surgery.path)
+    // Not the neutral catch-all — that is what an unregistered handle gets.
+    expect(trocars.path).not.toContain(CATEGORY_IMAGE_FALLBACK.file)
+  })
+
+  it('carries Trocar-specific alt text, not the parent category description', () => {
+    expect(trocars.alt).toBe('Trocars and trocar kits')
+    expect(trocars.alt).not.toBe(surgery.alt)
+  })
+
+  it('leaves the Surgery & Procedure card on its own image and alt', () => {
+    expect(surgery.alt).toBe('Surgery and procedure instruments')
+    expect(surgery.path).toContain('surgery-procedure-placeholder')
+  })
+
+  it('resolves the broad Surgery route to real artwork, not the neutral fallback', () => {
+    // Before P0.5 no roadmap entry matched the handle `surgery-procedure`
+    // (matchedHandles listed only the Trocar sub-collections), so this route
+    // would have resolved to 'Assorted medical supplies'.
+    expect(surgery.alt).not.toBe(CATEGORY_IMAGE_FALLBACK.alt)
+  })
+})
+
 describe('no initial-letter placeholders on customer-facing surfaces', () => {
   const ROOTS = ['app', 'components']
   const SKIP_DIRS = new Set(['node_modules', '.next', '__tests__', 'docs'])

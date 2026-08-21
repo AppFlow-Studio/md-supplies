@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { parseProductTags, CATEGORY_TREE_L1 } from '../category-tree'
+import {
+  parseProductTags,
+  CATEGORY_TREE_L1,
+  FEATURED_SUBCATEGORIES,
+  getFeaturedSubcategoryBySlug,
+  getFeaturedSubcategoriesForParent,
+  getCategorySlug,
+} from '../category-tree'
 
 describe('parseProductTags', () => {
   it('splits category: and subcategory: tags from the rest', () => {
@@ -104,6 +111,86 @@ describe('CATEGORY_TREE_L1 productSet (Bilal, 2026-08-20 — Trocar reversal)', 
   it('the other three productSet:"tag" categories are unchanged by the Trocar reversal', () => {
     const stillTagSourced = CATEGORY_TREE_L1.filter((c) => c.productSet === 'tag').map((c) => c.tag)
     expect(stillTagSourced.sort()).toEqual(['apparel', 'face-masks', 'room-furniture'])
+  })
+})
+
+// ── P0.5 / P0.6: Surgery & Procedure and Trocars are two distinct pages ──────
+//
+// The defect these lock down: ONE registry row carried
+// `tag: 'surgery-procedure'` with `collectionHandle: 'trocars-trocar-kits'`.
+// Because collectionHandle is simultaneously the route slug, the artwork key
+// and the product source, that single value meant /category/surgery-procedure
+// did not exist and /category/trocars-trocar-kits announced itself as
+// "Surgery & Procedure".
+describe('Surgery & Procedure vs Trocars route split (P0.5/P0.6)', () => {
+  const surgery = CATEGORY_TREE_L1.find((c) => c.tag === 'surgery-procedure')
+
+  it('the Surgery & Procedure L1 points at its OWN broad collection', () => {
+    expect(surgery).toBeDefined()
+    expect(surgery!.collectionHandle).toBe('surgery-procedure')
+    expect(surgery!.displayName).toBe('Surgery & Procedure')
+  })
+
+  it('no L1 category is backed by the Trocar collection', () => {
+    const handles = CATEGORY_TREE_L1.map((c) => c.collectionHandle)
+    expect(handles).not.toContain('trocars-trocar-kits')
+  })
+
+  it('resolves /category/surgery-procedure to the Surgery L1, never to Trocars', () => {
+    const l1 = getL1ByCollectionHandle('surgery-procedure')
+    expect(l1?.tag).toBe('surgery-procedure')
+    expect(l1?.displayName).toBe('Surgery & Procedure')
+  })
+
+  it('does NOT resolve the Trocar route to an L1 — it is a featured subcategory', () => {
+    expect(getL1ByCollectionHandle('trocars-trocar-kits')).toBeUndefined()
+    expect(getFeaturedSubcategoryBySlug('trocars-trocar-kits')?.displayName).toBe('Trocars & Trocar Kits')
+  })
+
+  it('the two routes have different public slugs', () => {
+    expect(getCategorySlug(surgery!)).toBe('surgery-procedure')
+    expect(getFeaturedSubcategoryBySlug('trocars-trocar-kits')!.slug).toBe('trocars-trocar-kits')
+    expect(getCategorySlug(surgery!)).not.toBe(getFeaturedSubcategoryBySlug('trocars-trocar-kits')!.slug)
+  })
+
+  it('files Trocars under Surgery & Procedure', () => {
+    const children = getFeaturedSubcategoriesForParent('surgery-procedure')
+    expect(children.map((c) => c.slug)).toEqual(['trocars-trocar-kits'])
+  })
+
+  it('every featured subcategory names a parent that exists in the L1 registry', () => {
+    const tags = new Set(CATEGORY_TREE_L1.map((c) => c.tag))
+    for (const sub of FEATURED_SUBCATEGORIES) {
+      expect(tags.has(sub.parentTag), `${sub.slug} has an unknown parent ${sub.parentTag}`).toBe(true)
+    }
+  })
+
+  it('no featured subcategory collides with an L1 slug or another featured slug', () => {
+    const l1Slugs = CATEGORY_TREE_L1.map((c) => getCategorySlug(c))
+    const featuredSlugs = FEATURED_SUBCATEGORIES.map((s) => s.slug)
+    expect(new Set(featuredSlugs).size).toBe(featuredSlugs.length)
+    for (const slug of featuredSlugs) {
+      expect(l1Slugs, `${slug} shadows an L1 route`).not.toContain(slug)
+    }
+  })
+
+  it('gives every featured subcategory its own truthful, HTML-free copy', () => {
+    for (const sub of FEATURED_SUBCATEGORIES) {
+      expect(sub.shortDescription.trim().length).toBeGreaterThan(0)
+      expect(sub.shortDescription).not.toMatch(/[<>]/)
+      expect(sub.imageAlt.trim().length).toBeGreaterThan(0)
+      // The alt describes THIS page, never the parent whose artwork it reuses.
+      expect(sub.imageAlt.toLowerCase()).not.toContain('surgery and procedure')
+    }
+  })
+
+  it('makes no regulatory, shipping or clinical-outcome claim in featured copy', () => {
+    // The Shopify collection's own seo.title asserts "FDA Registered"; that
+    // claim must not be restated in copy this repo controls.
+    const FORBIDDEN = /\b(FDA|CE marked|510\(k\)|sterile guarantee|free shipping|cures?|treats?)\b/i
+    for (const sub of FEATURED_SUBCATEGORIES) {
+      expect(sub.shortDescription).not.toMatch(FORBIDDEN)
+    }
   })
 })
 

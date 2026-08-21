@@ -5,7 +5,12 @@ import { GET_COLLECTIONS_FOR_SITEMAP } from '@/lib/shopify/queries/collections'
 import { GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import { GET_ALL_ARTICLE_HANDLES } from '@/lib/shopify/queries/blog'
 import { PARTNERS } from '@/lib/partners'
-import { CATEGORY_TREE_L1, buildL2Tree, getCategorySlug } from '@/lib/category-tree'
+import {
+  CATEGORY_TREE_L1,
+  buildL2Tree,
+  getCategorySlug,
+  FEATURED_SUBCATEGORIES,
+} from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
 import { STATIC_ARTICLES } from '@/lib/blog-static'
@@ -54,7 +59,7 @@ async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
     // Fall through: emit the routes without lastmod rather than dropping them.
   }
 
-  return CATEGORY_TREE_L1.map((c) => {
+  const l1Urls = CATEGORY_TREE_L1.map((c) => {
     const updatedAt = lastModByHandle.get(c.collectionHandle)
     return {
       url: `${SITE_URL}/category/${getCategorySlug(c)}`,
@@ -65,6 +70,21 @@ async function fetchCategoryUrls(): Promise<SitemapEntry[]> {
       ...(updatedAt ? { lastModified: new Date(updatedAt) } : {}),
     }
   })
+
+  // Featured subcategories are canonical, indexable, nav-linked category pages
+  // in their own right (Trocars & Trocar Kits), so they belong here. Priority
+  // sits below an L1 and above an L2 tag route, matching their depth.
+  const featuredUrls = FEATURED_SUBCATEGORIES.map((s) => {
+    const updatedAt = lastModByHandle.get(s.collectionHandle)
+    return {
+      url: `${SITE_URL}/category/${s.slug}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.75,
+      ...(updatedAt ? { lastModified: new Date(updatedAt) } : {}),
+    }
+  })
+
+  return [...l1Urls, ...featuredUrls]
 }
 
 async function fetchSubcategoryUrls(): Promise<SitemapEntry[]> {

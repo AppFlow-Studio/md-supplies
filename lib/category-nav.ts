@@ -30,9 +30,16 @@ export const ROADMAP_CATEGORIES: RoadmapCategory[] = [
   { displayName: 'Mobility', navGroup: 'primary', matchedHandles: ['mobility'], placeholderSlug: 'mobility' },
   { displayName: 'Patient Therapy & Rehab', navGroup: 'primary', matchedHandles: ['patient-therapy-rehab'], placeholderSlug: 'patient-therapy-rehab' },
   {
+    // `surgery-procedure` leads (2026-08-20, P0.5): matchedHandles is ordered,
+    // and getShopifyHandle/buildCategoryNav both take the FIRST live match, so
+    // the broad parent collection has to sit ahead of the Trocar sub-handles
+    // that used to stand in for it. The Trocar handles stay listed because
+    // lib/bunnycdn.ts resolves hero artwork through this table — dropping them
+    // would send /category/trocars-trocar-kits to the generic fallback image.
     displayName: 'Surgery & Procedure',
     navGroup: 'primary',
     matchedHandles: [
+      'surgery-procedure',
       'trocars-trocar-kits',
       'disposable-3-2mm-3-5mm-trocars',
       'disposable-4-5mm-trocars',
