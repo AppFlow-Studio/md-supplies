@@ -30,6 +30,7 @@ vi.mock('next/server', () => ({
 import type { NextRequest } from 'next/server'
 import { proxy } from '../proxy'
 import productRedirects from '../docs/redirects-ready.json'
+import { CATEGORY_TREE_L1, getCategorySlug } from '@/lib/category-tree'
 
 const PRODUCT_ROWS = productRedirects as { from: string; to: string }[]
 
@@ -434,6 +435,17 @@ describe('proxy — legacy Shopify /collections/<handle> → /category/<slug> (2
 
   it('does NOT guess a redirect for a subcategory-level Shopify collection not in the L1 registry', () => {
     expectPassThrough(proxy(req('/collections/25g-hypodermic-needles')))
+  })
+
+  it('every L1 tag AND collection handle redirects to that L1s canonical slug', () => {
+    for (const l1 of CATEGORY_TREE_L1) {
+      for (const key of [l1.tag, l1.collectionHandle]) {
+        const res = proxy(req(`/collections/${key}`))
+        expect(res?.status, key).toBe(301)
+        expect(res?.headers.get('Location'), key)
+          .toBe(`https://mdsupplies.com/category/${getCategorySlug(l1)}`)
+      }
+    }
   })
 })
 
