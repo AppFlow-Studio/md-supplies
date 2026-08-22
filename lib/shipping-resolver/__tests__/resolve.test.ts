@@ -95,18 +95,17 @@ describe('resolveVariantShippingDisplay', () => {
     expect(result.class).toBe('standard-free')
   })
 
-  it('makes no threshold promise, because that wording is not approved', () => {
-    // The class still resolves; only the wording is withheld. "over a vendor
-    // minimum" was wrong twice: unapproved, and "over" misstates a >= rule that
-    // a cart of exactly $30.00 satisfies.
+  it('shows the Bilal-approved threshold copy, "+" reading as inclusive of the >= rule', () => {
+    // "Free shipping over a vendor minimum" was wrong twice: unapproved, and
+    // "over" misstated a >= rule that a cart of exactly $30.00 satisfies.
+    // Bilal approved "Free Shipping on orders $30+" on 08-19; "+" reads as
+    // inclusive, which clears that objection.
     const result = resolveVariantShippingDisplay(
       'gid://shopify/Product/8670729830616',
       'gid://shopify/ProductVariant/48197143396568',
     )
     expect(result.class).toBe('threshold')
-    expect(result.message).toBe(SHIPPING_FALLBACK_MESSAGE)
-    expect(result.message).not.toMatch(/free/i)
-    expect(result.message).not.toMatch(/\bover\b/i)
+    expect(result.message).toBe('Free Shipping on orders $30+')
   })
 
   it('reads display_copy from the variant, not the parent product', () => {

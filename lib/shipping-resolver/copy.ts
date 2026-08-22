@@ -12,18 +12,22 @@ export const SHIPPING_FALLBACK_MESSAGE = 'Shipping calculated at checkout.'
 // qualifier. standard-paid and manual-quote stay null because naming a price
 // we have not verified is exactly the promise we cannot keep.
 //
-// threshold is null DELIBERATELY. It previously read "Free shipping over a
-// vendor minimum", which was wrong twice over: it was never approved wording,
-// and "over" misstates the rule. Test E01 shows the condition is >=, so a cart
-// at exactly $30.00 qualifies and "over $30" would under-promise at the
-// boundary. The confirmed policy is also narrower than "a vendor minimum": it
-// applies to merchandise actually FULFILLED by Dukal, not to everything
-// carrying the Dukal brand, which is a distinction this resolver cannot yet
-// make. Threshold wording stays blocked until the exact copy is written and
-// approved; until then a threshold product shows the neutral fallback.
+// threshold previously read "Free shipping over a vendor minimum", which was
+// wrong twice over: it was never approved wording, and "over" misstates the
+// rule. Test E01 shows the condition is >=, so a cart at exactly $30.00
+// qualifies and "over $30" would under-promise at the boundary. Bilal
+// approved "Free Shipping on orders $30+" on 2026-08-19 — the "+" reads as
+// inclusive, clearing that objection.
+//
+// One objection this approval does NOT resolve: the confirmed policy is
+// narrower than "a vendor minimum" — it applies to merchandise actually
+// FULFILLED by Dukal, not to everything carrying the Dukal brand, a
+// distinction this resolver cannot yet make. Bilal has ruled the label
+// vendor-based (his call to make), so this ships as approved; the mismatch is
+// his to revisit, not a reason to withhold the copy.
 export const SHIPPING_CLASS_COPY: Record<PublicDisplayClass, string | null> = {
   'standard-free': 'Free shipping',
-  threshold: null,
+  threshold: 'Free Shipping on orders $30+',
   'standard-paid': null,
   'manual-quote': null,
   unknown: null,
@@ -31,8 +35,11 @@ export const SHIPPING_CLASS_COPY: Record<PublicDisplayClass, string | null> = {
 
 // Badge shown on cards/quick-add/PDP. A badge is a promise in three words with
 // no room for a condition, so only a class that is unconditionally true gets
-// one. threshold is excluded for the same reason its copy is null: "Free
-// Shipping Available" implies an entitlement whose condition it cannot state.
+// one. threshold stays OUT of this map on purpose, even though it now has
+// approved copy above: "Free Shipping Available" implies an unconditional
+// entitlement, which threshold is not. Keeping it out of the badge is what
+// makes the conditional wording visually distinct from the unconditional
+// badge, per Bilal's requirement.
 export const SHIPPING_CLASS_BADGE_LABEL: Partial<Record<PublicDisplayClass, string>> = {
   'standard-free': 'Free Shipping',
 }
