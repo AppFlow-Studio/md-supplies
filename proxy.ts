@@ -177,6 +177,7 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
   { from: '/face-masks-n95-kn95.html',                                                                  to: '/category/face-masks',                            status: 301 },
   { from: '/medical-supply-store/Face-Masks-CYR82C7EBL.html',                                          to: '/category/face-masks',                            status: 301 },
   { from: '/medical-supply-store/Hygiene-WQ2ENW7KU6.html',                                             to: '/category/hygiene',                               status: 301 },
+  { from: '/bariatricproducts',                                                                        to: '/category/bariatric',                              status: 301 },
 
   // Partners / vendors
   { from: '/supplies-by-vendor/Drive-Medical-VQTWVE3SWE.html',                                         to: '/partners/drive-medical',                         status: 301 },
