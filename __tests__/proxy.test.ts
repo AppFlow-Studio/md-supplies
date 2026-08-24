@@ -30,8 +30,13 @@ vi.mock('next/server', () => ({
 import type { NextRequest } from 'next/server'
 import { proxy } from '../proxy'
 import productRedirects from '../docs/redirects-ready.json'
+import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES, getCategorySlug } from '@/lib/category-tree'
 
 const PRODUCT_ROWS = productRedirects as { from: string; to: string }[]
+
+const PRODUCT_REDIRECTS_FOR_TEST = new Map<string, string>(
+  PRODUCT_ROWS.map(({ from, to }) => [from, to.replace(/^\/products\//, '/product/')]),
+)
 
 // proxy() now always returns a Response (it stamps CSP headers on every
 // path, including pass-through) instead of `undefined` — this asserts the
@@ -377,62 +382,127 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     expect(res?.headers.get('Location')).toContain('/category/testing-screening')
   })
 
-  it('redirects the legacy Shopify collection URL to the canonical category route, preserving query params', () => {
-    const res = proxy(req('/collections/trocars-trocar-kits', '?variant=51633171923177'))
-    expect(res?.status).toBe(301)
-    const location = new URL(res!.headers.get('Location')!)
-    expect(location.pathname).toBe('/category/trocars-trocar-kits')
-    expect(location.searchParams.get('variant')).toBe('51633171923177')
+  describe('legacy Shopify /collections/<handle> → /category/<slug> (registry-driven, all L1 categories + featured subcategories)', () => {
+    it('redirects every L1 tag AND collection handle to that L1s canonical slug', () => {
+      for (const l1 of CATEGORY_TREE_L1) {
+        for (const key of [l1.tag, l1.collectionHandle]) {
+          const res = proxy(req(`/collections/${key}`))
+          expect(res?.status, key).toBe(301)
+          expect(new URL(res!.headers.get('Location')!).pathname, key)
+            .toBe(`/category/${getCategorySlug(l1)}`)
+        }
+      }
+    })
+
+    it('redirects a featured-subcategory collection handle to its own canonical category route', () => {
+      for (const sub of FEATURED_SUBCATEGORIES) {
+        for (const key of [sub.slug, sub.collectionHandle]) {
+          const res = proxy(req(`/collections/${key}`))
+          expect(res?.status, key).toBe(301)
+          expect(new URL(res!.headers.get('Location')!).pathname, key).toBe(`/category/${sub.slug}`)
+        }
+      }
+    })
+
+    it('preserves the query string on an L1 collection redirect', () => {
+      const res = proxy(req('/collections/gloves', '?sort_by=price-ascending'))
+      expect(res?.status).toBe(301)
+      const location = new URL(res!.headers.get('Location')!)
+      expect(location.pathname).toBe('/category/gloves')
+      expect(location.searchParams.get('sort_by')).toBe('price-ascending')
+    })
+
+    it('preserves the query string on a featured-subcategory collection redirect', () => {
+      const res = proxy(req('/collections/trocars-trocar-kits', '?variant=51633171923177'))
+      expect(res?.status).toBe(301)
+      const location = new URL(res!.headers.get('Location')!)
+      expect(location.pathname).toBe('/category/trocars-trocar-kits')
+      expect(location.searchParams.get('variant')).toBe('51633171923177')
+    })
+
+    it('redirects a nested path beneath an L1 collection URL in a single hop', () => {
+      const res = proxy(req('/collections/surgery-procedure/some-product'))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/surgery-procedure/some-product')
+    })
+
+    it('resolves a tag-name collection URL to its divergent canonical slug (Apparel: tag "apparel", collection "capes-gowns")', () => {
+      const res = proxy(req('/collections/apparel'))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/capes-gowns')
+    })
+
+    it('resolves Face Masks through the existing face-coverings → face-masks canonical slug mapping', () => {
+      const res = proxy(req('/collections/face-masks'))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/face-masks')
+
+      const res2 = proxy(req('/collections/face-coverings'))
+      expect(res2?.status).toBe(301)
+      expect(res2?.headers.get('Location')).toBe('https://mdsupplies.com/category/face-masks')
+    })
+
+    it('redirects /collections/occ to the single canonical OCC route, mirroring /category/occ', () => {
+      const res = proxy(req('/collections/occ'))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/solutions/occ')
+    })
+
+    it('does NOT guess a redirect for a subcategory-level Shopify collection not in either registry', () => {
+      expectPassThrough(proxy(req('/collections/25g-hypodermic-needles')))
+    })
+
+    it('stamps CSP on collection redirects like every other response path', () => {
+      for (const path of ['/collections/surgery-procedure', '/collections/trocars-trocar-kits', '/collections/gloves']) {
+        const res = proxy(req(path))
+        expect(res?.headers.get('Content-Security-Policy'), path).toBeTruthy()
+      }
+    })
+
+    it('never redirects the canonical destinations back out (no loop)', () => {
+      for (const l1 of CATEGORY_TREE_L1) {
+        expectPassThrough(proxy(req(`/category/${getCategorySlug(l1)}`)))
+      }
+      for (const sub of FEATURED_SUBCATEGORIES) {
+        expectPassThrough(proxy(req(`/category/${sub.slug}`)))
+      }
+    })
   })
 
-  it('redirects a nested path beneath the legacy collection URL in a single hop', () => {
-    const res = proxy(req('/collections/trocars-trocar-kits/some-product'))
-    expect(res?.status).toBe(301)
-    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/trocars-trocar-kits/some-product')
-  })
+  describe('legacy /collections/<collection>/products/<handle> → canonical /product/<handle> (single hop, any collection)', () => {
+    it('resolves a product nested under an L1 collection handle to its canonical /product/ route', () => {
+      const res = proxy(req('/collections/gloves/products/nitrile-exam-gloves-powder-free'))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/product/nitrile-exam-gloves-powder-free')
+    })
 
-  // ── P0.7: the Surgery & Procedure collection URL ──────────────────────────
-  // /category/surgery-procedure did not exist before P0.5, so this legacy URL
-  // had nowhere to land and was falling through to a 404.
-  it('redirects /collections/surgery-procedure to the canonical category route', () => {
-    const res = proxy(req('/collections/surgery-procedure'))
-    expect(res?.status).toBe(301)
-    expect(new URL(res!.headers.get('Location')!).pathname).toBe('/category/surgery-procedure')
-  })
+    it('resolves a product nested under an UNKNOWN collection handle too (the collection segment is discarded, not validated)', () => {
+      const res = proxy(req('/collections/25g-hypodermic-needles/products/some-handle'))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/product/some-handle')
+    })
 
-  it('preserves the query string on the Surgery collection redirect', () => {
-    const res = proxy(req('/collections/surgery-procedure', '?sort=PRICE_ASC&page=2'))
-    expect(res?.status).toBe(301)
-    const location = new URL(res!.headers.get('Location')!)
-    expect(location.pathname).toBe('/category/surgery-procedure')
-    expect(location.searchParams.get('sort')).toBe('PRICE_ASC')
-    expect(location.searchParams.get('page')).toBe('2')
-  })
+    it('routes a consolidated/renamed product handle through the existing PRODUCT_REDIRECTS map, not a naive rename', () => {
+      const [{ from }] = PRODUCT_ROWS
+      const handle = from.replace(/^\/products\//, '')
+      const expected = PRODUCT_REDIRECTS_FOR_TEST.get(from)!
+      const res = proxy(req(`/collections/gloves/products/${handle}`))
+      expect(res?.status).toBe(301)
+      expect(new URL(res!.headers.get('Location')!).pathname).toBe(expected)
+    })
 
-  it('redirects a nested path beneath the Surgery collection URL in one hop', () => {
-    const res = proxy(req('/collections/surgery-procedure/some-product'))
-    expect(res?.status).toBe(301)
-    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/surgery-procedure/some-product')
-  })
+    it('resolves a legacy AeroWalk color handle nested under a collection in one hop', () => {
+      const res = proxy(req('/collections/mobility/products/aerowalk-ultra-lite-rollator-rolling-walker-blue'))
+      expect(res?.status).toBe(301)
+      expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/product/aerowalk-ultra-lite-rollator-rolling-walker')
+    })
 
-  it('stamps CSP on collection redirects like every other response path', () => {
-    for (const path of ['/collections/surgery-procedure', '/collections/trocars-trocar-kits']) {
-      const res = proxy(req(path))
-      expect(res?.headers.get('Content-Security-Policy'), path).toBeTruthy()
-    }
-  })
-
-  it('leaves unlisted /collections/<handle> URLs alone rather than inventing a route', () => {
-    // The generalized matcher is an allowlist, not a blanket rewrite: a
-    // /collections/ URL with no corresponding category route must not 301 into
-    // a 404.
-    expectPassThrough(proxy(req('/collections/not-a-real-collection')))
-  })
-
-  it('never redirects the canonical destinations back out (no loop)', () => {
-    for (const target of ['/category/surgery-procedure', '/category/trocars-trocar-kits']) {
-      expectPassThrough(proxy(req(target)))
-    }
+    it('preserves the query string on a nested product redirect', () => {
+      const res = proxy(req('/collections/gloves/products/nitrile-exam-gloves-powder-free', '?variant=123'))
+      expect(res?.status).toBe(301)
+      const location = new URL(res!.headers.get('Location')!)
+      expect(location.searchParams.get('variant')).toBe('123')
+    })
   })
 })
 
