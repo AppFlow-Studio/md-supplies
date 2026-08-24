@@ -2,7 +2,7 @@
 
 **Branch:** catalog-cro-review-sardor-dev
 **Starting SHA:** e21205ccdf1bda800e69a4c00d2f710a3d840603
-**Final SHA:** 6c155f82aa7630c3f2ef62775e7a063e2c1a8a6a (this is the final code SHA from Task 3; docs commits follow)
+**Final SHA:** 96aac4a (Tasks 1-4: `5aef490`, `536f76c`, `6c155f8`, `80b34e4`; plus a final-review fix wave, `96aac4a`, closing 2 Important findings — see `HANDOFF-2026-08-24.md` §2 for what they were)
 
 ## What this plan fixed (code)
 
@@ -44,7 +44,11 @@ No type errors. TypeScript compilation clean.
 Next.js build completed successfully with all routes listed and prerendered/dynamic states correct.
 
 ### npm run lint
-**Result: FAIL** (pre-existing, out of scope)
+**Result: PASS** (`npx eslint . --max-warnings 0`, clean — 0 errors, 0 warnings)
+
+The `e2e/320px-overflow.spec.ts` unused-`expect`-import warning noted below was fixed in the final-review fix wave (commit `96aac4a`). `qa-sweep.js`'s `require()`-style import errors, seen on an earlier machine mid-session, do not appear on this repo checkout — that file is git-ignored/regenerable (`.gitignore`: `/qa-sweep.js`) and isn't tracked, so it never reaches CI's checkout either.
+
+**Superseded (for history — this is what `npm run lint` reported before the fix wave, at commit `80b34e4`):**
 
 ```
 C:\Users\sarik\WebstormProjects\md-supplies\e2e\320px-overflow.spec.ts
@@ -57,13 +61,14 @@ C:\Users\sarik\WebstormProjects\md-supplies\qa-sweep.js
 ✖ 3 problems (2 errors, 1 warning)
 ```
 
-**Status:** 2 pre-existing errors in `qa-sweep.js` (QA screenshot utility, lines 2–3 use `require()` style imports) and 1 pre-existing warning in `e2e/320px-overflow.spec.ts` (unused `expect` import, line 1). Both files are outside this plan's scope — confirmed via Tasks 1–3 diffs, which touched only `proxy.ts` and `__tests__/proxy.test.ts`. These lint issues were present at the plan's starting point (commit e21205c) and are not code changes this plan introduced or needs to fix in a docs-only task. Flagged for a future cleanup pass; not a blocker for this remediation plan's completion.
+The `qa-sweep.js` errors were a different machine's untracked local file, not a repo/CI issue — confirmed absent here via `git ls-files` and `git log --all -- qa-sweep.js` (no history at all). The `e2e/320px-overflow.spec.ts` warning was real and did fail CI's required `eslint . --max-warnings 0` job; it's fixed now.
 
 ## Summary
 
 - Code changes (Tasks 1–3): Complete, all tests passing, TypeScript clean, build successful.
 - Docs (Task 4): Complete, BASELINE.md updated with "Resolved this plan" section, FINAL-RESULTS.md written.
-- Lint: 2 pre-existing errors in utility files (qa-sweep.js) and 1 pre-existing warning in e2e test (320px-overflow.spec.ts), both outside plan scope, documented transparently per master plan §33.K.
+- Final whole-branch review (range `e21205c..80b34e4`): "Ready to merge? With fixes" — 3 Important findings (plan file untracked, resolved via `d46eb4a`; CI lint red; `REDIRECT_ENTRIES` dropping query strings on all 26 static entries). Fix wave (`96aac4a`) closed the remaining 2, scoped re-review confirmed both ADDRESSED with no new breakage, independently re-verified by the controller (tsc/eslint/vitest all clean). 8 Minor findings deferred, listed in `HANDOFF-2026-08-24.md` §2.
+- Lint: clean, 0 errors/0 warnings.
 
 ## Remaining P0 items (master plan §§6-13), not in this plan's scope
 
