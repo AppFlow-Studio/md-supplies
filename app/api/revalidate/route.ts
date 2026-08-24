@@ -62,8 +62,16 @@ export async function POST(request: Request) {
   if (topic.startsWith('products/')) {
     invalidate('products')
     if (handle) invalidate(`product:${handle}`)
-    // Deletes/creates also change collection listings, but per-collection
-    // membership isn't in the payload — the 300s fetch revalidate covers it.
+    // A product save can change which collections it belongs to (tag/category
+    // edits), but the webhook payload never carries collection membership —
+    // only collections/* webhooks name a handle. Invalidating the broad
+    // 'collections' tag (not a specific collection:<handle>) is the cheap,
+    // correct fallback: every category page's next request revalidates
+    // instead of waiting up to the 300s background window. Previously this
+    // gap meant a tag/category edit could take up to 5 minutes to appear on
+    // the storefront, which read to the client as the SAVE causing a delayed
+    // appearance rather than the cache window.
+    invalidate('collections')
   } else if (topic.startsWith('collections/')) {
     invalidate('collections')
     if (handle) invalidate(`collection:${handle}`)

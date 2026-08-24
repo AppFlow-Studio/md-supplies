@@ -1,6 +1,17 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
+
+vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }))
+vi.mock('@/lib/env.server', () => ({ serverEnv: { shopifyWebhookSecret: 'test-secret' } }))
+
+import { revalidateTag } from 'next/cache'
+const mockRevalidateTag = vi.mocked(revalidateTag)
+
+function signBody(body: string): string {
+  return crypto.createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64')
+}
 
 const ISR_ROUTE_FILES = [
   'app/page.tsx',
@@ -46,4 +57,48 @@ describe('dynamic routes: tag-invalidated pages do not carry dead ISR config', (
       expect(read(file)).not.toMatch(/export const revalidate/)
     })
   }
+})
+
+describe('POST /api/revalidate — products/* also invalidates the broad collections tag', () => {
+  beforeEach(() => {
+    mockRevalidateTag.mockReset()
+  })
+
+  it('invalidates products, product:<handle>, AND the broad collections tag on products/update', async () => {
+    const { POST } = await import('../app/api/revalidate/route')
+    const body = JSON.stringify({ handle: 'wheelchair-transport-17' })
+    const request = new Request('https://example.com/api/revalidate', {
+      method: 'POST',
+      headers: {
+        'x-shopify-hmac-sha256': signBody(body),
+        'x-shopify-topic': 'products/update',
+      },
+      body,
+    })
+
+    const res = await POST(request)
+    const json = await res.json()
+
+    expect(json.revalidated).toEqual(
+      expect.arrayContaining(['products', 'product:wheelchair-transport-17', 'collections']),
+    )
+    expect(mockRevalidateTag).toHaveBeenCalledWith('collections', 'max')
+  })
+
+  it('does not invalidate a specific collection:<handle> tag — the payload has no collection membership', async () => {
+    const { POST } = await import('../app/api/revalidate/route')
+    const body = JSON.stringify({ handle: 'wheelchair-transport-17' })
+    const request = new Request('https://example.com/api/revalidate', {
+      method: 'POST',
+      headers: {
+        'x-shopify-hmac-sha256': signBody(body),
+        'x-shopify-topic': 'products/update',
+      },
+      body,
+    })
+
+    const res = await POST(request)
+    const json = await res.json()
+    expect(json.revalidated).not.toEqual(expect.arrayContaining([expect.stringMatching(/^collection:/)]))
+  })
 })
