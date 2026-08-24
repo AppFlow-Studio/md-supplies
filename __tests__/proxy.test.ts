@@ -28,7 +28,7 @@ vi.mock('next/server', () => ({
 }))
 
 import type { NextRequest } from 'next/server'
-import { proxy } from '../proxy'
+import { proxy, REDIRECT_ENTRIES } from '../proxy'
 import productRedirects from '../docs/redirects-ready.json'
 import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES, getCategorySlug } from '@/lib/category-tree'
 
@@ -626,6 +626,38 @@ describe('proxy — full product redirect map (programmatic sweep)', () => {
       }
     }
     expect(chained).toEqual([])
+  })
+})
+
+describe('proxy — global no-chain / no-loop guardrail (regression: e21205c silently dropped a working redirect)', () => {
+  it('every static REDIRECT_ENTRIES 301 target is not itself a redirect source (one hop only)', () => {
+    for (const entry of REDIRECT_ENTRIES) {
+      if (entry.status !== 301) continue
+      const targetPath = new URL(entry.to, 'https://mdsupplies.com').pathname
+      expectPassThrough(proxy(req(targetPath)))
+    }
+  })
+
+  it('every L1 category canonical route is not itself a redirect source', () => {
+    for (const l1 of CATEGORY_TREE_L1) {
+      expectPassThrough(proxy(req(`/category/${getCategorySlug(l1)}`)))
+    }
+  })
+
+  it('every featured-subcategory canonical route is not itself a redirect source', () => {
+    for (const sub of FEATURED_SUBCATEGORIES) {
+      expectPassThrough(proxy(req(`/category/${sub.slug}`)))
+    }
+  })
+
+  it('a sample of consolidated product-redirect targets are not themselves redirect sources', () => {
+    // Full 1,285-row sweep already exists in the 'programmatic sweep' block
+    // above; this re-checks a bounded sample here so the guardrail block
+    // stays fast and legible as one file, not a duplicate of that sweep.
+    for (const { from } of PRODUCT_ROWS.slice(0, 50)) {
+      const target = PRODUCT_REDIRECTS_FOR_TEST.get(from)!
+      expectPassThrough(proxy(req(target)))
+    }
   })
 })
 
