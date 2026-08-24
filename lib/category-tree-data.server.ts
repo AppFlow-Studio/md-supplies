@@ -11,6 +11,27 @@ type ProductTagsResponse = {
   }
 }
 
+// One retry per page: this scan makes ~30 sequential requests, so without a
+// retry the probability of the WHOLE scan failing is ~30x a single request's
+// transient-failure rate. A single immediate retry absorbs one-off timeouts
+// and 5xx blips without masking a genuinely down API (two failures in a row
+// on the same page still throws).
+async function fetchTagPage(cursor: string | null): Promise<ProductTagsResponse> {
+  try {
+    return await storefrontFetch<ProductTagsResponse>(
+      GET_ALL_PRODUCT_TAGS,
+      { first: 250, after: cursor },
+      { next: { revalidate: 3600, tags: ['shopify', 'category-tree'] } },
+    )
+  } catch {
+    return await storefrontFetch<ProductTagsResponse>(
+      GET_ALL_PRODUCT_TAGS,
+      { first: 250, after: cursor },
+      { next: { revalidate: 3600, tags: ['shopify', 'category-tree'] } },
+    )
+  }
+}
+
 // Full-catalog tag scan (~30 requests at 7,400 products / 250 per page).
 // Cached for 1 hour under the 'category-tree' tag — the catalog moves daily
 // per the spec, so this is far less aggressive than the 5-minute default in
@@ -21,11 +42,7 @@ export async function fetchProductTagSummaries(): Promise<ProductTagSummary[]> {
   let cursor: string | null = null
 
   while (true) {
-    const data: ProductTagsResponse = await storefrontFetch<ProductTagsResponse>(
-      GET_ALL_PRODUCT_TAGS,
-      { first: 250, after: cursor },
-      { next: { revalidate: 3600, tags: ['shopify', 'category-tree'] } },
-    )
+    const data = await fetchTagPage(cursor)
 
     for (const node of data.products.nodes) {
       const { categories, subcategories } = parseProductTags(node.tags)

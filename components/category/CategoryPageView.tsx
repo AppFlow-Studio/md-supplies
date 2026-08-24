@@ -32,6 +32,8 @@ import { withTrackingParams } from '@/lib/analytics/tracking-params'
 import { getNonce } from '@/lib/csp-nonce'
 import { getCategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
+import { logServerError, logCategoryEvent } from '@/lib/log-error'
+import type { ProductTagSummary } from '@/lib/category-tree'
 
 // Server-rendered category view for the single canonical route
 // app/category/[slug], which reads searchParams directly. The former
@@ -252,16 +254,38 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
     ? CATEGORY_TREE_L1.find((c) => c.tag === featured.parentTag)
     : undefined
 
+  // The hero/product fetch stays on the critical path (a real failure there
+  // SHOULD show the error boundary — the page has no products to show). The
+  // tag scan only feeds the subcategory footer list, and Related Categories
+  // sourcing is independent of it (CATEGORY_TREE_L1 is static), so its
+  // failure degrades to "no subcategory footer" rather than no page at all.
   const [data, summaries] = await Promise.all([
     storefrontFetch<{ collection: CollectionHero | null }>(
       GET_COLLECTION_HERO,
       { handle: shopifyHandle },
       collectionFetchOptions(shopifyHandle),
     ),
-    fetchProductTagSummaries(),
+    fetchProductTagSummaries().catch((err) => {
+      logServerError('category-subcategory-scan', err)
+      logCategoryEvent({ route: `/category/${slug}`, handle: shopifyHandle, outcome: 'subcategory_scan_failed' })
+      return [] as ProductTagSummary[]
+    }),
   ])
 
-  if (!data.collection) notFound()
+  if (!data.collection) {
+    logCategoryEvent({ route: `/category/${slug}`, handle: shopifyHandle, outcome: 'collection_missing' })
+    notFound()
+  }
+
+  // productCount is intentionally omitted here: GET_COLLECTION_HERO does not
+  // fetch products (CollectionHero has no `products` field), so no count is
+  // available at this point in the render. CategoryResults below performs
+  // its own separate product fetch.
+  logCategoryEvent({
+    route: `/category/${slug}`,
+    handle: shopifyHandle,
+    outcome: 'ok',
+  })
 
   const { collection } = data
 
