@@ -83,6 +83,17 @@ export type L1CategoryDef = {
    * there is nothing for a tag override to correct.
    */
   productSet?: 'collection' | 'tag'
+  /**
+   * Historical/synonym Shopify collection handles for artwork resolution
+   * ONLY (lib/bunnycdn.ts) — ported from the legacy lib/category-nav.ts
+   * ROADMAP_CATEGORIES.matchedHandles list it replaced. NOT a
+   * membership/routing signal (CATEGORY_TREE_L1's own `tag` field is that);
+   * a handle here just means "if a product/collection page needs a hero image
+   * under one of these handles and has no direct entry, use this L1's
+   * artwork." Absent for L1s whose collectionHandle was always the only
+   * handle in their roadmap family.
+   */
+  artworkFallbackHandles?: readonly string[]
 }
 
 // The 25 approved category: tag values, confirmed against the live catalog
@@ -112,8 +123,8 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   // subcategory of this one, not a 26th L1, so it is deliberately NOT a row
   // here: CATEGORY_TREE_L1 membership is `category:` tag-derived, and there is
   // no `category:trocars-trocar-kits` tag.
-  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'surgery-procedure', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.' },
-  { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', productSet: 'tag', navGroup: 'primary', shortDescription: 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.' },
+  { tag: 'surgery-procedure', displayName: 'Surgery & Procedure', collectionHandle: 'surgery-procedure', navGroup: 'primary', shortDescription: 'Procedure-room instruments, kits, trays, and accessories for minor surgery and clinical procedures.', artworkFallbackHandles: ['trocars-trocar-kits', 'disposable-3-2mm-3-5mm-trocars', 'disposable-4-5mm-trocars', 'reusable-3-2mm-3-5mm-trocars', 'reusable-4-5mm-trocars'] },
+  { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', productSet: 'tag', navGroup: 'primary', shortDescription: 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.', artworkFallbackHandles: ['caps-headwear', 'coats-jackets', 'footwear', 'medical-scrubs', 'pants-shirts', 'undergarments-wraps'] },
   { tag: 'hygiene', displayName: 'Hygiene', collectionHandle: 'hygiene', navGroup: 'primary', shortDescription: 'Personal-hygiene and patient-care products for bathing, oral care, grooming, and everyday cleanliness.' },
   { tag: 'disinfectants', displayName: 'Disinfectants', collectionHandle: 'disinfectants', navGroup: 'primary', shortDescription: 'Cleaning and disinfection products for surfaces, equipment, hands, and infection-control routines.' },
   { tag: 'home-care', displayName: 'Home Care', collectionHandle: 'home-care', navGroup: 'more', shortDescription: 'Practical medical and personal-care supplies designed for patients, caregivers, and home-health use.' },
@@ -125,7 +136,7 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'dental', displayName: 'Dental', collectionHandle: 'dental', navGroup: 'more', shortDescription: 'Dental procedure, examination, infection-control, and patient-care supplies for dental practices.' },
   { tag: 'housekeeping-janitorial', displayName: 'Housekeeping & Janitorial', collectionHandle: 'housekeeping-janitorial', navGroup: 'more', shortDescription: 'Facility-cleaning, waste-handling, paper, and janitorial supplies for healthcare environments.' },
   { tag: 'bariatric', displayName: 'Bariatric', collectionHandle: 'bariatric', navGroup: 'more', shortDescription: 'Bariatric patient-care and mobility equipment designed for higher weight capacities and added support.' },
-  { tag: 'room-furniture', displayName: 'Room Furniture', collectionHandle: 'seating', productSet: 'tag', navGroup: 'more', shortDescription: 'Seating, exam tables, cabinets, and room furnishings for treatment, consultation, and patient-care spaces.' },
+  { tag: 'room-furniture', displayName: 'Room Furniture', collectionHandle: 'seating', productSet: 'tag', navGroup: 'more', shortDescription: 'Seating, exam tables, cabinets, and room furnishings for treatment, consultation, and patient-care spaces.', artworkFallbackHandles: ['exam-tables'] },
   { tag: 'face-masks', displayName: 'Face Masks', collectionHandle: 'face-coverings', productSet: 'tag', navGroup: 'more', shortDescription: 'Procedure masks, respirators, and face coverings for clinical, facility, and everyday protective use.' },
   { tag: 'pharmacy-products', displayName: 'Pharmacy Products', collectionHandle: 'pharmacy-products', navGroup: 'more', shortDescription: 'Dispensing, labeling, packaging, counting, and patient-use supplies for pharmacy operations.' },
 ] as const
@@ -322,6 +333,28 @@ export function getCategorySlug(l1: Pick<L1CategoryDef, 'collectionHandle'>): st
 
 const CANONICAL_SLUG_BY_HANDLE: Record<string, string> = {
   'face-coverings': 'face-masks',
+}
+
+// Inverse of getCategorySlug/CANONICAL_SLUG_BY_HANDLE: resolves a PUBLIC URL
+// slug back to the real Shopify collection handle for API calls. Only
+// face-masks diverges today (see getCategorySlug's doc comment); every other
+// slug already equals its handle, so this is a no-op for them.
+export function getShopifyHandle(slug: string): string {
+  for (const [handle, canonicalSlug] of Object.entries(CANONICAL_SLUG_BY_HANDLE)) {
+    if (canonicalSlug === slug) return handle
+  }
+  return slug
+}
+
+// The approved-handle allowlist, replacing lib/category-nav.ts's
+// getAllowedHandles(): every L1's canonical collection handle plus every
+// featured subcategory's — the full set of Shopify collections this
+// storefront intentionally links to.
+export function getAllowedHandles(): Set<string> {
+  return new Set([
+    ...CATEGORY_TREE_L1.map((c) => c.collectionHandle),
+    ...FEATURED_SUBCATEGORIES.map((s) => s.collectionHandle),
+  ])
 }
 
 export function humanizeTag(tag: string): string {

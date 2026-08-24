@@ -486,3 +486,33 @@ describe('buildCategoryTreeNav', () => {
     expect(testing?.href).toBe('/category/testing-screening')
   })
 })
+
+import { getShopifyHandle, getAllowedHandles } from '../category-tree'
+
+describe('getShopifyHandle', () => {
+  it('resolves the canonical face-masks slug back to the real face-coverings handle', () => {
+    expect(getShopifyHandle('face-masks')).toBe('face-coverings')
+  })
+
+  it('returns the input unchanged for a slug with no canonical alias', () => {
+    expect(getShopifyHandle('mobility')).toBe('mobility')
+    expect(getShopifyHandle('some-unrelated-slug')).toBe('some-unrelated-slug')
+  })
+})
+
+describe('getAllowedHandles', () => {
+  it('contains every L1 collection handle', () => {
+    const allowed = getAllowedHandles()
+    expect(allowed.has('mobility')).toBe(true)
+    expect(allowed.has('home-care')).toBe(true)
+    expect(allowed.has('gloves')).toBe(true)
+  })
+
+  it('contains every featured-subcategory collection handle', () => {
+    expect(getAllowedHandles().has('trocars-trocar-kits')).toBe(true)
+  })
+
+  it('does not contain an arbitrary non-registry handle', () => {
+    expect(getAllowedHandles().has('random-nonexistent')).toBe(false)
+  })
+})

@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { CATEGORY_TREE_L1, getCategorySlug } from '@/lib/category-tree'
+import { CATEGORY_TREE_L1, getCategorySlug, getShopifyHandle } from '@/lib/category-tree'
 import { INDUSTRIES, SUPPORTED_INDUSTRIES } from '@/lib/industries'
-import { ROADMAP_CATEGORIES, getShopifyHandle } from '@/lib/category-nav'
 import { CATEGORY_IMAGE_CONFIG, CATEGORY_IMAGE_FALLBACK } from '@/lib/category-images'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { filterRegistry, industryFilterRegistry, DEFAULT_FACET_RULES, getFacetRules } from '@/lib/filter-registry'
@@ -68,9 +67,9 @@ describe('hero imagery', () => {
     }
   })
 
-  it('has an image entry for every placeholderSlug the nav registry references', () => {
-    const missing = ROADMAP_CATEGORIES
-      .filter((c) => !(c.placeholderSlug in CATEGORY_IMAGE_CONFIG))
+  it('has an image entry for every tag the category registry references', () => {
+    const missing = CATEGORY_TREE_L1
+      .filter((c) => !(c.tag in CATEGORY_IMAGE_CONFIG))
       .map((c) => c.displayName)
     expect(missing).toEqual([])
   })

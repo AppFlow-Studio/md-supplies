@@ -13,7 +13,6 @@ import { getClusterLinks } from '@/lib/cluster-links'
 import { MAX_CATEGORY_PAGE } from '@/lib/category-utils'
 import { parsePageSize, DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
 import type { ProductSource } from '@/lib/category-results-source'
-import { getShopifyHandle } from '@/lib/category-nav'
 import {
   buildL2Tree,
   getSubcategoriesForParent,
@@ -21,6 +20,7 @@ import {
   humanizeTag,
   CATEGORY_TREE_L1,
   getCategorySlug,
+  getShopifyHandle,
   getFeaturedSubcategoryBySlug,
   getFeaturedSubcategoriesForParent,
 } from '@/lib/category-tree'
