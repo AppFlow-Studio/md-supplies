@@ -570,3 +570,17 @@ describe('registered-but-not-live facets fail closed', () => {
     }
   })
 })
+
+describe('Product Type usage conclusion (docs/audits/2026-08-25-product-type-usage-conclusion.md)', () => {
+  it('is never referenced by a per-category or per-industry facet registry entry', () => {
+    // PRODUCT_TYPE (filter.p.type / filter.p.product_type) is a distinct rule
+    // from M.type (the custom.type metafield) used throughout filterRegistry.
+    // This test pins the conclusion that Product Type has no role in any
+    // category or industry route's rendered filters — only in global search.
+    const allCategoryRules = Object.values(filterRegistry).flat()
+    const allIndustryRules = Object.values(industryFilterRegistry).flat()
+    const productTypeRuleName = 'productType'
+    expect(allCategoryRules.some((r) => r.name === productTypeRuleName)).toBe(false)
+    expect(allIndustryRules.some((r) => r.name === productTypeRuleName)).toBe(false)
+  })
+})
