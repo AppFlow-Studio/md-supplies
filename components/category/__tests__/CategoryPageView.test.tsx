@@ -34,4 +34,22 @@ describe('CategoryPageView — subcategory-scan resilience', () => {
     // the page rendered even though the tag scan failed.
     expect(result).toBeTruthy()
   })
+
+  it('still propagates a hero-fetch rejection to the caller (error boundary), unlike the isolated tag-scan failure above', async () => {
+    // The hero/product fetch stays on the critical path by design (see the
+    // comment above the Promise.all in CategoryPageView.tsx) — only the tag
+    // scan's failure is isolated via .catch(). This guards against a future
+    // accidental .catch() being added to the hero fetch, which would silently
+    // degrade a real Storefront outage into a broken page instead of the
+    // error boundary.
+    mockStorefront.mockImplementation(async (query: string) => {
+      if (query.includes('GET_COLLECTION_HERO') || query.includes('collection(')) {
+        throw new Error('storefront hero fetch failed')
+      }
+      return { collection: { title: 'Mobility', handle: 'mobility', products: { nodes: [], pageInfo: {}, filters: [] } } }
+    })
+    mockSummaries.mockResolvedValue([])
+
+    await expect(CategoryPageView({ slug: 'mobility', sp: {} })).rejects.toThrow('storefront hero fetch failed')
+  })
 })

@@ -24,10 +24,19 @@ async function fetchTagPage(cursor: string | null): Promise<ProductTagsResponse>
       { next: { revalidate: 3600, tags: ['shopify', 'category-tree'] } },
     )
   } catch {
+    // storefrontFetch's underlying cachedRequest is wrapped in React's
+    // cache(), which memoizes per unique argument set for the life of the
+    // server render. Retrying with byte-identical query/variables/
+    // fetchOptions would hit the SAME memoized (already-rejected) promise
+    // from the failed call above instead of issuing a real second HTTP
+    // request — this call would throw instantly without ever retrying. The
+    // 'retry' dedupeSalt gives this attempt its own cache() entry so it
+    // actually re-fetches.
     return await storefrontFetch<ProductTagsResponse>(
       GET_ALL_PRODUCT_TAGS,
       { first: 250, after: cursor },
       { next: { revalidate: 3600, tags: ['shopify', 'category-tree'] } },
+      'retry',
     )
   }
 }
