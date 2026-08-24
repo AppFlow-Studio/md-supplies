@@ -317,6 +317,14 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/bariatric')
   })
 
+  it('preserves the query string on the /bariatricproducts redirect', () => {
+    const res = proxy(req('/bariatricproducts', '?utm_source=email'))
+    expect(res?.status).toBe(301)
+    const location = new URL(res!.headers.get('Location')!)
+    expect(location.pathname).toBe('/category/bariatric')
+    expect(location.searchParams.get('utm_source')).toBe('email')
+  })
+
   it('row 3: Dynarex Specimen Containers → /partners/dynarex', () => {
     const res = proxy(req('/medical-supplies-Dynarex-Specimen-Containers-4oz-22I48F9UI7.html'))
     expect(res?.status).toBe(301)
@@ -657,6 +665,18 @@ describe('proxy — global no-chain / no-loop guardrail (regression: e21205c sil
     for (const { from } of PRODUCT_ROWS.slice(0, 50)) {
       const target = PRODUCT_REDIRECTS_FOR_TEST.get(from)!
       expectPassThrough(proxy(req(target)))
+    }
+  })
+})
+
+describe('proxy — REDIRECT_ENTRIES query-string preservation (regression: shared dispatch loop dropped request.nextUrl.search)', () => {
+  it('preserves the query string across a sample of REDIRECT_ENTRIES 301 rows', () => {
+    const rows301 = REDIRECT_ENTRIES.filter((entry) => entry.status === 301)
+    for (const entry of rows301.slice(0, 10)) {
+      const res = proxy(req(entry.from, '?utm_source=newsletter&utm_campaign=spring'))
+      expect(res?.status, entry.from).toBe(301)
+      const location = new URL(res!.headers.get('Location')!)
+      expect(location.search, entry.from).toBe('?utm_source=newsletter&utm_campaign=spring')
     }
   })
 })

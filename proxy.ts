@@ -303,7 +303,9 @@ export function proxy(request: NextRequest): Response {
   for (const entry of REDIRECT_ENTRIES) {
     if (pathname !== entry.from) continue
     if (entry.status === 410) return withCsp(new Response(null, { status: 410 }), nonce)
-    return withCsp(NextResponse.redirect(new URL(entry.to, request.url), 301), nonce)
+    const url = new URL(entry.to, request.url)
+    url.search = request.nextUrl.search
+    return withCsp(NextResponse.redirect(url, 301), nonce)
   }
 
   // Bulk product catalog 301s (consolidated/discontinued handles) — exact match.
