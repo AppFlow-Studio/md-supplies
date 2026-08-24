@@ -75,11 +75,11 @@ describe('QA fixture registry', () => {
     expect(d.message).toBe('Free shipping')
   })
 
-  it('makes no promise on the threshold fixture, wording being unapproved', () => {
+  it('shows the approved threshold copy on the threshold fixture', () => {
     const { productGid, variantGids } = gidsFor('qa-dukal-threshold')
     const d = resolveVariantShippingDisplay(productGid, variantGids[0])
     expect(d.class).toBe('threshold')
-    expect(d.message).toBe(SHIPPING_FALLBACK_MESSAGE)
+    expect(d.message).toBe('Free Shipping on orders $30+')
   })
 
   it('shows approved display_copy on the min-order fixture, the one case copy is allowed', () => {
