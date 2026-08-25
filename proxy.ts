@@ -127,6 +127,39 @@ function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, non
   return withCsp(NextResponse.redirect(url, 301), nonce)
 }
 
+// ─── Self-titled category-duplicate collapse (final-review fix wave) ────────
+//
+// P1 Task 1 added a redirect() call in app/category/[slug]/[product]/page.tsx
+// to collapse 7 self-titled duplicate pages (e.g. /category/hygiene/hygiene
+// -> /category/hygiene — a `category:hygiene` + `subcategory:hygiene` tag
+// pair on the same products, MASTER-PLAN §10). That redirect() doesn't
+// produce a real HTTP 301 in this fork: the route streams (root
+// app/layout.tsx wraps in <Suspense>), and redirect() degrades to a
+// client-side meta-refresh in a streaming context instead of an HTTP
+// redirect. The real fix belongs here, at the middleware layer, which
+// already gives real 301s.
+//
+// Registry-driven off CATEGORY_TREE_L1 — the same `subslug === l1.tag`
+// condition lib/category-tree.ts's buildL2Tree already uses to exclude a
+// self-titled L2 node, and the same condition
+// app/category/[slug]/[product]/page.tsx already checks (kept there too,
+// as defense in depth — this proxy intercepts first in production, so that
+// code becomes dead-but-harmless). Matched on the PUBLIC slug
+// (getCategorySlug), not collectionHandle, so a slug/handle-divergent
+// category (Face Masks: public slug face-masks, Shopify handle
+// face-coverings) resolves correctly off its canonical slug rather than a
+// raw handle that would never appear in a /category/<slug>/... URL.
+function redirectSelfTitledCategoryDuplicate(pathname: string, request: NextRequest, nonce: string): Response | null {
+  const match = pathname.match(/^\/category\/([^/]+)\/([^/]+)$/)
+  if (!match) return null
+  const [, slug, subslug] = match
+  const l1 = CATEGORY_TREE_L1.find((c) => getCategorySlug(c) === slug)
+  if (!l1 || subslug !== l1.tag) return null
+  const url = new URL(`/category/${slug}`, request.url)
+  url.search = request.nextUrl.search
+  return withCsp(NextResponse.redirect(url, 301), nonce)
+}
+
 // ─── Category-level 410s (§4.3) ───────────────────────────────────────────────
 //
 // Categories permanently removed from the new taxonomy. A direct hit (or a
@@ -293,6 +326,18 @@ export function proxy(request: NextRequest): Response {
 
   const legacyHandleRedirect = redirectLegacyProductHandle(pathname, request, nonce)
   if (legacyHandleRedirect) return legacyHandleRedirect
+
+  // Self-titled category-duplicate collapse — checked before the
+  // face-coverings subtree rewrite below so a URL already in its canonical
+  // public-slug form (e.g. /category/face-masks/face-masks) resolves in one
+  // hop rather than depending on rewrite order. (A raw-handle-prefixed
+  // variant, e.g. /category/face-coverings/face-masks, is NOT a case this
+  // ordering fixes either way — see the function's doc comment and
+  // __tests__/proxy.test.ts's "ordering investigation" test — but it is not
+  // a reachable URL under the current registry, since face-masks has no
+  // live self-titled subcategory pair.)
+  const selfTitledRedirect = redirectSelfTitledCategoryDuplicate(pathname, request, nonce)
+  if (selfTitledRedirect) return selfTitledRedirect
 
   // Face Masks canonical alias: Shopify collection handle is face-coverings; canonical
   // public URL is /category/face-masks. Subtree redirect so both the category root and

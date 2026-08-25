@@ -532,6 +532,80 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
   })
 })
 
+// Final-review fix wave: P1 Task 1's redirect() call in
+// app/category/[slug]/[product]/page.tsx doesn't produce a real HTTP 301 in
+// this fork (streaming context degrades redirect() to a client-side
+// meta-refresh). The real fix moves the self-titled-duplicate collapse
+// (/category/<slug>/<slug> → /category/<slug>) here, registry-driven off
+// CATEGORY_TREE_L1 — same `subslug === l1.tag` condition buildL2Tree and the
+// page component already use, matched against the PUBLIC slug
+// (getCategorySlug) rather than collectionHandle so a slug/handle-divergent
+// category (Face Masks) resolves correctly.
+describe('proxy — self-titled category duplicate collapse (real 301, MASTER-PLAN §10 follow-up)', () => {
+  it('collapses /category/hygiene/hygiene to /category/hygiene with a real 301', () => {
+    const res = proxy(req('/category/hygiene/hygiene'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/hygiene')
+  })
+
+  it('collapses /category/disinfectants/disinfectants to /category/disinfectants', () => {
+    const res = proxy(req('/category/disinfectants/disinfectants'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/disinfectants')
+  })
+
+  it('collapses /category/pharmacy-products/pharmacy-products to /category/pharmacy-products', () => {
+    const res = proxy(req('/category/pharmacy-products/pharmacy-products'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/pharmacy-products')
+  })
+
+  it('does NOT redirect a real, non-self-titled /category/<x>/<y> subcategory URL (control case)', () => {
+    expectPassThrough(proxy(req('/category/mobility/some-real-product-handle')))
+  })
+
+  it('preserves the query string on the collapse redirect', () => {
+    const res = proxy(req('/category/hygiene/hygiene', '?utm_source=email'))
+    expect(res?.status).toBe(301)
+    const location = new URL(res!.headers.get('Location')!)
+    expect(location.pathname).toBe('/category/hygiene')
+    expect(location.searchParams.get('utm_source')).toBe('email')
+  })
+
+  it('stamps CSP on the collapse redirect like every other response path', () => {
+    const res = proxy(req('/category/hygiene/hygiene'))
+    expect(res?.headers.get('Content-Security-Policy')).toBeTruthy()
+  })
+
+  it('is registry-driven: matches on PUBLIC slug (getCategorySlug), so a divergent-handle L1 (Face Masks: slug "face-masks", handle "face-coverings") resolves correctly off its canonical slug', () => {
+    const res = proxy(req('/category/face-masks/face-masks'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/face-masks')
+  })
+
+  it('ordering investigation: a /category/face-coverings/<subslug> URL is rewritten by the face-coverings subtree rule FIRST (this new rule matches on public slug, and "face-coverings" is never a public slug), so a hypothetical self-titled pair under the raw handle prefix would take 2 hops — documented here as NOT a reachable case: it would require a live "face-masks" subcategory tag nested under the Face Masks L1, and face-masks is not one of the registry\'s self-titled pairs (only hygiene, disinfectants, pharmacy-products, exam-room, wound-care, home-care, surgery-procedure are — all handle===slug categories, never routed through the face-coverings rewrite in the first place)', () => {
+    const res = proxy(req('/category/face-coverings/face-masks'))
+    expect(res?.status).toBe(301)
+    // Single hop today: the face-coverings rule rewrites straight to
+    // /category/face-masks/face-masks, which is itself a self-titled
+    // duplicate. In production, that intermediate URL would need a second
+    // request to fully collapse — but no live registry entry ever produces
+    // this pathname (see note above), so this is not an observable 2-hop
+    // chain for any real, reachable URL.
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/category/face-masks/face-masks')
+  })
+
+  it('every L1 self-titled pathname (/category/<slug>/<tag>) redirects to the L1 canonical route, and that route is not itself a redirect source (registry-driven sweep, extends the global no-chain/no-loop guardrail)', () => {
+    for (const l1 of CATEGORY_TREE_L1) {
+      const slug = getCategorySlug(l1)
+      const res = proxy(req(`/category/${slug}/${l1.tag}`))
+      expect(res?.status, l1.tag).toBe(301)
+      expect(new URL(res!.headers.get('Location')!).pathname, l1.tag).toBe(`/category/${slug}`)
+      expectPassThrough(proxy(req(`/category/${slug}`)))
+    }
+  })
+})
+
 describe('proxy — path normalization (pass-through for unknown)', () => {
   it('passes through unknown paths', () => {
     expectPassThrough(proxy(req('/some-random-page')))
