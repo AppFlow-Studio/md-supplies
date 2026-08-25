@@ -2,7 +2,7 @@
 
 **Branch:** catalog-cro-review-sardor-dev
 **Starting SHA:** `190a089b41d8b98a48fbfe386b701a5a27f69764`
-**Final SHA:** `e3be912a4c6268528380b4c9809023fbf61f05b0` (this task's own docs commit — `docs: P1 remediation results and status`)
+**Final SHA:** `aa20f49` (Task 4: `feat(seo): implement IndexNow submission on product/collection webhooks`; docs commits follow)
 
 ## What this plan fixed (code)
 
