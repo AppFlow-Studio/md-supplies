@@ -57,3 +57,20 @@ Tasks 1–3 of the P0 remediation plan landed and resolved the **merge regressio
 - Finding 4 (sitemap-only orphan URLs): P1 scope
 - Finding 5 (content-level SEO): Content ops / Shopify Admin
 - Finding 6 (downstream noise): Resolved by 1–5
+
+## Resolved this plan (P1, 2026-08-25)
+
+The P1 remediation plan (`docs/superpowers/plans/2026-08-25-seo-p1-remediation.md`) landed Tasks 1–4 on this branch, `190a089..aa20f49`:
+
+- **Task 1 (commit `6dd0a49`):** Collapsed the 7 self-titled duplicate `/category/<x>/<x>` pages (e.g. `/category/hygiene/hygiene`) by excluding any subcategory tag equal to its own resolved parent tag from `buildL2Tree` (`lib/category-tree.ts`) — fixing nav, the footer subcategory list, and the sitemap in one place, since all three consume that function's output — plus an explicit URL-level redirect in `app/category/[slug]/[product]/page.tsx` so the URL itself resolves cleanly instead of 404ing.
+- **Task 2 (commit `d7b084b`):** Added two new legacy redirects: `/collections/all` → `/categories` and `/a/sitemap-tools/sitemap` → `/sitemap.xml` (the latter had 8,128 inlinks per the 2026-08-21 Ahrefs export).
+- **Task 3 (commits `3286b5c`..`1669f04`):** Replaced the single flat sitemap (`getSitemapUrls()`) with a sitemap index (`/sitemap.xml`) plus sharded children (`content` shard + product shards at 2,000 URLs/file) via Next's native `generateSitemaps()`.
+- **Task 4 (commit `aa20f49`):** Implemented IndexNow — submits the affected product/category URL on real `products/*`/`collections/*` Shopify webhook topics, fire-and-forget, never blocking the webhook response. Previously not implemented anywhere in the repo.
+
+**Result:** Full verification recorded in `FINAL-RESULTS-P1.md` — `npm test` (151 files / 1627 tests passing), `tsc --noEmit` clean, `npm run build` clean (one pre-existing, unrelated Turbopack warning), and live dev-server checks. The two Task 2 redirects and the Task 3 sitemap index were confirmed working exactly as designed. **One gap found during this verification pass, not yet fixed:** the Task 1 URL-level redirect for `/category/hygiene/hygiene` does not issue an HTTP 301 (or any 3xx) — it degrades to a client-side `<meta http-equiv="refresh">` tag because `redirect()` in this Next.js fork emits a meta-refresh instead of an HTTP redirect header when called in a streaming context (this route streams via the root `Suspense` boundary; see `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/redirect.md:12`). The registry-level exclusion (nav/footer/sitemap) works correctly; only the URL's own redirect signal is weaker than intended. See `FINAL-RESULTS-P1.md`'s Verification section for the full trace and a suggested fix direction.
+
+**Out of scope for this plan (P1):**
+- Finding 4 (sitemap-only orphan URLs) is **still NOT resolved** by this plan. P1-01 (orphan/one-inlink pages) and the P1-02 singular/plural taxonomy consolidation list both require a live post-P0 Ahrefs re-crawl to know what's still actually live — the existing CSVs predate the P0 redirect/collection fixes and were never committed to this repo, so scoping either item from stale data risks "fixing" a pair P0 already collapsed. See this plan's own "What this plan does NOT do" section (`docs/superpowers/plans/2026-08-25-seo-p1-remediation.md`) for the full reasoning. Left for the next plan, after a re-crawl.
+- robots.txt filter/sort/param disallow rules and the `/checkout` disallow suggestion: not implemented, would be regressions or are moot — see the plan's own header section.
+- Structured-data fix for the 12 pharmacy/HRT-clinic Rich Results errors: the prior session's hypothesis doesn't hold against current code; needs a live Rich Results Test or fresh Ahrefs export, not a guess-fix.
+- Master plan P2 (metadata/images/performance) and P3 (remaining designer feedback items): untouched, per the original P0 handoff's own sequencing (P1 before P2/P3).
