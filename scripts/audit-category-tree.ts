@@ -6,9 +6,12 @@ import {
   buildL1Tiles,
   buildL2Tree,
   CATEGORY_TREE_L1,
+  getCategorySlug,
+  getTopSubcategoriesForParent,
   isAttributeSubcategoryTag,
 } from '../lib/category-tree'
 import { fetchProductTagSummaries } from '../lib/category-tree-data.server'
+import { fetchAllCollectionHandles } from '../lib/shopify/collection-handles.server'
 
 loadEnvConfig(process.cwd())
 
@@ -70,6 +73,21 @@ async function main() {
 
   lines.push('')
   lines.push(`Total routable subcategory: values (post attribute-exclusion): ${l2Nodes.length}`)
+
+  const liveHandles = new Set((await fetchAllCollectionHandles()).map((c) => c.handle))
+
+  lines.push('')
+  lines.push('## Frontend category → Shopify collection reconciliation')
+  lines.push('')
+  lines.push('| Frontend Category | Route | Configured Shopify Handle | Live Collection Exists? | Parent | Children (top 4) | Status |')
+  lines.push('|---|---|---|---|---|---|---|')
+  for (const l1 of CATEGORY_TREE_L1) {
+    const slug = getCategorySlug(l1)
+    const exists = liveHandles.has(l1.collectionHandle) ? 'YES' : 'NO — MISSING'
+    const children = getTopSubcategoriesForParent(l1.tag, l2Nodes, 4).map((n) => n.tag).join(', ') || '_none_'
+    const status = liveHandles.has(l1.collectionHandle) ? 'OK' : 'FLAG — configured handle not found live'
+    lines.push(`| ${l1.displayName} | /category/${slug} | ${l1.collectionHandle} | ${exists} | — | ${children} | ${status} |`)
+  }
 
   const report = lines.join('\n') + '\n'
   writeFileSync('audit/category-tree-audit-report.md', report)
