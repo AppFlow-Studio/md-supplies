@@ -115,7 +115,8 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
 
   // `slug` is the public canonical URL segment; a handful of categories
   // (e.g. face-masks) alias it to a differently-named live Shopify
-  // collection (face-coverings) — see lib/category-nav.ts canonicalSlug.
+  // collection (face-coverings) — see lib/category-tree.ts's
+  // getCategorySlug/CANONICAL_SLUG_BY_HANDLE.
   // Every Shopify-facing lookup below must use the real handle, not slug.
   const shopifyHandle = getShopifyHandle(slug)
 
@@ -239,7 +240,8 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
 
   // `slug` is the public canonical URL segment; a handful of categories
   // (e.g. face-masks) alias it to a differently-named live Shopify
-  // collection (face-coverings) — see lib/category-nav.ts canonicalSlug.
+  // collection (face-coverings) — see lib/category-tree.ts's
+  // getCategorySlug/CANONICAL_SLUG_BY_HANDLE.
   // Every Shopify-facing lookup below must use the real handle, not slug.
   const shopifyHandle = getShopifyHandle(slug)
 

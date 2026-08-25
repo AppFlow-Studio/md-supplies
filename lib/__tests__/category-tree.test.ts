@@ -515,4 +515,19 @@ describe('getAllowedHandles', () => {
   it('does not contain an arbitrary non-registry handle', () => {
     expect(getAllowedHandles().has('random-nonexistent')).toBe(false)
   })
+
+  it('deliberately excludes legacy category-nav.ts sub-handles that have no standalone header-nav tile', () => {
+    // The old lib/category-nav.ts allowlist flat-mapped every matchedHandles
+    // entry across all categories (~36 handles), including sub-collections
+    // like 'footwear' (under Apparel) and 'exam-tables' (under Room
+    // Furniture). The new allowlist is CATEGORY_TREE_L1 collection handles +
+    // FEATURED_SUBCATEGORIES only (26 handles) — exactly what
+    // buildCategoryTreeNav links in the header/footer nav. Neither 'footwear'
+    // nor 'exam-tables' has its own header nav entry (only the parent
+    // Apparel / Room Furniture tile does), so predictive search — the only
+    // live consumer of getAllowedHandles() — should not suggest them either.
+    const allowed = getAllowedHandles()
+    expect(allowed.has('footwear')).toBe(false)
+    expect(allowed.has('exam-tables')).toBe(false)
+  })
 })

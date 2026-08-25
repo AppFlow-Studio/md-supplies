@@ -350,6 +350,22 @@ export function getShopifyHandle(slug: string): string {
 // getAllowedHandles(): every L1's canonical collection handle plus every
 // featured subcategory's — the full set of Shopify collections this
 // storefront intentionally links to.
+//
+// Deliberately NARROWER than the legacy category-nav.ts version it replaced.
+// The old allowlist flat-mapped every ROADMAP_CATEGORIES.matchedHandles entry
+// across all categories — ~36 handles, including sub-handles like footwear,
+// caps-headwear, coats-jackets, medical-scrubs, pants-shirts,
+// undergarments-wraps (Apparel), the 4 disposable/reusable trocar-size
+// handles (Surgery & Procedure), and exam-tables (Room Furniture). Those
+// extra handles now live only in artworkFallbackHandles above — a hero-image
+// lookup key, not a membership/allow signal. This function's only live
+// consumer (app/api/search/predictive/route.ts) exists to gate suggestions
+// to "the same allowlist the header nav uses," and buildCategoryTreeNav below
+// is built from exactly this same 26-handle set (CATEGORY_TREE_L1 +
+// FEATURED_SUBCATEGORIES) — the header/footer nav never links any of those
+// ~11 sub-handles as their own tile. So this narrower set isn't a regression;
+// it fixes predictive search being able to suggest a collection (e.g.
+// "Footwear") with no dedicated page in the storefront's own navigation.
 export function getAllowedHandles(): Set<string> {
   return new Set([
     ...CATEGORY_TREE_L1.map((c) => c.collectionHandle),
