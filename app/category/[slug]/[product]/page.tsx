@@ -30,6 +30,7 @@ import {
   parseProductTags,
   type L2Node,
   getCategorySlug,
+  getShopifyHandle,
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { getNonce } from '@/lib/csp-nonce'
@@ -74,7 +75,12 @@ interface Props {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
   const sp = await searchParams
-  const l1 = getL1ByCollectionHandle(slug)
+  // `slug` is the PUBLIC URL slug, which diverges from the real Shopify
+  // collection handle for Face Masks (slug "face-masks", handle
+  // "face-coverings") — getL1ByCollectionHandle matches on collectionHandle,
+  // so it must be resolved through getShopifyHandle first (same pattern
+  // components/category/CategoryPageView.tsx already uses).
+  const l1 = getL1ByCollectionHandle(getShopifyHandle(slug))
 
   if (l1) {
     // Self-titled duplicate (/category/hygiene/hygiene) — same rule as the
@@ -280,7 +286,9 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
   const nonce = await getNonce()
   const { slug, product: handle } = await params
   const sp = await searchParams
-  const l1 = getL1ByCollectionHandle(slug)
+  // See generateMetadata above for why this must resolve through
+  // getShopifyHandle first, not the raw public slug.
+  const l1 = getL1ByCollectionHandle(getShopifyHandle(slug))
 
   // Self-titled duplicate (/category/hygiene/hygiene) — collapse onto the
   // parent category page instead of falling through to the product lookup
