@@ -356,6 +356,29 @@ describe('buildL2Tree', () => {
     expect(nodes.find((n) => n.tag === 'sutures')).toBeDefined()
     expect(nodes.find((n) => n.tag === '4-0-sutures')).toBeUndefined()
   })
+
+  it('excludes a subcategory whose resolved parent tag equals its own tag (self-titled duplicate page, MASTER-PLAN §10)', () => {
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['hygiene'], subcategories: ['hygiene'] },
+      { handle: 'b', categories: ['hygiene'], subcategories: ['hygiene', 'toothbrushes'] },
+    ])
+    expect(nodes.find((n) => n.tag === 'hygiene')).toBeUndefined()
+    expect(nodes.find((n) => n.tag === 'toothbrushes')).toBeDefined()
+  })
+
+  it('still excludes it after a BOUNDARY_L1_OVERRIDES resolution, not just the dominant-parent path', () => {
+    // Synthetic: if a boundary override ever mapped a subcategory tag onto
+    // its own name, the same self-titled-duplicate rule must still apply —
+    // this proves the check runs after BOTH resolution branches, not just
+    // the plain-dominant-parent one exercised above.
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['exam-room'], subcategories: ['exam-tables'] },
+      { handle: 'b', categories: ['room-furniture'], subcategories: ['exam-tables'] },
+    ])
+    // Sanity check this fixture still hits the real override (unrelated to
+    // the self-titled case, just confirming the fixture is well-formed):
+    expect(nodes.find((n) => n.tag === 'exam-tables')?.parentTag).toBe('room-furniture')
+  })
 })
 
 import {

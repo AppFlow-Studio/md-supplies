@@ -303,6 +303,19 @@ export function buildL2Tree(summaries: ProductTagSummary[]): L2Node[] {
       const [dominant] = [...parentCounts.entries()].sort((a, b) => b[1] - a[1])
       parentTag = dominant[0]
     }
+    // A subcategory tag identical to its own resolved parent tag produces a
+    // self-titled duplicate page (/category/hygiene/hygiene) whose product
+    // set is a strict subset of the parent category itself — not a real
+    // second-level category, almost always a redundant category:+subcategory:
+    // tag pair on the same product (2026-08-seo-remediation MASTER-PLAN §10,
+    // 7 confirmed live pairs: hygiene, disinfectants, pharmacy-products,
+    // exam-room, wound-care, home-care, surgery-procedure). Excluding it here
+    // fixes nav, the in-page subcategory list, AND the sitemap in one place,
+    // since all three are built from this function's output. The URL itself
+    // still needs an explicit redirect — see app/category/[slug]/[product]/
+    // page.tsx, since without this node it would otherwise fall through to a
+    // fresh 404 instead of collapsing onto the parent category page.
+    if (sub === parentTag) continue
     nodes.push({ tag: sub, parentTag, crossLinkParentTag, productCount: subProductCounts.get(sub) ?? 0 })
   }
   return nodes
