@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getSitemapUrls } from '../sitemap'
+import {
+  getSitemapUrls,
+  getContentSitemapUrls,
+  getProductShardCount,
+  getProductSitemapUrls,
+  PRODUCTS_PER_SITEMAP_SHARD,
+} from '../sitemap'
 import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES } from '@/lib/category-tree'
 
 vi.mock('@/lib/shopify/storefront', () => ({
@@ -315,5 +321,59 @@ describe('getSitemapUrls', () => {
     expect(l1).not.toContain('https://mdsupplies.com/category/face-coverings')
     // No query-parameter variants ever reach the sitemap.
     expect(urls.some((u) => u.includes('?'))).toBe(false)
+  })
+})
+
+describe('getContentSitemapUrls', () => {
+  it('includes every non-product URL getSitemapUrls includes', async () => {
+    setupDefaultMocks({ collections: ['gloves'] })
+    const urls = (await getContentSitemapUrls()).map((e) => e.url)
+    expect(urls.some((u) => u === 'https://mdsupplies.com/')).toBe(true)
+    expect(urls).toContain('https://mdsupplies.com/category/gloves')
+    // Partners are static config (lib/partners.ts), not Shopify-fetched, so
+    // they need no mock — asserting presence here just confirms
+    // getContentSitemapUrls still includes them after the refactor.
+    expect(urls.some((u) => u.includes('/partners/'))).toBe(true)
+  })
+
+  it('never includes a /product/ URL', async () => {
+    setupDefaultMocks({ collections: ['gloves'], products: ['exam-gloves-3xl'] })
+    const urls = (await getContentSitemapUrls()).map((e) => e.url)
+    expect(urls.some((u) => u.startsWith('https://mdsupplies.com/product/'))).toBe(false)
+  })
+})
+
+describe('getProductShardCount', () => {
+  it('returns 1 for a product count at or under one shard', async () => {
+    setupDefaultMocks({ products: Array.from({ length: 500 }, (_, i) => `product-${i}`) })
+    expect(await getProductShardCount()).toBe(1)
+  })
+
+  it('returns the ceiling of productCount / PRODUCTS_PER_SITEMAP_SHARD for a count spanning multiple shards', async () => {
+    setupDefaultMocks({ products: Array.from({ length: PRODUCTS_PER_SITEMAP_SHARD + 1 }, (_, i) => `product-${i}`) })
+    expect(await getProductShardCount()).toBe(2)
+  })
+
+  it('returns at least 1 even with zero products', async () => {
+    setupDefaultMocks({ products: [] })
+    expect(await getProductShardCount()).toBe(1)
+  })
+})
+
+describe('getProductSitemapUrls', () => {
+  it('returns only the products belonging to the requested shard index', async () => {
+    const total = PRODUCTS_PER_SITEMAP_SHARD + 10
+    setupDefaultMocks({ products: Array.from({ length: total }, (_, i) => `product-${i}`) })
+    const shard0 = await getProductSitemapUrls(0)
+    const shard1 = await getProductSitemapUrls(1)
+    expect(shard0).toHaveLength(PRODUCTS_PER_SITEMAP_SHARD)
+    expect(shard1).toHaveLength(10)
+    expect(shard0[0].url).toBe('https://mdsupplies.com/product/product-0')
+    expect(shard1[0].url).toBe(`https://mdsupplies.com/product/product-${PRODUCTS_PER_SITEMAP_SHARD}`)
+  })
+
+  it('returns an empty array for a shard index beyond the actual product count', async () => {
+    setupDefaultMocks({ products: ['only-one'] })
+    expect(await getProductSitemapUrls(5)).toEqual([])
   })
 })
