@@ -5,9 +5,13 @@ import crypto from 'node:crypto'
 
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }))
 vi.mock('@/lib/env.server', () => ({ serverEnv: { shopifyWebhookSecret: 'test-secret' } }))
+vi.mock('@/lib/seo/indexnow', () => ({ submitUrlToIndexNow: vi.fn().mockResolvedValue(undefined) }))
 
 import { revalidateTag } from 'next/cache'
 const mockRevalidateTag = vi.mocked(revalidateTag)
+
+import { submitUrlToIndexNow } from '@/lib/seo/indexnow'
+const mockSubmitToIndexNow = vi.mocked(submitUrlToIndexNow)
 
 function signBody(body: string): string {
   return crypto.createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64')
@@ -62,6 +66,7 @@ describe('dynamic routes: tag-invalidated pages do not carry dead ISR config', (
 describe('POST /api/revalidate — products/* also invalidates the broad collections tag', () => {
   beforeEach(() => {
     mockRevalidateTag.mockReset()
+    mockSubmitToIndexNow.mockReset()
   })
 
   it('invalidates products, product:<handle>, AND the broad collections tag on products/update', async () => {
@@ -100,5 +105,56 @@ describe('POST /api/revalidate — products/* also invalidates the broad collect
     const res = await POST(request)
     const json = await res.json()
     expect(json.revalidated).not.toEqual(expect.arrayContaining([expect.stringMatching(/^collection:/)]))
+  })
+
+  it('submits the product URL to IndexNow when the payload carries a handle', async () => {
+    const { POST } = await import('../app/api/revalidate/route')
+    const body = JSON.stringify({ handle: 'wheelchair-transport-17' })
+    const request = new Request('https://example.com/api/revalidate', {
+      method: 'POST',
+      headers: {
+        'x-shopify-hmac-sha256': signBody(body),
+        'x-shopify-topic': 'products/update',
+      },
+      body,
+    })
+
+    await POST(request)
+
+    expect(mockSubmitToIndexNow).toHaveBeenCalledWith('https://mdsupplies.com/product/wheelchair-transport-17')
+  })
+
+  it('does not submit to IndexNow when the payload has no handle (e.g. some delete payloads)', async () => {
+    const { POST } = await import('../app/api/revalidate/route')
+    const body = JSON.stringify({ id: 12345 })
+    const request = new Request('https://example.com/api/revalidate', {
+      method: 'POST',
+      headers: {
+        'x-shopify-hmac-sha256': signBody(body),
+        'x-shopify-topic': 'products/delete',
+      },
+      body,
+    })
+
+    await POST(request)
+
+    expect(mockSubmitToIndexNow).not.toHaveBeenCalled()
+  })
+
+  it('submits the resolved category URL to IndexNow on a collections/* webhook, using the canonical slug not the raw handle', async () => {
+    const { POST } = await import('../app/api/revalidate/route')
+    const body = JSON.stringify({ handle: 'face-coverings' })
+    const request = new Request('https://example.com/api/revalidate', {
+      method: 'POST',
+      headers: {
+        'x-shopify-hmac-sha256': signBody(body),
+        'x-shopify-topic': 'collections/update',
+      },
+      body,
+    })
+
+    await POST(request)
+
+    expect(mockSubmitToIndexNow).toHaveBeenCalledWith('https://mdsupplies.com/category/face-masks')
   })
 })

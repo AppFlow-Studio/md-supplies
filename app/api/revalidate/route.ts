@@ -2,6 +2,9 @@ import crypto from 'node:crypto'
 import { revalidateTag } from 'next/cache'
 import { serverEnv } from '@/lib/env.server'
 import { logServerError } from '@/lib/log-error'
+import { submitUrlToIndexNow } from '@/lib/seo/indexnow'
+import { SITE_URL } from '@/lib/seo/constants'
+import { getL1ByCollectionHandle, getCategorySlug } from '@/lib/category-tree'
 
 // Shopify webhook receiver → on-demand cache invalidation (audit H1/M25).
 //
@@ -72,9 +75,22 @@ export async function POST(request: Request) {
     // the storefront, which read to the client as the SAVE causing a delayed
     // appearance rather than the cache window.
     invalidate('collections')
+    // Fire-and-forget: never await-block the webhook response on IndexNow's
+    // own availability. handle is only present on create/update payloads,
+    // not delete (matches the existing per-handle revalidateTag behavior
+    // above) — a delete still gets the broad 'products'/'collections' cache
+    // invalidation, just no IndexNow ping for a URL that's going away.
+    if (handle) void submitUrlToIndexNow(`${SITE_URL}/product/${handle}`)
   } else if (topic.startsWith('collections/')) {
     invalidate('collections')
-    if (handle) invalidate(`collection:${handle}`)
+    if (handle) {
+      invalidate(`collection:${handle}`)
+      // A collection's public slug can diverge from its Shopify handle
+      // (e.g. face-coverings -> /category/face-masks) — resolve through the
+      // same registry proxy.ts and the sitemap use, never guess /category/<handle>.
+      const l1 = getL1ByCollectionHandle(handle)
+      if (l1) void submitUrlToIndexNow(`${SITE_URL}/category/${getCategorySlug(l1)}`)
+    }
   } else {
     return Response.json({ revalidated, ignoredTopic: topic })
   }
