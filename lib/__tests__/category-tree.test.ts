@@ -363,6 +363,7 @@ import {
   humanizeTag,
   buildSubcategoryTagQuery,
   getSubcategoriesForParent,
+  getTopSubcategoriesForParent,
   getProductCategoryPath,
 } from '../category-tree'
 
@@ -409,6 +410,29 @@ describe('getSubcategoriesForParent', () => {
     ]
     const result = getSubcategoriesForParent('gloves', l2Nodes)
     expect(result.map((n) => n.tag).sort()).toEqual(['exam-gloves', 'surgical-gloves'])
+  })
+})
+
+describe('getTopSubcategoriesForParent', () => {
+  const l2Nodes = [
+    { tag: 'walkers', parentTag: 'mobility', productCount: 3 },
+    { tag: 'rollators', parentTag: 'mobility', productCount: 7 },
+    { tag: 'canes', parentTag: 'mobility', productCount: 5 },
+    { tag: 'bed-pans', parentTag: 'home-care', productCount: 4 },
+  ]
+
+  it('returns only the requested parent, ordered by product count descending', () => {
+    const top = getTopSubcategoriesForParent('mobility', l2Nodes, 2)
+    expect(top.map((n) => n.tag)).toEqual(['rollators', 'canes'])
+  })
+
+  it('returns fewer than the limit if the parent has fewer subcategories', () => {
+    const top = getTopSubcategoriesForParent('home-care', l2Nodes, 5)
+    expect(top.map((n) => n.tag)).toEqual(['bed-pans'])
+  })
+
+  it('returns an empty array for a parent with no subcategories', () => {
+    expect(getTopSubcategoriesForParent('gloves', l2Nodes, 4)).toEqual([])
   })
 })
 

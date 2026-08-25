@@ -388,6 +388,20 @@ export function getSubcategoriesForParent(parentTag: string, l2Nodes: L2Node[]):
   return l2Nodes.filter((n) => n.parentTag === parentTag)
 }
 
+/** Top N subcategories for a parent by live product count — for surfaces
+ *  (like the header dropdown) that need a curated preview rather than the
+ *  full L2 list the category page's own footer/tabs already show in full. */
+export function getTopSubcategoriesForParent(
+  parentTag: string,
+  l2Nodes: L2Node[],
+  limit: number,
+): L2Node[] {
+  return getSubcategoriesForParent(parentTag, l2Nodes)
+    .slice()
+    .sort((a, b) => b.productCount - a.productCount)
+    .slice(0, limit)
+}
+
 export type CategoryNavEntry = { displayName: string; href: string }
 
 export function buildCategoryTreeNav(
