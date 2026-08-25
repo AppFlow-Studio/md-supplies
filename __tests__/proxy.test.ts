@@ -325,6 +325,18 @@ describe('proxy — new 301 entries (backlink recovery)', () => {
     expect(location.searchParams.get('utm_source')).toBe('email')
   })
 
+  it('redirects the legacy /collections/all vanity URL to /categories (2026-08-21 audit)', () => {
+    const res = proxy(req('/collections/all'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/categories')
+  })
+
+  it('redirects the legacy Shopify /a/sitemap-tools/sitemap theme page to the real sitemap (2026-08-21 audit, 8,128 inlinks)', () => {
+    const res = proxy(req('/a/sitemap-tools/sitemap'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toBe('https://mdsupplies.com/sitemap.xml')
+  })
+
   it('row 3: Dynarex Specimen Containers → /partners/dynarex', () => {
     const res = proxy(req('/medical-supplies-Dynarex-Specimen-Containers-4oz-22I48F9UI7.html'))
     expect(res?.status).toBe(301)
