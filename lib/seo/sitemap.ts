@@ -173,9 +173,9 @@ async function fetchArticleUrls(): Promise<SitemapEntry[]> {
 /**
  * Every sitemap URL except products: static pages, categories, L2
  * subcategories, partners, industries, and blog articles. Small and mostly
- * static — one shard (id 'content' in app/sitemap.ts) is enough for all of
- * it, distinct from the product shards below which scale with the live
- * catalog.
+ * static — one shard (id 'content' in app/sitemaps/sitemap.ts) is enough
+ * for all of it, distinct from the product shards below which scale with
+ * the live catalog.
  */
 export async function getContentSitemapUrls(): Promise<MetadataRoute.Sitemap> {
   const partnerUrls: SitemapEntry[] = PARTNERS.map(p => ({
@@ -243,9 +243,9 @@ export async function getProductSitemapUrls(shardIndex: number): Promise<Metadat
 /**
  * Full, unsharded sitemap — content URLs plus every product. Kept for any
  * caller that wants the complete set in one call (and as the function this
- * file's existing test coverage was written against); app/sitemap.ts itself
- * now calls getContentSitemapUrls/getProductSitemapUrls directly instead, to
- * get the sharded index behavior.
+ * file's existing test coverage was written against); app/sitemaps/sitemap.ts
+ * itself now calls getContentSitemapUrls/getProductSitemapUrls directly
+ * instead, to get the sharded index behavior.
  */
 export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
   const [contentUrls, productUrls] = await Promise.all([
