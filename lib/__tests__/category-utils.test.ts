@@ -60,7 +60,7 @@ describe('getRelatedCategories', () => {
 })
 
 import { getPrimaryCollection } from '@/lib/category-utils'
-import { getAllowedHandles } from '@/lib/category-nav'
+import { getAllowedHandles } from '@/lib/category-tree'
 import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
 
 describe('getPrimaryCollection', () => {

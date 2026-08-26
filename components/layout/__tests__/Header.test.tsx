@@ -75,7 +75,7 @@ afterEach(() => {
 
 describe('Header — crawlable nav DOM (NF7)', () => {
   it('renders submenu /category/ links in the DOM without any interaction', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     // Panels are CSS-hidden but present (desktop dropdown + mobile drawer):
     // server HTML must contain the submenu links for crawl equity.
     const subs = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
@@ -86,7 +86,7 @@ describe('Header — crawlable nav DOM (NF7)', () => {
 
 describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
   it('trigger button has aria-haspopup/aria-expanded/aria-controls and toggles on click', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
 
     expect(trigger).toHaveAttribute('aria-haspopup', 'true')
@@ -104,7 +104,7 @@ describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
   })
 
   it('opens on focus within the item and closes on Escape with focus returned to the trigger', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
 
     fireEvent.focus(trigger)
@@ -118,7 +118,7 @@ describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
 
 describe('Header — mobile drawer a11y (NF9)', () => {
   function openDrawer() {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const hamburger = screen.getByRole('button', { name: 'Toggle menu' })
     fireEvent.click(hamburger)
     return hamburger
@@ -188,7 +188,7 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
   // it: Trocars is now a distinct route nested under its parent.
 
   it('renders parent and child as two DISTINCT links, each to its own route (desktop)', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     // The categories panel is always in the DOM (CSS-toggled, see NF7 above),
     // so its links are queryable via hidden: true without simulating hover/focus.
     const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
@@ -201,7 +201,7 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
   })
 
   it('nests the child inside its parent list item, not as a sibling of the category grid', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
     const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
 
@@ -213,13 +213,13 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
   })
 
   it('no longer renders the detached "Trocar Supplies" badge anywhere', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     expect(screen.queryAllByRole('link', { name: 'Trocar Supplies', hidden: true })).toHaveLength(0)
     expect(screen.queryAllByRole('link', { name: /Trocar Supplies/, hidden: true })).toHaveLength(0)
   })
 
   it('renders the same parent/child pair in the mobile categories panel', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     // Desktop panel + mobile drawer both render the pair, so each label
     // resolves to exactly two links — one per breakpoint's markup.
     expect(screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })).toHaveLength(2)
@@ -231,7 +231,7 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
       ...COLLECTIONS,
       makeCollection('surgery-procedure', 'Surgery & Procedure'),
     ]
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={withoutTrocars} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={withoutTrocars} l2Nodes={[]} />)
     expect(screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true }).length).toBeGreaterThan(0)
     expect(screen.queryAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })).toHaveLength(0)
   })
@@ -239,21 +239,55 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
 
 describe('Header — menu slug validation (NF11)', () => {
   it('keeps hrefs whose slug matches a real collection handle', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
     links.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
   })
 
   it('falls back to /categories for a menu title with no matching collection', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Totally Fake Category', hidden: true })
     expect(links.length).toBeGreaterThan(0)
     links.forEach((l) => expect(l).toHaveAttribute('href', '/categories'))
   })
 
   it('skips validation when the collections list is empty (fetch failed)', () => {
-    render(<Header menuItems={MENU} collections={[]} />)
+    render(<Header menuItems={MENU} collections={[]} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
     links.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
+  })
+})
+
+describe('Header — mega-dropdown subcategory children', () => {
+  const NAV_COLLECTIONS: SlimCollection[] = [
+    makeCollection('mobility', 'Mobility'),
+    makeCollection('home-care', 'Home Care'),
+    makeCollection('gloves', 'Gloves'),
+  ]
+  const L2_NODES = [
+    { tag: 'walkers', parentTag: 'mobility', productCount: 3 },
+    { tag: 'rollators', parentTag: 'mobility', productCount: 7 },
+    { tag: 'bed-pans', parentTag: 'home-care', productCount: 4 },
+  ]
+  const MENU_WITH_CATALOG_ONLY: MenuItem[] = [
+    makeMenuItem({ id: 'gid://shopify/MenuItem/catalog', title: 'Categories', type: 'CATALOG' }),
+  ]
+
+  it('renders Mobility with its top live subcategories as nested links', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={L2_NODES} />)
+    const [rollatorsLink] = screen.getAllByRole('link', { name: /rollators/i, hidden: true })
+    expect(rollatorsLink).toHaveAttribute('href', '/category/mobility/rollators')
+  })
+
+  it('renders Home Care with its subcategory too', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={L2_NODES} />)
+    const [bedPansLink] = screen.getAllByRole('link', { name: /bed pans/i, hidden: true })
+    expect(bedPansLink).toHaveAttribute('href', '/category/home-care/bed-pans')
+  })
+
+  it('degrades to a flat tile (no children) when l2Nodes is empty', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={[]} />)
+    expect(screen.queryByRole('link', { name: /rollators/i, hidden: true })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /^Mobility$/i, hidden: true }).length).toBeGreaterThan(0)
   })
 })

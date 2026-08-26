@@ -122,9 +122,19 @@ describe('SEO route guardrails — private routes stay noindexed', () => {
 })
 
 describe('SEO route guardrails — sitemap and robots entrypoints stay wired', () => {
-  it('app/sitemap.ts delegates to getSitemapUrls', () => {
-    const src = read('sitemap.ts')
-    expect(src).toMatch(/getSitemapUrls/)
+  it('app/sitemaps/sitemap.ts delegates to the sharded sitemap helpers and stays a sitemap index', () => {
+    // Master plan §16: the special generateSitemaps-exporting file (nested
+    // at app/sitemaps/sitemap.ts rather than the app root — a root-level
+    // app/sitemap.ts collides with the hand-built app/sitemap.xml/route.ts
+    // index at build time in this fork's Next 16.2.12) is composed from
+    // getContentSitemapUrls/getProductSitemapUrls/getProductShardCount
+    // rather than the unsharded getSitemapUrls — that function still exists
+    // for any other caller, but this file itself no longer calls it directly.
+    const src = read('sitemaps/sitemap.ts')
+    expect(src).toMatch(/getContentSitemapUrls/)
+    expect(src).toMatch(/getProductSitemapUrls/)
+    expect(src).toMatch(/getProductShardCount/)
+    expect(src).toMatch(/export\s+async\s+function\s+generateSitemaps/)
     expect(src).toMatch(/export default/)
   })
 

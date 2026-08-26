@@ -23,10 +23,23 @@ const DEFAULT_FETCH_OPTIONS: StorefrontFetchOptions = {
 // memoizes per-request when running inside a Next.js App Router render;
 // the string-serialised arguments guarantee reference-equal cache keys
 // even when callers pass structurally identical but distinct object literals.
+// `dedupeSalt` is NOT sent to Shopify and does not touch Next's separate
+// `next: { revalidate, tags }` data-cache layer inside fetch() below — it
+// exists ONLY to vary this function's react `cache()` memoization key. A
+// caller that deliberately wants a second, independent attempt at the same
+// query+variables+fetchOptions within one render (e.g. a retry after a
+// transient failure) passes a distinct salt so it gets a fresh cache() entry
+// instead of replaying the first attempt's memoized (possibly rejected)
+// promise. See lib/category-tree-data.server.ts's fetchTagPage for the
+// motivating case.
 const cachedRequest = cache(async function cachedRequest<T>(
   query: string,
   variablesKey: string,
   fetchOptionsKey: string,
+  // Unused in the body by design — its only job is to occupy a distinct
+  // position in cache()'s memoized argument list. Prefixed with `_` to
+  // satisfy the no-unused-vars lint rule; do not remove it as dead code.
+  _dedupeSalt?: string,
 ): Promise<ShopifyResponse<T>> {
   const variables = variablesKey ? JSON.parse(variablesKey) : undefined;
   const fetchOptions: StorefrontFetchOptions = fetchOptionsKey
@@ -75,11 +88,17 @@ export async function storefrontFetch<T>(
   query: string,
   variables?: Record<string, unknown>,
   fetchOptions?: StorefrontFetchOptions,
+  // Optional cache()-memoization-key differentiator — see the comment on
+  // cachedRequest above. Every existing 3-arg call site is unaffected: an
+  // omitted salt is `undefined` for all of them alike, so their dedup
+  // behavior against each other is unchanged.
+  dedupeSalt?: string,
 ): Promise<T> {
   const json = await cachedRequest<T>(
     query,
     variables ? JSON.stringify(variables) : '',
     fetchOptions ? JSON.stringify(fetchOptions) : '',
+    dedupeSalt,
   );
 
   if (json.errors?.length) {

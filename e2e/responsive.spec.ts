@@ -178,6 +178,98 @@ test.describe('discovery controls', () => {
   })
 })
 
+test.describe('category nav regression (headless category nav remediation, 2026-08-25)', () => {
+  // Selectors are attribute/id-based (aria-controls, panel ids from
+  // Header.tsx) rather than link text, because the "Categories" trigger's
+  // visible text is the Shopify menu item's TITLE (this QA store's main menu
+  // renders it as "Catalog", not "Categories") and can legitimately differ
+  // per environment/store — the structural ids are the stable contract.
+  const SUBCATEGORY_NAME = /rollators|walkers|canes/i
+
+  test('direct navigation to /category/mobility and a real subcategory both resolve with no runtime error', async ({ page }) => {
+    const res1 = await page.goto('/category/mobility', { waitUntil: 'domcontentloaded' })
+    expect(res1?.status(), '/category/mobility status').toBeLessThan(400)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
+
+    // Rollators — a real tag-derived Mobility subcategory surfaced by this
+    // task's reconciliation table (docs/audits/2026-08-25-nav-reconciliation-table.md).
+    const res2 = await page.goto('/category/mobility/rollators', { waitUntil: 'domcontentloaded' })
+    expect(res2?.status(), '/category/mobility/rollators status').toBeLessThan(400)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
+  })
+
+  test('desktop header dropdown hover reveals a nested subcategory link that resolves (Task 5 regression guard)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+    const trigger = page.locator('button[aria-controls="nav-panel-categories"]')
+    await trigger.hover()
+    const panel = page.locator('#nav-panel-categories')
+    await expect(panel).toBeVisible()
+
+    // A tag-derived nested child link inside the panel — not the top-level
+    // "Mobility" link itself — proves the mega-dropdown is rendering real
+    // subcategories (Task 5's fix), not just the flat L1 tile list.
+    const subLink = panel.getByRole('link', { name: SUBCATEGORY_NAME }).first()
+    await expect(subLink).toBeVisible()
+    await expect(subLink).toHaveAttribute('href', /^\/category\/[^/]+\/[^/]+$/)
+
+    await subLink.click()
+    await expect(page).not.toHaveURL(/\/categories$/)
+    await expect(page.locator('main')).not.toBeEmpty()
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
+  })
+
+  test('mobile drawer tap-to-expand reveals nested subcategory links', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+    await page.getByRole('button', { name: 'Toggle menu' }).click()
+    await expect(page.locator('#mobile-menu')).toBeVisible()
+
+    await page.locator('button[aria-controls="mobile-panel-categories"]').click()
+    const mobilePanel = page.locator('#mobile-panel-categories')
+    await expect(mobilePanel).toBeVisible()
+
+    const subLink = mobilePanel.getByRole('link', { name: SUBCATEGORY_NAME }).first()
+    await expect(subLink).toBeVisible()
+    await expect(subLink).toHaveAttribute('href', /^\/category\/[^/]+\/[^/]+$/)
+  })
+
+  test('repeated navigation between two categories, then back/forward, never leaves a blank page (Task 1 regression guard)', async ({ page }) => {
+    await page.goto('/category/mobility', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    await page.goto('/category/gloves', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    await page.goto('/category/mobility', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.locator('main')).not.toBeEmpty()
+
+    await page.goBack({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.locator('main')).not.toBeEmpty()
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
+
+    await page.goForward({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.locator('main')).not.toBeEmpty()
+  })
+
+  test('hard refresh on a category page renders correctly, not blank', async ({ page }) => {
+    await page.goto('/category/mobility', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.locator('main')).not.toBeEmpty()
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
+  })
+})
+
 test.describe('industry page states', () => {
   test('veterinary is noindex and invents no products', async ({ page }) => {
     const res = await page.goto('/industries/veterinary', { waitUntil: 'domcontentloaded' })

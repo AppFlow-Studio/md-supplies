@@ -4,7 +4,7 @@ import { FALLBACK } from '../resolve'
 import type { ShippingDisplay } from '../resolve'
 
 const STANDARD_FREE: ShippingDisplay = { class: 'standard-free', message: 'Free shipping', displayCopy: null }
-const THRESHOLD: ShippingDisplay = { class: 'threshold', message: 'Shipping calculated at checkout.', displayCopy: null }
+const THRESHOLD: ShippingDisplay = { class: 'threshold', message: 'Free Shipping on orders $30+', displayCopy: null }
 const STANDARD_PAID: ShippingDisplay = { class: 'standard-paid', message: 'Shipping calculated at checkout.', displayCopy: '$45.95 flat rate' }
 const MANUAL_QUOTE: ShippingDisplay = { class: 'manual-quote', message: 'Shipping calculated at checkout.', displayCopy: null }
 const UNKNOWN: ShippingDisplay = { class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null }

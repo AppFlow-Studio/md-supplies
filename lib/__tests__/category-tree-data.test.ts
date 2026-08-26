@@ -48,4 +48,37 @@ describe('fetchProductTagSummaries', () => {
     expect(summaries).toHaveLength(1)
     expect(mockFetch).toHaveBeenCalledTimes(1)
   })
+
+  it('retries a single failed page once before giving up', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        products: { nodes: [{ handle: 'a', tags: ['category:gloves'] }], pageInfo: { hasNextPage: true, endCursor: 'cursor-1' } },
+      })
+      .mockRejectedValueOnce(new Error('storefront timeout'))
+      .mockResolvedValueOnce({
+        products: { nodes: [{ handle: 'b', tags: ['category:dental'] }], pageInfo: { hasNextPage: false, endCursor: null } },
+      })
+
+    const { fetchProductTagSummaries } = await import('../category-tree-data.server')
+    const summaries = await fetchProductTagSummaries()
+
+    expect(summaries).toEqual([
+      { handle: 'a', categories: ['gloves'], subcategories: [] },
+      { handle: 'b', categories: ['dental'], subcategories: [] },
+    ])
+    expect(mockFetch).toHaveBeenCalledTimes(3)
+  })
+
+  it('still throws after a page fails twice in a row', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        products: { nodes: [{ handle: 'a', tags: [] }], pageInfo: { hasNextPage: true, endCursor: 'cursor-1' } },
+      })
+      .mockRejectedValueOnce(new Error('storefront timeout'))
+      .mockRejectedValueOnce(new Error('storefront timeout'))
+
+    const { fetchProductTagSummaries } = await import('../category-tree-data.server')
+    await expect(fetchProductTagSummaries()).rejects.toThrow('storefront timeout')
+    expect(mockFetch).toHaveBeenCalledTimes(3)
+  })
 })

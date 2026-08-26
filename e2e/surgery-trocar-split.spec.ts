@@ -343,16 +343,25 @@ test.describe('P0.2/P0.3 — nav hierarchy and categories hub', () => {
     )
     expect(spanning, 'a full-width cell re-creates the Mobility/Hygiene gap').toBe(0)
 
-    // The taller nested group must be LAST in its list, so its extra height
-    // strands no following neighbour — the second cause of the gap.
-    const nestedIsLast = await panel.evaluate((p) => {
-      const list = p.querySelector('ul')
-      if (!list) return false
-      const items = Array.from(list.children)
-      const nestedIdx = items.findIndex((li) => li.querySelector('ul'))
-      return nestedIdx === items.length - 1
-    })
-    expect(nestedIsLast, 'the nested category must be the last cell in the grid').toBe(true)
+    // 2026-08-25 nav remediation, fix round (see task-5-report.md): this used
+    // to assert the single nested-children group ("Surgery & Procedure", the
+    // only category with children at the time) sat LAST in the list, on the
+    // theory that only a trailing tall cell could avoid stranding a neighbour.
+    // That assumption no longer holds — the nav remediation intentionally
+    // gives nearly every primary category its own nested children now (13/13
+    // in the current catalog), so "last" is no longer a meaningful position:
+    // at most one nested group can structurally be last, and which one is
+    // arbitrary. The real invariant "no vertical hole opens up" is what
+    // mattered, and that is guarded directly and more robustly by the two
+    // checks that bracket this one: no `col-span-2` spanning cell (above) and
+    // no >8px gap between consecutive column-1 cells (below). Under plain
+    // grid auto-flow with zero manual spans/placement — which is what the
+    // "no col-span-2" check confirms is in effect — CSS Grid cannot leave a
+    // literal hole in a row-major 2-column layout; cells just pack tightly
+    // with uneven heights, which is what was verified live in Chrome for this
+    // fix (see task-5-report.md screenshots). So this position assertion is
+    // dropped rather than replaced: assertions #1 and #3 already fully cover
+    // the "Mobility/Hygiene gap" class of bug for the new multi-child design.
 
     // No vertical hole: every column-1 cell should butt up against the next.
     const maxGap = await panel.evaluate((p) => {

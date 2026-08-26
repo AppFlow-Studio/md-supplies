@@ -7,7 +7,7 @@ import { isRateLimited, clientIp } from '@/lib/rate-limit'
 // The client debounces keystrokes at 280ms (~3.5 req/s max), so 60/min per IP
 // leaves generous headroom for real users while capping scripted loops.
 const RATE_LIMIT = { limit: 60, windowMs: 60_000 }
-import { getAllowedHandles } from '@/lib/category-nav'
+import { getAllowedHandles } from '@/lib/category-tree'
 
 export interface PredictiveProduct {
   id: string
