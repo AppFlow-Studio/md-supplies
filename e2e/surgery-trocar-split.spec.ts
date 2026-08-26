@@ -305,7 +305,7 @@ test.describe('P0.4 — exactly one clear-search control', () => {
 })
 
 test.describe('P0.2/P0.3 — nav hierarchy and categories hub', () => {
-  test('the mega-menu nests Trocars under Surgery & Procedure with distinct hrefs', async ({ page }) => {
+  test('the mega-menu binds Trocars to Surgery & Procedure with distinct hrefs', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
@@ -314,12 +314,24 @@ test.describe('P0.2/P0.3 — nav hierarchy and categories hub', () => {
     await expect(surgery).toBeAttached()
     await expect(trocars).toBeAttached()
 
-    // Structural nesting, not visual proximity.
-    const nested = await trocars.evaluate((el) => {
-      const li = el.closest('li')?.parentElement?.closest('li')
-      return Boolean(li?.querySelector('a[href="/category/surgery-procedure"]'))
-    })
-    expect(nested).toBe(true)
+    // Two-stage disclosure (2026-08-26): the child no longer sits inside the
+    // parent's own <li>. The parent is a rail item and the child lives in the
+    // detail panel that rail item controls, so the relationship is carried by
+    // ARIA rather than DOM containment — still structural, still real for a
+    // screen reader, just expressed the way a disclosure has to express it.
+    const panel = page.locator('#nav-panel-categories')
+    const railLink = panel.locator('a[data-tag="surgery-procedure"]')
+    await expect(railLink).toBeAttached()
+    const railId = await railLink.getAttribute('id')
+
+    const detail = panel.locator(`[aria-labelledby="${railId}"]`)
+    await expect(detail).toBeAttached()
+    await expect(detail.locator('a[href="/category/trocars-trocar-kits"]')).toHaveCount(1)
+
+    // And the chevron beside the department points at that same panel.
+    await expect(
+      panel.getByRole('button', { name: 'Show Surgery & Procedure subcategories', includeHidden: true }),
+    ).toHaveAttribute('aria-controls', (await detail.getAttribute('id'))!)
   })
 
   // Bilal, 2026-08-20: the first nesting attempt gave the parent `col-span-2`,

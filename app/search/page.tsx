@@ -13,6 +13,7 @@ import { CategoryPagination } from '@/components/category/CategoryPagination'
 import type { CollectionProduct, CollectionFilter } from '@/lib/shopify/types'
 import { notFound, redirect } from 'next/navigation'
 import { getSearchFacets, isAllowedFilterInput } from '@/lib/filter-registry'
+import { expandFilterInputs } from '@/lib/catalog/facet-canonicalization'
 import { SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE } from '@/lib/category-utils'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 
@@ -51,15 +52,11 @@ function parseFilterParam(filter?: string | string[]): string[] {
   return raw.filter(isAllowedFilterInput)
 }
 
+// Same expansion as the category rail: getSearchFacets merges duplicate
+// spellings of one concept into a single canonical option, so the query has to
+// ask for every raw value that option stands for.
 function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
-  return filterStrings.flatMap((f) => {
-    try {
-      const parsed = JSON.parse(f)
-      return parsed ? [parsed] : []
-    } catch {
-      return []
-    }
-  })
+  return expandFilterInputs(filterStrings)
 }
 
 function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
