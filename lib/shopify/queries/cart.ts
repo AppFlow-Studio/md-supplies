@@ -35,8 +35,15 @@ const CART_FRAGMENT = `#graphql
               # See lib/rx-gate.ts and the 2026-08-02 catalog audit.
               isRxOnly: metafield(namespace: "custom", key: "is_rx_only") { value }
               # DEV-LABEL-01: single backorder source, shared with the card/PDP.
+              # DEV-SHIP-04: ETA fields are compatibility/live-theme only —
+              # never displayed. custom.backorder alone triggers the label.
               estimatedRestockDate: metafield(namespace: "custom", key: "estimated_back_order_restock_date") { value }
+              backorderRestockEta: metafield(namespace: "custom", key: "backorder_restock_eta") { value }
               backorder: metafield(namespace: "custom", key: "backorder") { value }
+              # DEV-SHIP-02: merchant-controlled gate for the Free Shipping
+              # badge, ANDed with the shipping resolver's confirmation before
+              # attachCartShippingDisplay attaches the line's shippingDisplay.
+              freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
               images(first: 1) {
                 nodes { id url altText width height }
               }

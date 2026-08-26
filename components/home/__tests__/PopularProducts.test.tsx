@@ -70,4 +70,24 @@ describe('PopularProducts', () => {
     expect(imageLink).toHaveAttribute('aria-label', product.title)
     expect(imageLink).toHaveAccessibleName(product.title)
   })
+
+  // DEV-SHIP-02: the homepage card reads product.shippingDisplay exactly as
+  // attachCardShippingDisplay attached it (app/page.tsx runs both the
+  // ranked "Popular products" list and the hero products through it) —
+  // custom.free_shipping ANDed with the resolver's own confirmation.
+  it('shows a Free Shipping badge when the attached shippingDisplay is standard-free', () => {
+    const product = makeProduct({
+      shippingDisplay: { class: 'standard-free', message: 'Free shipping', displayCopy: null },
+    })
+    render(<PopularProducts products={[product]} />)
+    expect(screen.getByText('Free Shipping')).toBeInTheDocument()
+  })
+
+  it('shows no Free Shipping badge when the gate did not confirm it (unknown class)', () => {
+    const product = makeProduct({
+      shippingDisplay: { class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null },
+    })
+    render(<PopularProducts products={[product]} />)
+    expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+  })
 })

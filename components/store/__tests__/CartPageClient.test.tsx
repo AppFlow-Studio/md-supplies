@@ -306,6 +306,56 @@ describe('CartPageClient', () => {
     expect(screen.queryByText('RX Only')).not.toBeInTheDocument()
   })
 
+  // DEV-LABEL-01: the /cart page reads custom.backorder off the line's
+  // product via the same resolveProductLabels() contract as the PDP/card/
+  // quick add/cart popup, so a backordered line must agree with every
+  // other surface.
+  it('shows the Backorder badge on a line whose product carries custom.backorder=true', () => {
+    const backorderedLine = {
+      ...mockLine,
+      merchandise: {
+        ...mockLine.merchandise,
+        product: { ...mockLine.merchandise.product, backorder: { value: 'true' } },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [backorderedLine] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('shows no Backorder badge when custom.backorder is absent, even with a future ETA', () => {
+    const line = {
+      ...mockLine,
+      merchandise: {
+        ...mockLine.merchandise,
+        product: {
+          ...mockLine.merchandise.product,
+          estimatedRestockDate: { value: '2099-01-01' },
+        },
+      },
+    }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [line] } } })
+    render(<CartPageClient />)
+    expect(screen.queryByText(/Backorder/)).not.toBeInTheDocument()
+  })
+
+  // DEV-SHIP-02: the /cart page reads line.shippingDisplay exactly as
+  // attachCartShippingDisplay attached it (custom.free_shipping ANDed with
+  // the resolver's own confirmation) — the page never re-derives a claim.
+  it('shows a Free Shipping badge when the line shippingDisplay is standard-free', () => {
+    const line = { ...mockLine, shippingDisplay: { class: 'standard-free' as const, message: 'Free shipping', displayCopy: null } }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [line] } } })
+    render(<CartPageClient />)
+    expect(screen.getByText('Free Shipping')).toBeInTheDocument()
+  })
+
+  it('shows no Free Shipping badge when the gate did not confirm it (unknown class)', () => {
+    const line = { ...mockLine, shippingDisplay: { class: 'unknown' as const, message: 'Shipping calculated at checkout.', displayCopy: null } }
+    setupUseCart({ cart: { ...mockCart, lines: { nodes: [line] } } })
+    render(<CartPageClient />)
+    expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+  })
+
   // DEV-LAUNCH-09: a line Shopify can't ship to the destination must block
   // checkout with its own accurate message, distinct from (and possibly
   // alongside) a price-unavailable line.

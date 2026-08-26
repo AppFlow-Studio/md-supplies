@@ -14,6 +14,7 @@ import type { CollectionProduct, CollectionFilter } from '@/lib/shopify/types'
 import { notFound, redirect } from 'next/navigation'
 import { getSearchFacets, isAllowedFilterInput } from '@/lib/filter-registry'
 import { SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE } from '@/lib/category-utils'
+import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 
 export const dynamic = 'force-dynamic'
 
@@ -126,7 +127,10 @@ export default async function SearchPage({ searchParams }: Props) {
       })
       const allNodes = data.search.nodes
       const startIndex = (currentPage - 1) * SEARCH_PAGE_SIZE
-      products = allNodes.slice(startIndex, startIndex + SEARCH_PAGE_SIZE)
+      // DEV-SHIP-03: search results previously carried no shippingDisplay at
+      // all, so a genuinely free-shipping-eligible product never showed the
+      // claim on /search. Same attachment every other card grid gets.
+      products = attachCardShippingDisplay(allNodes.slice(startIndex, startIndex + SEARCH_PAGE_SIZE))
       hasNext = allNodes.length > currentPage * SEARCH_PAGE_SIZE
       totalCount = data.search.totalCount
       // Registry gate: only sources approved anywhere in the search
