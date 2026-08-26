@@ -68,11 +68,24 @@ const MENU: MenuItem[] = [
   makeMenuItem({
     id: 'gid://shopify/MenuItem/1',
     title: 'Gloves',
+    // items intentionally does NOT drive the rendered dropdown any more —
+    // otherItems' children come from navChildren() (the same tag-derived
+    // tree as the mega-menu), not from this Shopify main-menu item's own
+    // `items` array. Left non-empty here anyway to guard against a
+    // regression back to reading it.
     items: [
       { id: 's1', title: 'Exam Gloves', url: '', items: [] },
       { id: 's2', title: 'Totally Fake Category', url: '', items: [] },
     ],
   }),
+]
+
+// Tag-derived child for "Gloves" (a real CATEGORY_TREE_L1 entry), used so
+// MENU's "Gloves" item still renders a real dropdown across the tests below
+// now that the dropdown is sourced from navChildren() instead of the menu
+// item's own (ignored) `items` array.
+const MENU_L2_NODES = [
+  { tag: 'exam-gloves', parentTag: 'gloves', productCount: 5 },
 ]
 
 afterEach(() => {
@@ -82,18 +95,18 @@ afterEach(() => {
 
 describe('Header — crawlable nav DOM (NF7)', () => {
   it('renders submenu /category/ links in the DOM without any interaction', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
     // Panels are CSS-hidden but present (desktop dropdown + mobile drawer):
     // server HTML must contain the submenu links for crawl equity.
     const subs = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
     expect(subs.length).toBeGreaterThanOrEqual(2)
-    subs.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
+    subs.forEach((l) => expect(l).toHaveAttribute('href', '/category/gloves/exam-gloves'))
   })
 })
 
 describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
   it('trigger button has aria-haspopup/aria-expanded/aria-controls and toggles on click', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
     const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
 
     expect(trigger).toHaveAttribute('aria-haspopup', 'true')
@@ -111,7 +124,7 @@ describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
   })
 
   it('opens on focus within the item and closes on Escape with focus returned to the trigger', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
     const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
 
     fireEvent.focus(trigger)
@@ -245,23 +258,85 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
 })
 
 describe('Header — menu slug validation (NF11)', () => {
+  // NF11's slug validation (categoryHref, via menuItemHref) now only governs
+  // a top-level menu item's OWN href — dropdown children are sourced from
+  // navChildren() instead (see the "Other nav items" comment in Header.tsx),
+  // so these exercise a plain leaf item (no `items`) rather than a sub-item.
+  const examGlovesItem = makeMenuItem({
+    id: 'gid://shopify/MenuItem/eg',
+    title: 'Exam Gloves',
+    items: [],
+  })
+  const fakeCategoryItem = makeMenuItem({
+    id: 'gid://shopify/MenuItem/fake',
+    title: 'Totally Fake Category',
+    items: [],
+  })
+
   it('keeps hrefs whose slug matches a real collection handle', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    render(<Header menuItems={[examGlovesItem]} collections={COLLECTIONS} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
+    expect(links.length).toBeGreaterThan(0)
     links.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
   })
 
   it('falls back to /categories for a menu title with no matching collection', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    render(<Header menuItems={[fakeCategoryItem]} collections={COLLECTIONS} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Totally Fake Category', hidden: true })
     expect(links.length).toBeGreaterThan(0)
     links.forEach((l) => expect(l).toHaveAttribute('href', '/categories'))
   })
 
   it('skips validation when the collections list is empty (fetch failed)', () => {
-    render(<Header menuItems={MENU} collections={[]} l2Nodes={[]} />)
+    render(<Header menuItems={[examGlovesItem]} collections={[]} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
+    expect(links.length).toBeGreaterThan(0)
     links.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
+  })
+})
+
+describe('Header — otherItems dropdown is tag-derived, not menu-item-derived', () => {
+  // Regression coverage for the reported bug: the header's flat shortcut row
+  // (Mobility, Home Care, etc. — everything that isn't the CATALOG
+  // mega-dropdown) used to show a dropdown only when the Shopify main-menu's
+  // OWN item.items array was non-empty. That meant Mobility's dropdown
+  // silently depended on someone nesting links under it in Shopify Admin's
+  // Navigation editor — a second, untested data source independent of the
+  // tag-derived tree the mega-menu already used, and exactly why Mobility
+  // could show no dropdown in production while Home Care did. Both cases
+  // below assert the menu item's own `items` array is now irrelevant.
+  const NAV_COLLECTIONS: SlimCollection[] = [
+    makeCollection('mobility', 'Mobility'),
+    makeCollection('home-care', 'Home Care'),
+  ]
+
+  it('shows a dropdown from navChildren even when the Shopify menu item has zero items', () => {
+    const mobilityWithNoMenuItems = makeMenuItem({
+      id: 'gid://shopify/MenuItem/mobility',
+      title: 'Mobility',
+      type: 'COLLECTION',
+      items: [], // <- what production's Shopify main-menu has for Mobility
+    })
+    const l2Nodes = [{ tag: 'rollators', parentTag: 'mobility', productCount: 7 }]
+    render(<Header menuItems={[mobilityWithNoMenuItems]} collections={NAV_COLLECTIONS} l2Nodes={l2Nodes} />)
+
+    expect(screen.getByRole('button', { name: 'Mobility submenu' })).toBeInTheDocument()
+    const [rollatorsLink] = screen.getAllByRole('link', { name: /rollators/i, hidden: true })
+    expect(rollatorsLink).toHaveAttribute('href', '/category/mobility/rollators')
+  })
+
+  it('shows no dropdown when the tag tree has no children, even if the Shopify menu item has items', () => {
+    const homeCareWithMenuItemsButNoTagChildren = makeMenuItem({
+      id: 'gid://shopify/MenuItem/home-care',
+      title: 'Home Care',
+      type: 'COLLECTION',
+      items: [{ id: 's1', title: 'Bed Pans', url: '', items: [] }],
+    })
+    render(<Header menuItems={[homeCareWithMenuItemsButNoTagChildren]} collections={NAV_COLLECTIONS} l2Nodes={[]} />)
+
+    expect(screen.queryByRole('button', { name: 'Home Care submenu' })).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('link', { name: 'Bed Pans', hidden: true })).toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: /^Home Care$/i, hidden: true }).length).toBeGreaterThan(0)
   })
 })
 

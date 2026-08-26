@@ -508,11 +508,21 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
               </div>
             )}
 
-            {/* Other nav items */}
+            {/* Other nav items — dropdown content is the SAME tag-derived
+                tree the Categories mega-menu uses (navChildren), not this
+                Shopify main-menu item's own `items` array. The main-menu
+                only decides which shortcuts appear up here and in what
+                order/label; whether a shortcut like Mobility gets a
+                dropdown must not depend on a content editor separately
+                nesting links under it in Shopify Navigation — that's the
+                second, untested data source that left Mobility's dropdown
+                missing here while the mega-menu's copy of it was already
+                fixed (nav remediation, category-data-source-mismatch). */}
             {otherItems.map((item) => {
               const href = menuItemHref(item)
               const isOpen = openNav === item.id
-              const hasSubs = item.items.length > 0
+              const children = navChildren(href)
+              const hasSubs = children.length > 0
               const panelId = `nav-panel-${titleToSlug(item.title)}`
 
               if (!hasSubs) {
@@ -573,13 +583,13 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
                       All {item.title}
                     </Link>
                     <div className="border-t border-gray-100 my-1" />
-                    {item.items.map((sub) => (
+                    {children.map((child) => (
                       <Link
-                        key={sub.id}
-                        href={categoryHref(sub.title)}
+                        key={child.href}
+                        href={child.href}
                         className="block px-4 py-2 text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 transition-colors"
                       >
-                        {sub.title}
+                        {child.displayName}
                       </Link>
                     ))}
                   </div>
@@ -776,10 +786,12 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
               </div>
             )}
 
-            {/* Other nav items mobile */}
+            {/* Other nav items mobile — same tag-derived source as desktop
+                (see the desktop "Other nav items" comment above). */}
             {otherItems.map((item) => {
               const href = menuItemHref(item)
-              const hasSubs = item.items.length > 0
+              const children = navChildren(href)
+              const hasSubs = children.length > 0
               const panelId = `mobile-panel-${titleToSlug(item.title)}`
 
               if (!hasSubs) {
@@ -820,14 +832,14 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
                     >
                       All {item.title}
                     </Link>
-                    {item.items.map((sub) => (
+                    {children.map((child) => (
                       <Link
-                        key={sub.id}
-                        href={categoryHref(sub.title)}
+                        key={child.href}
+                        href={child.href}
                         onClick={() => setMobileOpen(false)}
                         className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
                       >
-                        {sub.title}
+                        {child.displayName}
                       </Link>
                     ))}
                   </div>
