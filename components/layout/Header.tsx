@@ -12,6 +12,7 @@ import type { LucideIcon } from 'lucide-react'
 
 import { useCart } from '@/components/store/CartProvider'
 import { SearchDropdown } from '@/components/layout/SearchDropdown'
+import { SearchBarForm } from '@/components/search/SearchBarForm'
 import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
 import type { MenuItem } from '@/lib/shopify/types'
@@ -82,9 +83,8 @@ function titleToSlug(title: string): string {
 const FOCUSABLE = 'a[href], button:not([disabled])'
 
 export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
-  // usePathname() is populated during SSR too, so the announcement bar's
-  // visibility class resolves identically on the server and the client — no
-  // post-hydration flash of a bar that is about to disappear.
+  // Drives the drawer/overlay reset below. usePathname() is populated during
+  // SSR too, so nothing here depends on a client-only first paint.
   const pathname = usePathname()
   const { cart, openCart } = useCart()
   const cartCount = cart?.totalQuantity ?? 0
@@ -119,6 +119,33 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+
+  // Close every header overlay whenever the route actually changes.
+  //
+  // The per-link `onClick={() => setMobileOpen(false)}` handlers below only
+  // cover links that carry one. The LOGO did not, so tapping it with the drawer
+  // open navigated home and left the drawer mounted over the new page — and,
+  // because the body-scroll lock is released by the `mobileOpen` effect's
+  // cleanup, left `body { overflow: hidden }` in place too. The shopper landed
+  // on a page they could not scroll with a menu they had not opened.
+  //
+  // Adjusted during render rather than in an effect: this is React's
+  // "adjust state when a prop changes" pattern, so the reset lands in the SAME
+  // commit as the route change — the drawer is never painted over the new page
+  // for a frame — and it does not trip react-hooks/set-state-in-effect.
+  //
+  // Keyed on `pathname` (not searchParams) on purpose: catalog filter, sort and
+  // pagination controls change only the query string on the SAME pathname and
+  // navigate with `scroll: false` deliberately, so they must not be treated as
+  // "left the page".
+  const [lastPathname, setLastPathname] = useState(pathname)
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname)
+    setMobileOpen(false)
+    setMobileExpanded(null)
+    setSearchOpen(false)
+    setOpenNav(null)
+  }
 
   // Mobile drawer a11y (NF9): while open, lock body scroll, move focus into
   // the drawer, trap Tab inside it, and close on Escape with focus returned
@@ -249,7 +276,7 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
     <header className="sticky top-0 z-40">
       {/* 1 — Announcement bar */}
       <div
-        className={`bg-navy-900 h-13.5 items-center ${announcementBarClass(pathname)}`}
+        className={`bg-navy-900 h-13.5 items-center ${announcementBarClass()}`}
         onMouseEnter={() => setAnnPaused(true)}
         onMouseLeave={() => setAnnPaused(false)}
         aria-live="polite"
@@ -570,11 +597,14 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
               Contact Us
             </Link>
 
+            {/* md+ only: below md the always-visible search row does this job,
+                and keeping both put two competing search affordances in a
+                header row that has ~40px of slack at 360px. */}
             <button
               type="button"
               aria-label="Search"
               onClick={openSearch}
-              className="text-gray-500 hover:text-navy-900 transition-colors p-1"
+              className="hidden md:inline-flex text-gray-500 hover:text-navy-900 transition-colors p-1"
             >
               <Search size={20} />
             </button>
@@ -815,6 +845,17 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
           </nav>
         </div>
       </nav>
+
+      {/* 4 — Mobile search row.
+          Phones only (<md): from md up the header keeps the search ICON plus
+          the predictive SearchDropdown, so desktop is untouched. Below md the
+          icon alone hid the single most valuable control on a catalog site
+          behind a discovery step, so the real field is on screen at all times.
+          Reuses the /search page's own form component — same route, same query
+          param, same wording — rather than introducing a parallel search. */}
+      <div className="md:hidden bg-white border-b border-blue-50 px-4 py-2.5">
+        <SearchBarForm variant="header" />
+      </div>
 
       {/* Search overlay with predictive dropdown */}
       {searchOpen && (

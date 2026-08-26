@@ -42,20 +42,22 @@ describe('announcement carousel route gating', () => {
     expect(isHomeRoute('')).toBe(false)
   })
 
-  it('shows the bar at every width on the homepage', () => {
-    expect(announcementBarClass('/')).toBe('flex')
+  it('hides the bar below md on EVERY route, homepage included', () => {
+    // The homepage used to be the one route that kept the bar at phone widths.
+    // It no longer is: phones get the vertical space back everywhere.
+    const cls = announcementBarClass()
+    expect(cls).toContain('hidden')
+    expect(cls).not.toBe('flex')
   })
 
-  it('hides it below md on inner routes while leaving desktop untouched', () => {
-    const cls = announcementBarClass('/category/gloves')
-    expect(cls).toContain('hidden')
-    // Desktop behaviour is unchanged: the bar still lays out from md up.
-    expect(cls).toContain('md:flex')
+  it('leaves desktop behaviour untouched', () => {
+    // The bar still lays out from md (768px) up, on every route.
+    expect(announcementBarClass()).toContain('md:flex')
   })
 
   it('never emits a class that would leave an empty spacer', () => {
     // `hidden` is display:none — the element leaves layout flow entirely, so no
     // reserved height, no header-offset drift, no CLS.
-    expect(announcementBarClass('/contact')).not.toMatch(/invisible|opacity-0/)
+    expect(announcementBarClass()).not.toMatch(/invisible|opacity-0/)
   })
 })

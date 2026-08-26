@@ -27,6 +27,13 @@ vi.mock('@/components/layout/SearchDropdown', () => ({
   SearchDropdown: () => <div data-testid="search-dropdown" />,
 }))
 
+// Mutable so a test can simulate a route change and assert the header's
+// overlays reset. Header reads usePathname() for exactly that.
+let mockPathname = '/category/gloves'
+vi.mock('next/navigation', () => ({
+  usePathname: () => mockPathname,
+}))
+
 function makeMenuItem(overrides: Partial<MenuItem> = {}): MenuItem {
   return {
     id: 'gid://shopify/MenuItem/1',
@@ -289,5 +296,74 @@ describe('Header — mega-dropdown subcategory children', () => {
     render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={[]} />)
     expect(screen.queryByRole('link', { name: /rollators/i, hidden: true })).not.toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /^Mobility$/i, hidden: true }).length).toBeGreaterThan(0)
+  })
+})
+
+describe('Header — always-visible mobile search bar', () => {
+  it('renders a real search field wired to the production /search route', () => {
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    const input = screen.getByRole('searchbox', { name: /search medical supplies/i })
+    expect(input).toHaveAttribute('name', 'q')
+
+    // Same endpoint and query param as the predictive dropdown and the
+    // WebSite SearchAction schema — not a parallel search system.
+    const form = input.closest('form')!
+    expect(form).toHaveAttribute('action', '/search')
+    expect(form.getAttribute('method')?.toUpperCase()).toBe('GET')
+  })
+
+  it('shows the field below md and the icon-only trigger from md up', () => {
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    const input = screen.getByRole('searchbox', { name: /search medical supplies/i })
+    // The row is phone-only; desktop keeps the icon + predictive dropdown.
+    const row = input.closest('form')!.parentElement!
+    expect(row.className).toContain('md:hidden')
+
+    // The icon trigger, not the form's submit button (both read as "Search").
+    const searchIcon = document.querySelector<HTMLElement>('button[aria-label="Search"]')!
+    expect(searchIcon).not.toBeNull()
+    expect(searchIcon.className).toContain('hidden')
+    expect(searchIcon.className).toContain('md:inline-flex')
+  })
+
+  it('gives the field an accessible name rather than relying on the placeholder', () => {
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    const input = screen.getByRole('searchbox', { name: /search medical supplies/i })
+    expect(input).toHaveAttribute('aria-label')
+    expect(input).toHaveAttribute('placeholder')
+  })
+})
+
+describe('Header — overlays reset on route change', () => {
+  it('closes the drawer and releases the body scroll lock when the path changes', () => {
+    mockPathname = '/category/gloves'
+    const { rerender } = render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
+    expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(false)
+    expect(document.body.style.overflow).toBe('hidden')
+
+    // Regression: tapping the LOGO (which carries no onClick close handler)
+    // navigated but left the drawer mounted over the new page AND left the
+    // body scroll-locked, so the destination could not be scrolled at all.
+    mockPathname = '/'
+    rerender(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+
+    expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Toggle menu' })).toHaveAttribute('aria-expanded', 'false')
+    expect(document.body.style.overflow).toBe('')
+  })
+
+  it('does not reset overlays when only the query string changes', () => {
+    // Catalog filter/sort/pagination navigate with scroll:false on the SAME
+    // pathname; treating those as "left the page" would close the drawer and
+    // fight the deliberate no-scroll behaviour.
+    mockPathname = '/category/gloves'
+    const { rerender } = render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
+    expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(false)
+
+    rerender(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
+    expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(false)
   })
 })

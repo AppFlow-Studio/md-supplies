@@ -20,6 +20,8 @@ function ogType(pageType: PageType): 'website' | 'article' | undefined {
 interface OgInput {
   pageType: PageType
   title: string
+  /** Overrides `title` for og:/twitter: only. Defaults to `title`. */
+  ogTitle?: string
   description: string
   url: string
   image?: string
@@ -37,13 +39,14 @@ function resolveImageUrl(image: string): string {
  * The OG image slot is always populated — falls back to the default site OG image.
  */
 export function buildOg(input: OgInput) {
-  const { pageType, title, description, url, image, imageWidth, imageHeight } = input
+  const { pageType, title, ogTitle, description, url, image, imageWidth, imageHeight } = input
   const trimmed = image?.trim()
   const imageUrl = trimmed ? resolveImageUrl(trimmed) : DEFAULT_OG_IMAGE
+  const socialTitle = ogTitle?.trim() || title
 
   return {
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url,
       siteName: SITE_NAME,
@@ -51,13 +54,13 @@ export function buildOg(input: OgInput) {
         url: imageUrl,
         width: imageWidth ?? OG_IMAGE_WIDTH,
         height: imageHeight ?? OG_IMAGE_HEIGHT,
-        alt: title,
+        alt: socialTitle,
       }],
       ...(ogType(pageType) ? { type: ogType(pageType) } : {}),
     },
     twitter: {
       card: 'summary_large_image' as const,
-      title,
+      title: socialTitle,
       description,
       images: [imageUrl],
     },
