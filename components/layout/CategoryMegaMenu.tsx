@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+
+import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 
 // The desktop "Categories" panel.
 //
@@ -56,39 +57,23 @@ type Props = {
   featuredLink?: { displayName: string; href: string; parentName: string }
 }
 
-/**
- * Hover intent for the department rail.
- *
- * The problem: the rail is two columns and the detail panel sits to the RIGHT
- * of both, so reaching a column-ONE department's panel means dragging the
- * pointer straight across column two. Switching on the bare `mouseenter` meant
- * the panel had already been replaced by whichever column-two department the
- * pointer crossed on the way, which made column-one departments effectively
- * unreachable by mouse.
- *
- * A fixed delay alone does NOT fix this, and it is worth recording why: a delay
- * only distinguishes crossing from resting when the crossing is faster than the
- * delay, and a measured pointer sweep across a ~185px-wide column takes longer
- * than any delay short enough to still feel responsive. Raising it far enough to
- * cover a slow sweep makes a deliberate hover feel broken.
- *
- * So the rule is about DIRECTION, not just time. A department commits only once
- * the pointer has stopped travelling rightward — i.e. it is no longer on its way
- * to the panel. A sweep keeps re-arming the check and never commits; stopping on
- * a row commits within about a tenth of a second. Keyboard focus, clicks and
- * arrow keys bypass all of it: those are unambiguous, and a keyboard user must
- * never wait.
- */
-const HOVER_INTENT_MS = 100
-
-/** Rightward travel more recent than this means "still heading for the panel". */
-const RIGHTWARD_GRACE_MS = 140
-
-/** Horizontal movement below this is pointer noise, not travel. */
-const RIGHTWARD_MIN_DX = 2
-
-/** Upper bound on re-arming, so a pointer parked mid-sweep still resolves. */
-const MAX_INTENT_REARMS = 10
+// Switching the detail panel is CLICK-driven, not hover-driven, and that is a
+// deliberate reversal.
+//
+// The rail is two columns and the panel sits to the RIGHT of both, so reaching a
+// column-one department's panel means dragging the pointer across column two.
+// On hover that handed the panel to whatever row was crossed. A fixed delay did
+// not fix it (a slow sweep outlasts any delay short enough to feel responsive),
+// and a direction guard fixed the straight-line case but still mis-fired on
+// real, wandering pointer paths. Every one of those is a heuristic guessing at
+// intent.
+//
+// A click is not a guess. The chevron beside each department is a real
+// disclosure control — aria-expanded, aria-controls, one click, no ambiguity —
+// and the department NAME stays a plain link to its own category page, so
+// nothing about navigation got slower. Keyboard focus and the arrow keys still
+// move the panel, because that is the keyboard's equivalent of pointing at
+// something and costs a keyboard user nothing.
 
 function panelId(tag: string) {
   return `mega-panel-${tag}`
@@ -103,57 +88,10 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
   // the panel is never an empty column on open.
   const [activeTag, setActiveTag] = useState(categories[0]?.tag ?? '')
   const railRef = useRef<HTMLUListElement>(null)
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Once the pointer is inside the detail panel, nothing the rail scheduled on
-  // the way there may still fire — otherwise the panel swaps out from under a
-  // pointer that has already arrived.
-  const panelHovered = useRef(false)
-  // When the pointer last moved meaningfully to the right, and where it was.
-  const lastRightwardAt = useRef(0)
-  const lastX = useRef<number | null>(null)
 
   const active = categories.find((c) => c.tag === activeTag) ?? categories[0]
 
-  const cancelPending = () => {
-    if (hoverTimer.current) {
-      clearTimeout(hoverTimer.current)
-      hoverTimer.current = null
-    }
-  }
-
-  /** `immediate` for unambiguous input (focus, click); intent-checked for hover. */
-  const activate = (tag: string, immediate = false) => {
-    cancelPending()
-    if (immediate) {
-      setActiveTag(tag)
-      return
-    }
-    scheduleHover(tag, 0)
-  }
-
-  const scheduleHover = (tag: string, attempt: number) => {
-    hoverTimer.current = setTimeout(() => {
-      hoverTimer.current = null
-      // The pointer got where it was going — this row was only ever scenery.
-      if (panelHovered.current) return
-      const stillTravelling = Date.now() - lastRightwardAt.current < RIGHTWARD_GRACE_MS
-      if (stillTravelling && attempt < MAX_INTENT_REARMS) {
-        scheduleHover(tag, attempt + 1)
-        return
-      }
-      setActiveTag(tag)
-    }, HOVER_INTENT_MS)
-  }
-
-  const onMenuMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const prev = lastX.current
-    lastX.current = e.clientX
-    if (prev !== null && e.clientX - prev > RIGHTWARD_MIN_DX) {
-      lastRightwardAt.current = Date.now()
-    }
-  }
-
-  useEffect(() => cancelPending, [])
+  const activate = (tag: string) => setActiveTag(tag)
 
   // Roving arrow-key movement over the rail's department links. Deliberately
   // NOT an ARIA menu: these are ordinary links, so Tab, Enter, middle-click and
@@ -185,11 +123,11 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
       : e.key === 'ArrowDown' ? (current + 1 + links.length) % links.length
       : (current - 1 + links.length) % links.length
     links[next]?.focus()
-    activate(links[next]?.dataset.tag ?? activeTag, true)
+    activate(links[next]?.dataset.tag ?? activeTag)
   }
 
   return (
-    <div className="flex flex-col" onMouseMove={onMenuMouseMove}>
+    <div className="flex flex-col">
       <div className="grid grid-cols-[400px_260px]">
         {/* ── Stage one: the department rail ────────────────────────────── */}
         <div className="pr-5 border-r border-gray-100">
@@ -209,14 +147,13 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
               const isActive = cat.tag === active?.tag
               const hasChildren = cat.children.length > 0
               return (
-                <li
-                  key={cat.tag}
-                  className="min-w-0"
-                  onMouseEnter={() => activate(cat.tag)}
-                >
+                <li key={cat.tag} className="min-w-0">
+                  {/* `group` so the arrow reacts to the whole row, not just the
+                      button it sits in — the row is what the eye reads as one
+                      target. */}
                   <div
-                    className={`flex items-center gap-1 rounded transition-colors ${
-                      isActive ? 'bg-neutral-50' : ''
+                    className={`group flex items-center gap-1 rounded transition-colors ${
+                      isActive ? 'bg-neutral-50' : 'hover:bg-neutral-50/60'
                     }`}
                   >
                     <Link
@@ -224,7 +161,7 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
                       href={cat.href}
                       data-rail-link
                       data-tag={cat.tag}
-                      onFocus={() => activate(cat.tag, true)}
+                      onFocus={() => activate(cat.tag)}
                       className={`flex-1 min-w-0 block text-[13px] leading-snug px-2 py-1.5 rounded transition-colors ${
                         isActive ? 'text-navy-900 font-medium' : 'text-gray-500'
                       } hover:text-navy-900`}
@@ -237,11 +174,17 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
                         aria-expanded={isActive}
                         aria-controls={panelId(cat.tag)}
                         aria-label={`Show ${cat.displayName} subcategories`}
-                        onClick={() => activate(cat.tag, true)}
-                        onFocus={() => activate(cat.tag, true)}
-                        className="shrink-0 p-1 text-gray-400 hover:text-navy-900 transition-colors"
+                        onClick={() => activate(cat.tag)}
+                        onFocus={() => activate(cat.tag)}
+                        className={`shrink-0 p-1 transition-colors ${
+                          isActive ? 'text-navy-900' : 'text-gray-400 group-hover:text-navy-900'
+                        }`}
                       >
-                        <ChevronRight size={12} aria-hidden="true" />
+                        {/* Same motion as the homepage hero's OCC link. The
+                            open department keeps the arrow nudged across, so
+                            the rail shows which panel is on screen even when
+                            the pointer is somewhere else entirely. */}
+                        <AnimatedArrow size={14} className={isActive ? 'translate-x-1' : ''} />
                       </button>
                     )}
                   </div>
@@ -255,16 +198,7 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
         {/* Every department's panel is rendered; only the active one is shown.
             The column has a fixed width so switching departments never resizes
             the sheet or shifts the rail sideways under the cursor. */}
-        <div
-          className="pl-5"
-          onMouseEnter={() => {
-            panelHovered.current = true
-            cancelPending()
-          }}
-          onMouseLeave={() => {
-            panelHovered.current = false
-          }}
-        >
+        <div className="pl-5">
           {categories.map((cat) => {
             const isActive = cat.tag === active?.tag
             const sortedChildren = [

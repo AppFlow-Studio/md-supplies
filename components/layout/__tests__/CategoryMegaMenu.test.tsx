@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react'
 import { CategoryMegaMenu, type MegaMenuCategory } from '../CategoryMegaMenu'
 
 vi.mock('next/link', () => ({
@@ -41,17 +41,6 @@ const CATEGORIES: MegaMenuCategory[] = [
   { tag: 'room-furniture', displayName: 'Room Furniture', href: '/category/room-furniture', children: [] },
 ]
 
-/** Mirror CategoryMegaMenu's own timing constants. */
-const HOVER_INTENT_MS = 100
-const RIGHTWARD_GRACE_MS = 140
-
-/** Runs pending timers AND flushes the React update they schedule. */
-function advance(ms: number) {
-  act(() => {
-    vi.advanceTimersByTime(ms)
-  })
-}
-
 function renderMenu() {
   return render(
     <CategoryMegaMenu
@@ -92,26 +81,19 @@ describe('CategoryMegaMenu — progressive disclosure', () => {
     }
   })
 
-  it('swaps the detail panel on a deliberate hover without touching the rail', () => {
-    vi.useFakeTimers()
-    try {
-      const { container } = renderMenu()
-      const railLink = container.querySelector<HTMLAnchorElement>('a[data-tag="home-care"]')!
-      fireEvent.mouseEnter(railLink.closest('li')!)
-      advance(HOVER_INTENT_MS)
+  it('swaps the detail panel when a department is opened, without touching the rail', () => {
+    const { container } = renderMenu()
+    fireEvent.click(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
 
-      const panel = visiblePanel(container)
-      expect(panel.id).toBe('mega-panel-home-care')
-      expect(within(panel).getByRole('link', { name: 'Bedside Commodes' })).toBeTruthy()
-      // Every department is still listed — the rail does not change, only the
-      // column beside it.
-      expect(container.querySelectorAll('a[data-rail-link]')).toHaveLength(CATEGORIES.length)
-    } finally {
-      vi.useRealTimers()
-    }
+    const panel = visiblePanel(container)
+    expect(panel.id).toBe('mega-panel-home-care')
+    expect(within(panel).getByRole('link', { name: 'Bedside Commodes' })).toBeTruthy()
+    // Every department is still listed — the rail does not change, only the
+    // column beside it.
+    expect(container.querySelectorAll('a[data-rail-link]')).toHaveLength(CATEGORIES.length)
   })
 
-  it('swaps the detail panel on keyboard focus, not only hover', () => {
+  it('swaps the detail panel on keyboard focus', () => {
     const { container } = renderMenu()
     fireEvent.focus(container.querySelector<HTMLAnchorElement>('a[data-tag="surgery-procedure"]')!)
     expect(visiblePanel(container).id).toBe('mega-panel-surgery-procedure')
@@ -178,110 +160,72 @@ describe('CategoryMegaMenu — progressive disclosure', () => {
   })
 })
 
-describe('CategoryMegaMenu — hover intent (the diagonal problem)', () => {
+describe('CategoryMegaMenu — click, not hover (the diagonal problem)', () => {
   // The rail is two columns and the detail panel sits to the right of BOTH, so
   // reaching a column-one department's panel means dragging the pointer across
-  // column two. Switching on the bare mouseenter made column-one departments
-  // effectively unreachable by mouse: the panel had already been replaced by
-  // whichever column-two row the pointer crossed on the way.
+  // column two. Every hover-based scheme — bare mouseenter, a fixed delay, a
+  // direction guard — is a heuristic guessing at intent, and each one mis-fired
+  // on real pointer paths. Opening is a click now, and these lock that in.
 
-  it('does not hand the panel to a department the pointer merely swept across', () => {
-    vi.useFakeTimers()
-    try {
-      const { container } = renderMenu()
-      const li = (tag: string) => container.querySelector<HTMLElement>(`a[data-tag="${tag}"]`)!.closest('li')!
+  it('does not change the panel on hover, however long the pointer rests', () => {
+    const { container } = renderMenu()
+    const li = (tag: string) => container.querySelector<HTMLElement>(`a[data-tag="${tag}"]`)!.closest('li')!
 
-      // Sitting on Gloves (column one).
-      fireEvent.mouseEnter(li('gloves'))
-      advance(HOVER_INTENT_MS)
-      expect(visiblePanel(container).id).toBe('mega-panel-gloves')
-
-      // Sweeping right across two column-two rows on the way to the panel,
-      // faster than the intent delay.
-      fireEvent.mouseEnter(li('home-care'))
-      advance(40)
-      fireEvent.mouseEnter(li('surgery-procedure'))
-      advance(40)
-      // ...and arriving.
-      fireEvent.mouseEnter(container.querySelector<HTMLElement>('#mega-panel-gloves')!.parentElement!)
-      advance(1000)
-
-      expect(visiblePanel(container).id).toBe('mega-panel-gloves')
-    } finally {
-      vi.useRealTimers()
-    }
+    expect(visiblePanel(container).id).toBe('mega-panel-gloves')
+    fireEvent.mouseEnter(li('home-care'))
+    fireEvent.mouseOver(li('home-care'))
+    fireEvent.mouseMove(li('home-care'))
+    expect(visiblePanel(container).id).toBe('mega-panel-gloves')
   })
 
-  it('still switches when the pointer actually rests on a department', () => {
-    vi.useFakeTimers()
-    try {
-      const { container } = renderMenu()
-      const li = (tag: string) => container.querySelector<HTMLElement>(`a[data-tag="${tag}"]`)!.closest('li')!
-      fireEvent.mouseEnter(li('home-care'))
-      advance(HOVER_INTENT_MS)
-      expect(visiblePanel(container).id).toBe('mega-panel-home-care')
-    } finally {
-      vi.useRealTimers()
+  it('does not change the panel when the pointer sweeps across other departments', () => {
+    const { container } = renderMenu()
+    const li = (tag: string) => container.querySelector<HTMLElement>(`a[data-tag="${tag}"]`)!.closest('li')!
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show Gloves subcategories' }))
+    for (const tag of ['home-care', 'surgery-procedure', 'home-care']) {
+      fireEvent.mouseEnter(li(tag))
+      fireEvent.mouseOver(li(tag))
     }
+    expect(visiblePanel(container).id).toBe('mega-panel-gloves')
   })
 
-  it('never makes the keyboard wait — focus and clicks switch at once', () => {
-    vi.useFakeTimers()
-    try {
-      const { container } = renderMenu()
-      fireEvent.focus(container.querySelector<HTMLAnchorElement>('a[data-tag="surgery-procedure"]')!)
-      expect(visiblePanel(container).id).toBe('mega-panel-surgery-procedure')
-
-      fireEvent.click(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
-      expect(visiblePanel(container).id).toBe('mega-panel-home-care')
-    } finally {
-      vi.useRealTimers()
-    }
+  it('opens the department whose disclosure control was clicked', () => {
+    const { container } = renderMenu()
+    fireEvent.click(screen.getByRole('button', { name: 'Show Surgery & Procedure subcategories' }))
+    expect(visiblePanel(container).id).toBe('mega-panel-surgery-procedure')
+    fireEvent.click(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
+    expect(visiblePanel(container).id).toBe('mega-panel-home-care')
   })
 
-  it('holds the panel while the pointer is still travelling rightward toward it', () => {
-    // The mechanism that actually fixes the diagonal: a fixed delay cannot tell
-    // a slow sweep from a deliberate hover, so a department commits only once
-    // the pointer has STOPPED heading for the panel.
-    vi.useFakeTimers()
-    try {
-      const { container } = renderMenu()
-      const root = container.firstElementChild!
-      const li = (tag: string) => container.querySelector<HTMLElement>(`a[data-tag="${tag}"]`)!.closest('li')!
-
-      fireEvent.mouseEnter(li('gloves'))
-      advance(HOVER_INTENT_MS)
-      expect(visiblePanel(container).id).toBe('mega-panel-gloves')
-
-      // Pointer crosses a column-two row, still moving right the whole time.
-      fireEvent.mouseMove(root, { clientX: 100 })
-      fireEvent.mouseEnter(li('home-care'))
-      for (let x = 140; x <= 380; x += 40) {
-        fireEvent.mouseMove(root, { clientX: x })
-        advance(HOVER_INTENT_MS)
-        expect(visiblePanel(container).id).toBe('mega-panel-gloves')
-      }
-
-      // It stops heading right — now the hovered department may take over.
-      advance(RIGHTWARD_GRACE_MS + HOVER_INTENT_MS)
-      expect(visiblePanel(container).id).toBe('mega-panel-home-care')
-    } finally {
-      vi.useRealTimers()
-    }
+  it('keeps the department name a link, so opening is never required to navigate', () => {
+    const { container } = renderMenu()
+    const railLink = container.querySelector<HTMLAnchorElement>('a[data-tag="surgery-procedure"]')!
+    expect(railLink).toHaveAttribute('href', '/category/surgery-procedure')
+    // Clicking the NAME must not be intercepted into a panel switch.
+    expect(visiblePanel(container).id).toBe('mega-panel-gloves')
   })
 
-  it('cancels a pending switch once the pointer is inside the panel', () => {
-    vi.useFakeTimers()
-    try {
-      const { container } = renderMenu()
-      const panelColumn = container.querySelector<HTMLElement>('#mega-panel-gloves')!.parentElement!
-      fireEvent.mouseEnter(container.querySelector<HTMLElement>('a[data-tag="home-care"]')!.closest('li')!)
-      fireEvent.mouseEnter(panelColumn)
-      advance(1000)
-      expect(visiblePanel(container).id).toBe('mega-panel-gloves')
-    } finally {
-      vi.useRealTimers()
-    }
+  it('nudges the open department arrow across, so the rail shows what is on screen', () => {
+    const { container } = renderMenu()
+    const arrowIn = (tag: string) =>
+      container.querySelector<HTMLElement>(`button[aria-controls="mega-panel-${tag}"] svg`)!
+
+    // classList, not a substring match: the base class already carries
+    // `group-hover:translate-x-1`, which contains the same text.
+    expect(arrowIn('gloves').classList.contains('translate-x-1')).toBe(true)
+    expect(arrowIn('home-care').classList.contains('translate-x-1')).toBe(false)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
+    expect(arrowIn('home-care').classList.contains('translate-x-1')).toBe(true)
+    expect(arrowIn('gloves').classList.contains('translate-x-1')).toBe(false)
+  })
+
+  it('carries the same hover motion the rest of the site uses for forward links', () => {
+    const { container } = renderMenu()
+    const arrow = container.querySelector<HTMLElement>('button[aria-controls="mega-panel-gloves"] svg')!
+    expect(arrow.getAttribute('class')).toContain('group-hover:translate-x-1')
+    expect(arrow.closest('.group')).not.toBeNull()
   })
 })
 

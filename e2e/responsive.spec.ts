@@ -209,11 +209,17 @@ test.describe('category nav regression (headless category nav remediation, 2026-
 
     // Progressive disclosure (2026-08-26): the panel no longer shows every
     // department's children at once. Exactly one department's detail panel is
-    // on screen, and hovering a department in the rail swaps it — which is
+    // on screen, and the chevron beside a department opens its own — which is
     // what makes the menu scannable instead of a 100-link wall.
     await expect(panel.locator('[id^="mega-panel-"]:visible')).toHaveCount(1)
 
+    // Hover must NOT switch: the rail is two columns and the panel sits right
+    // of both, so a hover trigger hands the panel to whatever row the pointer
+    // crosses on its way there.
     await panel.locator('a[data-tag="mobility"]').hover()
+    await expect(panel.locator('#mega-panel-mobility')).toBeHidden()
+
+    await panel.getByRole('button', { name: 'Show Mobility subcategories' }).click()
     const mobilityPanel = panel.locator('#mega-panel-mobility')
     await expect(mobilityPanel).toBeVisible()
     await expect(panel.locator('[id^="mega-panel-"]:visible')).toHaveCount(1)
