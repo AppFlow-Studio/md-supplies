@@ -10,6 +10,7 @@
 
 import type { CollectionFilter } from '@/lib/shopify/types'
 import { orderFacetValues } from '@/lib/catalog/facet-order'
+import { canonicalizeFacetValues } from '@/lib/catalog/facet-canonicalization'
 
 // ── Facet id shapes (Storefront API) ────────────────────────────────────────
 // filter.v.availability · filter.v.price · filter.p.type / filter.p.product_type
@@ -349,9 +350,11 @@ export function getSearchFacets(facets: CollectionFilter[]): CollectionFilter[] 
     // Same count-descending value order as the category rail — /search shares
     // the FilterRail component, so a different order there would be a visible
     // inconsistency for the same facet.
-    .map((facet) =>
-      facet.type === 'PRICE_RANGE' ? facet : { ...facet, values: orderFacetValues(facet.values) },
-    )
+    .map((facet) => {
+      if (facet.type === 'PRICE_RANGE') return facet
+      const canonical = canonicalizeFacetValues(facet)
+      return { ...canonical, values: orderFacetValues(canonical.values) }
+    })
 }
 
 // Sources that MAY be referenced by registry entries (spec §"Allowed filter
@@ -414,8 +417,29 @@ export function getAllowedFacets(
    */
   activeFilterInputs: readonly string[] = [],
 ): CollectionFilter[] {
+  return applyRelevanceGate(
+    orderAllowedFacets(collectionHandle, facets, kind),
+    activeFilterInputs,
+  )
+}
+
+/**
+ * Steps 1 and 2 above — default-deny, registry order, canonical value merge —
+ * WITHOUT step 3's relevance gate.
+ *
+ * Split out because search-sourced routes have to correct their counts before
+ * anything is judged on them: Shopify's `Query.search` facet counts are
+ * window-derived approximations (lib/catalog/exact-facet-counts.ts), so gating
+ * on them can drop a group that in truth has matching products. Those routes
+ * call this, replace the counts, then call `applyRelevanceGate`. Collection
+ * routes, whose counts are exact as returned, just call `getAllowedFacets`.
+ */
+export function orderAllowedFacets(
+  collectionHandle: string,
+  facets: CollectionFilter[],
+  kind: FacetRouteKind = 'category',
+): CollectionFilter[] {
   const rules = getFacetRulesFor(kind, collectionHandle)
-  const active = new Set(activeFilterInputs)
   const ordered: CollectionFilter[] = []
 
   for (const rule of rules) {
@@ -425,12 +449,28 @@ export function getAllowedFacets(
       ordered.push(facet)
       continue
     }
-    // Relevance gate: a group whose every value is zero-count narrows nothing.
-    if (!facet.values.some((v) => v.count > 0 || active.has(v.input))) continue
-    ordered.push({ ...facet, values: orderFacetValues(facet.values) })
+    // Duplicate spellings of one concept collapse to a single option here, so
+    // the rail, the mobile drawer and the Category tab row cannot disagree
+    // about how many options a group has (lib/catalog/facet-canonicalization).
+    const canonical = canonicalizeFacetValues(facet)
+    ordered.push({ ...canonical, values: orderFacetValues(canonical.values) })
   }
 
   return ordered
+}
+
+/** Step 3: a group whose every value is zero-count narrows nothing, so it is
+ *  not a filter. Selected values keep their group alive regardless. */
+export function applyRelevanceGate(
+  facets: CollectionFilter[],
+  activeFilterInputs: readonly string[] = [],
+): CollectionFilter[] {
+  const active = new Set(activeFilterInputs)
+  return facets.filter(
+    (facet) =>
+      facet.type === 'PRICE_RANGE' ||
+      facet.values.some((v) => v.count > 0 || active.has(v.input)),
+  )
 }
 
 /** Strips only hard-denied facets (raw tags) — used where there is no

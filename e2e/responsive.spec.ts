@@ -184,8 +184,6 @@ test.describe('category nav regression (headless category nav remediation, 2026-
   // visible text is the Shopify menu item's TITLE (this QA store's main menu
   // renders it as "Catalog", not "Categories") and can legitimately differ
   // per environment/store — the structural ids are the stable contract.
-  const SUBCATEGORY_NAME = /rollators|walkers|canes/i
-
   test('direct navigation to /category/mobility and a real subcategory both resolve with no runtime error', async ({ page }) => {
     const res1 = await page.goto('/category/mobility', { waitUntil: 'domcontentloaded' })
     expect(res1?.status(), '/category/mobility status').toBeLessThan(400)
@@ -200,7 +198,7 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
   })
 
-  test('desktop header dropdown hover reveals a nested subcategory link that resolves (Task 5 regression guard)', async ({ page }) => {
+  test('desktop mega-menu reveals one department at a time (Task 5 regression guard)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
@@ -209,10 +207,31 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     const panel = page.locator('#nav-panel-categories')
     await expect(panel).toBeVisible()
 
-    // A tag-derived nested child link inside the panel — not the top-level
-    // "Mobility" link itself — proves the mega-dropdown is rendering real
-    // subcategories (Task 5's fix), not just the flat L1 tile list.
-    const subLink = panel.getByRole('link', { name: SUBCATEGORY_NAME }).first()
+    // Progressive disclosure (2026-08-26): the panel no longer shows every
+    // department's children at once. Exactly one department's detail panel is
+    // on screen, and the chevron beside a department opens its own — which is
+    // what makes the menu scannable instead of a 100-link wall.
+    await expect(panel.locator('[id^="mega-panel-"]:visible')).toHaveCount(1)
+
+    // Hover must NOT switch: the rail is two columns and the panel sits right
+    // of both, so a hover trigger hands the panel to whatever row the pointer
+    // crosses on its way there.
+    await panel.locator('[data-rail-item][data-tag="mobility"]').hover()
+    await expect(panel.locator('#mega-panel-mobility')).toBeHidden()
+
+    // The rail row IS the disclosure — one target per row, no link/control
+    // split to guess between.
+    await panel.locator('[data-rail-item][data-tag="mobility"]').click()
+    const mobilityPanel = panel.locator('#mega-panel-mobility')
+    await expect(mobilityPanel).toBeVisible()
+    await expect(panel.locator('[id^="mega-panel-"]:visible')).toHaveCount(1)
+
+    // A tag-derived nested child link inside that department's panel — not the
+    // top-level "Mobility" link itself — proves the menu is rendering real
+    // subcategories (Task 5's fix), not just the flat L1 tile list. Matched on
+    // the L2 route shape rather than a name, so the assertion holds against
+    // both the QA store's catalogue and production's.
+    const subLink = mobilityPanel.locator('a[href^="/category/mobility/"]').first()
     await expect(subLink).toBeVisible()
     await expect(subLink).toHaveAttribute('href', /^\/category\/[^/]+\/[^/]+$/)
 
@@ -222,7 +241,7 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
   })
 
-  test('mobile drawer tap-to-expand reveals nested subcategory links', async ({ page }) => {
+  test('mobile drawer drills down into one department and reveals its nested subcategory links', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
@@ -233,9 +252,20 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     const mobilePanel = page.locator('#mobile-panel-categories')
     await expect(mobilePanel).toBeVisible()
 
-    const subLink = mobilePanel.getByRole('link', { name: SUBCATEGORY_NAME }).first()
+    // Level one lists departments; tapping a row opens exactly one of them.
+    await mobilePanel.getByRole('button', { name: 'Mobility', exact: true }).click()
+    const department = mobilePanel.locator('#mobile-cat-mobility')
+    await expect(department).toBeVisible()
+    await expect(mobilePanel.locator('[id^="mobile-cat-"]:visible')).toHaveCount(1)
+
+    const subLink = department.locator('a[href^="/category/mobility/"]').first()
     await expect(subLink).toBeVisible()
     await expect(subLink).toHaveAttribute('href', /^\/category\/[^/]+\/[^/]+$/)
+
+    // And the way back out is a control, not the browser's Back button.
+    await department.getByRole('button', { name: /Categories/ }).click()
+    await expect(department).toBeHidden()
+    await expect(mobilePanel.getByRole('button', { name: 'Mobility', exact: true })).toBeVisible()
   })
 
   test('repeated navigation between two categories, then back/forward, never leaves a blank page (Task 1 regression guard)', async ({ page }) => {

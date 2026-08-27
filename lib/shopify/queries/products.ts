@@ -267,12 +267,32 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
         startCursor
         endCursor
       }
-      productFilters {
-        id
-        label
-        type
-        values { id label count input }
-      }
+      # NO \`productFilters\` SELECTION HERE — deliberate, and load-bearing.
+      #
+      # Measured live against this store's Storefront API (2026-08-26): on
+      # \`Query.search\`, asking for the \`productFilters\` FIELD in the same
+      # operation that passes a non-empty \`productFilters:\` ARGUMENT makes the
+      # API drop the \`query\` scope entirely and answer for the filter alone,
+      # across the whole catalogue. Reproduced 3/3 with a query that matches
+      # nothing:
+      #
+      #   search(query: "tag:\\"subcategory:zzz-does-not-exist\\"",
+      #          productFilters: [{productMetafield:{namespace:"custom",
+      #                            key:"customer_filter_category",
+      #                            value:"Shower Commode"}}])
+      #     · with    productFilters selected -> totalCount 8, 8 nodes
+      #     · without productFilters selected -> totalCount 0, 0 nodes
+      #
+      # Removing the field is what restores scoping. Real impact before this
+      # change, same run: /category/apparel with one Brand filter rendered
+      # products from a 1,000-product whole-catalogue set instead of the 39
+      # Apparel products that match, and every L2 subcategory page did the
+      # same (Home Care -> Bedside Commodes, "Shower Commode": 8 products
+      # returned for a facet that counted 1).
+      #
+      # Facets for search-sourced routes now come from SEARCH_SCOPED_FACETS
+      # below, which never passes the argument, plus exact per-value counts
+      # from lib/catalog/exact-facet-counts.ts. Do not re-add this field.
       nodes {
         ... on Product {
           id
@@ -313,6 +333,60 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
     }
   }
 `;
+
+/**
+ * Facets for a search-sourced product set (L2 subcategory routes and the
+ * `productSet: 'tag'` L1s), scoped by `query` alone.
+ *
+ * Takes NO `productFilters` argument by design — see the long comment in
+ * SEARCH_PRODUCTS_BY_TAG: passing one alongside a `productFilters` selection
+ * silently discards the `query` scope. With no argument the response is
+ * correctly scoped, which makes this the only trustworthy way to learn which
+ * facet groups and values exist for a tag-scoped product set.
+ *
+ * The `count` each value carries is still Shopify's, and Shopify's is wrong
+ * here — measured 2026-08-26, the same query returns "Bedside Commodes = 17"
+ * at `first: 1` and "= 24" at `first: 20` for a set where the true figure is
+ * 32. Callers replace these counts via lib/catalog/exact-facet-counts.ts;
+ * only the group/value/label/input structure is taken from this response.
+ */
+export const SEARCH_SCOPED_FACETS = `#graphql
+  query SearchScopedFacets($query: String!) {
+    search(query: $query, types: PRODUCT, first: 1) {
+      totalCount
+      productFilters {
+        id
+        label
+        type
+        values { id label count input }
+      }
+    }
+  }
+`;
+
+/**
+ * Builds a single operation that asks `Query.search` for N independent
+ * `totalCount`s — one per facet value — all under the same `query` scope.
+ *
+ * One aliased request instead of N round-trips: 86 aliases (the widest
+ * search-sourced route, Apparel) answered in ~1.7s on 2026-08-26, and the
+ * usual L2 page needs ~10. `productFilters` is NEVER selected here, so each
+ * alias keeps its `query` scope and its `totalCount` is exact — which is the
+ * whole point: the number shown next to a facet value is the number of
+ * products clicking it returns.
+ */
+export function buildSearchFacetCountsQuery(count: number): string {
+  const args = Array.from({ length: count }, (_, i) => `$f${i}: [ProductFilter!]`).join(', ');
+  const fields = Array.from(
+    { length: count },
+    (_, i) => `c${i}: search(query: $query, types: PRODUCT, first: 1, productFilters: $f${i}) { totalCount }`,
+  ).join('\n    ');
+  return `#graphql
+  query SearchFacetCounts($query: String!, ${args}) {
+    ${fields}
+  }
+`;
+}
 
 export const GET_PRODUCT_CARD_BY_HANDLE = `#graphql
   query GetProductCardByHandle($handle: String!) {

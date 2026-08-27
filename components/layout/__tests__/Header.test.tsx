@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react'
 import { Header } from '../Header'
 import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
 
@@ -210,8 +210,13 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
   it('renders parent and child as two DISTINCT links, each to its own route (desktop)', () => {
     render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     // The categories panel is always in the DOM (CSS-toggled, see NF7 above),
-    // so its links are queryable via hidden: true without simulating hover/focus.
-    const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
+    // so its links are queryable via hidden: true without simulating a click.
+    //
+    // The parent's link is "All Surgery & Procedure" inside its own panel, not
+    // the rail row: the rail selects and the panel navigates, so that the
+    // department name and the control that opens its subcategories can never be
+    // mistaken for each other (see CategoryMegaMenu).
+    const [surgery] = screen.getAllByRole('link', { name: 'All Surgery & Procedure', hidden: true })
     const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
 
     expect(surgery).toHaveAttribute('href', '/category/surgery-procedure')
@@ -220,16 +225,31 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
     expect(trocars.getAttribute('href')).not.toBe(surgery.getAttribute('href'))
   })
 
-  it('nests the child inside its parent list item, not as a sibling of the category grid', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
-    const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
-    const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
+  it('binds the child to its parent department through ARIA, not visual proximity', () => {
+    const { container } = render(
+      <Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />,
+    )
+    // Under two-stage disclosure the child no longer sits inside the parent's
+    // own <li> — the parent is a rail item and the child lives in the detail
+    // panel that rail item controls. The relationship has to be explicit for a
+    // screen reader, so the panel names its department and the department's
+    // chevron points at the panel.
+    const railItem = container.querySelector<HTMLElement>('[data-rail-item][data-tag="surgery-procedure"]')
+    expect(railItem).not.toBeNull()
 
-    // Structural containment is what makes the relationship real for a screen
-    // reader rather than implied by visual proximity.
-    const parentItem = surgery.closest('li')
-    expect(parentItem).not.toBeNull()
-    expect(parentItem!.contains(trocars)).toBe(true)
+    const panel = container.querySelector<HTMLElement>(
+      `[aria-labelledby="${railItem!.id}"]`,
+    )
+    expect(panel).not.toBeNull()
+    expect(
+      within(panel!).getByRole('link', { name: 'Trocars & Trocar Kits', hidden: true }),
+    ).toHaveAttribute('href', '/category/trocars-trocar-kits')
+
+    // The rail row IS the disclosure control now — one target per row, so the
+    // element that opens the panel and the element that names the department
+    // are the same thing.
+    expect(railItem!.tagName).toBe('BUTTON')
+    expect(railItem).toHaveAttribute('aria-controls', panel!.id)
   })
 
   it('no longer renders the detached "Trocar Supplies" badge anywhere', () => {
@@ -238,12 +258,30 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
     expect(screen.queryAllByRole('link', { name: /Trocar Supplies/, hidden: true })).toHaveLength(0)
   })
 
-  it('renders the same parent/child pair in the mobile categories panel', () => {
+  it('renders the same parent/child pair in the mobile drill-down panel', () => {
+    const { container } = render(
+      <Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />,
+    )
+    const panel = container.querySelector<HTMLElement>('#mobile-cat-surgery-procedure')
+    expect(panel).not.toBeNull()
+    expect(
+      within(panel!).getByRole('link', { name: 'All Surgery & Procedure', hidden: true }),
+    ).toHaveAttribute('href', '/category/surgery-procedure')
+    expect(
+      within(panel!).getByRole('link', { name: 'Trocars & Trocar Kits', hidden: true }),
+    ).toHaveAttribute('href', '/category/trocars-trocar-kits')
+  })
+
+  it('keeps Trocars reachable without first opening any department (§28)', () => {
     render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
-    // Desktop panel + mobile drawer both render the pair, so each label
-    // resolves to exactly two links — one per breakpoint's markup.
-    expect(screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })).toHaveLength(2)
-    expect(screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })).toHaveLength(2)
+    // The commercial requirement: opening Categories is the ONLY interaction
+    // needed to see it. The menu footer carries the link regardless of which
+    // department's panel happens to be showing, so click depth is 1.
+    const featured = screen
+      .getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
+      .filter((el) => el.closest('#nav-panel-categories') && !el.closest('[aria-labelledby]'))
+    expect(featured).toHaveLength(1)
+    expect(featured[0]).toHaveAttribute('href', '/category/trocars-trocar-kits')
   })
 
   it('omits the child when its collection is not live, without dropping the parent', () => {
