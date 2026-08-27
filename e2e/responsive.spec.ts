@@ -216,10 +216,12 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     // Hover must NOT switch: the rail is two columns and the panel sits right
     // of both, so a hover trigger hands the panel to whatever row the pointer
     // crosses on its way there.
-    await panel.locator('a[data-tag="mobility"]').hover()
+    await panel.locator('[data-rail-item][data-tag="mobility"]').hover()
     await expect(panel.locator('#mega-panel-mobility')).toBeHidden()
 
-    await panel.getByRole('button', { name: 'Show Mobility subcategories' }).click()
+    // The rail row IS the disclosure — one target per row, no link/control
+    // split to guess between.
+    await panel.locator('[data-rail-item][data-tag="mobility"]').click()
     const mobilityPanel = panel.locator('#mega-panel-mobility')
     await expect(mobilityPanel).toBeVisible()
     await expect(panel.locator('[id^="mega-panel-"]:visible')).toHaveCount(1)
@@ -250,8 +252,8 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     const mobilePanel = page.locator('#mobile-panel-categories')
     await expect(mobilePanel).toBeVisible()
 
-    // Level one lists departments; the chevron opens exactly one of them.
-    await mobilePanel.getByRole('button', { name: 'Show Mobility subcategories' }).click()
+    // Level one lists departments; tapping a row opens exactly one of them.
+    await mobilePanel.getByRole('button', { name: 'Mobility', exact: true }).click()
     const department = mobilePanel.locator('#mobile-cat-mobility')
     await expect(department).toBeVisible()
     await expect(mobilePanel.locator('[id^="mobile-cat-"]:visible')).toHaveCount(1)
@@ -263,7 +265,7 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     // And the way back out is a control, not the browser's Back button.
     await department.getByRole('button', { name: /Categories/ }).click()
     await expect(department).toBeHidden()
-    await expect(mobilePanel.getByRole('button', { name: 'Show Mobility subcategories' })).toBeVisible()
+    await expect(mobilePanel.getByRole('button', { name: 'Mobility', exact: true })).toBeVisible()
   })
 
   test('repeated navigation between two categories, then back/forward, never leaves a blank page (Task 1 regression guard)', async ({ page }) => {

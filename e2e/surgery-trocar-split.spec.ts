@@ -320,18 +320,18 @@ test.describe('P0.2/P0.3 — nav hierarchy and categories hub', () => {
     // ARIA rather than DOM containment — still structural, still real for a
     // screen reader, just expressed the way a disclosure has to express it.
     const panel = page.locator('#nav-panel-categories')
-    const railLink = panel.locator('a[data-tag="surgery-procedure"]')
-    await expect(railLink).toBeAttached()
-    const railId = await railLink.getAttribute('id')
+    const railItem = panel.locator('[data-rail-item][data-tag="surgery-procedure"]')
+    await expect(railItem).toBeAttached()
+    const railId = await railItem.getAttribute('id')
 
     const detail = panel.locator(`[aria-labelledby="${railId}"]`)
     await expect(detail).toBeAttached()
     await expect(detail.locator('a[href="/category/trocars-trocar-kits"]')).toHaveCount(1)
 
-    // And the chevron beside the department points at that same panel.
-    await expect(
-      panel.getByRole('button', { name: 'Show Surgery & Procedure subcategories', includeHidden: true }),
-    ).toHaveAttribute('aria-controls', (await detail.getAttribute('id'))!)
+    // And the rail row itself IS the control that opens that panel — one
+    // target per row, so the element naming the department and the element
+    // opening its subcategories are the same thing.
+    await expect(railItem).toHaveAttribute('aria-controls', (await detail.getAttribute('id'))!)
   })
 
   // Bilal, 2026-08-20: the first nesting attempt gave the parent `col-span-2`,

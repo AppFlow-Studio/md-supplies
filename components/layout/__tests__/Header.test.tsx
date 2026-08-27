@@ -210,8 +210,13 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
   it('renders parent and child as two DISTINCT links, each to its own route (desktop)', () => {
     render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     // The categories panel is always in the DOM (CSS-toggled, see NF7 above),
-    // so its links are queryable via hidden: true without simulating hover/focus.
-    const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
+    // so its links are queryable via hidden: true without simulating a click.
+    //
+    // The parent's link is "All Surgery & Procedure" inside its own panel, not
+    // the rail row: the rail selects and the panel navigates, so that the
+    // department name and the control that opens its subcategories can never be
+    // mistaken for each other (see CategoryMegaMenu).
+    const [surgery] = screen.getAllByRole('link', { name: 'All Surgery & Procedure', hidden: true })
     const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
 
     expect(surgery).toHaveAttribute('href', '/category/surgery-procedure')
@@ -229,25 +234,22 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
     // panel that rail item controls. The relationship has to be explicit for a
     // screen reader, so the panel names its department and the department's
     // chevron points at the panel.
-    const railLink = container.querySelector<HTMLAnchorElement>('a[data-tag="surgery-procedure"]')
-    expect(railLink).not.toBeNull()
+    const railItem = container.querySelector<HTMLElement>('[data-rail-item][data-tag="surgery-procedure"]')
+    expect(railItem).not.toBeNull()
 
     const panel = container.querySelector<HTMLElement>(
-      `[aria-labelledby="${railLink!.id}"]`,
+      `[aria-labelledby="${railItem!.id}"]`,
     )
     expect(panel).not.toBeNull()
     expect(
       within(panel!).getByRole('link', { name: 'Trocars & Trocar Kits', hidden: true }),
     ).toHaveAttribute('href', '/category/trocars-trocar-kits')
 
-    // Scoped to the desktop panel: the mobile drill-down renders its own
-    // disclosure control with the same accessible name.
-    const desktopPanel = container.querySelector<HTMLElement>('#nav-panel-categories')!
-    const chevron = within(desktopPanel).getByRole('button', {
-      name: 'Show Surgery & Procedure subcategories',
-      hidden: true,
-    })
-    expect(chevron).toHaveAttribute('aria-controls', panel!.id)
+    // The rail row IS the disclosure control now — one target per row, so the
+    // element that opens the panel and the element that names the department
+    // are the same thing.
+    expect(railItem!.tagName).toBe('BUTTON')
+    expect(railItem).toHaveAttribute('aria-controls', panel!.id)
   })
 
   it('no longer renders the detached "Trocar Supplies" badge anywhere', () => {

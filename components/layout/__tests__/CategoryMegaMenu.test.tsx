@@ -63,6 +63,9 @@ function visiblePanel(container: HTMLElement): HTMLElement {
   return shown[0]
 }
 
+const railItem = (container: HTMLElement, tag: string) =>
+  container.querySelector<HTMLElement>(`[data-rail-item][data-tag="${tag}"]`)!
+
 afterEach(cleanup)
 
 describe('CategoryMegaMenu — progressive disclosure', () => {
@@ -81,53 +84,44 @@ describe('CategoryMegaMenu — progressive disclosure', () => {
     }
   })
 
-  it('swaps the detail panel when a department is opened, without touching the rail', () => {
+  it('opens a department when its row is clicked', () => {
     const { container } = renderMenu()
-    fireEvent.click(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
+    fireEvent.click(railItem(container, 'home-care'))
 
     const panel = visiblePanel(container)
     expect(panel.id).toBe('mega-panel-home-care')
     expect(within(panel).getByRole('link', { name: 'Bedside Commodes' })).toBeTruthy()
     // Every department is still listed — the rail does not change, only the
     // column beside it.
-    expect(container.querySelectorAll('a[data-rail-link]')).toHaveLength(CATEGORIES.length)
+    expect(container.querySelectorAll('[data-rail-item]')).toHaveLength(CATEGORIES.length)
   })
 
-  it('swaps the detail panel on keyboard focus', () => {
+  it('opens a department on keyboard focus, so Tab previews as the pointer would', () => {
     const { container } = renderMenu()
-    fireEvent.focus(container.querySelector<HTMLAnchorElement>('a[data-tag="surgery-procedure"]')!)
+    fireEvent.focus(railItem(container, 'surgery-procedure'))
     expect(visiblePanel(container).id).toBe('mega-panel-surgery-procedure')
   })
 
-  it('keeps each department name a direct link to its own category page', () => {
-    // Navigation must never require expanding first.
+  it('marks the open department expanded, and the others not', () => {
     const { container } = renderMenu()
-    const railLink = container.querySelector<HTMLAnchorElement>('a[data-tag="home-care"]')!
-    expect(railLink).toHaveAttribute('href', '/category/home-care')
+    expect(railItem(container, 'gloves')).toHaveAttribute('aria-expanded', 'true')
+    expect(railItem(container, 'home-care')).toHaveAttribute('aria-expanded', 'false')
   })
 
-  it('marks the open department’s disclosure control expanded, and the others not', () => {
-    renderMenu()
-    expect(screen.getByRole('button', { name: 'Show Gloves subcategories' }))
-      .toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
-      .toHaveAttribute('aria-expanded', 'false')
-  })
-
-  it('offers no disclosure control for a department with no subcategories', () => {
-    renderMenu()
-    expect(screen.queryByRole('button', { name: 'Show Room Furniture subcategories' })).toBeNull()
-    expect(screen.getByRole('link', { name: 'Room Furniture' })).toHaveAttribute(
-      'href',
-      '/category/room-furniture',
-    )
+  it('sends a department with no subcategories straight to its category page', () => {
+    // Nothing to disclose, so there is no panel worth opening and the row is
+    // the destination.
+    const { container } = renderMenu()
+    const row = railItem(container, 'room-furniture')
+    expect(row.tagName).toBe('A')
+    expect(row).toHaveAttribute('href', '/category/room-furniture')
+    expect(row).not.toHaveAttribute('aria-expanded')
   })
 
   it('moves along the rail with Arrow keys and brings the panel with it', () => {
     const { container } = renderMenu()
     const rail = container.querySelector<HTMLUListElement>('ul')!
-    const first = container.querySelector<HTMLAnchorElement>('a[data-tag="gloves"]')!
-    first.focus()
+    railItem(container, 'gloves').focus()
 
     fireEvent.keyDown(rail, { key: 'ArrowDown' })
     expect(document.activeElement).toHaveAttribute('data-tag', 'home-care')
@@ -143,10 +137,10 @@ describe('CategoryMegaMenu — progressive disclosure', () => {
     expect(document.activeElement).toHaveAttribute('data-tag', 'gloves')
   })
 
-  it('steps into the open panel with ArrowRight', () => {
+  it('steps into the open panel with ArrowRight, landing on its primary link', () => {
     const { container } = renderMenu()
     const rail = container.querySelector<HTMLUListElement>('ul')!
-    container.querySelector<HTMLAnchorElement>('a[data-tag="gloves"]')!.focus()
+    railItem(container, 'gloves').focus()
     fireEvent.keyDown(rail, { key: 'ArrowRight' })
     expect(document.activeElement).toHaveAttribute('href', '/category/gloves')
     expect(document.activeElement?.textContent).toBe('All Gloves')
@@ -160,70 +154,79 @@ describe('CategoryMegaMenu — progressive disclosure', () => {
   })
 })
 
-describe('CategoryMegaMenu — click, not hover (the diagonal problem)', () => {
-  // The rail is two columns and the detail panel sits to the right of BOTH, so
-  // reaching a column-one department's panel means dragging the pointer across
-  // column two. Every hover-based scheme — bare mouseenter, a fixed delay, a
-  // direction guard — is a heuristic guessing at intent, and each one mis-fired
-  // on real pointer paths. Opening is a click now, and these lock that in.
+describe('CategoryMegaMenu — one meaning per surface', () => {
+  // The rail used to carry a link (the name) and a disclosure control (an
+  // arrow) in one 26px row: two targets, two meanings, no separation, and the
+  // disclosure wearing the glyph this site uses for "go somewhere". Nobody
+  // could tell which half did what. The rail selects; the panel navigates.
+
+  it('puts no navigation in the rail — a department row selects, it does not go anywhere', () => {
+    const { container } = renderMenu()
+    const rail = container.querySelector<HTMLUListElement>('ul')!
+    // Only the childless department, which has no panel to open, is a link.
+    const links = Array.from(rail.querySelectorAll('a'))
+    expect(links.map((a) => a.getAttribute('data-tag'))).toEqual(['room-furniture'])
+  })
+
+  it('puts the route to the category page first inside the panel', () => {
+    const { container } = renderMenu()
+    const panel = container.querySelector<HTMLElement>('#mega-panel-home-care')!
+    const first = panel.querySelector('a')!
+    expect(first).toHaveAttribute('href', '/category/home-care')
+    expect(first.textContent).toBe('All Home Care')
+  })
+
+  it('still gives every department a real, crawlable category link', () => {
+    // The link moved out of the rail and into the panel; it must not have been
+    // lost. A childless department carries two — its rail row IS the link, and
+    // its panel still leads with "All …" for the keyboard path that can reach
+    // it — which is fine: the requirement is that none went missing.
+    const { container } = renderMenu()
+    for (const cat of CATEGORIES) {
+      const links = container.querySelectorAll(`a[href="${cat.href}"]`)
+      expect(links.length, `${cat.displayName} category link`).toBeGreaterThan(0)
+    }
+    // And for a department with children, exactly one — the panel's.
+    expect(container.querySelectorAll('a[href="/category/home-care"]')).toHaveLength(1)
+  })
 
   it('does not change the panel on hover, however long the pointer rests', () => {
     const { container } = renderMenu()
-    const li = (tag: string) => container.querySelector<HTMLElement>(`a[data-tag="${tag}"]`)!.closest('li')!
-
     expect(visiblePanel(container).id).toBe('mega-panel-gloves')
-    fireEvent.mouseEnter(li('home-care'))
-    fireEvent.mouseOver(li('home-care'))
-    fireEvent.mouseMove(li('home-care'))
+    const row = railItem(container, 'home-care')
+    fireEvent.mouseEnter(row)
+    fireEvent.mouseOver(row)
+    fireEvent.mouseMove(row)
     expect(visiblePanel(container).id).toBe('mega-panel-gloves')
   })
 
   it('does not change the panel when the pointer sweeps across other departments', () => {
     const { container } = renderMenu()
-    const li = (tag: string) => container.querySelector<HTMLElement>(`a[data-tag="${tag}"]`)!.closest('li')!
-
-    fireEvent.click(screen.getByRole('button', { name: 'Show Gloves subcategories' }))
+    fireEvent.click(railItem(container, 'gloves'))
     for (const tag of ['home-care', 'surgery-procedure', 'home-care']) {
-      fireEvent.mouseEnter(li(tag))
-      fireEvent.mouseOver(li(tag))
+      fireEvent.mouseEnter(railItem(container, tag))
+      fireEvent.mouseOver(railItem(container, tag))
     }
-    expect(visiblePanel(container).id).toBe('mega-panel-gloves')
-  })
-
-  it('opens the department whose disclosure control was clicked', () => {
-    const { container } = renderMenu()
-    fireEvent.click(screen.getByRole('button', { name: 'Show Surgery & Procedure subcategories' }))
-    expect(visiblePanel(container).id).toBe('mega-panel-surgery-procedure')
-    fireEvent.click(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
-    expect(visiblePanel(container).id).toBe('mega-panel-home-care')
-  })
-
-  it('keeps the department name a link, so opening is never required to navigate', () => {
-    const { container } = renderMenu()
-    const railLink = container.querySelector<HTMLAnchorElement>('a[data-tag="surgery-procedure"]')!
-    expect(railLink).toHaveAttribute('href', '/category/surgery-procedure')
-    // Clicking the NAME must not be intercepted into a panel switch.
     expect(visiblePanel(container).id).toBe('mega-panel-gloves')
   })
 
   it('nudges the open department arrow across, so the rail shows what is on screen', () => {
     const { container } = renderMenu()
-    const arrowIn = (tag: string) =>
-      container.querySelector<HTMLElement>(`button[aria-controls="mega-panel-${tag}"] svg`)!
+    const arrowIn = (tag: string) => railItem(container, tag).querySelector('svg')!
 
     // classList, not a substring match: the base class already carries
     // `group-hover:translate-x-1`, which contains the same text.
     expect(arrowIn('gloves').classList.contains('translate-x-1')).toBe(true)
     expect(arrowIn('home-care').classList.contains('translate-x-1')).toBe(false)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show Home Care subcategories' }))
+    fireEvent.click(railItem(container, 'home-care'))
     expect(arrowIn('home-care').classList.contains('translate-x-1')).toBe(true)
     expect(arrowIn('gloves').classList.contains('translate-x-1')).toBe(false)
   })
 
   it('carries the same hover motion the rest of the site uses for forward links', () => {
     const { container } = renderMenu()
-    const arrow = container.querySelector<HTMLElement>('button[aria-controls="mega-panel-gloves"] svg')!
+    const arrow = railItem(container, 'gloves').querySelector('svg')!
     expect(arrow.getAttribute('class')).toContain('group-hover:translate-x-1')
     expect(arrow.closest('.group')).not.toBeNull()
   })
@@ -245,6 +248,7 @@ describe('CategoryMegaMenu — Trocars prominence', () => {
     const items = Array.from(panel.querySelectorAll('li'))
     // "All Surgery & Procedure" leads, then the featured child ahead of the
     // tag-derived ones.
+    expect(items[0].textContent).toBe('All Surgery & Procedure')
     expect(items[1].textContent).toContain('Trocars & Trocar Kits')
     expect(items[1].textContent).toContain('Popular')
     // The badge must not become part of the link's accessible name.
