@@ -15,6 +15,13 @@ import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { SUPPORTED_INDUSTRIES } from '@/lib/industries'
 import { STATIC_ARTICLES } from '@/lib/blog-static'
 
+// Google's sitemap size limit is 50,000 URLs per file; this shards well
+// below that so each child file stays small and independently
+// fetchable/cacheable, and a Storefront hiccup mid-crawl only costs one
+// shard's freshness instead of the whole catalog's (master plan §16 —
+// "stable sharding is preferred").
+export const PRODUCTS_PER_SITEMAP_SHARD = 2000
+
 type SitemapEntry = MetadataRoute.Sitemap[number]
 
 const STATIC_URLS: SitemapEntry[] = [
@@ -163,7 +170,14 @@ async function fetchArticleUrls(): Promise<SitemapEntry[]> {
   }
 }
 
-export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
+/**
+ * Every sitemap URL except products: static pages, categories, L2
+ * subcategories, partners, industries, and blog articles. Small and mostly
+ * static — one shard (id 'content' in app/sitemaps/sitemap.ts) is enough
+ * for all of it, distinct from the product shards below which scale with
+ * the live catalog.
+ */
+export async function getContentSitemapUrls(): Promise<MetadataRoute.Sitemap> {
   const partnerUrls: SitemapEntry[] = PARTNERS.map(p => ({
     url: `${SITE_URL}/partners/${p.slug}`,
     changeFrequency: 'monthly' as const,
@@ -188,10 +202,9 @@ export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }))
 
-  const [categoryUrls, subcategoryUrls, productUrls, articleUrls] = await Promise.all([
+  const [categoryUrls, subcategoryUrls, articleUrls] = await Promise.all([
     fetchCategoryUrls(),
     fetchSubcategoryUrls(),
-    fetchProductUrls(),
     fetchArticleUrls(),
   ])
 
@@ -207,10 +220,37 @@ export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
     ...STATIC_URLS,
     ...categoryUrls,
     ...subcategoryUrls,
-    ...productUrls,
     ...partnerUrls,
     ...industryUrls,
     ...articleUrls,
     ...deduplicatedStaticUrls,
   ]
+}
+
+/** Number of product shards needed for the current live catalog size. */
+export async function getProductShardCount(): Promise<number> {
+  const urls = await fetchProductUrls()
+  return Math.max(1, Math.ceil(urls.length / PRODUCTS_PER_SITEMAP_SHARD))
+}
+
+/** The product URLs belonging to one shard, 0-indexed. */
+export async function getProductSitemapUrls(shardIndex: number): Promise<MetadataRoute.Sitemap> {
+  const urls = await fetchProductUrls()
+  const start = shardIndex * PRODUCTS_PER_SITEMAP_SHARD
+  return urls.slice(start, start + PRODUCTS_PER_SITEMAP_SHARD)
+}
+
+/**
+ * Full, unsharded sitemap — content URLs plus every product. Kept for any
+ * caller that wants the complete set in one call (and as the function this
+ * file's existing test coverage was written against); app/sitemaps/sitemap.ts
+ * itself now calls getContentSitemapUrls/getProductSitemapUrls directly
+ * instead, to get the sharded index behavior.
+ */
+export async function getSitemapUrls(): Promise<MetadataRoute.Sitemap> {
+  const [contentUrls, productUrls] = await Promise.all([
+    getContentSitemapUrls(),
+    fetchProductUrls(),
+  ])
+  return [...contentUrls, ...productUrls]
 }

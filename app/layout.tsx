@@ -17,6 +17,8 @@ import { buildOrganizationSchema, jsonLdSafe } from '@/lib/schema'
 import { getNonce } from '@/lib/csp-nonce'
 import { IS_STAGING, SITE_ORIGIN } from '@/lib/site-config'
 import { fetchAllCollectionHandles, type CollectionHandle } from '@/lib/shopify/collection-handles.server'
+import { buildL2Tree, type L2Node } from '@/lib/category-tree'
+import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import type { LocalizationData, AvailableCountry, ShopifyMenu } from '@/lib/shopify/types'
 
 const manrope = Manrope({
@@ -44,7 +46,7 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const nonce = await getNonce()
-  const [localization, collectionsData, menuData] = await Promise.all([
+  const [localization, collectionsData, menuData, l2Nodes] = await Promise.all([
     storefrontFetch<{ localization: LocalizationData }>(
       GET_LOCALIZATION,
       undefined,
@@ -59,6 +61,13 @@ export default async function RootLayout({
       { handle: 'main-menu' },
       { next: { revalidate: 3600, tags: ['shopify', 'menu'] } },
     ).catch(() => ({ menu: { id: '', title: '', items: [] } as ShopifyMenu })),
+    // Nav-dropdown subcategory preview (nav remediation, item 1/2). Reuses the
+    // SAME 1-hour-cached scan CategoryPageView already runs — Next's data cache
+    // dedupes concurrent identical requests, so this is normally a cache hit,
+    // not a second full scan. Fails soft to an empty tree so a cold-cache
+    // Storefront hiccup degrades the header to today's flat-tile dropdown
+    // instead of breaking navigation sitewide.
+    fetchProductTagSummaries().then(buildL2Tree).catch(() => [] as L2Node[]),
   ])
   const availableCountries: AvailableCountry[] = localization?.localization.availableCountries ?? []
   const collections: CollectionHandle[] = collectionsData
@@ -88,7 +97,7 @@ export default async function RootLayout({
             framer <MotionConfig reducedMotion="user"> pulled the whole motion
             runtime into the shared bundle (audit M24). */}
         <CartProvider>
-          <Header menuItems={menuItems} collections={collections} />
+          <Header menuItems={menuItems} collections={collections} l2Nodes={l2Nodes} />
           {children}
           <Footer
             collections={collections}

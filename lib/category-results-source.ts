@@ -1,7 +1,7 @@
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION, GET_COLLECTION_PRODUCT_IDS } from '@/lib/shopify/queries/collections'
-import { SEARCH_PRODUCTS_BY_TAG } from '@/lib/shopify/queries/products'
-import type { Collection } from '@/lib/shopify/types'
+import { SEARCH_PRODUCTS_BY_TAG, SEARCH_SCOPED_FACETS } from '@/lib/shopify/queries/products'
+import type { Collection, CollectionFilter } from '@/lib/shopify/types'
 
 // Lets CategoryResults pull products from either a Shopify collection (L1
 // pages, unchanged behavior) or a raw tag query (L2 subcategory pages, which
@@ -66,11 +66,15 @@ export function sanitizeSearchText(raw: string): string {
     .trim()
 }
 
+// No `productFilters` here any more: SEARCH_PRODUCTS_BY_TAG deliberately does
+// not select that field, because selecting it alongside a non-empty
+// `productFilters:` argument makes Query.search discard the `query` scope (see
+// the evidence block on that query). Facets for search-sourced routes come
+// from fetchScopedSearchFacets below instead.
 type SearchConnectionData = {
   search: {
     nodes: Collection['products']['nodes']
     pageInfo: Collection['products']['pageInfo']
-    productFilters: Collection['products']['filters']
   }
 }
 
@@ -108,6 +112,27 @@ async function fetchSearchConnection(
     { next: { revalidate: 300, tags: cacheTags } },
   )
   return data.search
+}
+
+/**
+ * The facet groups and values available for a search-scoped product set.
+ *
+ * Issued as its own request, with NO `productFilters` argument, because that
+ * is the only shape of `Query.search` whose `productFilters` response respects
+ * the `query` scope. The counts it returns are Shopify's and are approximate
+ * (see lib/catalog/exact-facet-counts.ts) — callers take the structure from
+ * here and the numbers from there.
+ */
+export async function fetchScopedSearchFacets(
+  query: string,
+  cacheTags: string[],
+): Promise<CollectionFilter[]> {
+  const data = await storefrontFetch<{ search: { productFilters: CollectionFilter[] } | null }>(
+    SEARCH_SCOPED_FACETS,
+    { query },
+    { next: { revalidate: 300, tags: cacheTags } },
+  )
+  return data.search?.productFilters ?? []
 }
 
 // Membership cap for the ID-intersection path. OCC-scale collections stay far
@@ -160,7 +185,7 @@ export async function fetchProductConnection(
         ['shopify', 'products', 'category-tree'],
       )
       return {
-        products: { nodes: search.nodes, pageInfo: search.pageInfo, filters: search.productFilters },
+        products: { nodes: search.nodes, pageInfo: search.pageInfo, filters: [] },
         title: source.title,
         handle: source.slug,
       }
@@ -175,7 +200,7 @@ export async function fetchProductConnection(
         ['shopify', 'products', 'collections', `collection:${source.handle}`],
       )
       return {
-        products: { nodes: search.nodes, pageInfo: search.pageInfo, filters: search.productFilters },
+        products: { nodes: search.nodes, pageInfo: search.pageInfo, filters: [] },
         title: source.handle,
         handle: source.handle,
       }
@@ -197,7 +222,7 @@ export async function fetchProductConnection(
         // no longer applies; the full (capped) member set is returned in one
         // page and CategoryResults' slicing handles display.
         pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
-        filters: search.productFilters,
+        filters: [],
       },
       title: source.handle,
       handle: source.handle,
@@ -224,7 +249,7 @@ export async function fetchProductConnection(
 
   const search = await fetchSearchConnection(source.query, opts, ['shopify', 'products', 'category-tree'])
   return {
-    products: { nodes: search.nodes, pageInfo: search.pageInfo, filters: search.productFilters },
+    products: { nodes: search.nodes, pageInfo: search.pageInfo, filters: [] },
     title: source.title,
     handle: source.slug,
   }

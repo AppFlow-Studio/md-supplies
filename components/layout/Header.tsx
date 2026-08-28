@@ -17,11 +17,15 @@ import Image from 'next/image'
 import { ROUTES } from '@/lib/routes'
 import type { MenuItem } from '@/lib/shopify/types'
 import {
-  buildCategoryTreeNav,
   CATEGORY_TREE_L1,
   getCategorySlug,
+  getTopSubcategoriesForParent,
+  humanizeTag,
   FEATURED_SUBCATEGORIES,
+  type L2Node,
 } from '@/lib/category-tree'
+import { CategoryMegaMenu, type MegaMenuCategory } from '@/components/layout/CategoryMegaMenu'
+import { MobileCategoryNav } from '@/components/layout/MobileCategoryNav'
 import { LOGO_PATH } from '@/lib/bunnycdn'
 import { approvedClaims, type ClaimKey } from '@/lib/claims'
 import { announcementBarClass } from '@/lib/announcement-visibility'
@@ -30,7 +34,36 @@ interface HeaderProps {
   menuItems: MenuItem[]
   /** Complete live collection-handle set for nav reconciliation (DEV-NAV-01). */
   collections: { handle: string }[]
+  /** Tag-derived L2 subcategory tree (nav remediation) — empty array degrades
+   *  every dropdown to a flat tile, same as before this prop existed. */
+  l2Nodes: L2Node[]
 }
+
+/** Cap on how many tag-derived subcategories a header dropdown cell shows
+ *  before pointing shoppers to the full list on the category page itself
+ *  (the footer link list + CategoryTabs already show everything).
+ *
+ * 3, not 4 (2026-08-25 visual verification): with nearly every one of the 25
+ * L1 cells now carrying children (nav remediation — previously only one
+ * outlier did), a 4-deep cap measured ~1270px tall in the live desktop
+ * panel against a ~790px available viewport height even after fixing the
+ * `col-start-1` 2-column-grid regression below. 3 brings the common case
+ * much closer to fitting; the panel's own max-height/overflow-y-auto (below)
+ * is the guaranteed fallback for whatever doesn't. */
+const MAX_DROPDOWN_CHILDREN = 3
+
+/** Cap for the two-stage Categories mega-menu's detail panel.
+ *
+ * Higher than the shortcut cap above because the two surfaces have opposite
+ * constraints. A shortcut dropdown is a small curated list hanging off one
+ * header link and every extra row makes it taller. The mega-menu shows exactly
+ * ONE department's children at a time beside a fixed-height rail, so six rows
+ * cost nothing visually — the panel is still shorter than the rail beside it —
+ * while a 3-item cap made the detail column look emptier than the space it
+ * occupies. Departments with more than this still get a "All <department>"
+ * link to the full list, which the category page's own tabs/footer render in
+ * full. */
+const MAX_MEGA_MENU_CHILDREN = 6
 
 const ANNOUNCEMENTS = [
   'Serving facilities, organizations & individual customers',
@@ -63,7 +96,7 @@ function titleToSlug(title: string): string {
 // Focusable elements inside the mobile drawer, for the focus trap (NF9).
 const FOCUSABLE = 'a[href], button:not([disabled])'
 
-export function Header({ menuItems, collections }: HeaderProps) {
+export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
   // Drives the drawer/overlay reset below. usePathname() is populated during
   // SSR too, so nothing here depends on a client-only first paint.
   const pathname = usePathname()
@@ -192,7 +225,6 @@ export function Header({ menuItems, collections }: HeaderProps) {
 
   const categoriesItem = menuItems.find((item) => item.type === 'CATALOG')
   const otherItems = menuItems.filter((item) => item.type !== 'CATALOG')
-  const categoryNav = buildCategoryTreeNav(collections)
 
   // NF11: menu hrefs are slugified from Shopify menu TITLES with no guarantee
   // the slug is a real collection handle. Reconcile against the live handle
@@ -218,44 +250,86 @@ export function Header({ menuItems, collections }: HeaderProps) {
     return categoryHref(item.title)
   }
 
-  // Featured subcategories (lib/category-tree.ts), keyed by their PARENT's nav
-  // href so a nav entry can render its own children without re-deriving the
-  // registry. Replaces the detached "Trocar Supplies" badge that used to sit at
-  // the foot of the panel: that badge pointed at the same URL the Surgery &
-  // Procedure tile did, so the menu offered one category under two names while
-  // giving no indication the two were related.
+  // Nav-dropdown children per L1, keyed by the PARENT's nav href so a nav
+  // entry can render its own children without re-deriving the registry.
+  // Featured subcategories (curated, route-owning — e.g. Trocars) fill first,
+  // then remaining slots are backfilled with the top tag-derived L2
+  // subcategories (nav remediation) so every category — not just the one
+  // with a featured child — gets real nested links.
   const childrenByParentHref = new Map<string, { displayName: string; href: string }[]>()
-  for (const sub of FEATURED_SUBCATEGORIES) {
-    // Same fail-closed rule the rest of the nav uses: skip when the live handle
-    // list is available and does not contain this collection.
-    if (validHandles.size > 0 && !validHandles.has(sub.collectionHandle)) continue
-    const parent = CATEGORY_TREE_L1.find((c) => c.tag === sub.parentTag)
-    if (!parent) continue
-    const parentHref = ROUTES.category(getCategorySlug(parent))
-    const list = childrenByParentHref.get(parentHref) ?? []
-    list.push({ displayName: sub.displayName, href: ROUTES.category(sub.slug) })
-    childrenByParentHref.set(parentHref, list)
+  for (const l1 of CATEGORY_TREE_L1) {
+    const parentHref = ROUTES.category(getCategorySlug(l1))
+    const featuredChildren = FEATURED_SUBCATEGORIES
+      .filter((sub) => sub.parentTag === l1.tag)
+      // Same fail-closed rule the rest of the nav uses: skip when the live
+      // handle list is available and does not contain this collection.
+      .filter((sub) => validHandles.size === 0 || validHandles.has(sub.collectionHandle))
+      .map((sub) => ({ displayName: sub.displayName, href: ROUTES.category(sub.slug) }))
+
+    const remainingSlots = MAX_DROPDOWN_CHILDREN - featuredChildren.length
+    const tagChildren = remainingSlots > 0
+      ? getTopSubcategoriesForParent(l1.tag, l2Nodes, remainingSlots).map((n) => ({
+          displayName: humanizeTag(n.tag),
+          href: ROUTES.subcategory(getCategorySlug(l1), n.tag),
+        }))
+      : []
+
+    const children = [...featuredChildren, ...tagChildren]
+    if (children.length > 0) childrenByParentHref.set(parentHref, children)
   }
   const navChildren = (parentHref: string) => childrenByParentHref.get(parentHref) ?? []
 
-  /**
-   * Desktop panel order: categories that own a featured subcategory render
-   * LAST, and start a fresh row in column 1 (see `col-start-1` below).
-   *
-   * Their cell is taller than a plain one — it carries an indented child link —
-   * and in a row-major 2-column grid a taller cell mid-list leaves the cell
-   * beside it visibly empty. That was the blank block Bilal flagged, first
-   * between Mobility and Hygiene and then between Patient Therapy & Rehab and
-   * Apparel. Moving the group to the end means nothing follows it, so its extra
-   * height strands no neighbour.
-   *
-   * Desktop only: the mobile drawer is a single column, where a taller item
-   * costs nothing and registry order is the more useful reading order.
-   */
-  const primaryDesktopOrder = [
-    ...categoryNav.primary.filter((c) => navChildren(c.href).length === 0),
-    ...categoryNav.primary.filter((c) => navChildren(c.href).length > 0),
-  ]
+  // The Categories mega-menu's own model: every live department, each with its
+  // OWN children, resolved from the same tag-derived registry the shortcut
+  // dropdowns use. Built separately from `childrenByParentHref` only because
+  // the two surfaces cap children differently (see MAX_MEGA_MENU_CHILDREN) —
+  // there is still exactly one source of truth for what the children ARE.
+  const megaMenuCategories: MegaMenuCategory[] = CATEGORY_TREE_L1
+    // Live-handle reconciliation (DEV-NAV-01), with the same fail-OPEN rule
+    // `categoryHref` above already applies: when the collections fetch failed
+    // and the list is empty, the reviewed registry wins and every department
+    // still renders. A registry L1 is a validated canonical route, so an
+    // upstream fetch failure must not empty the whole Categories menu — the
+    // previous buildCategoryTreeNav-driven panel did exactly that.
+    .filter((l1) => validHandles.size === 0 || validHandles.has(l1.collectionHandle))
+    .map((l1) => {
+      const featuredChildren = FEATURED_SUBCATEGORIES
+        .filter((sub) => sub.parentTag === l1.tag)
+        .filter((sub) => validHandles.size === 0 || validHandles.has(sub.collectionHandle))
+        .map((sub) => ({ displayName: sub.displayName, href: ROUTES.category(sub.slug), featured: true }))
+      const remainingSlots = MAX_MEGA_MENU_CHILDREN - featuredChildren.length
+      const tagChildren = remainingSlots > 0
+        ? getTopSubcategoriesForParent(l1.tag, l2Nodes, remainingSlots).map((n) => ({
+            displayName: humanizeTag(n.tag),
+            href: ROUTES.subcategory(getCategorySlug(l1), n.tag),
+          }))
+        : []
+      return {
+        tag: l1.tag,
+        displayName: l1.displayName,
+        href: ROUTES.category(getCategorySlug(l1)),
+        children: [...featuredChildren, ...tagChildren],
+      }
+    })
+
+  // Trocars & Trocar Kits is commercially important and is a SUBCATEGORY of
+  // Surgery & Procedure, so under progressive disclosure it would otherwise
+  // only appear once that department's panel is showing. Surfacing it in the
+  // menu footer keeps it visible the moment Categories opens, in addition to
+  // its badged place inside its parent's panel. Resolved from the registry
+  // rather than hardcoding a URL.
+  const featuredMenuLink = (() => {
+    const sub = FEATURED_SUBCATEGORIES.find(
+      (s) => validHandles.size === 0 || validHandles.has(s.collectionHandle),
+    )
+    if (!sub) return undefined
+    const parent = CATEGORY_TREE_L1.find((c) => c.tag === sub.parentTag)
+    return {
+      displayName: sub.displayName,
+      href: ROUTES.category(sub.slug),
+      parentName: parent?.displayName ?? '',
+    }
+  })()
 
   return (
     <header className="sticky top-0 z-40">
@@ -355,111 +429,53 @@ export function Header({ menuItems, collections }: HeaderProps) {
 
                 <div
                   id="nav-panel-categories"
-                  // 680 -> 800, and anchored to the trigger instead of centred.
-                  // At 680 the four inner columns were ~150px, narrower than the
-                  // longest approved labels ("Housekeeping & Janitorial" needs
-                  // 155px + padding), so they truncated mid-word. Widening alone
-                  // was not available while the panel was centred with
-                  // `left-1/2 -translate-x-1/2`: at 760 it already reached within
-                  // 8px of the viewport's left edge, so anything wider clipped
-                  // off-screen. `left-0` hangs it from the "Categories" trigger,
-                  // which both buys the width and reads as deliberate alignment
-                  // rather than a panel drifting far to the left of its opener.
-                  className={`${openNav === 'categories' ? 'block' : 'hidden'} absolute top-full left-0 mt-0 w-[800px] bg-white border border-gray-200 shadow-lg z-50 p-6`}
+                  // Two-stage layout (2026-08-26): a 400px department rail plus
+                  // a fixed 260px detail column, ~700px wide against the old
+                  // 800px, and — the point of the change — roughly 440px tall
+                  // against a measured ~1270px. The old sheet rendered all 25
+                  // departments AND every department's children simultaneously
+                  // and needed `max-h-[80vh] overflow-y-auto` to stay on
+                  // screen at all; this one fits a laptop viewport outright, so
+                  // the internal scrollbar is a safety net rather than the
+                  // normal experience.
+                  //
+                  // `left-0` still hangs the panel off the "Categories"
+                  // trigger rather than centring it — see the width history
+                  // that rule was written for; a centred panel could not be
+                  // widened past ~760px without clipping off-screen.
+                  //
+                  // The detail column's fixed width is what stops the sheet
+                  // resizing (and the rail sliding under the cursor) as
+                  // departments with different numbers of children take turns
+                  // being shown.
+                  className={`${openNav === 'categories' ? 'block' : 'hidden'} absolute top-full left-0 mt-0 max-h-[80vh] overflow-y-auto bg-white border border-gray-200 shadow-lg z-50 p-6`}
                   onMouseEnter={() => openDropdown('categories')}
                   onMouseLeave={scheduleClose}
                 >
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-3">
-                        Categories
-                      </p>
-                      {/* One cell per category. A category with featured
-                          subcategories renders them INSIDE its own cell, so
-                          the parent/child relationship is structural (a nested
-                          <ul> under the parent link) rather than implied by a
-                          detached badge at the foot of the panel.
-                          Deliberately NOT col-span-2 on the parent: forcing the
-                          Surgery & Procedure cell to span the full width pushed
-                          it onto its own row and left the cell beside Patient
-                          Therapy & Rehab empty. Instead the group is ordered
-                          last (primaryDesktopOrder) and pinned to column 1 with
-                          `col-start-1`, so its extra height falls at the end of
-                          the list where nothing follows it. `col-start-1` rather
-                          than relying on the count being even: it guarantees the
-                          bottom-left placement no matter how many plain
-                          categories precede it.
-                          `items-start` keeps neighbours top-aligned in a row
-                          rather than centring them against its height. */}
-                      <ul className="grid grid-cols-2 items-start gap-x-3 gap-y-0.5 list-none m-0 p-0">
-                        {primaryDesktopOrder.map((cat) => {
-                          const children = navChildren(cat.href)
-                          return (
-                            <li key={cat.href} className={children.length > 0 ? 'col-start-1' : undefined}>
-                              <Link
-                                href={cat.href}
-                                className="block text-[13px] leading-snug text-gray-500 hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors"
-                              >
-                                {cat.displayName}
-                              </Link>
-                              {children.length > 0 && (
-                                <ul className="list-none m-0 mt-0.5 mb-1 p-0 pl-2.5 ml-2 border-l border-gray-200">
-                                  {children.map((child) => (
-                                    <li key={child.href}>
-                                      <Link
-                                        href={child.href}
-                                        className="block text-[13px] leading-snug text-ink-link hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors"
-                                      >
-                                        {child.displayName}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-3">
-                        More Categories
-                      </p>
-                      {/* `truncate` dropped here too: at this column width it
-                          was clipping real labels mid-word ("Housekeeping &
-                          Jani…", "Patient Therapy & Re…"), which is worse than
-                          a second line. Wrapping keeps every destination
-                          readable. */}
-                      <div className="grid grid-cols-2 items-start gap-x-3 gap-y-0.5">
-                        {categoryNav.more.map((cat) => (
-                          <Link
-                            key={cat.href}
-                            href={cat.href}
-                            className="block text-[13px] leading-snug text-gray-500 hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors"
-                          >
-                            {cat.displayName}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-gray-100">
-                    <Link
-                      href={ROUTES.categories}
-                      className="text-[13px] text-teal-500 font-semibold hover:text-ink-link transition-colors"
-                    >
-                      Browse all categories →
-                    </Link>
-                  </div>
+                  <CategoryMegaMenu
+                    categories={megaMenuCategories}
+                    allHref={ROUTES.categories}
+                    featuredLink={featuredMenuLink}
+                  />
                 </div>
               </div>
             )}
 
-            {/* Other nav items */}
+            {/* Other nav items — dropdown content is the SAME tag-derived
+                tree the Categories mega-menu uses (navChildren), not this
+                Shopify main-menu item's own `items` array. The main-menu
+                only decides which shortcuts appear up here and in what
+                order/label; whether a shortcut like Mobility gets a
+                dropdown must not depend on a content editor separately
+                nesting links under it in Shopify Navigation — that's the
+                second, untested data source that left Mobility's dropdown
+                missing here while the mega-menu's copy of it was already
+                fixed (nav remediation, category-data-source-mismatch). */}
             {otherItems.map((item) => {
               const href = menuItemHref(item)
               const isOpen = openNav === item.id
-              const hasSubs = item.items.length > 0
+              const children = navChildren(href)
+              const hasSubs = children.length > 0
               const panelId = `nav-panel-${titleToSlug(item.title)}`
 
               if (!hasSubs) {
@@ -520,13 +536,13 @@ export function Header({ menuItems, collections }: HeaderProps) {
                       All {item.title}
                     </Link>
                     <div className="border-t border-gray-100 my-1" />
-                    {item.items.map((sub) => (
+                    {children.map((child) => (
                       <Link
-                        key={sub.id}
-                        href={categoryHref(sub.title)}
+                        key={child.href}
+                        href={child.href}
                         className="block px-4 py-2 text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 transition-colors"
                       >
-                        {sub.title}
+                        {child.displayName}
                       </Link>
                     ))}
                   </div>
@@ -629,75 +645,27 @@ export function Header({ menuItems, collections }: HeaderProps) {
                 </button>
                 <div
                   id="mobile-panel-categories"
-                  className={`${mobileExpanded === 'categories' ? 'flex' : 'hidden'} py-2 pl-4 flex-col gap-0.5`}
+                  className={`${mobileExpanded === 'categories' ? 'block' : 'hidden'} py-2 pl-4`}
                 >
-                  {/* Same nesting as the desktop panel: a featured subcategory
-                      is indented directly beneath its parent, not appended as a
-                      detached badge after the whole primary list. */}
-                  {categoryNav.primary.map((cat) => {
-                    const children = navChildren(cat.href)
-                    if (children.length === 0) {
-                      return (
-                        <Link
-                          key={cat.href}
-                          href={cat.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
-                        >
-                          {cat.displayName}
-                        </Link>
-                      )
-                    }
-                    return (
-                      <div key={cat.href} className="flex flex-col">
-                        <Link
-                          href={cat.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
-                        >
-                          {cat.displayName}
-                        </Link>
-                        <ul className="list-none m-0 p-0 pl-3 ml-1 border-l border-gray-200 flex flex-col">
-                          {children.map((child) => (
-                            <li key={child.href}>
-                              <Link
-                                href={child.href}
-                                onClick={() => setMobileOpen(false)}
-                                className="block text-ink-link text-sm py-1.5 hover:text-navy-900 transition-colors"
-                              >
-                                {child.displayName}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  })}
-                  {categoryNav.more.map((cat) => (
-                    <Link
-                      key={cat.href}
-                      href={cat.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
-                    >
-                      {cat.displayName}
-                    </Link>
-                  ))}
-                  <Link
-                    href={ROUTES.categories}
-                    onClick={() => setMobileOpen(false)}
-                    className="text-teal-500 text-sm py-1.5 font-semibold"
-                  >
-                    All categories →
-                  </Link>
+                  {/* Drill-down, not a wall: the old panel listed all 25
+                      departments with every department's children indented
+                      underneath, in one scroll. */}
+                  <MobileCategoryNav
+                    categories={megaMenuCategories}
+                    allHref={ROUTES.categories}
+                    onNavigate={() => setMobileOpen(false)}
+                    resetKey={pathname}
+                  />
                 </div>
               </div>
             )}
 
-            {/* Other nav items mobile */}
+            {/* Other nav items mobile — same tag-derived source as desktop
+                (see the desktop "Other nav items" comment above). */}
             {otherItems.map((item) => {
               const href = menuItemHref(item)
-              const hasSubs = item.items.length > 0
+              const children = navChildren(href)
+              const hasSubs = children.length > 0
               const panelId = `mobile-panel-${titleToSlug(item.title)}`
 
               if (!hasSubs) {
@@ -738,14 +706,14 @@ export function Header({ menuItems, collections }: HeaderProps) {
                     >
                       All {item.title}
                     </Link>
-                    {item.items.map((sub) => (
+                    {children.map((child) => (
                       <Link
-                        key={sub.id}
-                        href={categoryHref(sub.title)}
+                        key={child.href}
+                        href={child.href}
                         onClick={() => setMobileOpen(false)}
                         className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
                       >
-                        {sub.title}
+                        {child.displayName}
                       </Link>
                     ))}
                   </div>

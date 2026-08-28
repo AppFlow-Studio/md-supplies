@@ -1,4 +1,4 @@
-import { ROADMAP_CATEGORIES } from '@/lib/category-nav'
+import { CATEGORY_TREE_L1 } from '@/lib/category-tree'
 import {
   CATEGORY_IMAGE_CONFIG,
   CATEGORY_IMAGE_FALLBACK,
@@ -30,8 +30,10 @@ export const GLOBAL_PRODUCT_PLACEHOLDER = `${PROXY_PREFIX}/${CATEGORIES_PATH}/${
 export const LOGO_PATH = '/images/logo.png'
 
 function findRoadmapCategory(handle: string) {
-  return ROADMAP_CATEGORIES.find((category) =>
-    category.matchedHandles.some((h) => handle === h || handle.startsWith(`${h}-`)),
+  return CATEGORY_TREE_L1.find((category) =>
+    (category.artworkFallbackHandles ?? []).some((h) => handle === h || handle.startsWith(`${h}-`))
+    || handle === category.collectionHandle
+    || handle.startsWith(`${category.collectionHandle}-`),
   )
 }
 
@@ -46,7 +48,10 @@ function resolveEntry(handle: string): CategoryImageEntry {
 
   const category = findRoadmapCategory(handle)
   if (!category) return CATEGORY_IMAGE_FALLBACK
-  return CATEGORY_IMAGE_CONFIG[category.placeholderSlug] ?? CATEGORY_IMAGE_FALLBACK
+  // ROADMAP_CATEGORIES.placeholderSlug had no L1 equivalent — CATEGORY_TREE_L1's
+  // `tag` is the same "short slug for the placeholder filename" concept
+  // (e.g. tag 'surgery-procedure' -> file 'surgery-procedure-placeholder.webp').
+  return CATEGORY_IMAGE_CONFIG[category.tag] ?? CATEGORY_IMAGE_FALLBACK
 }
 
 /** Returns the BunnyCDN proxy path and descriptive alt text for a category hero banner. */

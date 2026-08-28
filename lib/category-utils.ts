@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTIONS } from '@/lib/shopify/queries/collections'
 import { EXCLUDED_COLLECTION_HANDLES } from '@/lib/excluded-categories'
-import { getAllowedHandles } from '@/lib/category-nav'
+import { getAllowedHandles } from '@/lib/category-tree'
 
 export const STOREFRONT_MAX_FIRST = 250
 

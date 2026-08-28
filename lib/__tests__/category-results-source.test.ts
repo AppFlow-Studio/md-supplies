@@ -8,6 +8,30 @@ beforeEach(() => {
   mockFetch.mockReset()
 })
 
+describe('fetchScopedSearchFacets', () => {
+  it('asks for facets under the query scope alone, with no productFilters argument', async () => {
+    const facets = [{ id: 'filter.p.m.custom.type', label: 'Type', type: 'LIST', values: [] }]
+    mockFetch.mockResolvedValue({ search: { productFilters: facets } })
+
+    const { fetchScopedSearchFacets } = await import('../category-results-source')
+    const result = await fetchScopedSearchFacets('tag:"category:gloves"', ['shopify'])
+
+    expect(result).toEqual(facets)
+    const [query, variables] = mockFetch.mock.calls[0]
+    expect(query).toContain('SearchScopedFacets')
+    expect(variables).toEqual({ query: 'tag:"category:gloves"' })
+    // The absence of this argument is the whole reason the response is
+    // correctly scoped — a filters argument here would reintroduce the bug.
+    expect(variables).not.toHaveProperty('filters')
+  })
+
+  it('returns an empty rail rather than throwing when the search resolves to nothing', async () => {
+    mockFetch.mockResolvedValue({ search: null })
+    const { fetchScopedSearchFacets } = await import('../category-results-source')
+    expect(await fetchScopedSearchFacets('tag:"category:nope"', ['shopify'])).toEqual([])
+  })
+})
+
 describe('fetchProductConnection', () => {
   it('fetches via GET_COLLECTION for a collection source and returns its products/title/handle', async () => {
     mockFetch.mockResolvedValue({
@@ -47,10 +71,9 @@ describe('fetchProductConnection', () => {
     expect(result).toBeNull()
   })
 
-  it('fetches via SEARCH_PRODUCTS_BY_TAG for a tag source, using the source\'s title/slug, and reshapes search.productFilters into products.filters', async () => {
-    const mockFilters = [{ id: 'filter.p.m.custom.type', label: 'Type', type: 'LIST', values: [] }]
+  it('fetches via SEARCH_PRODUCTS_BY_TAG for a tag source, using the source\'s title/slug, and carries NO facets', async () => {
     mockFetch.mockResolvedValue({
-      search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }, productFilters: mockFilters },
+      search: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null } },
     })
 
     const { fetchProductConnection } = await import('../category-results-source')
@@ -61,10 +84,27 @@ describe('fetchProductConnection', () => {
 
     expect(result?.title).toBe('Exam Gloves')
     expect(result?.handle).toBe('exam-gloves')
-    expect(result?.products.filters).toEqual(mockFilters)
+    // This connection used to reshape search.productFilters into
+    // products.filters. It no longer asks for them at all: measured live on
+    // 2026-08-26, selecting productFilters in the same operation that passes a
+    // non-empty productFilters ARGUMENT makes Query.search discard the `query`
+    // scope, so the filtered grid rendered whole-catalogue products. Facets for
+    // this source now come from fetchScopedSearchFacets.
+    expect(result?.products.filters).toEqual([])
     const [query, variables] = mockFetch.mock.calls[0]
     expect(query).toContain('SearchProductsByTag')
     expect(variables).toMatchObject({ query: 'tag:"category:gloves" AND tag:"subcategory:exam-gloves"' })
+  })
+
+  it('never selects productFilters on the product query — the scope-drop guard', async () => {
+    const { SEARCH_PRODUCTS_BY_TAG } = await import('@/lib/shopify/queries/products')
+    // Strip the comment block that explains the rule before asserting on it.
+    const body = SEARCH_PRODUCTS_BY_TAG
+      .split(String.fromCharCode(10))
+      .filter((line) => !line.trim().startsWith('#'))
+      .join(' ')
+    expect(body).toContain('productFilters: $filters')
+    expect(body).not.toMatch(/productFilters\s*\{/)
   })
 
   it('maps the COLLECTION_DEFAULT sort key to RELEVANCE for a tag source, since SearchSortKeys only accepts RELEVANCE and PRICE', async () => {

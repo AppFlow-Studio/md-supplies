@@ -7,7 +7,9 @@ import { SITE_URL } from '@/lib/seo/constants'
 import { type ProductSource } from '@/lib/category-results-source'
 import { fetchCatalogPage } from '@/lib/catalog/fetch-page'
 import { getVisibleFilters } from '@/lib/shopify/filters'
-import { getAllowedFacets, type FacetRouteKind } from '@/lib/filter-registry'
+import { applyRelevanceGate, orderAllowedFacets, type FacetRouteKind } from '@/lib/filter-registry'
+import { applyExactFacetCounts } from '@/lib/catalog/exact-facet-counts'
+import { expandFilterInputs } from '@/lib/catalog/facet-canonicalization'
 import { withTrackingParams, type TrackingParamSource } from '@/lib/analytics/tracking-params'
 import { formatResultCount, DEFAULT_PAGE_SIZE, type PageSize } from '@/lib/catalog/page-size'
 import { PerPageSelect } from '@/components/category/PerPageSelect'
@@ -25,15 +27,15 @@ import { CatalogResultsState } from '@/components/category/CatalogResultsState'
 import { ROUTES } from '@/lib/routes'
 import { getNonce } from '@/lib/csp-nonce'
 
+// URL filter strings -> Storefront `ProductFilter` inputs.
+//
+// This is the ONE place a selected filter becomes a query input, and therefore
+// the one place a canonical merged value (e.g. "Shower Commodes", standing for
+// both the singular and plural spellings live in the catalogue) expands back
+// into every raw value it represents. Everything else — chips, selected state,
+// links, pagination — keeps working on the single canonical URL string.
 function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
-  return filterStrings.flatMap((f) => {
-    try {
-      const parsed = JSON.parse(f)
-      return parsed ? [parsed] : []
-    } catch {
-      return []
-    }
-  })
+  return expandFilterInputs(filterStrings)
 }
 
 interface Props {
@@ -124,7 +126,19 @@ export async function CategoryResults({
 
   if (!isFiltered && currentPage > 1 && products.length === 0) notFound()
 
-  const allowedFacets = getAllowedFacets(facetKey, result.facets, facetKind, activeFilterStrings)
+  // Facet pipeline, in the order the correctness of each step depends on:
+  //   1. default-deny + registry order + duplicate-value merge
+  //   2. exact per-value counts, for search-sourced sets only — Shopify's own
+  //      counts on Query.search are window-derived and understate the truth
+  //      (Home Care -> Shower Commodes reported 2 for a value matching 5), so
+  //      they must be corrected BEFORE anything is judged on them
+  //   3. relevance gate: drop groups left with nothing to narrow
+  //   4. per-value visibility: drop zero-count values, keep selected ones
+  const orderedFacets = orderAllowedFacets(facetKey, result.facets, facetKind)
+  const countedFacets = result.searchQuery
+    ? await applyExactFacetCounts(result.searchQuery, orderedFacets, activeFilterStrings, cacheTags)
+    : orderedFacets
+  const allowedFacets = applyRelevanceGate(countedFacets, activeFilterStrings)
   const filters = getVisibleFilters(allowedFacets, activeFilterStrings)
 
   const removeFilterUrl = (filterToRemove: string) => {

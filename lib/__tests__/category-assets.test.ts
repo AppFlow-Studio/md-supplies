@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { CATEGORY_IMAGE_CONFIG, CATEGORY_IMAGE_FALLBACK } from '../category-images'
-import { ROADMAP_CATEGORIES } from '../category-nav'
 import { CATEGORY_TREE_L1 } from '../category-tree'
 import { getCategoryBannerConfig } from '../bunnycdn'
 
@@ -13,21 +12,21 @@ import { getCategoryBannerConfig } from '../bunnycdn'
  */
 
 describe('category asset coverage', () => {
-  it('every roadmap category has an image entry with a file and descriptive alt', () => {
+  it('every registry category has an image entry with a file and descriptive alt', () => {
     const missing: string[] = []
-    for (const category of ROADMAP_CATEGORIES) {
-      const entry = CATEGORY_IMAGE_CONFIG[category.placeholderSlug]
+    for (const category of CATEGORY_TREE_L1) {
+      const entry = CATEGORY_IMAGE_CONFIG[category.tag]
       if (!entry) {
-        missing.push(category.placeholderSlug)
+        missing.push(category.tag)
         continue
       }
-      expect(entry.file.trim(), `${category.placeholderSlug} file`).not.toBe('')
-      expect(entry.file, `${category.placeholderSlug} file extension`).toMatch(/\.(jpe?g|png|webp|avif)$/i)
+      expect(entry.file.trim(), `${category.tag} file`).not.toBe('')
+      expect(entry.file, `${category.tag} file extension`).toMatch(/\.(jpe?g|png|webp|avif)$/i)
       // Alt text must describe the category, not repeat the filename.
-      expect(entry.alt.trim().length, `${category.placeholderSlug} alt text`).toBeGreaterThan(8)
-      expect(entry.alt, `${category.placeholderSlug} alt text`).not.toMatch(/placeholder|\.jpe?g|\.png/i)
+      expect(entry.alt.trim().length, `${category.tag} alt text`).toBeGreaterThan(8)
+      expect(entry.alt, `${category.tag} alt text`).not.toMatch(/placeholder|\.jpe?g|\.png/i)
     }
-    expect(missing, 'roadmap categories with no image entry').toEqual([])
+    expect(missing, 'registry categories with no image entry').toEqual([])
   })
 
   it('every active L1 registry category resolves to a real banner path and alt', () => {
