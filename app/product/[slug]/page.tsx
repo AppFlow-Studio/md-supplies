@@ -111,7 +111,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
     : {}
 
   // Recommendations previously got no shippingDisplay at all (RelatedProductCard
-  // rendered no badges), so "You May Also Like"/"Frequently Bought With" could
+  // rendered no badges), so "Similar Products"/"Frequently Bought With" could
   // never show a Free Shipping claim even when the product itself qualifies.
   const relatedProducts = attachCardShippingDisplay(recsData.related)
   const complementaryProducts = attachCardShippingDisplay(recsData.complementary)

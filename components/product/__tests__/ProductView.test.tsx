@@ -351,7 +351,7 @@ describe('ProductView — Variant Description supplement (no duplicate display)'
 // Task 4 (2026-08-18): "You May Also Need" (the relatedProducts.slice(4)
 // overflow scroll row) hand-rolled bare <div> cards instead of reusing
 // RelatedProductCard like its two siblings ("Frequently Bought With" /
-// "You May Also Like") — no <Link>, no keyboard focus, no accessible name.
+// "Similar Products") — no <Link>, no keyboard focus, no accessible name.
 describe('ProductView — You May Also Need cards are clickable (Task 4)', () => {
   function collectionProduct(overrides: Partial<CollectionProduct> = {}): CollectionProduct {
     return {
@@ -423,15 +423,15 @@ describe('ProductView — You May Also Need cards are clickable (Task 4)', () =>
       expect(row.className).toMatch(/gap-\[23px\]/)
     })
 
-    it('uses the same gutter token as "You May Also Like"', () => {
+    it('uses the same gutter token as "Similar Products"', () => {
       renderRow()
-      const alsoLike = screen.getByText('You May Also Like').parentElement!
-      const alsoLikeRow = alsoLike.querySelector('div.flex')!
+      const similarProducts = screen.getByText('Similar Products').parentElement!
+      const similarProductsRow = similarProducts.querySelector('div.flex')!
       const needRow = screen.getByRole('region', {
         name: 'You May Also Need — scrollable product list',
       })
       const gutter = /gap-\[23px\]/
-      expect(alsoLikeRow.className).toMatch(gutter)
+      expect(similarProductsRow.className).toMatch(gutter)
       expect(needRow.className).toMatch(gutter)
     })
 
