@@ -17,6 +17,10 @@ async function renderSchema(props: Parameters<typeof ProductSchema>[0]) {
   return JSON.parse(el.props.dangerouslySetInnerHTML.__html)
 }
 
+async function renderSchemaRaw(props: Parameters<typeof ProductSchema>[0]) {
+  return ProductSchema(props)
+}
+
 const baseProps = {
   name: 'Nitrile Exam Gloves',
   description: 'Durable exam gloves.',
@@ -35,17 +39,21 @@ describe('ProductSchema — price/structured-data agreement (DEV-LAUNCH-07)', ()
     expect(schema.offers).toMatchObject({ price: 19.99, priceCurrency: 'USD' })
   })
 
-  it('omits the Offer entirely for a zero-price (quote-only) product', async () => {
+  it('renders no Product schema at all for a zero-price (quote-only) product', async () => {
     // A $0 Offer would tell Google a price the page itself refuses to state
     // ("Contact for pricing") — the exact PDP/structured-data disagreement
-    // this ticket's acceptance criteria forbid.
-    const schema = await renderSchema({ ...baseProps, price: 0 })
-    expect(schema.offers).toBeUndefined()
+    // this ticket's acceptance criteria forbid. And since this component never
+    // emits review/aggregateRating either, a Product node with none of
+    // offers/review/aggregateRating fails Google's Product rich-result
+    // required-property check (the real cause of the 12 pharmacy/HRT Rich
+    // Results errors) — so skip the whole block rather than submit one.
+    const el = await renderSchemaRaw({ ...baseProps, price: 0 })
+    expect(el).toBeNull()
   })
 
-  it('omits the Offer for a missing/non-finite price', async () => {
-    const schema = await renderSchema({ ...baseProps, price: NaN })
-    expect(schema.offers).toBeUndefined()
+  it('renders no Product schema for a missing/non-finite price', async () => {
+    const el = await renderSchemaRaw({ ...baseProps, price: NaN })
+    expect(el).toBeNull()
   })
 
   it('never emits a Brand node built from vendor when brand is omitted', async () => {
