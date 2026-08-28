@@ -1,7 +1,7 @@
 # Private Practice + Structured Data + Designer Polish — Results
 
 **Branch:** `catalog-cro-review`
-**Starting SHA:** `2ce405f` (Merge pull request #70 from BilalA99/nav-filter-ui-polish)
+**Starting SHA:** `2ce405f`
 **Final SHA:** `9a86736`
 
 
@@ -21,7 +21,7 @@
 | Trusted Brands spacing (DESIGN-03) | `mr-[22px]` | `mr-[40px]` | `02ea6f7` |
 | Mobile PDP variant/option control (DESIGN-02) | Desktop button grid only, no distinct mobile presentation | Native dropdown/select on mobile (`sm:hidden`), desktop grid unchanged (`hidden sm:flex`); both read one shared `valueMeta()` computation so purchasability/price logic can't drift between them | `9a86736` |
 
-## Verification (this session, on `9a86736`)
+## Verification (on `9a86736`)
 
 ### `npx vitest run`
 ```
