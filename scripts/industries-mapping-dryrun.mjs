@@ -92,7 +92,9 @@ const APPROVED = {
  */
 const UNBACKED_PAGES = [
   'ems', 'long-term-care', 'physical-therapy',
-  'private-practice', 'dental', 'veterinary', 'community-health',
+  'dental', 'veterinary', 'community-health',
+  // 'private-practice' removed from the route table entirely — consolidated
+  // into 'clinics-doctors-offices' via a 301 (see proxy.ts), not an unbacked page.
 ]
 
 /** Minimal RFC4180-ish CSV parser (quoted fields, embedded commas/newlines). */

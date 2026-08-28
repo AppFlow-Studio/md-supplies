@@ -45,7 +45,7 @@ const INDUSTRY_LINKS = [
   { label: "HRT Clinics",     href: "/industries/hrt-clinics",      Icon: Activity  },
   { label: "Home Health",     href: "/industries/home-health",      Icon: Home      },
   { label: "Long-Term Care",  href: "/industries/long-term-care",   Icon: Heart     },
-  { label: "Clinics",         href: "/industries/private-practice", Icon: Building2 },
+  { label: "Clinics",         href: "/industries/clinics-doctors-offices", Icon: Building2 },
   { label: "First Responder", href: "/industries/ems",              Icon: Shield    },
 ];
 

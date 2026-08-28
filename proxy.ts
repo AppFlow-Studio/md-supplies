@@ -223,7 +223,13 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
   { from: '/medical-supplies-Dynarex-Specimen-Containers-4oz-22I48F9UI7.html',                         to: '/partners/dynarex',                               status: 301 },
 
   // Industries
-  { from: '/Medical-Supplies-for-Doctors.html',                                                        to: '/industries/private-practice',                    status: 301 },
+  // Private Practice was consolidated into Clinics & Doctor's Offices
+  // (2026-08-seo-remediation MASTER-PLAN DESIGN-05 + Bilal's 2026-08-28
+  // direction): industry:clinic already covers the same commercial/search
+  // intent at scale, so both legacy destinations point directly at the one
+  // indexable Clinics page rather than chaining through the old thin route.
+  { from: '/Medical-Supplies-for-Doctors.html',                                                        to: '/industries/clinics-doctors-offices',             status: 301 },
+  { from: '/industries/private-practice',                                                               to: '/industries/clinics-doctors-offices',             status: 301 },
 
   // Needles & Syringes
   { from: '/medical-supplies-Exel-Insulin-Syringe-05cc-29g-x-12-8DKB9DMTEX.html',                     to: '/category/needles-syringes',                      status: 301 },
