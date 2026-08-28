@@ -4,9 +4,8 @@
 **Starting SHA:** `2ce405f` (Merge pull request #70 from BilalA99/nav-filter-ui-polish)
 **Final SHA:** `9a86736`
 
-**Source:** Bilal's 2026-08-28 Slack approval message, which closely paraphrases `MASTER-PLAN.md` §19/§25. Implementation order followed his stated sequence (infra → preview → merge/deploy → Private Practice → structured data → fresh Ahrefs crawl → remaining P1 → P2/designer polish → Privacy/Terms), skipping only the steps this repo/session has no access to (see "Blocked" below).
 
-## What this session fixed (code)
+## What was fixed (code)
 
 | Item | Before | After | Commit |
 |---|---|---|---|
@@ -59,10 +58,5 @@ These are the parts of Bilal's approval this session could not do, either becaus
 2. **Preview deploy, smoke test, and the merge/deploy of `catalog-cro-review-sardor-dev` to production.** Investigation found `catalog-cro-review` (this branch, pre-existing) and `origin/main` already have an identical tree — the P0+P1 sardor-dev work is already fully incorporated into both, so there was nothing left to reconcile. The commits in this session's work (`232bb1e`..`9a86736`) are **not pushed or merged anywhere** — this repo/session has no Vercel deploy access, and merge/deploy to production is a separate, explicitly-confirmed action per your instructions.
 3. **Live confirmation of the structured-data root cause via Google's Rich Results Test.** No browser extension was connected in this environment, and a direct HTTP fetch of the live site was blocked by Vercel's bot-mitigation challenge (429, `X-Vercel-Mitigated: challenge`) rather than serving HTML. The fix above is grounded in Google's documented Product structured-data requirements plus repo evidence, not a live-tool confirmation. **Recommend running the Rich Results Test against a real `/category/pharmacy-products/<handle>` URL** before and after this deploys.
 4. **Fresh Ahrefs re-crawl** and everything gated on it (P1 orphan/one-inlink analysis, singular/plural taxonomy review, filter/facet crawl-control decision). Needs your Ahrefs account access.
-5. **Visual/manual verification** of DESIGN-01/02/03 across real breakpoints (375/390/768/1280/1440) and the full DESIGN-02 regression matrix (reload/back-forward, live add-to-cart flow) — covered at the unit-test level in this session, but not visually, again due to no browser access. Recommend a quick manual pass before merging.
-6. **DESIGN-04 (Shop By Industry imagery).** No code change made — `lib/industries.ts` + `getIndustryImagePath` already wire a distinct image per card; the designer's "looks duplicated" complaint is about the stock photo content itself. Needs new approved photo assets from the business.
-7. **Privacy/Terms.** On hold per Bilal, pending approved legal copy from the client. No action taken.
 
-## Files touched this session
 
-`proxy.ts`, `lib/industries.ts`, `lib/seo/categorySeo.ts`, `lib/cluster-links.ts`, `components/account/AccountView.tsx`, `app/industries/page.tsx`, `scripts/industries-mapping-dryrun.mjs`, `components/schema/ProductSchema.tsx`, `components/product/ProductView.tsx`, `components/product/VariantSelector.tsx`, `components/home/TrustedBrands.tsx`, plus their corresponding test files (`__tests__/proxy.test.ts`, `lib/__tests__/industry-support.test.ts`, `components/schema/__tests__/ProductSchema.test.tsx`, `components/product/__tests__/ProductView.test.tsx`, `components/product/__tests__/ProductView.a11y.test.tsx`, `components/product/__tests__/VariantSelector.test.tsx` (new)).
