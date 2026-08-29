@@ -121,10 +121,12 @@ export default function IndustriesPage() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {/* Only industries with unique content AND a validated product
-                assortment. Seven of the twelve (EMS, Long-Term Care, Physical
-                Therapy, Private Practice, Dental, Veterinary, Community
-                Health) have NO approved product membership in the catalog, so
-                linking them from here would build a doorway network. */}
+                assortment. Six of the eleven (EMS, Long-Term Care, Physical
+                Therapy, Dental, Veterinary, Community Health) have NO
+                approved product membership in the catalog, so linking them
+                from here would build a doorway network. Private Practice was
+                consolidated into Clinics & Doctor's Offices (301 redirect,
+                see proxy.ts) rather than kept as an unbacked page. */}
             {SUPPORTED_INDUSTRIES.map(({ name, slug, image, description }) => (
               <Link
                 key={slug}

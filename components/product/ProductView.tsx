@@ -705,31 +705,18 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
         </section>
       )}
 
-      {/* You May Also Like — Shopify auto-generated related */}
-      {relatedProducts.length > 0 && (
-        <section className="bg-white border-t border-gray-200">
-          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
-            <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
-              You May Also Like
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-[23px]">
-              {relatedProducts.slice(0, 4).map((p) => (
-                <RelatedProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* More products — overflow scroll row */}
+      {/* You May Also Need — overflow scroll row (DESIGN-01: moved ahead of
+          "Similar Products" per Bilal's 2026-08-28 direction; same
+          Shopify auto-generated `related` data/slice as before, only the
+          section order changed) */}
       {relatedProducts.length > 4 && (
-        <section className="bg-[#f9faf9] border-t border-gray-200">
+        <section className="bg-white border-t border-gray-200">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
             <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
               You May Also Need
             </h2>
             {/* gap-[23px] is the same gutter "Frequently Bought With" and
-                "You May Also Like" use, so all three recommendation rows read
+                "Similar Products" use, so all three recommendation rows read
                 as one card system. It was gap-0, which butted every card's
                 neutral-50 panel against its neighbour: with no border or radius
                 on the card, adjacent panels merged into a single grey slab and
@@ -743,7 +730,7 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               aria-label="You May Also Need — scrollable product list"
             >
               {/* Task 4 (2026-08-18): reuse RelatedProductCard (same component
-                  as "Frequently Bought With" / "You May Also Like") instead of
+                  as "Frequently Bought With" / "Similar Products") instead of
                   hand-rolling bare, non-interactive <div> cards — those had no
                   <Link>, no keyboard focus, and no accessible name. The
                   wrapping <div> here only carries the fixed scroll-row width
@@ -757,6 +744,24 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                 <div key={item.id} className="w-[185px] sm:w-[201px] shrink-0">
                   <RelatedProductCard product={item} />
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Similar Products — Shopify auto-generated related (DESIGN-01:
+          relabeled from "You May Also Like" and moved after "You May Also
+          Need"; same relatedProducts slice as before) */}
+      {relatedProducts.length > 0 && (
+        <section className="bg-[#f9faf9] border-t border-gray-200">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
+            <h2 className="text-navy-900 text-[28px] font-semibold tracking-[0.56px] mb-8">
+              Similar Products
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-[23px]">
+              {relatedProducts.slice(0, 4).map((p) => (
+                <RelatedProductCard key={p.id} product={p} />
               ))}
             </div>
           </div>

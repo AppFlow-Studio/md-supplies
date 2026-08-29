@@ -134,15 +134,6 @@ export const INDUSTRIES: Industry[] = [
     buyerType: 'Physical therapists and practice owners sourcing mobility aids, exercise equipment, and patient rehabilitation supplies.',
   },
   {
-    name: 'Private Practice',
-    h1: 'Private Practice Supplies',
-    slug: 'private-practice',
-    collectionHandle: 'private-practice',
-    description: 'Exam room essentials, diagnostics, and office supplies.',
-    image: getIndustryImagePath('industry-private-practice-supplies.jpeg'),
-    buyerType: 'Independent physicians, specialty clinicians, and office managers equipping exam rooms and maintaining day-to-day clinical supplies.',
-  },
-  {
     name: 'Dental',
     h1: 'Dental Supplies',
     slug: 'dental',
@@ -175,13 +166,17 @@ export const INDUSTRIES: Industry[] = [
     slug: 'clinics-doctors-offices',
     collectionHandle: 'clinics-doctors-offices',
     tag: 'industry:clinic',
-    description: 'Exam room essentials, diagnostic supplies, gloves, and office consumables for outpatient practices.',
+    description: 'Exam room essentials, diagnostic supplies, gloves, and office consumables for outpatient practices — including independent, private practice offices.',
     image: getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg"),
-    buyerType: 'Clinic owners, office managers, and medical directors sourcing exam room consumables, diagnostic supplies, and day-to-day clinical materials for outpatient practices.',
+    buyerType: 'Clinic owners, private practice physicians, office managers, and medical directors sourcing exam room consumables, diagnostic supplies, and day-to-day clinical materials for outpatient practices.',
     faq: [
       {
         question: 'What types of medical supplies do clinics and doctor\'s offices typically order?',
         answer: 'Clinics and physician offices typically order exam gloves, exam table paper, diagnostic supplies, wound care materials, specimen collection items, and general consumables. MDSupplies carries all of these categories with ordering options suited to practice-level volumes.',
+      },
+      {
+        question: 'Do you carry private practice medical supplies for independent physicians?',
+        answer: 'Yes. Independent and private practice physicians order the same exam room consumables, diagnostic supplies, and office essentials as larger clinics — just at practice-level volumes. Browse our categories or contact our B2B team to set up ordering for your private practice.',
       },
       {
         question: 'Can I set up a standing order or recurring supply arrangement for my practice?',

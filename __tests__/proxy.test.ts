@@ -117,10 +117,16 @@ describe('proxy — 301 static redirects', () => {
     expect(res?.headers.get('Location')).toContain('/partners/dynarex')
   })
 
-  it('row 10: /Medical-Supplies-for-Doctors.html → /industries/private-practice', () => {
+  it('row 10: /Medical-Supplies-for-Doctors.html → /industries/clinics-doctors-offices', () => {
     const res = proxy(req('/Medical-Supplies-for-Doctors.html'))
     expect(res?.status).toBe(301)
-    expect(res?.headers.get('Location')).toContain('/industries/private-practice')
+    expect(res?.headers.get('Location')).toContain('/industries/clinics-doctors-offices')
+  })
+
+  it('/industries/private-practice → /industries/clinics-doctors-offices (Private Practice consolidation, 2026-08-28)', () => {
+    const res = proxy(req('/industries/private-practice'))
+    expect(res?.status).toBe(301)
+    expect(res?.headers.get('Location')).toContain('/industries/clinics-doctors-offices')
   })
 
   // TEMP: blog not yet live in Shopify; pointing to category until articles are published
@@ -614,7 +620,7 @@ describe('proxy — path normalization (pass-through for unknown)', () => {
   it('passes through canonical targets (no chains)', () => {
     const targets = [
       '/categories', '/category/gloves', '/category/face-masks', '/category/hygiene',
-      '/partners/drive-medical', '/partners/dynarex', '/industries/private-practice',
+      '/partners/drive-medical', '/partners/dynarex', '/industries/clinics-doctors-offices',
       '/category/surgical-sutures', '/category/needles-syringes',
       '/category/respiratory', '/category/emergency-supplies', '/category/wound-care',
       '/category/testing-screening', '/product/drape-sheets-40-x-60-2-ply-blue-100-cs',

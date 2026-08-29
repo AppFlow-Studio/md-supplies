@@ -243,7 +243,7 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
   })
 })
 
-// DEV-SHIP-02: recommendation cards ("You May Also Like" / "Frequently
+// DEV-SHIP-02: recommendation cards ("Similar Products" / "Frequently
 // Bought With") previously carried no shippingDisplay at all — RelatedProductCard
 // rendered no badges — so a genuinely free-shipping-eligible related product
 // never showed the claim. app/product/[slug]/page.tsx now runs relatedProducts/
