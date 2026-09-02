@@ -14,6 +14,7 @@ const EXPLORE = [
   { label: 'Blog', href: ROUTES.blog },
   { label: 'OCC', href: ROUTES.solutions.occ },
   { label: 'Returns', href: ROUTES.returns },
+  { label: 'Customer Reviews', href: ROUTES.reviews },
 ]
 
 const COMPANY_HELP = [

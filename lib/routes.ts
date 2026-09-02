@@ -20,6 +20,7 @@ export const ROUTES = {
   accountOrders: '/account/orders',
   contact: '/contact',
   returns: '/returns',
+  reviews: '/reviews',
   policy: (slug: string) => `/policies/${slug}`,
   about: '/about',
   faq: '/faq',

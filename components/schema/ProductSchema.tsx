@@ -23,6 +23,14 @@ interface Props {
   returnPolicy?: Record<string, unknown>
   /** Structured OfferShippingDetails JSON-LD fragment (lib/merchant-policy.ts). */
   shippingDetails?: Record<string, unknown>
+  /** TrustShop-backed rating summary — omit entirely for a zero-review
+      product (DEV-REVIEWS-01); never fabricated, must match the visible UI. */
+  aggregateRating?: {
+    ratingValue: number
+    reviewCount: number
+    bestRating: number
+    worstRating: number
+  }
 }
 
 export async function ProductSchema({
@@ -41,6 +49,7 @@ export async function ProductSchema({
   priceValidUntil,
   returnPolicy,
   shippingDetails,
+  aggregateRating,
 }: Props) {
   // Google's Product rich result requires at least one of offers, review, or
   // aggregateRating. This component never emits review/aggregateRating (no
@@ -86,6 +95,14 @@ export async function ProductSchema({
   if (returnPolicy) offers.hasMerchantReturnPolicy = returnPolicy
   if (shippingDetails) offers.shippingDetails = shippingDetails
   schema.offers = offers
+
+  // Same normalized TrustShop summary object the visible UI renders — never
+  // a second, independently-computed rating. Omitted entirely (not the
+  // AggregateRating node at all) when the caller passes no aggregateRating,
+  // which app/product/[slug]/page.tsx only does for a zero-review product.
+  if (aggregateRating) {
+    schema.aggregateRating = { '@type': 'AggregateRating', ...aggregateRating }
+  }
 
   return (
     <script

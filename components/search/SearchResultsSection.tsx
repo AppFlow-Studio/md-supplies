@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { ProductGrid } from '@/components/category/ProductGrid'
 import type { CollectionProduct } from '@/lib/shopify/types'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 
 const SUGGESTED = [
   { label: 'Exam Gloves', href: '/category/exam-gloves' },
@@ -15,13 +16,14 @@ interface Props {
   q: string
   clearFiltersUrl: string
   isFiltered: boolean
+  reviewSummaries?: Map<string, ProductReviewSummary | null>
 }
 
 // Plain results grid + empty state. Pagination moved to page.tsx
 // (DEV-LAUNCH-06 — deterministic page-N via CategoryPagination, same model
 // as category/OCC/industry, replacing the cursor-based "Load More" this
 // component used to own), so nothing here needs client-side state anymore.
-export function SearchResultsSection({ products, q, clearFiltersUrl, isFiltered }: Props) {
+export function SearchResultsSection({ products, q, clearFiltersUrl, isFiltered, reviewSummaries }: Props) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-6">
@@ -67,6 +69,7 @@ export function SearchResultsSection({ products, q, clearFiltersUrl, isFiltered 
       emptyStateMessage={`No results for "${q}"`}
       itemListId="search-results"
       itemListName={`Search results for "${q}"`}
+      reviewSummaries={reviewSummaries}
     />
   )
 }

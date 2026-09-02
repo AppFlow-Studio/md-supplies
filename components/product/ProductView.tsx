@@ -22,9 +22,28 @@ import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
 import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
+import { ProductReviewSummaryLink } from '@/components/reviews/ProductReviewSummaryLink'
+import { ProductReviews } from '@/components/reviews/ProductReviews'
+import type { ProductReviewSummary, ProductReview, ProductReviewMedia, ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
 
-type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
-const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS']
+
+// #reviews is a standalone always-rendered section below the tabs (not a
+// fourth tab-panel) — a plain `<a href="#reviews">` compact summary link can
+// then scroll to it with zero client JS, and it never fights the tab
+// system's conditional mount/unmount of the other three panels.
+interface ReviewsSectionProps {
+  basePath: string
+  productGid: string
+  summary: ProductReviewSummary | null
+  reviews: ProductReview[] | null
+  media: ProductReviewMedia[]
+  currentFilter: ProductReviewFilter
+  currentSort: ProductReviewSort
+  currentPage: number
+  hasNextPage: boolean
+}
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const price = parseFloat(
@@ -92,9 +111,11 @@ interface Props {
   breadcrumbs?: BreadcrumbItem[]
   partnerSlug?: string | null
   variantShippingDisplays?: Record<string, ShippingDisplay>
+  reviewSummary?: ProductReviewSummary | null
+  reviewsSection?: ReviewsSectionProps
 }
 
-export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
+export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {}, reviewSummary = null, reviewsSection }: Props) {
   // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
   // Medchain, …) and must never be presented as a brand — when brand_name is
   // absent the brand line, spec row, and analytics item_brand are all omitted.
@@ -329,6 +350,11 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
             <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
               {displayTitle}
             </h1>
+
+            {/* Compact rating summary — plain #reviews anchor, no client JS.
+                Renders nothing if reviewsSection isn't wired up (defensive:
+                keeps this component usable without the reviews props too). */}
+            {reviewsSection && <ProductReviewSummaryLink summary={reviewSummary} />}
 
             {/* SKU + Manufacturer Item Number — kept as two separately-
                 labeled values (never conflated): the plan's Figure 3
@@ -677,17 +703,20 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                 ))}
               </div>
             )}
-
-            {activeTab === 'REVIEWS' && (
-              <div className="flex flex-col gap-6 max-w-[760px]">
-                <p className="text-gray-500 text-[15px] leading-[28px]">
-                  Reviews are not yet available for this product.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </section>
+
+      {/* Reviews — standalone always-rendered section (not a tab panel), so
+          the compact #reviews anchor above never fights the SPECIFICATIONS/
+          ORDER PACKAGING/VENDOR SHIPPING tab-switcher's conditional mount. */}
+      {reviewsSection && (
+        <section className="bg-white border-t border-gray-200">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
+            <ProductReviews {...reviewsSection} />
+          </div>
+        </section>
+      )}
 
       {/* Frequently Bought With — complementary (manually curated in S&D) */}
       {complementaryProducts.length > 0 && (

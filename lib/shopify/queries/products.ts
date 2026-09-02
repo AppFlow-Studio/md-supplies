@@ -424,6 +424,17 @@ export const GET_PRODUCT_RECS = `#graphql
   }
 `;
 
+// Cheap existence check for the review write route: confirms a
+// client-supplied Shopify GID still resolves to a real product before
+// forwarding a review to TrustShop, without pulling a full product payload.
+export const GET_PRODUCT_EXISTS_BY_ID = `#graphql
+  query GetProductExistsById($id: ID!) {
+    product(id: $id) {
+      id
+    }
+  }
+`;
+
 export const GET_ALL_PRODUCT_HANDLES = `#graphql
   query GetAllProductHandles($first: Int!, $after: String) {
     products(first: $first, after: $after) {

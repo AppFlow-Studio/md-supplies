@@ -11,6 +11,8 @@ import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
+import { ProductRating } from '@/components/reviews/ProductRating'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 
 interface Props {
   product: CollectionProduct
@@ -20,9 +22,13 @@ interface Props {
   index?: number
   /** Above-the-fold tile: load its image eagerly with fetchpriority="high". */
   imagePriority?: boolean
+  /** Summary-only — never full reviews/media on a card (N+1 guard, see
+      lib/trustshop/product.ts's getManyProductReviewSummaries). Omitted
+      (no rating row, no reserved space) when null/zero-review. */
+  reviewSummary?: ProductReviewSummary | null
 }
 
-export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false }: Props) {
+export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false, reviewSummary = null }: Props) {
   const variant = product.variants.nodes[0]
   const price = parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount)
   const compareAt = variant?.compareAtPrice
@@ -92,9 +98,14 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
         ) : (
           <span className="leading-[20px] sm:leading-[25px]" aria-hidden />
         )}
-        <p className="text-black text-[13px] sm:text-[14px] font-semibold tracking-[0.28px] leading-[1.35] sm:leading-5 line-clamp-2 mb-3 sm:mb-[30px]">
+        <p className="text-black text-[13px] sm:text-[14px] font-semibold tracking-[0.28px] leading-[1.35] sm:leading-5 line-clamp-2 mb-1 sm:mb-1.5">
           {product.title}
         </p>
+        {reviewSummary && reviewSummary.totalReviews > 0 && (
+          <div className="mb-2 sm:mb-2.5">
+            <ProductRating summary={reviewSummary} size="sm" variant="card" />
+          </div>
+        )}
         {/* DEV-LABEL-01: a shipping claim comes ONLY from the resolver-backed
             ShippingBadge — the raw `free-shipping` tag fallback is gone (an
             uncurated tag must never create a shipping promise). RX/backorder

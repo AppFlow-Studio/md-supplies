@@ -26,6 +26,7 @@ import { CatalogTransitionProvider } from '@/components/category/CatalogTransiti
 import { CatalogResultsState } from '@/components/category/CatalogResultsState'
 import { ROUTES } from '@/lib/routes'
 import { getNonce } from '@/lib/csp-nonce'
+import { getReviewSummariesByGid } from '@/lib/trustshop/collection-summaries'
 
 // URL filter strings -> Storefront `ProductFilter` inputs.
 //
@@ -123,6 +124,11 @@ export async function CategoryResults({
   const startIndex = (currentPage - 1) * pageSize
   const products = attachCardShippingDisplay(result.products)
   const hasNext = result.hasNext
+
+  // Summary-only, batched with bounded concurrency (N+1 guard) — never a
+  // sequential per-card TrustShop request, and a slow/down provider degrades
+  // to no rating rows rather than blocking the collection render.
+  const reviewSummaries = await getReviewSummariesByGid(products)
 
   if (!isFiltered && currentPage > 1 && products.length === 0) notFound()
 
@@ -380,6 +386,7 @@ export async function CategoryResults({
               categorySlug={handle}
               itemListId={handle}
               itemListName={title}
+              reviewSummaries={reviewSummaries}
             />
           </CatalogResultsState>
 

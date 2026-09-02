@@ -23,6 +23,9 @@ import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-ga
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
+import { getNumericShopifyProductId } from '@/lib/trustshop/product-id'
+import { getProductReviewSummary, listProductReviews, getProductReviewMedia } from '@/lib/trustshop/product'
+import type { ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -32,7 +35,12 @@ import { buildCanonical } from '@/lib/seo/canonical'
 
 interface Props {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ variant?: string }>
+  searchParams: Promise<{
+    variant?: string
+    reviewFilter?: string
+    reviewSort?: string
+    reviewPage?: string
+  }>
 }
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
@@ -96,6 +104,30 @@ export default async function ProductPage({ params, searchParams }: Props) {
     (p) => p.isActive && p.vendorName === product.vendor,
   ) ?? null
 
+  // TrustShop reviews: never allowed to fail the PDP. getNumericShopifyProductId
+  // throws only on a malformed GID (shouldn't happen for a real Shopify
+  // product); every TrustShop read below already resolves to null on any
+  // provider failure (lib/trustshop/product.ts), and the outer .catch here is
+  // belt-and-suspenders in the same style as recsData below.
+  let numericProductId: number | null = null
+  try {
+    numericProductId = getNumericShopifyProductId(product.id)
+  } catch {
+    numericProductId = null
+  }
+
+  const reviewFilter = sp.reviewFilter as ProductReviewFilter | undefined
+  const reviewSort = sp.reviewSort as ProductReviewSort | undefined
+  const reviewPage = Number(sp.reviewPage) > 0 ? Number(sp.reviewPage) : 1
+
+  const [reviewSummary, reviewsPage, reviewMediaPage] = numericProductId
+    ? await Promise.all([
+        getProductReviewSummary(numericProductId).catch(() => null),
+        listProductReviews(numericProductId, { filter: reviewFilter, sort: reviewSort, currentPage: reviewPage }).catch(() => null),
+        getProductReviewMedia(numericProductId, { perPage: 20 }).catch(() => null),
+      ])
+    : [null, null, null]
+
   const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
     GET_PRODUCT_RECS,
     { handle: slug },
@@ -153,6 +185,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
     priceValidUntil: buildPriceValidUntil(),
     ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
+    // Identical normalized TrustShop summary the visible UI uses — omitted
+    // entirely (not a fabricated 0/empty rating) for a zero-review product.
+    ...(reviewSummary && reviewSummary.totalReviews > 0
+      ? {
+          aggregateRating: {
+            ratingValue: reviewSummary.averageRating,
+            reviewCount: reviewSummary.totalReviews,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
   }
 
   // Contextual middle crumb(s) (audit L12, superseded by the tag-derived
@@ -195,6 +239,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
         breadcrumbs={categoryCrumbs}
         partnerSlug={partner?.slug ?? null}
         variantShippingDisplays={variantShippingDisplays}
+        reviewSummary={reviewSummary}
+        reviewsSection={{
+          basePath: `/product/${slug}`,
+          productGid: product.id,
+          summary: reviewSummary,
+          reviews: reviewsPage?.reviews ?? null,
+          media: reviewMediaPage?.media ?? [],
+          currentFilter: reviewFilter ?? 'all',
+          currentSort: reviewSort ?? 'most_helpful',
+          currentPage: reviewsPage?.currentPage ?? reviewPage,
+          hasNextPage: reviewsPage?.hasNextPage ?? false,
+        }}
       />
     </main>
   )

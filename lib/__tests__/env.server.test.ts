@@ -8,6 +8,8 @@ const REQUIRED: Record<string, string> = {
   BUNNYCDN_STORAGE_ACCESS_KEY: 'bunny-key',
   SHOPIFY_ADMIN_CLIENT_ID: 'admin-client-id',
   SHOPIFY_ADMIN_CLIENT_SECRET: 'admin-client-secret',
+  TRUSTSHOP_API_BASE_URL: 'https://integrations.trustshop.io',
+  TRUSTSHOP_INTEGRATION_KEY: 'trustshop-test-key',
 }
 
 function stubRequired(omit?: string) {
@@ -37,6 +39,8 @@ describe('serverEnv — happy path', () => {
     expect(serverEnv.bunnyCdnAccessKey).toBe('bunny-key')
     expect(serverEnv.shopifyAdminClientId).toBe('admin-client-id')
     expect(serverEnv.shopifyAdminClientSecret).toBe('admin-client-secret')
+    expect(serverEnv.trustShopApiBaseUrl).toBe('https://integrations.trustshop.io')
+    expect(serverEnv.trustShopIntegrationKey).toBe('trustshop-test-key')
   })
 
   it('uses fallback for optional vars when not set', async () => {
@@ -71,6 +75,8 @@ describe('serverEnv — missing required vars', () => {
     BUNNYCDN_STORAGE_ACCESS_KEY: (e) => e.bunnyCdnAccessKey,
     SHOPIFY_ADMIN_CLIENT_ID: (e) => e.shopifyAdminClientId,
     SHOPIFY_ADMIN_CLIENT_SECRET: (e) => e.shopifyAdminClientSecret,
+    TRUSTSHOP_API_BASE_URL: (e) => e.trustShopApiBaseUrl,
+    TRUSTSHOP_INTEGRATION_KEY: (e) => e.trustShopIntegrationKey,
   }
 
   it('import does not throw even when required vars are missing', async () => {

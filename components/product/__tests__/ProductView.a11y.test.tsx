@@ -501,3 +501,77 @@ describe('ProductView — You May Also Need region is keyboard-operable (Task 4)
     expect(within(link).queryByRole('button')).not.toBeInTheDocument()
   })
 })
+
+// TrustShop reviews (DEV-REVIEWS-01): the compact summary link near the H1
+// scrolls to a real, always-rendered #reviews section — never a fourth
+// tab-panel gated behind the SPECIFICATIONS/ORDER PACKAGING/VENDOR SHIPPING
+// switcher (see ProductView.tsx's comment on the reviewsSection prop).
+describe('ProductView — reviews wiring', () => {
+  const reviewsSection = {
+    basePath: '/product/nitrile-exam-gloves',
+    productGid: product.id,
+    summary: { averageRating: 4.5, totalReviews: 55, ratingsDistribution: { 1: 2, 2: 0, 3: 3, 4: 8, 5: 42 } },
+    reviews: [],
+    media: [],
+    currentFilter: 'all' as const,
+    currentSort: 'most_helpful' as const,
+    currentPage: 1,
+    hasNextPage: false,
+  }
+
+  it('renders the compact summary as a plain #reviews anchor near the title', () => {
+    const { container } = render(
+      <ProductView
+        product={product}
+        initialVariant={product.variants.nodes[0]}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+        reviewSummary={reviewsSection.summary}
+        reviewsSection={reviewsSection}
+      />,
+    )
+    expect(container.querySelector('a[href="#reviews"]')).toBeInTheDocument()
+  })
+
+  it('renders a real, scrollable #reviews section id, not a hidden tab panel', () => {
+    const { container } = render(
+      <ProductView
+        product={product}
+        initialVariant={product.variants.nodes[0]}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+        reviewSummary={reviewsSection.summary}
+        reviewsSection={reviewsSection}
+      />,
+    )
+    expect(container.querySelector('#reviews')).toBeInTheDocument()
+  })
+
+  it('shows a "Write a review" CTA (not a fake rating) for a zero-review product', () => {
+    render(
+      <ProductView
+        product={product}
+        initialVariant={product.variants.nodes[0]}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+        reviewSummary={null}
+        reviewsSection={{ ...reviewsSection, summary: null }}
+      />,
+    )
+    expect(screen.getByRole('link', { name: /No reviews yet · Write a review/ })).toBeInTheDocument()
+  })
+
+  it('no longer renders a REVIEWS tab pill — reviews live in a standalone section', () => {
+    render(
+      <ProductView
+        product={product}
+        initialVariant={product.variants.nodes[0]}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+        reviewSummary={reviewsSection.summary}
+        reviewsSection={reviewsSection}
+      />,
+    )
+    expect(screen.queryByRole('tab', { name: 'REVIEWS' })).not.toBeInTheDocument()
+  })
+})

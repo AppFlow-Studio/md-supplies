@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
 import { ViewItemListTracker } from './ViewItemListTracker'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 
 interface Props {
     products: CollectionProduct[]
@@ -10,6 +11,10 @@ interface Props {
     categorySlug?: string
     itemListId: string
     itemListName: string
+    /** Keyed by Shopify GID (product.id) — batch-fetched with a bounded
+        concurrency cap (getManyProductReviewSummaries) so a full collection
+        page never issues a sequential per-card TrustShop waterfall. */
+    reviewSummaries?: Map<string, ProductReviewSummary | null>
 }
 
 export function ProductGrid({
@@ -19,6 +24,7 @@ export function ProductGrid({
     categorySlug,
     itemListId,
     itemListName,
+    reviewSummaries,
 }: Props) {
 
   if (products.length === 0) {
@@ -59,6 +65,7 @@ export function ProductGrid({
           // First xl row (3 tiles) is above the fold — eager + fetchpriority
           // high so the category LCP image isn't lazy-loaded.
           imagePriority={index < 3}
+          reviewSummary={reviewSummaries?.get(product.id) ?? null}
         />
       ))}
     </div>

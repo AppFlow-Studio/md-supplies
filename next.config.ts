@@ -28,6 +28,15 @@ const nextConfig: NextConfig = {
     // an explicit remotePattern. BunnyCDN itself needs no entry here: it has no
     // public Pull Zone, so every BunnyCDN read already goes through the
     // same-origin /api/bunny proxy above (see lib/bunnycdn.ts).
+    // TODO(trustshop-media-host): review media (components/reviews/ProductReviewMedia.tsx,
+    // ReviewMediaModal.tsx) intentionally renders via plain <img>, not
+    // next/image, until TrustShop's real media CDN host is known — a live
+    // TRUSTSHOP_INTEGRATION_KEY hasn't been available yet to observe real
+    // review-media URLs. Once known, add its remotePattern here and switch
+    // those two components to next/image for AVIF/WebP + built-in
+    // responsive sizing (aspect-ratio reservation is already handled
+    // manually via inline styles either way, so this is a perf upgrade, not
+    // a CLS fix).
     remotePatterns: [{ protocol: "https", hostname: "cdn.shopify.com", pathname: "/s/files/**" }],
   },
 

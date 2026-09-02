@@ -18,6 +18,8 @@ import { applyExactFacetCounts } from '@/lib/catalog/exact-facet-counts'
 import { getVisibleFilters } from '@/lib/shopify/filters'
 import { SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE } from '@/lib/category-utils'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
+import { getReviewSummariesByGid } from '@/lib/trustshop/collection-summaries'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -109,6 +111,7 @@ export default async function SearchPage({ searchParams }: Props) {
   let totalCount = 0
   let productFilters: CollectionFilter[] = []
   let hasNext = false
+  let reviewSummaries: Map<string, ProductReviewSummary | null> = new Map()
 
   if (q.trim()) {
     try {
@@ -132,6 +135,9 @@ export default async function SearchPage({ searchParams }: Props) {
       products = attachCardShippingDisplay(allNodes.slice(startIndex, startIndex + SEARCH_PAGE_SIZE))
       hasNext = allNodes.length > currentPage * SEARCH_PAGE_SIZE
       totalCount = data.search.totalCount
+      // Summary-only, bounded-concurrency batch (N+1 guard) — same helper
+      // CategoryResults.tsx uses, so /search cards agree with /category cards.
+      reviewSummaries = await getReviewSummariesByGid(products)
       // Registry gate: only sources approved anywhere in the search
       // allowlist may reach the filter rail (NF3) — the Storefront
       // `productFilters` response is untrusted input.
@@ -279,6 +285,7 @@ export default async function SearchPage({ searchParams }: Props) {
               q={q}
               clearFiltersUrl={clearFiltersUrl}
               isFiltered={isFiltered}
+              reviewSummaries={reviewSummaries}
             />
           )}
 
