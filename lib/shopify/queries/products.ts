@@ -388,6 +388,25 @@ export function buildSearchFacetCountsQuery(count: number): string {
 `;
 }
 
+// Account Favorites view (DEV-FAV-01): resolves the customer's saved product
+// IDs to live card data through the SAME fragment every other card grid uses
+// — never a second pricing/availability computation. `nodes` returns one
+// entry per input id, `null` for anything Shopify can no longer resolve
+// (deleted, or not visible to the Storefront API — unpublished/archived).
+// Callers treat a null as an orphan to drop, both from the rendered list and
+// from the persisted favorite record (lib/shopify/favorites-admin.ts
+// pruneCustomerFavorites).
+export const GET_PRODUCTS_BY_IDS = `#graphql
+  ${PRODUCT_CARD_FRAGMENT}
+  query GetProductsByIds($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on Product {
+        ...ProductCard
+      }
+    }
+  }
+`;
+
 export const GET_PRODUCT_CARD_BY_HANDLE = `#graphql
   query GetProductCardByHandle($handle: String!) {
     product(handle: $handle) {

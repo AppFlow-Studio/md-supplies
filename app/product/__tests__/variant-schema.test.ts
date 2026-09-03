@@ -4,6 +4,10 @@ vi.mock('@/lib/shopify/storefront', () => ({
   storefrontFetch: vi.fn(),
 }))
 
+// DEV-FAV-01: ProductPage now checks getSession() (favorites heart
+// hydration) — not under test here, a plain "signed out" stub.
+vi.mock('@/lib/shopify/session', () => ({ getSession: async () => null }))
+
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS, GET_ALL_PRODUCT_TAGS } from '@/lib/shopify/queries/products'
 import ProductPage from '../[slug]/page'

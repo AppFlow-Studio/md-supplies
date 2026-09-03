@@ -25,6 +25,7 @@ import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type
 import { ProductReviewSummaryLink } from '@/components/reviews/ProductReviewSummaryLink'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 import type { ProductReviewSummary, ProductReview, ProductReviewMedia, ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
+import { FavoriteButton } from '@/components/product/FavoriteButton'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS']
@@ -113,9 +114,13 @@ interface Props {
   variantShippingDisplays?: Record<string, ShippingDisplay>
   reviewSummary?: ProductReviewSummary | null
   reviewsSection?: ReviewsSectionProps
+  /** Favorites (DEV-FAV-01) — server-computed session state and the
+      customer's saved status for THIS product. */
+  isSignedIn?: boolean
+  isFavorited?: boolean
 }
 
-export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {}, reviewSummary = null, reviewsSection }: Props) {
+export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {}, reviewSummary = null, reviewsSection, isSignedIn = false, isFavorited = false }: Props) {
   // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
   // Medchain, …) and must never be presented as a brand — when brand_name is
   // absent the brand line, spec row, and analytics item_brand are all omitted.
@@ -346,10 +351,22 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               </div>
             )}
 
-            {/* Title */}
-            <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
-              {displayTitle}
-            </h1>
+            {/* Title + Favorite */}
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
+                {displayTitle}
+              </h1>
+              <FavoriteButton
+                productId={product.id}
+                productHandle={product.handle}
+                productTitle={displayTitle}
+                variantId={selectedVariant.id}
+                isSignedIn={isSignedIn}
+                initialFavorited={isFavorited}
+                list="pdp"
+                className="shrink-0 border border-gray-200"
+              />
+            </div>
 
             {/* Compact rating summary — plain #reviews anchor, no client JS.
                 Renders nothing if reviewsSection isn't wired up (defensive:

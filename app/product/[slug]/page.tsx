@@ -26,6 +26,8 @@ import { buildCanonical } from '@/lib/seo/canonical'
 import { getNumericShopifyProductId } from '@/lib/trustshop/product-id'
 import { getProductReviewSummary, listProductReviews, getProductReviewMedia } from '@/lib/trustshop/product'
 import type { ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
+import { getFavoritedProductIds } from '@/app/actions/favorites'
+import { getSession } from '@/lib/shopify/session'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -127,6 +129,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
         getProductReviewMedia(numericProductId, { perPage: 20 }).catch(() => null),
       ])
     : [null, null, null]
+
+  // Favorites (DEV-FAV-01): getSession() is a cheap cookie read, so a guest
+  // never touches the Admin API — the heart still renders (guest, unsaved),
+  // it just skips the fetch that decides its initial saved state.
+  const isSignedIn = Boolean(await getSession())
+  const favoritedProductIds = isSignedIn ? await getFavoritedProductIds() : []
+  const isFavorited = favoritedProductIds.includes(product.id)
 
   const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
     GET_PRODUCT_RECS,
@@ -240,6 +249,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
         partnerSlug={partner?.slug ?? null}
         variantShippingDisplays={variantShippingDisplays}
         reviewSummary={reviewSummary}
+        isSignedIn={isSignedIn}
+        isFavorited={isFavorited}
         reviewsSection={{
           basePath: `/product/${slug}`,
           productGid: product.id,

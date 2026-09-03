@@ -17,13 +17,16 @@ interface Props {
   clearFiltersUrl: string
   isFiltered: boolean
   reviewSummaries?: Map<string, ProductReviewSummary | null>
+  /** Favorites (DEV-FAV-01) — see ProductGrid's own prop comment. */
+  isSignedIn?: boolean
+  favoritedProductIds?: ReadonlySet<string>
 }
 
 // Plain results grid + empty state. Pagination moved to page.tsx
 // (DEV-LAUNCH-06 — deterministic page-N via CategoryPagination, same model
 // as category/OCC/industry, replacing the cursor-based "Load More" this
 // component used to own), so nothing here needs client-side state anymore.
-export function SearchResultsSection({ products, q, clearFiltersUrl, isFiltered, reviewSummaries }: Props) {
+export function SearchResultsSection({ products, q, clearFiltersUrl, isFiltered, reviewSummaries, isSignedIn, favoritedProductIds }: Props) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-6">
@@ -70,6 +73,8 @@ export function SearchResultsSection({ products, q, clearFiltersUrl, isFiltered,
       itemListId="search-results"
       itemListName={`Search results for "${q}"`}
       reviewSummaries={reviewSummaries}
+      isSignedIn={isSignedIn}
+      favoritedProductIds={favoritedProductIds}
     />
   )
 }

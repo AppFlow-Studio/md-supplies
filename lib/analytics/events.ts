@@ -137,8 +137,31 @@ export function buildBeginCheckoutEvent(params: { currency: string; items: GA4It
   }
 }
 
-export type AnalyticsEvent = GA4EcommerceEvent | PageViewEvent | FormSubmitEvent
-
 export function buildFormSubmitEvent(params: { formName: string; details?: Record<string, string> }): FormSubmitEvent {
   return { event: 'form_submit', form_name: params.formName, ...(params.details ?? {}) }
+}
+
+// Favorites (DEV-FAV-01). Non-PII: item_id is the public Shopify product GID
+// (already sent on every other GA4Item event on the site) — never a customer
+// ID. `list` says which surface the action happened on (pdp/card/account) so
+// the two required surfaces can be told apart in reporting without a second
+// event name per surface.
+export interface FavoriteEvent {
+  event: 'favorite_add' | 'favorite_remove' | 'favorite_auth_prompt' | 'favorite_to_cart'
+  item_id: string
+  list: 'pdp' | 'card' | 'account'
+}
+
+export type AnalyticsEvent = GA4EcommerceEvent | PageViewEvent | FormSubmitEvent | FavoriteEvent
+
+export function buildFavoriteEvent(params: {
+  action: 'add' | 'remove' | 'auth_prompt' | 'to_cart'
+  productId: string
+  list: FavoriteEvent['list']
+}): FavoriteEvent {
+  return {
+    event: `favorite_${params.action}` as FavoriteEvent['event'],
+    item_id: params.productId,
+    list: params.list,
+  }
 }

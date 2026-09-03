@@ -229,11 +229,13 @@ function LoggedInDashboard({
   customer,
   orders,
   addresses,
+  favoritesCount,
   rxCard,
 }: {
   customer:  Customer;
   orders:    CustomerOrder[];
   addresses: CustomerAddress[];
+  favoritesCount: number;
   rxCard?:   React.ReactNode;
 }) {
   const displayName  = [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "there";
@@ -275,21 +277,31 @@ function LoggedInDashboard({
 
       {/* Dashboard stats */}
       <section className="w-full bg-neutral-100">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 grid grid-cols-2 gap-5">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 grid grid-cols-2 sm:grid-cols-3 gap-5">
           {[
-            { icon: <Package size={20} className="text-teal-500" />, value: String(orders.length),    label: "Total Orders"    },
-            { icon: <MapPin  size={20} className="text-teal-500" />, value: String(addresses.length), label: "Saved Addresses" },
-          ].map(({ icon, value, label }) => (
-            <div key={label} className="bg-white p-6 flex items-center gap-4">
-              <div className="w-[44px] h-[44px] rounded-[10px] bg-[rgba(0,193,255,0.12)] flex items-center justify-center shrink-0">
-                {icon}
+            { icon: <Package size={20} className="text-teal-500" />, value: String(orders.length),    label: "Total Orders",    href: "/account/orders"    },
+            { icon: <MapPin  size={20} className="text-teal-500" />, value: String(addresses.length), label: "Saved Addresses", href: undefined            },
+            { icon: <Heart   size={20} className="text-teal-500" />, value: String(favoritesCount),   label: "Favorites",       href: "/account/favorites" },
+          ].map(({ icon, value, label, href }) => {
+            const tile = (
+              <div className="bg-white p-6 flex items-center gap-4 h-full">
+                <div className="w-[44px] h-[44px] rounded-[10px] bg-[rgba(0,193,255,0.12)] flex items-center justify-center shrink-0">
+                  {icon}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-navy-900 text-[26px] font-semibold leading-none">{value}</span>
+                  <span className="text-gray-500 text-[13px] uppercase tracking-[0.3px]">{label}</span>
+                </div>
               </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-navy-900 text-[26px] font-semibold leading-none">{value}</span>
-                <span className="text-gray-500 text-[13px] uppercase tracking-[0.3px]">{label}</span>
-              </div>
-            </div>
-          ))}
+            );
+            return href ? (
+              <Link key={label} href={href} className="hover:opacity-90 transition-opacity">
+                {tile}
+              </Link>
+            ) : (
+              <div key={label}>{tile}</div>
+            );
+          })}
         </div>
       </section>
 
@@ -430,15 +442,16 @@ interface AccountViewProps {
   customer:  Customer | null
   orders:    CustomerOrder[]
   addresses: CustomerAddress[]
+  favoritesCount?: number
   /** RX prescription-document card (server-fetched state), logged-in only. */
   rxCard?:   React.ReactNode
 }
 
-export function AccountView({ customer, orders, addresses, rxCard }: AccountViewProps) {
+export function AccountView({ customer, orders, addresses, favoritesCount = 0, rxCard }: AccountViewProps) {
   return (
     <main id="main-content">
       {customer ? (
-        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} rxCard={rxCard} />
+        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} favoritesCount={favoritesCount} rxCard={rxCard} />
       ) : (
         <LoggedOutView />
       )}

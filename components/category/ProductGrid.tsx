@@ -15,6 +15,15 @@ interface Props {
         concurrency cap (getManyProductReviewSummaries) so a full collection
         page never issues a sequential per-card TrustShop waterfall. */
     reviewSummaries?: Map<string, ProductReviewSummary | null>
+    /** Favorites (DEV-FAV-01). Omitted (default) leaves the heart unrendered
+        on a grid that hasn't been wired up — see ShopifyProductCard's own
+        prop comment. When passed, `isSignedIn` must be the real
+        server-computed session state for this request, and
+        `favoritedProductIds` ONE batched read of the customer's saved IDs
+        (never a per-card fetch — see CategoryResults/SearchResultsSection). */
+    isSignedIn?: boolean
+    favoritedProductIds?: ReadonlySet<string>
+    onFavoriteRemoved?: (productId: string) => void
 }
 
 export function ProductGrid({
@@ -25,6 +34,9 @@ export function ProductGrid({
     itemListId,
     itemListName,
     reviewSummaries,
+    isSignedIn,
+    favoritedProductIds,
+    onFavoriteRemoved,
 }: Props) {
 
   if (products.length === 0) {
@@ -66,6 +78,9 @@ export function ProductGrid({
           // high so the category LCP image isn't lazy-loaded.
           imagePriority={index < 3}
           reviewSummary={reviewSummaries?.get(product.id) ?? null}
+          isSignedIn={isSignedIn}
+          isFavorited={favoritedProductIds?.has(product.id) ?? false}
+          onFavoriteRemoved={onFavoriteRemoved}
         />
       ))}
     </div>

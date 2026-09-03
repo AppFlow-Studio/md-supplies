@@ -20,6 +20,8 @@ import { SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE } from '@/lib/category-utils'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { getReviewSummariesByGid } from '@/lib/trustshop/collection-summaries'
 import type { ProductReviewSummary } from '@/lib/trustshop/types'
+import { getFavoritedProductIds } from '@/app/actions/favorites'
+import { getSession } from '@/lib/shopify/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -112,6 +114,11 @@ export default async function SearchPage({ searchParams }: Props) {
   let productFilters: CollectionFilter[] = []
   let hasNext = false
   let reviewSummaries: Map<string, ProductReviewSummary | null> = new Map()
+  // Favorites (DEV-FAV-01): ONE batched read for the whole results grid, and
+  // only for a signed-in visitor — getSession() is a cheap cookie read, so a
+  // guest never touches the Admin API here.
+  const isSignedIn = Boolean(await getSession())
+  let favoritedProductIds: Set<string> | undefined
 
   if (q.trim()) {
     try {
@@ -138,6 +145,7 @@ export default async function SearchPage({ searchParams }: Props) {
       // Summary-only, bounded-concurrency batch (N+1 guard) — same helper
       // CategoryResults.tsx uses, so /search cards agree with /category cards.
       reviewSummaries = await getReviewSummariesByGid(products)
+      if (isSignedIn) favoritedProductIds = new Set(await getFavoritedProductIds())
       // Registry gate: only sources approved anywhere in the search
       // allowlist may reach the filter rail (NF3) — the Storefront
       // `productFilters` response is untrusted input.
@@ -286,6 +294,8 @@ export default async function SearchPage({ searchParams }: Props) {
               clearFiltersUrl={clearFiltersUrl}
               isFiltered={isFiltered}
               reviewSummaries={reviewSummaries}
+              isSignedIn={isSignedIn}
+              favoritedProductIds={favoritedProductIds}
             />
           )}
 

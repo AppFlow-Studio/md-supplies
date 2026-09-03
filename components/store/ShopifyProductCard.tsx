@@ -13,6 +13,7 @@ import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { ProductRating } from '@/components/reviews/ProductRating'
 import type { ProductReviewSummary } from '@/lib/trustshop/types'
+import { FavoriteButton } from '@/components/product/FavoriteButton'
 
 interface Props {
   product: CollectionProduct
@@ -26,9 +27,19 @@ interface Props {
       lib/trustshop/product.ts's getManyProductReviewSummaries). Omitted
       (no rating row, no reserved space) when null/zero-review. */
   reviewSummary?: ProductReviewSummary | null
+  /** Favorites (DEV-FAV-01). Both omitted (the default) on a call site that
+      hasn't been wired up yet — the heart is simply not rendered there, so
+      an unmigrated surface is unaffected. When present, `isSignedIn` must be
+      the real server-computed session state: a guest heart must never look
+      like a signed-in one, since it drives whether the click authorizes a
+      write or hands off to login. */
+  isSignedIn?: boolean
+  isFavorited?: boolean
+  /** Account Favorites grid only — lets that page drop the tile on remove. */
+  onFavoriteRemoved?: (productId: string) => void
 }
 
-export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false, reviewSummary = null }: Props) {
+export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false, reviewSummary = null, isSignedIn, isFavorited = false, onFavoriteRemoved }: Props) {
   const variant = product.variants.nodes[0]
   const price = parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount)
   const compareAt = variant?.compareAtPrice
@@ -84,6 +95,26 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             <div className="absolute inset-0 bg-white/60" />
           )}
         </Link>
+
+        {/* Sibling of the image Link, not nested inside it — a <button>
+            inside an <a> is invalid interactive-in-interactive markup (same
+            rule RelatedProductCard follows). Only rendered once the caller
+            has wired favorites up for this surface (isSignedIn !== undefined,
+            see the Props comment above). */}
+        {isSignedIn !== undefined && (
+          <FavoriteButton
+            productId={product.id}
+            productHandle={product.handle}
+            productTitle={product.title}
+            variantId={product.variants.nodes[0]?.id ?? null}
+            isSignedIn={isSignedIn}
+            initialFavorited={isFavorited}
+            list="card"
+            size="sm"
+            className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white"
+            onRemoved={onFavoriteRemoved}
+          />
+        )}
       </div>
 
       {/* Info */}

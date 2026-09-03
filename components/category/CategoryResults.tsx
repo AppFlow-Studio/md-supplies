@@ -27,6 +27,8 @@ import { CatalogResultsState } from '@/components/category/CatalogResultsState'
 import { ROUTES } from '@/lib/routes'
 import { getNonce } from '@/lib/csp-nonce'
 import { getReviewSummariesByGid } from '@/lib/trustshop/collection-summaries'
+import { getFavoritedProductIds } from '@/app/actions/favorites'
+import { getSession } from '@/lib/shopify/session'
 
 // URL filter strings -> Storefront `ProductFilter` inputs.
 //
@@ -129,6 +131,12 @@ export async function CategoryResults({
   // sequential per-card TrustShop request, and a slow/down provider degrades
   // to no rating rows rather than blocking the collection render.
   const reviewSummaries = await getReviewSummariesByGid(products)
+
+  // Favorites (DEV-FAV-01): ONE batched read of the customer's saved product
+  // IDs for the whole grid — never a per-card fetch (getSession() is a cheap
+  // cookie read, so a guest never touches the Admin API at all here).
+  const isSignedIn = Boolean(await getSession())
+  const favoritedProductIds = isSignedIn ? new Set(await getFavoritedProductIds()) : undefined
 
   if (!isFiltered && currentPage > 1 && products.length === 0) notFound()
 
@@ -387,6 +395,8 @@ export async function CategoryResults({
               itemListId={handle}
               itemListName={title}
               reviewSummaries={reviewSummaries}
+              isSignedIn={isSignedIn}
+              favoritedProductIds={favoritedProductIds}
             />
           </CatalogResultsState>
 

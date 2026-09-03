@@ -7,6 +7,7 @@ import { AccountView } from '@/components/account/AccountView'
 import type { Customer, CustomerOrder, CustomerAddress } from '@/components/account/AccountView'
 import { RxDocumentCard } from '@/components/account/RxDocumentCard'
 import { getRxAccountState } from '@/app/actions/rx'
+import { getFavoritedProductIds } from '@/app/actions/favorites'
 
 export const metadata: Metadata = {
   title: 'My Account | MD Supplies',
@@ -64,12 +65,14 @@ export default async function AccountPage() {
   }
 
   const rxState = await getRxAccountState()
+  const favoritesCount = await getFavoritedProductIds().then((ids) => ids.length).catch(() => 0)
 
   return (
     <AccountView
       customer={customer}
       orders={orders}
       addresses={addresses}
+      favoritesCount={favoritesCount}
       rxCard={
         customer ? (
           <RxDocumentCard hasDocument={rxState.hasDocument} verified={rxState.verified} />

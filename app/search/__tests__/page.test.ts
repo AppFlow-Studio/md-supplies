@@ -4,6 +4,13 @@ vi.mock('@/lib/shopify/storefront', () => ({
   storefrontFetch: vi.fn(),
 }))
 
+// DEV-FAV-01: SearchPage now checks getSession() for the favorites heart
+// state. Not under test here — every case in this file exercises a guest
+// visitor's search results, so this stays a plain "signed out" stub.
+vi.mock('@/lib/shopify/session', () => ({
+  getSession: vi.fn().mockResolvedValue(null),
+}))
+
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import SearchPage from '../page'
 
