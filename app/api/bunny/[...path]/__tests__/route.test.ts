@@ -67,4 +67,29 @@ describe('GET /api/bunny/[...path]', () => {
     expect(res.status).toBe(400)
     expect(fetch).not.toHaveBeenCalled()
   })
+
+  it('still returns a bare 404 to the client for a missing brand logo (client behavior unchanged)', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 404 }))
+
+    const res = await GET(makeRequest('brands/lumex.svg'), makeParams('brands/lumex.svg'))
+
+    expect(res.status).toBe(404)
+  })
+
+  it('logs a distinct diagnostic when a brands/ object 404s, unlike other missing objects', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 404 }))
+
+    await GET(makeRequest('brands/lumex.svg'), makeParams('brands/lumex.svg'))
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[bunny] brand logo missing on storage (404) path=brands/lumex.svg'))
+
+    warnSpy.mockClear()
+    await GET(
+      makeRequest('mdsupplies/placeholders/products/missing.webp'),
+      makeParams('mdsupplies/placeholders/products/missing.webp'),
+    )
+    expect(warnSpy).not.toHaveBeenCalled()
+
+    warnSpy.mockRestore()
+  })
 })

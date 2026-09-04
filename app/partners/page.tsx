@@ -14,7 +14,14 @@ export const metadata = buildMetadata({
   description: 'Our network of trusted medical supply manufacturers and partners.',
 })
 
-const HERO_IMAGE = 'https://www.figma.com/api/mcp/asset/7e97ac3a-09ed-42db-96c5-a2d21b722527'
+// Was a Figma Dev-Mode-MCP asset URL (figma.com/api/mcp/asset/<id>) — an
+// ephemeral, session-scoped link generated while pulling design context, not
+// a public/persistent asset. It 404s outside that Figma session (confirmed
+// against production) and was never in the CSP img-src allowlist (lib/csp.ts)
+// either, so it would have been blocked a second way even if it did resolve.
+// Reuse the same warehouse photo already served safely from /public on the
+// About page (app/about/page.tsx) instead of a remote/ephemeral source.
+const HERO_IMAGE = '/images/about/warehouse.png'
 
 
 export default function PartnersPage() {
@@ -49,14 +56,14 @@ export default function PartnersPage() {
           <img
             src={HERO_IMAGE}
             alt="Medical supply warehouse"
-            className="w-full aspect-[4/3] object-cover"
+            className="w-full aspect-[4/3] object-cover bg-gray-100"
             loading="eager"
           />
         </div>
 
         {/* Desktop: text card left, image right (absolute) */}
         <div className="hidden lg:flex relative min-h-[580px] items-center">
-          <div className="absolute inset-0 left-[38%]">
+          <div className="absolute inset-0 left-[38%] bg-gray-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={HERO_IMAGE}

@@ -239,8 +239,15 @@ export const PARTNERS: Partner[] = [
     type: 'brand',
     isActive: true,
     description: 'Durable medical equipment and mobility aids for patient care.',
+    // P0 regression (2026-09-04): the uploaded lumex.svg resolves 200 with a
+    // valid image content-type, but every fill is #FFFFFF — invisible on this
+    // page's white cards (it was only ever legible on the navy partner-detail
+    // hero, which forces white via `brightness-0 invert`). Cleared to the empty
+    // string, which BrandLogoImage/buildOg both already treat as "no logo" and
+    // fall back from cleanly — not a hack, the same contract lib/brands.ts uses.
+    // See docs/audits/2026-09-04-partners-brand-logo-audit.md.
     logo: {
-      url: '/api/bunny/brands/lumex.svg',
+      url: '',
       altText: 'Lumex logo',
       width: 109,
       height: 85,
