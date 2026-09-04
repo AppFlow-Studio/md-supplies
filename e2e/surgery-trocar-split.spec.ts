@@ -316,22 +316,37 @@ test.describe('P0.2/P0.3 — nav hierarchy and categories hub', () => {
 
     // Two-stage disclosure (2026-08-26): the child no longer sits inside the
     // parent's own <li>. The parent is a rail item and the child lives in the
-    // detail panel that rail item controls, so the relationship is carried by
-    // ARIA rather than DOM containment — still structural, still real for a
-    // screen reader, just expressed the way a disclosure has to express it.
+    // detail panel that rail item's chevron controls, so the relationship is
+    // carried by ARIA rather than DOM containment — still structural, still
+    // real for a screen reader, just expressed the way a disclosure has to
+    // express it.
+    //
+    // Split control (2026-09-04 P0 nav-defect fix): the rail row is now TWO
+    // elements, not one — a name link (which carries the id the panel is
+    // labelled by) and a separate disclosure chevron (which carries
+    // aria-controls). See CategoryMegaMenu.tsx's file-header comment.
     const panel = page.locator('#nav-panel-categories')
-    const railItem = panel.locator('[data-rail-item][data-tag="surgery-procedure"]')
-    await expect(railItem).toBeAttached()
-    const railId = await railItem.getAttribute('id')
+    // CSS/href-based, not getByRole: the panel starts CSS-hidden
+    // (`display:none`) until the trigger is hovered/focused, and a
+    // `display:none` subtree is genuinely absent from the accessibility
+    // tree in a real browser — Playwright's role locators can't see into it
+    // even with `hidden: true` (that option only recovers aria-hidden /
+    // visibility:hidden cases, not display:none). NF7 still requires these
+    // links to be crawlable/queryable without simulating the open
+    // interaction first, so a plain CSS selector is the right tool here,
+    // same as `surgery`/`trocars` above.
+    const nameLink = panel.locator('a[href="/category/surgery-procedure"]').first()
+    const chevron = panel.locator('[data-rail-item][data-tag="surgery-procedure"]')
+    await expect(nameLink).toBeAttached()
+    await expect(chevron).toBeAttached()
+    const nameId = await nameLink.getAttribute('id')
 
-    const detail = panel.locator(`[aria-labelledby="${railId}"]`)
+    const detail = panel.locator(`[aria-labelledby="${nameId}"]`)
     await expect(detail).toBeAttached()
     await expect(detail.locator('a[href="/category/trocars-trocar-kits"]')).toHaveCount(1)
 
-    // And the rail row itself IS the control that opens that panel — one
-    // target per row, so the element naming the department and the element
-    // opening its subcategories are the same thing.
-    await expect(railItem).toHaveAttribute('aria-controls', (await detail.getAttribute('id'))!)
+    // The chevron is the control that opens that panel.
+    await expect(chevron).toHaveAttribute('aria-controls', (await detail.getAttribute('id'))!)
   })
 
   // Bilal, 2026-08-20: the first nesting attempt gave the parent `col-span-2`,

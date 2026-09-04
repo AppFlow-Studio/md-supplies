@@ -143,7 +143,7 @@ describe('CategoryMegaMenu — progressive disclosure', () => {
     railItem(container, 'gloves').focus()
     fireEvent.keyDown(rail, { key: 'ArrowRight' })
     expect(document.activeElement).toHaveAttribute('href', '/category/gloves')
-    expect(document.activeElement?.textContent).toBe('All Gloves')
+    expect(document.activeElement?.textContent).toBe('Browse All Gloves')
   })
 
   it('names each panel after its department for assistive tech', () => {
@@ -154,18 +154,31 @@ describe('CategoryMegaMenu — progressive disclosure', () => {
   })
 })
 
-describe('CategoryMegaMenu — one meaning per surface', () => {
-  // The rail used to carry a link (the name) and a disclosure control (an
-  // arrow) in one 26px row: two targets, two meanings, no separation, and the
-  // disclosure wearing the glyph this site uses for "go somewhere". Nobody
-  // could tell which half did what. The rail selects; the panel navigates.
+describe('CategoryMegaMenu — one meaning per control, not per row (2026-09-04)', () => {
+  // A row used to be one control doing double duty as both "go here" and
+  // "open here" — which meant it could only ever do one of the two (see the
+  // CategoryMegaMenu.tsx file-header comment for the full history: link-only
+  // was ambiguous, button-only made the client's Wound Care demo read as
+  // broken). Now every row with children carries TWO real, separate controls:
+  // the name is a link, the chevron is the disclosure. Hovering either must
+  // still never touch the active panel.
 
-  it('puts no navigation in the rail — a department row selects, it does not go anywhere', () => {
+  it('gives every department row a real link to its own category page', () => {
     const { container } = renderMenu()
     const rail = container.querySelector<HTMLUListElement>('ul')!
-    // Only the childless department, which has no panel to open, is a link.
-    const links = Array.from(rail.querySelectorAll('a'))
-    expect(links.map((a) => a.getAttribute('data-tag'))).toEqual(['room-furniture'])
+    for (const cat of CATEGORIES) {
+      const link = within(rail).getByRole('link', { name: cat.displayName })
+      expect(link).toHaveAttribute('href', cat.href)
+    }
+  })
+
+  it('the disclosure control never carries an href — it only opens, never navigates', () => {
+    const { container } = renderMenu()
+    for (const cat of CATEGORIES.filter((c) => c.children.length > 0)) {
+      const disclosure = railItem(container, cat.tag)
+      expect(disclosure.tagName).toBe('BUTTON')
+      expect(disclosure).not.toHaveAttribute('href')
+    }
   })
 
   it('puts the route to the category page first inside the panel', () => {
@@ -173,21 +186,22 @@ describe('CategoryMegaMenu — one meaning per surface', () => {
     const panel = container.querySelector<HTMLElement>('#mega-panel-home-care')!
     const first = panel.querySelector('a')!
     expect(first).toHaveAttribute('href', '/category/home-care')
-    expect(first.textContent).toBe('All Home Care')
+    expect(first.textContent).toBe('Browse All Home Care')
   })
 
-  it('still gives every department a real, crawlable category link', () => {
-    // The link moved out of the rail and into the panel; it must not have been
-    // lost. A childless department carries two — its rail row IS the link, and
-    // its panel still leads with "All …" for the keyboard path that can reach
-    // it — which is fine: the requirement is that none went missing.
+  it('gives every department two routes to its category page: the rail name and the panel CTA', () => {
+    // A childless department still carries two: its rail row IS the link, and
+    // its (unreachable-by-click, but still crawlable) panel leads with
+    // "Browse All …" too. A department with children now matches it exactly —
+    // the rail name link plus the panel's own CTA — rather than relying on
+    // the panel link alone.
     const { container } = renderMenu()
     for (const cat of CATEGORIES) {
-      const links = container.querySelectorAll(`a[href="${cat.href}"]`)
-      expect(links.length, `${cat.displayName} category link`).toBeGreaterThan(0)
+      expect(
+        container.querySelectorAll(`a[href="${cat.href}"]`).length,
+        `${cat.displayName} category link`,
+      ).toBe(2)
     }
-    // And for a department with children, exactly one — the panel's.
-    expect(container.querySelectorAll('a[href="/category/home-care"]')).toHaveLength(1)
   })
 
   it('does not change the panel on hover, however long the pointer rests', () => {
@@ -197,6 +211,17 @@ describe('CategoryMegaMenu — one meaning per surface', () => {
     fireEvent.mouseEnter(row)
     fireEvent.mouseOver(row)
     fireEvent.mouseMove(row)
+    expect(visiblePanel(container).id).toBe('mega-panel-gloves')
+  })
+
+  it('does not change the panel on hover over the name link either — hovering EITHER half of the split row is inert', () => {
+    const { container } = renderMenu()
+    expect(visiblePanel(container).id).toBe('mega-panel-gloves')
+    const rail = container.querySelector<HTMLUListElement>('ul')!
+    const nameLink = within(rail).getByRole('link', { name: 'Home Care' })
+    fireEvent.mouseEnter(nameLink)
+    fireEvent.mouseOver(nameLink)
+    fireEvent.mouseMove(nameLink)
     expect(visiblePanel(container).id).toBe('mega-panel-gloves')
   })
 
@@ -210,23 +235,29 @@ describe('CategoryMegaMenu — one meaning per surface', () => {
     expect(visiblePanel(container).id).toBe('mega-panel-gloves')
   })
 
-  it('nudges the open department arrow across, so the rail shows what is on screen', () => {
+  it('rotates the open department’s chevron, so the rail shows what is on screen', () => {
     const { container } = renderMenu()
-    const arrowIn = (tag: string) => railItem(container, tag).querySelector('svg')!
+    const chevronIn = (tag: string) => railItem(container, tag).querySelector('svg')!
 
     // classList, not a substring match: the base class already carries
-    // `group-hover:translate-x-1`, which contains the same text.
-    expect(arrowIn('gloves').classList.contains('translate-x-1')).toBe(true)
-    expect(arrowIn('home-care').classList.contains('translate-x-1')).toBe(false)
+    // `group-hover:...`, which could otherwise substring-match.
+    expect(chevronIn('gloves').classList.contains('rotate-180')).toBe(true)
+    expect(chevronIn('home-care').classList.contains('rotate-180')).toBe(false)
 
     fireEvent.click(railItem(container, 'home-care'))
-    expect(arrowIn('home-care').classList.contains('translate-x-1')).toBe(true)
-    expect(arrowIn('gloves').classList.contains('translate-x-1')).toBe(false)
+    expect(chevronIn('home-care').classList.contains('rotate-180')).toBe(true)
+    expect(chevronIn('gloves').classList.contains('rotate-180')).toBe(false)
   })
 
-  it('carries the same hover motion the rest of the site uses for forward links', () => {
+  it('carries the same forward-hover motion as the rest of the site on the panel’s go-somewhere links', () => {
+    // The rail's own disclosure chevron deliberately does NOT carry this
+    // motion — it is a ChevronDown, not the ArrowRight "go somewhere" glyph
+    // (see the file-header comment on why those two must not be conflated).
+    // AnimatedArrow, and its hover nudge, stay on the links that actually
+    // navigate: the panel's "Browse All" CTA and the childless rail row.
     const { container } = renderMenu()
-    const arrow = railItem(container, 'gloves').querySelector('svg')!
+    const panelCta = container.querySelector<HTMLElement>('#mega-panel-gloves a')!
+    const arrow = panelCta.querySelector('svg')!
     expect(arrow.getAttribute('class')).toContain('group-hover:translate-x-1')
     expect(arrow.closest('.group')).not.toBeNull()
   })
@@ -246,9 +277,9 @@ describe('CategoryMegaMenu — Trocars prominence', () => {
     const { container } = renderMenu()
     const panel = container.querySelector<HTMLElement>('#mega-panel-surgery-procedure')!
     const items = Array.from(panel.querySelectorAll('li'))
-    // "All Surgery & Procedure" leads, then the featured child ahead of the
-    // tag-derived ones.
-    expect(items[0].textContent).toBe('All Surgery & Procedure')
+    // "Browse All Surgery & Procedure" leads, then the featured child ahead
+    // of the tag-derived ones.
+    expect(items[0].textContent).toBe('Browse All Surgery & Procedure')
     expect(items[1].textContent).toContain('Trocars & Trocar Kits')
     expect(items[1].textContent).toContain('Popular')
     // The badge must not become part of the link's accessible name.
