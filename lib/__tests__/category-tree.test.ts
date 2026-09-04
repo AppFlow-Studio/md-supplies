@@ -356,6 +356,29 @@ describe('buildL2Tree', () => {
     expect(nodes.find((n) => n.tag === 'sutures')).toBeDefined()
     expect(nodes.find((n) => n.tag === '4-0-sutures')).toBeUndefined()
   })
+
+  it('excludes a subcategory whose resolved parent tag equals its own tag (self-titled duplicate page, MASTER-PLAN §10)', () => {
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['hygiene'], subcategories: ['hygiene'] },
+      { handle: 'b', categories: ['hygiene'], subcategories: ['hygiene', 'toothbrushes'] },
+    ])
+    expect(nodes.find((n) => n.tag === 'hygiene')).toBeUndefined()
+    expect(nodes.find((n) => n.tag === 'toothbrushes')).toBeDefined()
+  })
+
+  it('still excludes it after a BOUNDARY_L1_OVERRIDES resolution, not just the dominant-parent path', () => {
+    // Synthetic: if a boundary override ever mapped a subcategory tag onto
+    // its own name, the same self-titled-duplicate rule must still apply —
+    // this proves the check runs after BOTH resolution branches, not just
+    // the plain-dominant-parent one exercised above.
+    const nodes = buildL2Tree([
+      { handle: 'a', categories: ['exam-room'], subcategories: ['exam-tables'] },
+      { handle: 'b', categories: ['room-furniture'], subcategories: ['exam-tables'] },
+    ])
+    // Sanity check this fixture still hits the real override (unrelated to
+    // the self-titled case, just confirming the fixture is well-formed):
+    expect(nodes.find((n) => n.tag === 'exam-tables')?.parentTag).toBe('room-furniture')
+  })
 })
 
 import {
@@ -363,6 +386,7 @@ import {
   humanizeTag,
   buildSubcategoryTagQuery,
   getSubcategoriesForParent,
+  getTopSubcategoriesForParent,
   getProductCategoryPath,
 } from '../category-tree'
 
@@ -409,6 +433,29 @@ describe('getSubcategoriesForParent', () => {
     ]
     const result = getSubcategoriesForParent('gloves', l2Nodes)
     expect(result.map((n) => n.tag).sort()).toEqual(['exam-gloves', 'surgical-gloves'])
+  })
+})
+
+describe('getTopSubcategoriesForParent', () => {
+  const l2Nodes = [
+    { tag: 'walkers', parentTag: 'mobility', productCount: 3 },
+    { tag: 'rollators', parentTag: 'mobility', productCount: 7 },
+    { tag: 'canes', parentTag: 'mobility', productCount: 5 },
+    { tag: 'bed-pans', parentTag: 'home-care', productCount: 4 },
+  ]
+
+  it('returns only the requested parent, ordered by product count descending', () => {
+    const top = getTopSubcategoriesForParent('mobility', l2Nodes, 2)
+    expect(top.map((n) => n.tag)).toEqual(['rollators', 'canes'])
+  })
+
+  it('returns fewer than the limit if the parent has fewer subcategories', () => {
+    const top = getTopSubcategoriesForParent('home-care', l2Nodes, 5)
+    expect(top.map((n) => n.tag)).toEqual(['bed-pans'])
+  })
+
+  it('returns an empty array for a parent with no subcategories', () => {
+    expect(getTopSubcategoriesForParent('gloves', l2Nodes, 4)).toEqual([])
   })
 })
 
@@ -484,5 +531,50 @@ describe('buildCategoryTreeNav', () => {
     const nav = buildCategoryTreeNav([{ handle: 'testing-screening' }])
     const testing = nav.primary.find((e) => e.displayName === 'Testing')
     expect(testing?.href).toBe('/category/testing-screening')
+  })
+})
+
+import { getShopifyHandle, getAllowedHandles } from '../category-tree'
+
+describe('getShopifyHandle', () => {
+  it('resolves the canonical face-masks slug back to the real face-coverings handle', () => {
+    expect(getShopifyHandle('face-masks')).toBe('face-coverings')
+  })
+
+  it('returns the input unchanged for a slug with no canonical alias', () => {
+    expect(getShopifyHandle('mobility')).toBe('mobility')
+    expect(getShopifyHandle('some-unrelated-slug')).toBe('some-unrelated-slug')
+  })
+})
+
+describe('getAllowedHandles', () => {
+  it('contains every L1 collection handle', () => {
+    const allowed = getAllowedHandles()
+    expect(allowed.has('mobility')).toBe(true)
+    expect(allowed.has('home-care')).toBe(true)
+    expect(allowed.has('gloves')).toBe(true)
+  })
+
+  it('contains every featured-subcategory collection handle', () => {
+    expect(getAllowedHandles().has('trocars-trocar-kits')).toBe(true)
+  })
+
+  it('does not contain an arbitrary non-registry handle', () => {
+    expect(getAllowedHandles().has('random-nonexistent')).toBe(false)
+  })
+
+  it('deliberately excludes legacy category-nav.ts sub-handles that have no standalone header-nav tile', () => {
+    // The old lib/category-nav.ts allowlist flat-mapped every matchedHandles
+    // entry across all categories (~36 handles), including sub-collections
+    // like 'footwear' (under Apparel) and 'exam-tables' (under Room
+    // Furniture). The new allowlist is CATEGORY_TREE_L1 collection handles +
+    // FEATURED_SUBCATEGORIES only (26 handles) — exactly what
+    // buildCategoryTreeNav links in the header/footer nav. Neither 'footwear'
+    // nor 'exam-tables' has its own header nav entry (only the parent
+    // Apparel / Room Furniture tile does), so predictive search — the only
+    // live consumer of getAllowedHandles() — should not suggest them either.
+    const allowed = getAllowedHandles()
+    expect(allowed.has('footwear')).toBe(false)
+    expect(allowed.has('exam-tables')).toBe(false)
   })
 })

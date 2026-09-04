@@ -42,6 +42,19 @@ export async function ProductSchema({
   returnPolicy,
   shippingDetails,
 }: Props) {
+  // Google's Product rich result requires at least one of offers, review, or
+  // aggregateRating. This component never emits review/aggregateRating (no
+  // real review data exists), and a zero/unusable price already omits offers
+  // (see below) — so a quote-only product would emit a Product node with NONE
+  // of the three, which Google's validator flags as a missing required field.
+  // That's the real cause behind the 12 pharmacy/HRT Rich Results errors
+  // (2026-08-21 audit; all on /category/pharmacy-products/<handle>, all
+  // zero-price/quote-only items per docs/audits/2026-08-02-catalog-cro/
+  // zero-price-active-variants.csv) — distinct from the zero-price-Offer
+  // theory already ruled out. Skip the whole block rather than submit an
+  // incomplete one.
+  if (!hasUsablePrice(price)) return null
+
   const nonce = await getNonce()
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -58,26 +71,21 @@ export async function ProductSchema({
   if (mpn) schema.mpn = mpn
   if (gtin) schema.gtin = gtin
 
-  // A zero/missing price is a quote-only item, never a $0 product
-  // (lib/purchasability.ts). Emitting an Offer with `price: 0` would tell
-  // Google (and any other JSON-LD consumer) a price the page itself refuses
-  // to state — the exact card/PDP/structured-data disagreement this schema
-  // must not create. Omit the Offer entirely rather than fabricate one.
-  if (hasUsablePrice(price)) {
-    const offers: Record<string, unknown> = {
-      '@type': 'Offer',
-      url,
-      price,
-      priceCurrency,
-      availability: `https://schema.org/${availability}`,
-      itemCondition: 'https://schema.org/NewCondition',
-      seller: { '@type': 'Organization', name: seller },
-    }
-    if (priceValidUntil) offers.priceValidUntil = priceValidUntil
-    if (returnPolicy) offers.hasMerchantReturnPolicy = returnPolicy
-    if (shippingDetails) offers.shippingDetails = shippingDetails
-    schema.offers = offers
+  // Price is guaranteed usable here (see the early return above), so the
+  // Offer is always built — never with a fabricated $0/missing price.
+  const offers: Record<string, unknown> = {
+    '@type': 'Offer',
+    url,
+    price,
+    priceCurrency,
+    availability: `https://schema.org/${availability}`,
+    itemCondition: 'https://schema.org/NewCondition',
+    seller: { '@type': 'Organization', name: seller },
   }
+  if (priceValidUntil) offers.priceValidUntil = priceValidUntil
+  if (returnPolicy) offers.hasMerchantReturnPolicy = returnPolicy
+  if (shippingDetails) offers.shippingDetails = shippingDetails
+  schema.offers = offers
 
   return (
     <script

@@ -49,6 +49,9 @@ Task 3: complete (no commits — verification only; brief's premise about which 
 Task 4: minor (deferred): manual browser walkthrough (brief Step 5, both PDP routes/breakpoints) not performed — claude-in-chrome reported "not connected" in this environment. Automated RTL/a11y tests fully cover the link-swap behavior (role, href, focus, no nested button) per reviewer's judgment, but a human/tooled spot-check on a live PDP is still recommended before launch — carry into Task 12's evidence doc checklist.
 Task 4: minor (deferred): no axe/jest-axe wired into the vitest component suite for a11y testing (only Playwright e2e has @axe-core/playwright, e.g. e2e/axe.spec.ts) — brief assumed one existed. Worked around correctly with role/focus assertions matching the file's real existing idiom; wiring real axe into vitest is a separate backlog item, not this plan's scope.
 Task 4: complete (commits a1e5ae2..b5d2fcd, review clean)
+Task 5: minor (deferred): new tests in CartPopup.test.tsx / CartPageClient.test.tsx build standalone inline fixtures instead of reusing the files' existing mockLine/cartWithLineProduct helper patterns — harmless, but a future shared-fixture shape change won't propagate to these two tests.
+Task 5: complete (commits 4ba650e..b6513cf, review clean)
+Task 6: implemented, NOT yet reviewed (commit b6513cf..130632e). Real-data check performed for real (adapted scripts/verify-aerowalk-pinned-metafields.ts read-only against QA AeroWalk product, reverted after) — confirmed bold-mark shape `{ type: 'text', value, bold: true }` matches brief's fixture exactly, no adjustment needed. Full suite 145/145 files, 1502/1502 tests, tsc+lint clean. Review package generated at review-b6513cf..130632e.diff — NEXT SESSION: dispatch task reviewer for Task 6 before doing anything else (do not re-implement).
 
 ## Plan amendment (2026-08-19)
 

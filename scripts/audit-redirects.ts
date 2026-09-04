@@ -32,7 +32,7 @@ import { REDIRECT_ENTRIES, GONE_CATEGORY_SLUGS, LEGACY_PRODUCT_HANDLES } from '.
 import { storefrontFetch } from '../lib/shopify/storefront'
 import { GET_ALL_PRODUCT_HANDLES } from '../lib/shopify/queries/products'
 import { GET_ALL_COLLECTION_HANDLES } from '../lib/shopify/queries/collections'
-import { getAllowedHandles, getShopifyHandle } from '../lib/category-nav'
+import { getAllowedHandles, getShopifyHandle } from '../lib/category-tree'
 import { PARTNERS } from '../lib/partners'
 import { INDUSTRIES } from '../lib/industries'
 

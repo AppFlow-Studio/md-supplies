@@ -15,11 +15,10 @@ import { writeFileSync, mkdirSync } from 'fs'
 loadEnvConfig(process.cwd())
 
 import { storefrontFetch } from '../lib/shopify/storefront'
-import { CATEGORY_TREE_L1 } from '../lib/category-tree'
+import { CATEGORY_TREE_L1, getCategorySlug } from '../lib/category-tree'
 import { INDUSTRIES } from '../lib/industries'
 import { OCC_HUB } from '../lib/occ'
 import { getOccCollectionHandle } from '../lib/occ-collection'
-import { ROADMAP_CATEGORIES } from '../lib/category-nav'
 
 const PAGE_SIZE = 250
 const MAX_COUNTED = 1000 // matches lib/category-results-source.ts MAX_MEMBERSHIP_IDS
@@ -157,15 +156,11 @@ async function main() {
   lines.push('| Tag (route slug*) | Collection handle | Live on QA? | GID | Product count | Sample products |')
   lines.push('|---|---|---|---|---|---|')
 
-  const canonicalSlugOf = new Map(
-    ROADMAP_CATEGORIES.filter((c) => c.canonicalSlug).map((c) => [c.matchedHandles[0], c.canonicalSlug!]),
-  )
-
   const l1Results: { tag: string; result: CollectionFixtureResult }[] = []
   for (const l1 of CATEGORY_TREE_L1) {
     const result = await fetchCollectionFixture(l1.collectionHandle)
     l1Results.push({ tag: l1.tag, result })
-    const routeSlug = canonicalSlugOf.get(l1.collectionHandle) ?? l1.collectionHandle
+    const routeSlug = getCategorySlug(l1)
     const live = result.exists ? '✅' : (result.error ? `❌ (${result.error})` : '❌ not found')
     const count = result.exists ? `${result.productCount}${result.countIsCapped ? '+' : ''}` : '—'
     const samples = result.sampleProducts.map((p) => p.handle).join(', ') || '—'
@@ -174,7 +169,7 @@ async function main() {
     )
   }
   lines.push('')
-  lines.push('\\* Route slug is the collection handle unless a `canonicalSlug` override exists in `lib/category-nav.ts` (only `face-masks` today).')
+  lines.push('\\* Route slug is the collection handle unless a canonical-slug override exists in `lib/category-tree.ts` (only `face-masks` today).')
   lines.push('')
 
   // ── OCC ───────────────────────────────────────────────────────────────────
@@ -226,7 +221,7 @@ async function main() {
     l1Categories: l1Results.map(({ tag, result }) => ({
       tag,
       collectionHandle: result.handle,
-      routeSlug: canonicalSlugOf.get(result.handle) ?? result.handle,
+      routeSlug: getCategorySlug({ collectionHandle: result.handle }),
       exists: result.exists,
       gid: result.gid,
       productCount: result.productCount,

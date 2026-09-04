@@ -13,6 +13,9 @@ import { CategoryPagination } from '@/components/category/CategoryPagination'
 import type { CollectionProduct, CollectionFilter } from '@/lib/shopify/types'
 import { notFound, redirect } from 'next/navigation'
 import { getSearchFacets, isAllowedFilterInput } from '@/lib/filter-registry'
+import { expandFilterInputs } from '@/lib/catalog/facet-canonicalization'
+import { applyExactFacetCounts } from '@/lib/catalog/exact-facet-counts'
+import { getVisibleFilters } from '@/lib/shopify/filters'
 import { SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE } from '@/lib/category-utils'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 
@@ -51,15 +54,11 @@ function parseFilterParam(filter?: string | string[]): string[] {
   return raw.filter(isAllowedFilterInput)
 }
 
+// Same expansion as the category rail: getSearchFacets merges duplicate
+// spellings of one concept into a single canonical option, so the query has to
+// ask for every raw value that option stands for.
 function parseFilters(filterStrings: string[]): Record<string, unknown>[] {
-  return filterStrings.flatMap((f) => {
-    try {
-      const parsed = JSON.parse(f)
-      return parsed ? [parsed] : []
-    } catch {
-      return []
-    }
-  })
+  return expandFilterInputs(filterStrings)
 }
 
 function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
@@ -136,7 +135,18 @@ export default async function SearchPage({ searchParams }: Props) {
       // Registry gate: only sources approved anywhere in the search
       // allowlist may reach the filter rail (NF3) — the Storefront
       // `productFilters` response is untrusted input.
-      productFilters = getSearchFacets(data.search.productFilters ?? [])
+      // Same two-step the category rail uses. `Query.search` facet counts are
+      // window-derived approximations, and /search is search-sourced by
+      // definition: measured live on 2026-08-26 for q="shower commode",
+      // Shopify reported "Bariatric Commode Chairs 3" for a value matching 8
+      // and "Bariatric Shower Chairs 1" for one matching 3 — 4 of the first 10
+      // Category values were wrong. Corrected here so the number beside a
+      // value is the number clicking it returns, then zero-count values (which
+      // only become visible once the counts are right) are dropped unless
+      // they are currently selected.
+      const gated = getSearchFacets(data.search.productFilters ?? [])
+      const counted = await applyExactFacetCounts(q, gated, activeFilterStrings, ['shopify', 'products'])
+      productFilters = getVisibleFilters(counted, activeFilterStrings)
     } catch {
       // A Storefront error on a deep page isn't a genuinely empty result —
       // bounce to page 1 (q/sort/filter intact) instead of rendering a false

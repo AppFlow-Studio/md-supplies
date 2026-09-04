@@ -15,16 +15,17 @@ import {
  *   clinic 6,390 · urgent-care 4,344 · home-care 3,091 · hrt-surgery 531 ·
  *   pharmacy 282 · occ-charities 106  (counts overlap).
  *
- * Five back an industry page; occ-charities is served by /solutions/occ. The
- * other seven requested pages have no approved product membership, so they
- * must not be indexed, sitemapped or linked from navigation.
+ * Five back an industry page; occ-charities is served by /solutions/occ. Of
+ * the remaining requested pages, six have no approved product membership, so
+ * they must not be indexed, sitemapped or linked from navigation; Private
+ * Practice was consolidated into Clinics & Doctor's Offices instead (301,
+ * see proxy.ts) rather than kept as a seventh unbacked page.
  */
 
 const UNBACKED = [
   'ems',
   'long-term-care',
   'physical-therapy',
-  'private-practice',
   'dental',
   'veterinary',
   'community-health',

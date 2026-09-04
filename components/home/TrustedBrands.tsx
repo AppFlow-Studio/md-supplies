@@ -74,12 +74,13 @@ function BrandLogo({ name, img, width, height }: BrandLogoProps) {
   );
 }
 
-// A single logo cell. ~22px trailing gap keeps even spacing and makes the
-// -50% marquee loop perfectly periodic.
+// A single logo cell. 40px trailing gap (DESIGN-03) keeps even spacing and
+// makes the -50% marquee loop perfectly periodic — periodicity only depends
+// on every cell sharing the same trailing margin, not on its specific value.
 function BrandCell({ hidden, ...logo }: BrandLogoProps & { hidden?: boolean }) {
   return (
     <div
-      className="mr-[22px] flex shrink-0 items-center justify-center"
+      className="mr-[40px] flex shrink-0 items-center justify-center"
       aria-hidden={hidden || undefined}
     >
       <BrandLogo {...logo} />

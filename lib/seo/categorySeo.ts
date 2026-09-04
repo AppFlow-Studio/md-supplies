@@ -96,7 +96,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
       '/category/wound-care',
       '/category/surgical-sutures/absorbable-sutures',
       '/industries/urgent-care',
-      '/industries/private-practice',
+      '/industries/clinics-doctors-offices',
       '/partners/ad-surgical',
     ],
     schemaTypes: ['BreadcrumbList', 'CollectionPage', 'FAQPage'],

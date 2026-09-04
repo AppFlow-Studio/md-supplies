@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react'
 import { Header } from '../Header'
 import type { MenuItem, SlimCollection } from '@/lib/shopify/types'
 
@@ -68,11 +68,24 @@ const MENU: MenuItem[] = [
   makeMenuItem({
     id: 'gid://shopify/MenuItem/1',
     title: 'Gloves',
+    // items intentionally does NOT drive the rendered dropdown any more —
+    // otherItems' children come from navChildren() (the same tag-derived
+    // tree as the mega-menu), not from this Shopify main-menu item's own
+    // `items` array. Left non-empty here anyway to guard against a
+    // regression back to reading it.
     items: [
       { id: 's1', title: 'Exam Gloves', url: '', items: [] },
       { id: 's2', title: 'Totally Fake Category', url: '', items: [] },
     ],
   }),
+]
+
+// Tag-derived child for "Gloves" (a real CATEGORY_TREE_L1 entry), used so
+// MENU's "Gloves" item still renders a real dropdown across the tests below
+// now that the dropdown is sourced from navChildren() instead of the menu
+// item's own (ignored) `items` array.
+const MENU_L2_NODES = [
+  { tag: 'exam-gloves', parentTag: 'gloves', productCount: 5 },
 ]
 
 afterEach(() => {
@@ -82,18 +95,18 @@ afterEach(() => {
 
 describe('Header — crawlable nav DOM (NF7)', () => {
   it('renders submenu /category/ links in the DOM without any interaction', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
     // Panels are CSS-hidden but present (desktop dropdown + mobile drawer):
     // server HTML must contain the submenu links for crawl equity.
     const subs = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
     expect(subs.length).toBeGreaterThanOrEqual(2)
-    subs.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
+    subs.forEach((l) => expect(l).toHaveAttribute('href', '/category/gloves/exam-gloves'))
   })
 })
 
 describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
   it('trigger button has aria-haspopup/aria-expanded/aria-controls and toggles on click', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
     const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
 
     expect(trigger).toHaveAttribute('aria-haspopup', 'true')
@@ -111,7 +124,7 @@ describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
   })
 
   it('opens on focus within the item and closes on Escape with focus returned to the trigger', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
     const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
 
     fireEvent.focus(trigger)
@@ -125,7 +138,7 @@ describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
 
 describe('Header — mobile drawer a11y (NF9)', () => {
   function openDrawer() {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const hamburger = screen.getByRole('button', { name: 'Toggle menu' })
     fireEvent.click(hamburger)
     return hamburger
@@ -195,10 +208,15 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
   // it: Trocars is now a distinct route nested under its parent.
 
   it('renders parent and child as two DISTINCT links, each to its own route (desktop)', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     // The categories panel is always in the DOM (CSS-toggled, see NF7 above),
-    // so its links are queryable via hidden: true without simulating hover/focus.
-    const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
+    // so its links are queryable via hidden: true without simulating a click.
+    //
+    // The parent's link is "All Surgery & Procedure" inside its own panel, not
+    // the rail row: the rail selects and the panel navigates, so that the
+    // department name and the control that opens its subcategories can never be
+    // mistaken for each other (see CategoryMegaMenu).
+    const [surgery] = screen.getAllByRole('link', { name: 'All Surgery & Procedure', hidden: true })
     const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
 
     expect(surgery).toHaveAttribute('href', '/category/surgery-procedure')
@@ -207,30 +225,63 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
     expect(trocars.getAttribute('href')).not.toBe(surgery.getAttribute('href'))
   })
 
-  it('nests the child inside its parent list item, not as a sibling of the category grid', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
-    const [surgery] = screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })
-    const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
+  it('binds the child to its parent department through ARIA, not visual proximity', () => {
+    const { container } = render(
+      <Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />,
+    )
+    // Under two-stage disclosure the child no longer sits inside the parent's
+    // own <li> — the parent is a rail item and the child lives in the detail
+    // panel that rail item controls. The relationship has to be explicit for a
+    // screen reader, so the panel names its department and the department's
+    // chevron points at the panel.
+    const railItem = container.querySelector<HTMLElement>('[data-rail-item][data-tag="surgery-procedure"]')
+    expect(railItem).not.toBeNull()
 
-    // Structural containment is what makes the relationship real for a screen
-    // reader rather than implied by visual proximity.
-    const parentItem = surgery.closest('li')
-    expect(parentItem).not.toBeNull()
-    expect(parentItem!.contains(trocars)).toBe(true)
+    const panel = container.querySelector<HTMLElement>(
+      `[aria-labelledby="${railItem!.id}"]`,
+    )
+    expect(panel).not.toBeNull()
+    expect(
+      within(panel!).getByRole('link', { name: 'Trocars & Trocar Kits', hidden: true }),
+    ).toHaveAttribute('href', '/category/trocars-trocar-kits')
+
+    // The rail row IS the disclosure control now — one target per row, so the
+    // element that opens the panel and the element that names the department
+    // are the same thing.
+    expect(railItem!.tagName).toBe('BUTTON')
+    expect(railItem).toHaveAttribute('aria-controls', panel!.id)
   })
 
   it('no longer renders the detached "Trocar Supplies" badge anywhere', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
     expect(screen.queryAllByRole('link', { name: 'Trocar Supplies', hidden: true })).toHaveLength(0)
     expect(screen.queryAllByRole('link', { name: /Trocar Supplies/, hidden: true })).toHaveLength(0)
   })
 
-  it('renders the same parent/child pair in the mobile categories panel', () => {
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} />)
-    // Desktop panel + mobile drawer both render the pair, so each label
-    // resolves to exactly two links — one per breakpoint's markup.
-    expect(screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })).toHaveLength(2)
-    expect(screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true })).toHaveLength(2)
+  it('renders the same parent/child pair in the mobile drill-down panel', () => {
+    const { container } = render(
+      <Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />,
+    )
+    const panel = container.querySelector<HTMLElement>('#mobile-cat-surgery-procedure')
+    expect(panel).not.toBeNull()
+    expect(
+      within(panel!).getByRole('link', { name: 'All Surgery & Procedure', hidden: true }),
+    ).toHaveAttribute('href', '/category/surgery-procedure')
+    expect(
+      within(panel!).getByRole('link', { name: 'Trocars & Trocar Kits', hidden: true }),
+    ).toHaveAttribute('href', '/category/trocars-trocar-kits')
+  })
+
+  it('keeps Trocars reachable without first opening any department (§28)', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={COLLECTIONS_WITH_TROCARS} l2Nodes={[]} />)
+    // The commercial requirement: opening Categories is the ONLY interaction
+    // needed to see it. The menu footer carries the link regardless of which
+    // department's panel happens to be showing, so click depth is 1.
+    const featured = screen
+      .getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
+      .filter((el) => el.closest('#nav-panel-categories') && !el.closest('[aria-labelledby]'))
+    expect(featured).toHaveLength(1)
+    expect(featured[0]).toHaveAttribute('href', '/category/trocars-trocar-kits')
   })
 
   it('omits the child when its collection is not live, without dropping the parent', () => {
@@ -238,36 +289,132 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
       ...COLLECTIONS,
       makeCollection('surgery-procedure', 'Surgery & Procedure'),
     ]
-    render(<Header menuItems={MENU_WITH_CATALOG} collections={withoutTrocars} />)
+    render(<Header menuItems={MENU_WITH_CATALOG} collections={withoutTrocars} l2Nodes={[]} />)
     expect(screen.getAllByRole('link', { name: 'Surgery & Procedure', hidden: true }).length).toBeGreaterThan(0)
     expect(screen.queryAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })).toHaveLength(0)
   })
 })
 
 describe('Header — menu slug validation (NF11)', () => {
+  // NF11's slug validation (categoryHref, via menuItemHref) now only governs
+  // a top-level menu item's OWN href — dropdown children are sourced from
+  // navChildren() instead (see the "Other nav items" comment in Header.tsx),
+  // so these exercise a plain leaf item (no `items`) rather than a sub-item.
+  const examGlovesItem = makeMenuItem({
+    id: 'gid://shopify/MenuItem/eg',
+    title: 'Exam Gloves',
+    items: [],
+  })
+  const fakeCategoryItem = makeMenuItem({
+    id: 'gid://shopify/MenuItem/fake',
+    title: 'Totally Fake Category',
+    items: [],
+  })
+
   it('keeps hrefs whose slug matches a real collection handle', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={[examGlovesItem]} collections={COLLECTIONS} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
+    expect(links.length).toBeGreaterThan(0)
     links.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
   })
 
   it('falls back to /categories for a menu title with no matching collection', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={[fakeCategoryItem]} collections={COLLECTIONS} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Totally Fake Category', hidden: true })
     expect(links.length).toBeGreaterThan(0)
     links.forEach((l) => expect(l).toHaveAttribute('href', '/categories'))
   })
 
   it('skips validation when the collections list is empty (fetch failed)', () => {
-    render(<Header menuItems={MENU} collections={[]} />)
+    render(<Header menuItems={[examGlovesItem]} collections={[]} l2Nodes={[]} />)
     const links = screen.getAllByRole('link', { name: 'Exam Gloves', hidden: true })
+    expect(links.length).toBeGreaterThan(0)
     links.forEach((l) => expect(l).toHaveAttribute('href', '/category/exam-gloves'))
+  })
+})
+
+describe('Header — otherItems dropdown is tag-derived, not menu-item-derived', () => {
+  // Regression coverage for the reported bug: the header's flat shortcut row
+  // (Mobility, Home Care, etc. — everything that isn't the CATALOG
+  // mega-dropdown) used to show a dropdown only when the Shopify main-menu's
+  // OWN item.items array was non-empty. That meant Mobility's dropdown
+  // silently depended on someone nesting links under it in Shopify Admin's
+  // Navigation editor — a second, untested data source independent of the
+  // tag-derived tree the mega-menu already used, and exactly why Mobility
+  // could show no dropdown in production while Home Care did. Both cases
+  // below assert the menu item's own `items` array is now irrelevant.
+  const NAV_COLLECTIONS: SlimCollection[] = [
+    makeCollection('mobility', 'Mobility'),
+    makeCollection('home-care', 'Home Care'),
+  ]
+
+  it('shows a dropdown from navChildren even when the Shopify menu item has zero items', () => {
+    const mobilityWithNoMenuItems = makeMenuItem({
+      id: 'gid://shopify/MenuItem/mobility',
+      title: 'Mobility',
+      type: 'COLLECTION',
+      items: [], // <- what production's Shopify main-menu has for Mobility
+    })
+    const l2Nodes = [{ tag: 'rollators', parentTag: 'mobility', productCount: 7 }]
+    render(<Header menuItems={[mobilityWithNoMenuItems]} collections={NAV_COLLECTIONS} l2Nodes={l2Nodes} />)
+
+    expect(screen.getByRole('button', { name: 'Mobility submenu' })).toBeInTheDocument()
+    const [rollatorsLink] = screen.getAllByRole('link', { name: /rollators/i, hidden: true })
+    expect(rollatorsLink).toHaveAttribute('href', '/category/mobility/rollators')
+  })
+
+  it('shows no dropdown when the tag tree has no children, even if the Shopify menu item has items', () => {
+    const homeCareWithMenuItemsButNoTagChildren = makeMenuItem({
+      id: 'gid://shopify/MenuItem/home-care',
+      title: 'Home Care',
+      type: 'COLLECTION',
+      items: [{ id: 's1', title: 'Bed Pans', url: '', items: [] }],
+    })
+    render(<Header menuItems={[homeCareWithMenuItemsButNoTagChildren]} collections={NAV_COLLECTIONS} l2Nodes={[]} />)
+
+    expect(screen.queryByRole('button', { name: 'Home Care submenu' })).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('link', { name: 'Bed Pans', hidden: true })).toHaveLength(0)
+    expect(screen.getAllByRole('link', { name: /^Home Care$/i, hidden: true }).length).toBeGreaterThan(0)
+  })
+})
+
+describe('Header — mega-dropdown subcategory children', () => {
+  const NAV_COLLECTIONS: SlimCollection[] = [
+    makeCollection('mobility', 'Mobility'),
+    makeCollection('home-care', 'Home Care'),
+    makeCollection('gloves', 'Gloves'),
+  ]
+  const L2_NODES = [
+    { tag: 'walkers', parentTag: 'mobility', productCount: 3 },
+    { tag: 'rollators', parentTag: 'mobility', productCount: 7 },
+    { tag: 'bed-pans', parentTag: 'home-care', productCount: 4 },
+  ]
+  const MENU_WITH_CATALOG_ONLY: MenuItem[] = [
+    makeMenuItem({ id: 'gid://shopify/MenuItem/catalog', title: 'Categories', type: 'CATALOG' }),
+  ]
+
+  it('renders Mobility with its top live subcategories as nested links', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={L2_NODES} />)
+    const [rollatorsLink] = screen.getAllByRole('link', { name: /rollators/i, hidden: true })
+    expect(rollatorsLink).toHaveAttribute('href', '/category/mobility/rollators')
+  })
+
+  it('renders Home Care with its subcategory too', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={L2_NODES} />)
+    const [bedPansLink] = screen.getAllByRole('link', { name: /bed pans/i, hidden: true })
+    expect(bedPansLink).toHaveAttribute('href', '/category/home-care/bed-pans')
+  })
+
+  it('degrades to a flat tile (no children) when l2Nodes is empty', () => {
+    render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={[]} />)
+    expect(screen.queryByRole('link', { name: /rollators/i, hidden: true })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /^Mobility$/i, hidden: true }).length).toBeGreaterThan(0)
   })
 })
 
 describe('Header — always-visible mobile search bar', () => {
   it('renders a real search field wired to the production /search route', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const input = screen.getByRole('searchbox', { name: /search medical supplies/i })
     expect(input).toHaveAttribute('name', 'q')
 
@@ -279,7 +426,7 @@ describe('Header — always-visible mobile search bar', () => {
   })
 
   it('shows the field below md and the icon-only trigger from md up', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const input = screen.getByRole('searchbox', { name: /search medical supplies/i })
     // The row is phone-only; desktop keeps the icon + predictive dropdown.
     const row = input.closest('form')!.parentElement!
@@ -293,7 +440,7 @@ describe('Header — always-visible mobile search bar', () => {
   })
 
   it('gives the field an accessible name rather than relying on the placeholder', () => {
-    render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     const input = screen.getByRole('searchbox', { name: /search medical supplies/i })
     expect(input).toHaveAttribute('aria-label')
     expect(input).toHaveAttribute('placeholder')
@@ -303,7 +450,7 @@ describe('Header — always-visible mobile search bar', () => {
 describe('Header — overlays reset on route change', () => {
   it('closes the drawer and releases the body scroll lock when the path changes', () => {
     mockPathname = '/category/gloves'
-    const { rerender } = render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    const { rerender } = render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
     expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(false)
@@ -313,7 +460,7 @@ describe('Header — overlays reset on route change', () => {
     // navigated but left the drawer mounted over the new page AND left the
     // body scroll-locked, so the destination could not be scrolled at all.
     mockPathname = '/'
-    rerender(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    rerender(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
 
     expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(true)
     expect(screen.getByRole('button', { name: 'Toggle menu' })).toHaveAttribute('aria-expanded', 'false')
@@ -325,11 +472,11 @@ describe('Header — overlays reset on route change', () => {
     // pathname; treating those as "left the page" would close the drawer and
     // fight the deliberate no-scroll behaviour.
     mockPathname = '/category/gloves'
-    const { rerender } = render(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    const { rerender } = render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
     expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(false)
 
-    rerender(<Header menuItems={MENU} collections={COLLECTIONS} />)
+    rerender(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(false)
   })
 })

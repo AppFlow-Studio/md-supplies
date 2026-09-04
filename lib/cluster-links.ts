@@ -40,8 +40,8 @@ export const CLUSTER_LINKS: Record<string, ClusterLinks> = {
 
   'surgical-sutures': {
     industryLinks: [
-      { slug: 'private-practice', name: 'Private Practice' },
-      { slug: 'urgent-care',      name: 'Urgent Care' },
+      { slug: 'clinics-doctors-offices', name: "Clinics & Doctor's Offices" },
+      { slug: 'urgent-care',             name: 'Urgent Care' },
     ],
     partnerLinks: [
       { slug: 'ad-surgical', name: 'AD Surgical' },

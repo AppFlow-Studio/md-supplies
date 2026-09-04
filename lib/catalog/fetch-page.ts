@@ -1,5 +1,6 @@
 import {
   fetchProductConnection,
+  fetchScopedSearchFacets,
   sanitizeSearchText,
   type ProductSource,
 } from '@/lib/category-results-source'
@@ -23,6 +24,15 @@ export type CatalogPage = {
   products: CollectionProduct[]
   /** Raw Storefront facets — NOT yet gated; callers pass them to getAllowedFacets. */
   facets: CollectionFilter[]
+  /**
+   * The `Query.search` string this page's products came from, or null for a
+   * plain collection browse.
+   *
+   * Callers need it to ask for exact per-value facet counts
+   * (lib/catalog/exact-facet-counts.ts): search-sourced facet counts from
+   * Shopify are window-derived and wrong, collection-sourced ones are exact.
+   */
+  searchQuery: string | null
   /** Authoritative count of products matching the current query. */
   total: number
   /** False when `total` is a floor (result set beyond the index cap). */
@@ -84,9 +94,22 @@ export async function fetchCatalogPage(
     })
     if (!result) return null
     const all = result.products.nodes
+    // The product fetch no longer carries facets (see fetchScopedSearchFacets);
+    // this path's facet universe is the text query's, exactly as before —
+    // membership intersection happens after the fetch and was never reflected
+    // in Shopify's facet response either.
+    const facets = await fetchScopedSearchFacets(text, opts.cacheTags)
     return {
       products: all.slice(offset, offset + opts.pageSize),
-      facets: result.products.filters ?? [],
+      facets,
+      // Deliberately null even though this path IS search-sourced. Its product
+      // set is `search(text) INTERSECT collection members`, and that
+      // intersection cannot be expressed as one Storefront query — so a
+      // per-value `totalCount` would count the text search alone and overstate
+      // every facet. Shopify's own counts here are no better, but they are not
+      // presented as exact. Keeping them is honest; computing a wrong number
+      // and calling it exact is not.
+      searchQuery: null,
       total: all.length,
       // Exact for the set we can prove: the intersection is complete within
       // the membership cap enforced in fetchCollectionProductIdSet, which
@@ -114,6 +137,7 @@ export async function fetchCatalogPage(
     return {
       products: [],
       facets: [],
+      searchQuery,
       total: index.total,
       exactTotal: index.exact,
       title: source.kind === 'tag' ? source.title : source.handle,
@@ -122,19 +146,28 @@ export async function fetchCatalogPage(
     }
   }
 
-  const result = await fetchProductConnection(source, {
-    first: opts.pageSize,
-    after: index.cursorForOffset(offset),
-    sortKey: opts.sortKey,
-    reverse: opts.reverse,
-    filters: opts.filters,
-    text: opts.text,
-  })
+  // The facet request is independent of the page request and is issued
+  // alongside it. For a search-sourced set it is its own scoped query (the
+  // product fetch cannot carry facets without losing its scope); for a plain
+  // collection browse the collection's own connection already returns exact
+  // facets, so nothing extra is fetched.
+  const [result, searchFacets] = await Promise.all([
+    fetchProductConnection(source, {
+      first: opts.pageSize,
+      after: index.cursorForOffset(offset),
+      sortKey: opts.sortKey,
+      reverse: opts.reverse,
+      filters: opts.filters,
+      text: opts.text,
+    }),
+    searchQuery ? fetchScopedSearchFacets(searchQuery, opts.cacheTags) : Promise.resolve(null),
+  ])
   if (!result) return null
 
   return {
     products: result.products.nodes,
-    facets: result.products.filters ?? [],
+    facets: searchFacets ?? result.products.filters ?? [],
+    searchQuery,
     total: index.total,
     exactTotal: index.exact,
     title: result.title,
