@@ -197,8 +197,44 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
   // Thorne Research supplements: not MDSupplies inventory; links are spam-adjacent.
   { from: '/medical-supplies-Thorne Research-VeganPro Complex Vanilla-WQEMF6Q8IH.html',               status: 410 },
   { from: '/medical-supplies-Thorne Research-VeganPro Complex Chocolate-TIH9JNRQT6.html',             status: 410 },
+  // 2026-09-01 Ahrefs export, new row (same Thorne Research vendor confirmed absent
+  // from the live catalog via Storefront search — see docs/audits/2026-09-04-p0-seo-
+  // migration-integrity/unified-targets.json).
+  { from: '/medical-supplies-Thorne Research-MediClear-SGS Chocolate-UAQUGHR6DP.html',                status: 410 },
+
+  // P0 SEO migration integrity (2026-09-04): direct historic image backlinks from
+  // the 2026-09-01 Ahrefs export (/sup/images/... — old-store product photography,
+  // never migrated). Each of these was checked against the live Storefront API
+  // (title/vendor search — see scripts/seo-migration/match-images.mts and
+  // docs/audits/2026-09-04-p0-seo-migration-integrity/image-search-results.json)
+  // with NO confident current-catalog match, so there is no live image asset to
+  // serve or redirect to. A blanket redirect to an HTML page is explicitly wrong
+  // here (a third-party <img src> would render broken regardless), so these get a
+  // definitive 410 instead of silently 404ing. See EXCEPTIONS.md in that same
+  // audit folder for the image targets that got a plausible-but-unverified
+  // candidate match instead of a 410 — those are left for Izzy's review rather
+  // than guessed at here.
+  { from: '/sup/images/free-shipping-yellow.png',                    status: 410 }, // UI badge now rendered as a component, not a static image
+  { from: '/sup/images/productImages/7CXML2268H.gif',                status: 410 }, // Dynarex tattoo needle 1203RL — not in catalog
+  { from: '/sup/images/productImages/7HQXDFWJ49.gif',                status: 410 }, // Dynarex tattoo needle 1201RL — not in catalog
+  { from: '/sup/images/productImages/FKJEB33I41.gif',                status: 410 }, // Dynarex tattoo needle 1207RL — not in catalog
+  { from: '/sup/images/productImages/K8J9ZVU2GY.gif',                status: 410 }, // Dynarex tattoo needle 1201RL round liner — not in catalog
+  { from: '/sup/images/productImages/VLPUK8KBSY.gif',                status: 410 }, // Dynarex tattoo needle 1209RL round liner — not in catalog
+  { from: '/sup/images/productImages/WEVSAQ14IE.gif',                status: 410 }, // Vision Labs requisition form — a service document, not a stocked product
+  { from: '/sup/images/productImages/WRW2B797FM.gif',                status: 410 }, // Hospira Lactated Ringers IV bag — injectable pharmaceutical, same DEA/compliance retirement as Pharmaceuticals above
+  { from: '/sup/images/productImages/ZTLE7VFV3C.gif',                status: 410 }, // Rx Destroyer drug disposal system — not in catalog
 
   // ── 301 Recoverable redirects ─────────────────────────────────────────────
+
+  // Direct legacy image backlink, Case 2 (same product category exists, image
+  // changed): the generic-anchor legacy filename carries no SKU to pick an
+  // exact vendor variant, but "Alcohol Prep Pad" is an unambiguous, low-risk
+  // commodity match confirmed live via Storefront search (Dukal, handle
+  // alcohol-prep-pad — see scripts/seo-migration/get-product-image.mts
+  // output in docs/audits/2026-09-04-p0-seo-migration-integrity/). Redirects
+  // straight to the CDN image asset (not the HTML product page) so a
+  // third-party <img src> still renders instead of breaking.
+  { from: '/sup/images/productImages/3Y3PKD2E6Q.gif',                                                to: 'https://cdn.shopify.com/s/files/1/0821/0989/0793/files/857-4000.jpg?v=1786100370', status: 301 },
 
   // Note: /category/face-coverings → /category/face-masks is handled as a subtree
   // redirect in the proxy() function below (covers both root and nested paths).
@@ -302,6 +338,52 @@ function captureAttribution(request: NextRequest, response: NextResponse): void 
   })
 }
 
+// ─── Legacy-path encoding normalization (P0 SEO migration integrity) ────────
+//
+// Old Magento/WooCommerce-style URLs encode a literal space as EITHER a raw
+// "+" or "%20" — and, per the 2026-09-01 Ahrefs export, sometimes BOTH in the
+// same URL (e.g. "…-Graham%20Medical-Drape+Sheet+White…"). The previous
+// implementation only swapped "+" for a space and never percent-decoded at
+// all, so any "%20" segment silently fell through to a 404 instead of
+// matching the REDIRECT_ENTRIES `from` strings below (which are written with
+// literal spaces). See docs/audits/2026-09-04-p0-seo-migration-integrity/.
+//
+// Order matters: "+" is swapped for a space FIRST, before any percent-
+// decoding, so a genuinely-encoded plus sign ("%2B") survives untouched by
+// that swap and is decoded to a real "+" character afterward — not
+// corrupted into a space. safeDecodeURIComponent never throws on malformed
+// input (a bare "%", a truncated "%2", or an invalid "%zz" sequence): it
+// decodes every well-formed %XX token it finds and leaves the rest exactly
+// as received, rather than 500ing the request.
+//
+// Deliberately NOT lower-cased: the 1,285-entry bulk table
+// (docs/redirects-ready.json) and the hand-written entries below preserve
+// the legacy CMS's exact mixed-case path segments, and normalizing case here
+// risks silently merging two originally-distinct paths that differed only by
+// case.
+function safeDecodeURIComponent(input: string): string {
+  try {
+    return decodeURIComponent(input)
+  } catch {
+    return input.replace(/%[0-9A-Fa-f]{2}/g, (seq) => {
+      try {
+        return decodeURIComponent(seq)
+      } catch {
+        return seq
+      }
+    })
+  }
+}
+
+function normalizeLegacyPathname(raw: string): string {
+  const spaceNormalized = raw.replace(/\+/g, ' ')
+  const decoded = safeDecodeURIComponent(spaceNormalized)
+  // Strip a single trailing slash (but not the root "/") so a legacy link hit
+  // with an extra trailing slash still matches the exact `from` strings below
+  // instead of falling through to a 404 (DEV-LAUNCH-12).
+  return decoded.replace(/^(.+)\/$/, '$1')
+}
+
 function withCsp(response: Response, nonce: string): Response {
   const isDev = process.env.NODE_ENV === 'development'
   const csp = buildCsp(nonce, isDev)
@@ -317,15 +399,7 @@ export function proxy(request: NextRequest): Response {
   const nonce = generateNonce()
 
   const raw = request.nextUrl.pathname
-  // Normalize encoded paths (+, %20) to match old Magento/WooCommerce-style URLs,
-  // and strip a single trailing slash (but not the root "/") so a legacy link
-  // hit with an extra trailing slash still matches the exact `from` strings
-  // below instead of falling through to a 404 (DEV-LAUNCH-12). Deliberately NOT
-  // lower-cased: the 1,285-entry bulk table (docs/redirects-ready.json) and the
-  // hand-written entries below preserve the legacy CMS's exact mixed-case path
-  // segments, and normalizing case here risks silently merging two originally-
-  // distinct paths that differed only by case.
-  const pathname = raw.replace(/\+/g, ' ').replace(/^(.+)\/$/, '$1')
+  const pathname = normalizeLegacyPathname(raw)
 
   // Definitive removal first: permanently-gone categories (§4.3).
   if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), nonce)
@@ -357,7 +431,13 @@ export function proxy(request: NextRequest): Response {
     if (pathname !== entry.from) continue
     if (entry.status === 410) return withCsp(new Response(null, { status: 410 }), nonce)
     const url = new URL(entry.to, request.url)
-    url.search = request.nextUrl.search
+    // Only overwrite the destination's query string when the INCOMING request
+    // actually carries one (preserves e.g. ?formularyId=... onto a category
+    // page). Some `to` values are absolute external asset URLs with their own
+    // required query (a Shopify CDN image's `?v=` cache-busting param) — an
+    // unconditional overwrite would silently strip that off a query-less
+    // legacy image request.
+    if (request.nextUrl.search) url.search = request.nextUrl.search
     return withCsp(NextResponse.redirect(url, 301), nonce)
   }
 

@@ -31,6 +31,7 @@ import type { NextRequest } from 'next/server'
 import { proxy, REDIRECT_ENTRIES } from '../proxy'
 import productRedirects from '../docs/redirects-ready.json'
 import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES, getCategorySlug } from '@/lib/category-tree'
+import fixtureTargets from './fixtures/seo-migration-targets.json'
 
 const PRODUCT_ROWS = productRedirects as { from: string; to: string }[]
 
@@ -886,5 +887,193 @@ describe('proxy — first-touch gclid/utm attribution capture (DEV-LAUNCH-12)', 
   it('does not overwrite an existing capture (first-touch, not last-touch)', () => {
     const res = proxy(req('/category/gloves', '?gclid=second-click', ['md_attr']))
     expect(res.headers.get('Set-Cookie')).toBeNull()
+  })
+})
+
+// ─── P0 SEO migration integrity (2026-09-04) ────────────────────────────────
+//
+// Follow-up to T4: a new Ahrefs export (2026-09-01) exposed direct historic
+// image backlinks AND a mixed-encoding gap in the previous normalization —
+// it swapped "+" for a space but never percent-decoded at all, so any
+// legacy URL using "%20" (or, per the real export, "%20" and "+" together in
+// the SAME URL) silently 404'd instead of matching REDIRECT_ENTRIES. See
+// docs/audits/2026-09-04-p0-seo-migration-integrity/ for the source CSVs,
+// the unified target inventory, and the Izzy exceptions handoff.
+describe('proxy — encoded-path hardening (P0 SEO migration integrity)', () => {
+  it('%20 alone decodes and matches (previously fell through to a 404)', () => {
+    const res = proxy(req('/medical-supply-store/Pharmaceuticals/Medication%20Aids/Narcotics%20Storage-GRF8SCRI15.html'))
+    expect(res.status).toBe(410)
+  })
+
+  it('+ alone still matches (legacy space convention, pre-existing behavior preserved)', () => {
+    const res = proxy(req('/medical-supplies-Thorne+Research-VeganPro+Complex+Vanilla-WQEMF6Q8IH.html'))
+    expect(res.status).toBe(410)
+  })
+
+  it('mixed %20 and + in the SAME URL decodes and matches (real 2026-09-01 export row)', () => {
+    const res = proxy(req('/medical-supplies-Graham%20Medical-Drape+Sheet+White+40+x+60+2-Ply-XVUAKHW2KF.html'))
+    expect(res.status).toBe(301)
+    expect(res.headers.get('Location')).toContain('/category/exam-room')
+  })
+
+  it('%2B decodes to a literal "+" and is NOT corrupted into a space', () => {
+    const withRealPlus = req('/medical-supplies-C%2BVitamin-Sample-ABC123.html')
+    const withSpace = req('/medical-supplies-C Vitamin-Sample-ABC123.html')
+    // Neither is a real REDIRECT_ENTRIES row, so both pass through — the
+    // point of this test is that they do NOT collide with each other or
+    // throw, proving %2B decodes to "+" rather than a space.
+    expectPassThrough(proxy(withRealPlus))
+    expectPassThrough(proxy(withSpace))
+  })
+
+  it('legitimate encoded query-string plus is untouched by pathname normalization', () => {
+    // The + → space swap only ever runs on the pathname, never on the query
+    // string, so a real "+" in a query value (e.g. a formulary ID) is passed
+    // through to the destination verbatim rather than being space-normalized.
+    const res = proxy(req('/medical-supply-store/Face-Masks-CYR82C7EBL.html', '?formularyId=A%2BB'))
+    expect(res.status).toBe(301)
+    expect(res.headers.get('Location')).toContain('formularyId=A%2BB')
+  })
+
+  it('malformed percent-encoding never throws (bare "%")', () => {
+    expect(() => proxy(req('/some-random-page%'))).not.toThrow()
+    expectPassThrough(proxy(req('/some-random-page%')))
+  })
+
+  it('malformed percent-encoding never throws (truncated "%2")', () => {
+    expect(() => proxy(req('/some-random-page%2'))).not.toThrow()
+    expectPassThrough(proxy(req('/some-random-page%2')))
+  })
+
+  it('malformed percent-encoding never throws (invalid hex "%zz")', () => {
+    expect(() => proxy(req('/some-random-page%zz'))).not.toThrow()
+    expectPassThrough(proxy(req('/some-random-page%zz')))
+  })
+
+  it('trailing slash still normalizes on a %20-encoded match', () => {
+    const res = proxy(req('/medical-supply-store/Pharmaceuticals/Medication%20Aids/Narcotics%20Storage-GRF8SCRI15.html/'))
+    expect(res.status).toBe(410)
+  })
+
+  it('query-string variants of the same %20/+ path reach the same destination without a duplicate indexable page', () => {
+    const noQuery = proxy(req('/medical-supply-store/Face-Masks-CYR82C7EBL.html'))
+    const withQuery = proxy(req('/medical-supply-store/Face-Masks-CYR82C7EBL.html', '?formularyId=S4MBN1JH2L'))
+    expect(noQuery.status).toBe(301)
+    expect(withQuery.status).toBe(301)
+    expect(new URL(noQuery.headers.get('Location')!).pathname).toBe(
+      new URL(withQuery.headers.get('Location')!).pathname,
+    )
+  })
+
+  it('case-sensitive legacy path segments are preserved, not merged by lowercasing', () => {
+    // "Medication Aids" (capital M/A) is the real legacy segment; an
+    // all-lowercase variant is NOT a registered entry and must not
+    // accidentally match via case-folding.
+    const res = proxy(req('/medical-supply-store/pharmaceuticals/medication%20aids/narcotics%20storage-GRF8SCRI15.html'))
+    expectPassThrough(res)
+  })
+})
+
+describe('proxy — direct legacy image backlinks (2026-09-01 Ahrefs export)', () => {
+  it('confidently-retired product images return a true 410, not a redirect to an HTML page', () => {
+    const retired = [
+      '/sup/images/productImages/7CXML2268H.gif',
+      '/sup/images/productImages/7HQXDFWJ49.gif',
+      '/sup/images/productImages/FKJEB33I41.gif',
+      '/sup/images/productImages/K8J9ZVU2GY.gif',
+      '/sup/images/productImages/VLPUK8KBSY.gif',
+      '/sup/images/productImages/WEVSAQ14IE.gif',
+      '/sup/images/productImages/WRW2B797FM.gif',
+      '/sup/images/productImages/ZTLE7VFV3C.gif',
+    ]
+    for (const path of retired) {
+      const res = proxy(req(path))
+      expect(res.status, path).toBe(410)
+      expect(res.headers.get('Location'), path).toBeNull()
+    }
+  })
+
+  it('a retired site-wide UI badge image returns 410, not a redirect to a rendered page', () => {
+    const res = proxy(req('/sup/images/free-shipping-yellow.png'))
+    expect(res.status).toBe(410)
+  })
+
+  // Case 2 recovery (2026-09-04): confident, low-risk category match —
+  // redirects straight to the live CDN image asset, not the HTML product
+  // page, so a third-party <img src> still renders instead of breaking.
+  it('a confidently-matched product image redirects directly to the live CDN image asset (not an HTML page)', () => {
+    const res = proxy(req('/sup/images/productImages/3Y3PKD2E6Q.gif'))
+    expect(res.status).toBe(301)
+    const location = res.headers.get('Location')!
+    expect(location).toBe('https://cdn.shopify.com/s/files/1/0821/0989/0793/files/857-4000.jpg?v=1786100370')
+    expect(new URL(location).pathname).toMatch(/\.(jpg|jpeg|png|gif|webp)$/)
+  })
+
+  it('the CDN image redirect keeps its own cache-busting query string when the incoming request has none', () => {
+    // Regression guard: the shared REDIRECT_ENTRIES dispatch loop used to
+    // unconditionally overwrite the destination's query string with the
+    // (empty) incoming one, which would have silently stripped the `?v=`
+    // param off this absolute CDN URL.
+    const res = proxy(req('/sup/images/productImages/3Y3PKD2E6Q.gif'))
+    expect(res.headers.get('Location')).toContain('?v=1786100370')
+  })
+
+  it('spam/off-topic and unverified image targets are left alone (no invented relevance)', () => {
+    // These either have no product-identifying signal (spam anchor text) or
+    // no confident current-catalog match — see EXCEPTIONS.md. They must NOT
+    // redirect to an unrelated category/homepage just to preserve link
+    // equity, so the current pass-through (ultimately a 404) is correct.
+    const unresolved = [
+      '/sup/images/IIUR93PAQ6.gif',
+      '/sup/images/JD8EJSY7CV.gif',
+      '/sup/images/productImages/5K5N96KZBM.gif',
+      '/sup/images/productImages/XMP2E37F1N.gif',
+      '/sup/images/productImages/XYZPG89DSJ.gif',
+    ]
+    for (const path of unresolved) {
+      expectPassThrough(proxy(req(path)))
+    }
+  })
+})
+
+describe('proxy — fixture-driven regression sweep (exact 2026-04-26 + 2026-09-01 Ahrefs targets)', () => {
+  // Fixtures are generated from the two source CSVs (not hand-copied) by
+  // scripts/seo-migration/build-inventory.mts — see
+  // docs/audits/2026-09-04-p0-seo-migration-integrity/unified-inventory.md
+  // for the full classification and rationale behind every row.
+  const fixtures = fixtureTargets as {
+    testCaseId: string
+    pathAndQuery: string
+    type: string
+    expectedStatus: number
+    expectedLocationContains: string | null
+    passthrough?: boolean
+  }[]
+
+  it('loaded a non-trivial fixture set covering both exports', () => {
+    expect(fixtures.length).toBe(51)
+  })
+
+  for (const fx of fixtures) {
+    it(`${fx.testCaseId} [${fx.type}] ${fx.pathAndQuery} → ${fx.passthrough ? 'pass-through' : fx.expectedStatus}`, () => {
+      const [pathname, search] = fx.pathAndQuery.split(/\?([\s\S]*)/)
+      const res = proxy(req(pathname, search ? `?${search}` : ''))
+      if (fx.passthrough) {
+        expectPassThrough(res)
+        return
+      }
+      expect(res.status).toBe(fx.expectedStatus)
+      if (fx.expectedLocationContains) {
+        expect(res.headers.get('Location')).toContain(fx.expectedLocationContains)
+      }
+    })
+  }
+
+  it('no fixture 301 target is itself a `from` key (no chains)', () => {
+    const froms = new Set(REDIRECT_ENTRIES.map((e) => e.from))
+    for (const fx of fixtures) {
+      if (fx.expectedStatus !== 301 || !fx.expectedLocationContains) continue
+      expect(froms.has(fx.expectedLocationContains)).toBe(false)
+    }
   })
 })

@@ -1,0 +1,688 @@
+[
+  {
+    "pathAndQuery": "/sup/images/free-shipping-yellow.png",
+    "query": "",
+    "candidates": []
+  },
+  {
+    "pathAndQuery": "/sup/images/IIUR93PAQ6.gif",
+    "query": "",
+    "candidates": []
+  },
+  {
+    "pathAndQuery": "/sup/images/JD8EJSY7CV.gif",
+    "query": "",
+    "candidates": []
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/15ULWMDK6A.gif",
+    "query": "safety goggles side shields",
+    "candidates": [
+      {
+        "title": "BATHTUB SAFETY RAIL TUB-GUARD LUMEX 1 EA (69623A)",
+        "handle": "bathtub-safety-rail-tub-guard-lumex-1-ea-69623a",
+        "vendor": "Graham Field",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "BATHTUB SAFETY RAIL-RETAIL LUMEX 1 EA",
+        "handle": "bathtub-safety-rail-retail-lumex-1-ea",
+        "vendor": "Graham Field",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "BATHTUB RAIL SURE SAFE LUMEX",
+        "handle": "bathtub-rail-sure-safe-lumex",
+        "vendor": "Graham Field",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "Bathtub Shower Grab Bar Safety Rail, Parallel",
+        "handle": "bathtub-shower-grab-bar-safety-rail-parallel",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/uc9oovsh27lql4rl5g0s.jpg?v=1786100694"
+      },
+      {
+        "title": "CSR Wraps - 15in x 15in - 1000/cs.",
+        "handle": "csr-wraps-15in-x-15in-1000-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": null
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/3Y3PKD2E6Q.gif",
+    "query": "alcohol prep pads",
+    "candidates": [
+      {
+        "title": "Alcohol Prep Pad, Medium (857-4000)",
+        "handle": "alcohol-prep-pad",
+        "vendor": "Dukal",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/857-4000.jpg?v=1786100370"
+      },
+      {
+        "title": "Alcohol Prep Pad - Sterile, Medium, Case (1113UB-24)",
+        "handle": "alcohol-prep-pad-sterile-medium-100-24cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/1113UB-24_alcohol-prep-pads_BX-DM-n-pad_72dpi_f315785d-ae40-43a1-80df-fe1165a7e094.png?v=1786100381"
+      },
+      {
+        "title": "Alcohol Prep Pad, Medium, 2-Ply, Case (KEN 6818-)",
+        "handle": "alcohol-prep-pad-medium-2-ply",
+        "vendor": "MedPlus",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/6818.jpg?v=1786100371"
+      },
+      {
+        "title": "Alcohol Prep Pad - Sterile, Large, Case (1116)",
+        "handle": "alcohol-prep-pad-sterile-large-10-100-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/lukcgcsmo9p6mwdrhpls.png?v=1786100378"
+      },
+      {
+        "title": "Alcohol Prep Pad, 2-Ply, Medium, Sterile (853)",
+        "handle": "sterile-alcohol-pad-2-ply-medium",
+        "vendor": "Dukal",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/853_eb0fbbea-05be-4d03-84ca-0bbf60eb1ffc.jpg?v=1786101483"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/53DADEVYIN.gif",
+    "query": "PVC commode chair",
+    "candidates": [
+      {
+        "title": "Bariatric Drop Arm Bedside Commode Chair (11135-1)",
+        "handle": "bariatric-drop-arm-bedside-commode-chair",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/qw1f5bwar1fci2hwqn6k.jpg?v=1786100607"
+      },
+      {
+        "title": "BARIATRIC FOLDING COMMODE LUMEX",
+        "handle": "bariatric-folding-commode-lumex",
+        "vendor": "Graham Field",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "Aluminum Shower Commode Transport Chair",
+        "handle": "aluminum-shower-commode-transport-chair",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/hlqcnwzqwyikjtoxqody.jpg?v=1786100456"
+      },
+      {
+        "title": "Aluminum Shower Mobile Commode Transport Chair",
+        "handle": "aluminum-shower-mobile-commode-transport-chair",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/ekhpwhv4pqvgklkjuuqi.jpg?v=1786100457"
+      },
+      {
+        "title": "Aluminum Bariatric Rehab Shower Commode Chair with Two Rear-Locking Casters (NRS185008)",
+        "handle": "aluminum-bariatric-rehab-shower-commode-chair-with-two-rear-locking-casters",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/gek0avmvekci579w90kv.jpg?v=1786100448"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/5K5N96KZBM.gif",
+    "query": "",
+    "candidates": []
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/7CXML2268H.gif",
+    "query": "Dynarex tattoo needle 1203RL",
+    "candidates": [
+      {
+        "title": "20cc Syringe, Luer Lock, Case (6991)",
+        "handle": "syringe-luer-lock-20-cc-10-50-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/c7tnpnzefpbo62bardhj.png?v=1786101547"
+      },
+      {
+        "title": "QA RX Exempt Dynarex Insulin Syringe",
+        "handle": "qa-rx-exempt-dynarex",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/76297-001-01.jpg?v=1786099590"
+      },
+      {
+        "title": "Air-Water Syringe Tips, Case",
+        "handle": "air-water-syringe-tips-blue-40-250-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/fjibgrymi1nj3dtlltdd.jpg?v=1786100357"
+      },
+      {
+        "title": "Dead End Caps Luer Lock, Red/Blue, Case (7057)",
+        "handle": "dead-end-caps-luer-lock-red-blue-10-100-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/e6owwn7cgqnqslpmvvvf.png?v=1786100883"
+      },
+      {
+        "title": "1cc 25G x 5/8\", Luer-Lok, Detachable Needle, Case (305780)",
+        "handle": "1cc-25g-x-5-8-luer-lok-detachable-needle-case-305780",
+        "vendor": "Medchain",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/BEC_305757_6d5fab39-ec20-48fa-a943-e3ce4cb9c795.jpg?v=1786099687"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/7HQXDFWJ49.gif",
+    "query": "Dynarex tattoo needle 1201RL",
+    "candidates": [
+      {
+        "title": "20cc Syringe, Luer Lock, Case (6991)",
+        "handle": "syringe-luer-lock-20-cc-10-50-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/c7tnpnzefpbo62bardhj.png?v=1786101547"
+      },
+      {
+        "title": "QA RX Exempt Dynarex Insulin Syringe",
+        "handle": "qa-rx-exempt-dynarex",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/76297-001-01.jpg?v=1786099590"
+      },
+      {
+        "title": "Air-Water Syringe Tips, Case",
+        "handle": "air-water-syringe-tips-blue-40-250-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/fjibgrymi1nj3dtlltdd.jpg?v=1786100357"
+      },
+      {
+        "title": "Dead End Caps Luer Lock, Red/Blue, Case (7057)",
+        "handle": "dead-end-caps-luer-lock-red-blue-10-100-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/e6owwn7cgqnqslpmvvvf.png?v=1786100883"
+      },
+      {
+        "title": "Sterilization Pouches, 12\" x 16\", Case (4466)",
+        "handle": "sterilization-pouches-12-x-16-5-200-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/gzfydlttzc3zbts4g8hb.png?v=1786101497"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/979PEK3F66.gif",
+    "query": "pediatric mobility chair",
+    "candidates": [
+      {
+        "title": "Aluminum Shower Mobile Commode Transport Chair",
+        "handle": "aluminum-shower-mobile-commode-transport-chair",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/ekhpwhv4pqvgklkjuuqi.jpg?v=1786100457"
+      },
+      {
+        "title": "Bathroom Safety Shower Chair with Folding Back",
+        "handle": "bathroom-safety-shower-chair-with-folding-back",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/wulspsqztbxkud5uesqt.jpg?v=1786100681"
+      },
+      {
+        "title": "Aluminum Shower Commode Transport Chair",
+        "handle": "aluminum-shower-commode-transport-chair",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/hlqcnwzqwyikjtoxqody.jpg?v=1786100456"
+      },
+      {
+        "title": "Bariatric Drop Arm Bedside Commode Chair (11135-1)",
+        "handle": "bariatric-drop-arm-bedside-commode-chair",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/qw1f5bwar1fci2hwqn6k.jpg?v=1786100607"
+      },
+      {
+        "title": "Battery Powered Electric Patient Lift with Rechargeable and Removable Battery, No Wall Mount",
+        "handle": "battery-powered-electric-patient-lift-with-rechargeable-and-removable-battery-no-wall-mount",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/mjeexgbdslcunz8eeur6_5db722f7-dd44-43a2-aff2-e0f871b2adb0.jpg?v=1786100698"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/FF2KL9HABG.gif",
+    "query": "MedPride hydrogel wound dressing",
+    "candidates": [
+      {
+        "title": "Adhesive Bandage - Plastic X-Lg. - 2\" x 4.5\" - Sterile - 24/50/cs.",
+        "handle": "adhesive-bandage-plastic-x-lg-2-x-4-5-sterile-24-50-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/MPR-63201.jpg?v=1786100202"
+      },
+      {
+        "title": "Adhesive Bandage - Sheer Spot 7/8\", Sterile - 48/100/cs.",
+        "handle": "adhesive-bandage-sheer-spot-7-8-sterile-48-100-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/adhesive-bandage-sheer-spot-7-8-sterile-48-100-cs__1.jpg?v=1786100209"
+      },
+      {
+        "title": "Adhesive Bandage - Fabric Fingertip, Sterile - 24/100/cs",
+        "handle": "adhesive-bandage-fabric-fingertip-1-75-x-2-sterile-24-100-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/MPR-63121.jpg?v=1786100197"
+      },
+      {
+        "title": "Adhesive Bandage - Fabric 3\" x 3\", 4 Wing, Sterile - 24/50/cs.",
+        "handle": "adhesive-bandage-fabric-3-x-3-4-wing-sterile-24-50-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/MPR-63141.jpg?v=1786100195"
+      },
+      {
+        "title": "Adhesive Bandage - Fabric, Sterile - 24/50/cs",
+        "handle": "adhesive-bandage-fabric-2-x-4-5-sterile-24-50-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/MPR-63103.jpg?v=1786100192"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/FKJEB33I41.gif",
+    "query": "Dynarex tattoo needle 1207RL",
+    "candidates": [
+      {
+        "title": "20cc Syringe, Luer Lock, Case (6991)",
+        "handle": "syringe-luer-lock-20-cc-10-50-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/c7tnpnzefpbo62bardhj.png?v=1786101547"
+      },
+      {
+        "title": "QA RX Exempt Dynarex Insulin Syringe",
+        "handle": "qa-rx-exempt-dynarex",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/76297-001-01.jpg?v=1786099590"
+      },
+      {
+        "title": "Dead End Caps Luer Lock, Red/Blue, Case (7057)",
+        "handle": "dead-end-caps-luer-lock-red-blue-10-100-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/e6owwn7cgqnqslpmvvvf.png?v=1786100883"
+      },
+      {
+        "title": "IV Administration Set - 15 Drop, 78\", 1 Injection Site, 50/bx",
+        "handle": "iv-administration-set-15-drop-78-1-injection-site-50-bx",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/rbkwstacimzbvlnv1oi0.jpg?v=1786101196"
+      },
+      {
+        "title": "Air-Water Syringe Tips, Case",
+        "handle": "air-water-syringe-tips-blue-40-250-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/fjibgrymi1nj3dtlltdd.jpg?v=1786100357"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/K8J9ZVU2GY.gif",
+    "query": "Dynarex tattoo needle 1201RL round liner",
+    "candidates": [
+      {
+        "title": "20cc Syringe, Luer Lock, Case (6991)",
+        "handle": "syringe-luer-lock-20-cc-10-50-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/c7tnpnzefpbo62bardhj.png?v=1786101547"
+      },
+      {
+        "title": "Dead End Caps Luer Lock, Red/Blue, Case (7057)",
+        "handle": "dead-end-caps-luer-lock-red-blue-10-100-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/e6owwn7cgqnqslpmvvvf.png?v=1786100883"
+      },
+      {
+        "title": "QA RX Exempt Dynarex Insulin Syringe",
+        "handle": "qa-rx-exempt-dynarex",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/76297-001-01.jpg?v=1786099590"
+      },
+      {
+        "title": "Sterilization Pouches, 12\" x 16\", Case (4466)",
+        "handle": "sterilization-pouches-12-x-16-5-200-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/gzfydlttzc3zbts4g8hb.png?v=1786101497"
+      },
+      {
+        "title": "Air-Water Syringe Tips, Case",
+        "handle": "air-water-syringe-tips-blue-40-250-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/fjibgrymi1nj3dtlltdd.jpg?v=1786100357"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/MXCUT572QP.gif",
+    "query": "vinyl gloves",
+    "candidates": [
+      {
+        "title": "8 Mil  Black Extra Extra Large - 10/100/cs",
+        "handle": "8-mil-black-extra-extra-large-10-100-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/MPR-51567.jpg?v=1786099969"
+      },
+      {
+        "title": "AloeTex Latex Gloves w/ Aloe, Green, Powder-Free, Case",
+        "handle": "aloetex-latex-gloves-w-aloe-x-small-green-powder-free-10-100-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/iyptkgmvaazrmveerckp.jpg?v=1786100443"
+      },
+      {
+        "title": "8 Mil  Black Extra Large- 10/100/cs",
+        "handle": "8-mil-black-extra-large-10-100-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/MPR-51566.jpg?v=1786099971"
+      },
+      {
+        "title": "8 Mil Nitrile Industrial Gloves, Diamond Textured, Green, Large (8103)",
+        "handle": "8-mil-nitrile-industrial-gloves-diamond-textured-green-large-8103",
+        "vendor": "First Glove",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/8101.2.jpg?v=1786099984"
+      },
+      {
+        "title": "8 Mil Nitrile Industrial Gloves, Diamond Textured",
+        "handle": "8-mil-nitrile-industrial-gloves-diamond-textured-black-small-9101",
+        "vendor": "First Glove",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/9101.1_394ce428-5f66-4e08-96e9-2e451d010985.jpg?v=1786099979"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/PREGWANPVK.gif",
+    "query": "disposable scalpels",
+    "candidates": [
+      {
+        "title": "QA Disposable Scalpels Sterile",
+        "handle": "qa-min-order-700",
+        "vendor": "MedPro",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "4.5mm Disposable Blunt Tip, Trocar Combo Kit (B2083C)",
+        "handle": "4-5mm-disposable-blunt-tip-trocar-combo-kit-b2083c",
+        "vendor": "Trocar Supplies",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/B2030.1.jpg?v=1786100162"
+      },
+      {
+        "title": "Disposable Blunt Tip, Trocar Combo Kit (B2080C)",
+        "handle": "3-5mm-disposable-blunt-tip-trocar-combo-kit-b2080c",
+        "vendor": "Trocar Supplies",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/B2087.jpg?v=1787171330"
+      },
+      {
+        "title": "3.2mm Stainless Steel Disposable Trocar Kit, Small Gloves, Case of 16 (3.2SSSG)",
+        "handle": "3-2mm-stainless-steel-disposable-trocar-kit-small-gloves-19130sg",
+        "vendor": "Kadara Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/19130_4a8d8cc9-9548-40d2-bcda-8acc50e1dd5a.jpg?v=1786099722"
+      },
+      {
+        "title": "4.5mm ABS Plastic Disposable Trocar Kit, Small Gloves, Case of 16 (19200SG)",
+        "handle": "4-5mm-abs-plastic-disposable-trocar-kit-small-gloves-case-of-16-19200sg",
+        "vendor": "Kadara Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/19200_748377b4-3238-4467-b778-f4c236b38dd3.jpg?v=1786100160"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/RQZYQP73KJ.gif",
+    "query": "pharmaceutical spatula",
+    "candidates": [
+      {
+        "title": "Sterilization Pouches 5-1/4\" x 11\"",
+        "handle": "sterilization-pouches-5-1-4-x-11",
+        "vendor": "Dukal",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "Foot Stool, Chrome (4351)",
+        "handle": "foot-stool-chrome",
+        "vendor": "Dukal",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/4351.webp?v=1786101053"
+      },
+      {
+        "title": "Sterilization Pouches 5.25 x 10",
+        "handle": "sterilization-pouches-5-25-x-10",
+        "vendor": "Dukal",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "Sterilization Pouches 7-1/2\" x 13\"",
+        "handle": "sterilization-pouches-7-1-2-x-13",
+        "vendor": "Dukal",
+        "availableForSale": true,
+        "image": null
+      },
+      {
+        "title": "Sterilization Pouches 3-1/4\" x 12\"",
+        "handle": "sterilization-pouches-3-1-4-x-12",
+        "vendor": "Dukal",
+        "availableForSale": true,
+        "image": null
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/VLPUK8KBSY.gif",
+    "query": "Dynarex tattoo needle 1209RL round liner",
+    "candidates": [
+      {
+        "title": "20cc Syringe, Luer Lock, Case (6991)",
+        "handle": "syringe-luer-lock-20-cc-10-50-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/c7tnpnzefpbo62bardhj.png?v=1786101547"
+      },
+      {
+        "title": "Dead End Caps Luer Lock, Red/Blue, Case (7057)",
+        "handle": "dead-end-caps-luer-lock-red-blue-10-100-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/e6owwn7cgqnqslpmvvvf.png?v=1786100883"
+      },
+      {
+        "title": "QA RX Exempt Dynarex Insulin Syringe",
+        "handle": "qa-rx-exempt-dynarex",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/76297-001-01.jpg?v=1786099590"
+      },
+      {
+        "title": "Air-Water Syringe Tips, Case",
+        "handle": "air-water-syringe-tips-blue-40-250-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/fjibgrymi1nj3dtlltdd.jpg?v=1786100357"
+      },
+      {
+        "title": "Sterilization Pouches, 12\" x 16\", Case (4466)",
+        "handle": "sterilization-pouches-12-x-16-5-200-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/gzfydlttzc3zbts4g8hb.png?v=1786101497"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/WEVSAQ14IE.gif",
+    "query": "requisition form",
+    "candidates": []
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/WRW2B797FM.gif",
+    "query": "lactated ringers IV bag",
+    "candidates": [
+      {
+        "title": "Drawstring Bags - Black, 200/Case (2385217)",
+        "handle": "drawstring-bags-black-200-case-2385217",
+        "vendor": "DDays",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/BlackDrawstringBags.jpg?v=1786196817"
+      },
+      {
+        "title": "Oxygen Cylinder Carry Bag, Horizontal Bag",
+        "handle": "oxygen-cylinder-carry-bag-horizontal-bag",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/x7crscn5nxdbdrmds61u_ff391b20-cab8-4fa1-acde-0bacbfd53c50.jpg?v=1786101324"
+      },
+      {
+        "title": "Oxygen Cylinder Carry Bag, Vertical Horizontal or Backpack Bag",
+        "handle": "oxygen-cylinder-carry-bag-vertical-horizontal-or-backpack-bag",
+        "vendor": "Drive Medical",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/fr4qm1jau9flmjyqjd3u_3a279184-0b2c-403d-b386-679aa12add05.jpg?v=1786101327"
+      },
+      {
+        "title": "Machine Bag, 5\" x 5\", 16/500/cs",
+        "handle": "machine-bag-5-x-5-16-500-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/kkxsfvzlkrgbrsz01oux.png?v=1786101298"
+      },
+      {
+        "title": "MedPride, Soiled Linen Bags, 40\" x 48\", Blue (MPR-96254)",
+        "handle": "blue-soiled-linen-bags-40-x-48-250-cs",
+        "vendor": "Shield Line",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/MPR-96253_468abed5-5abb-431a-a990-8138ce110491.png?v=1786100791"
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/XMP2E37F1N.gif",
+    "query": "",
+    "candidates": []
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/XYZPG89DSJ.gif",
+    "query": "life jacket",
+    "candidates": [
+      {
+        "title": "Adult Life Jackets, 4-Pack in Carry Case, 2 Blue / 2 Red (20-002-4-PACK)",
+        "handle": "kemp-usa-life-jackets-4-pack-in-carry-case-2-blue-2-red-adult",
+        "vendor": "Kemp USA",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/Adult4Pack.png?v=1786101269"
+      },
+      {
+        "title": "Adult Life Jacket, Red & Black (20-002-ADULT-RED)",
+        "handle": "kemp-usa-life-jacket-red-black-adult",
+        "vendor": "Kemp USA",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/20-002Adult.Red.png?v=1786101267"
+      },
+      {
+        "title": "6' Umbrella, With LIFE GUARD Logo, Red (12-004-RED)",
+        "handle": "6-umbrella-with-life-guard-logo-red-12-004-red",
+        "vendor": "Kemp USA",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/LGLOGO_e51b3c87-7a8d-4c9a-9863-73fa8eb3ddd6.jpg?v=1786100166"
+      },
+      {
+        "title": "5.5' Wind Umbrella, with LIFE GUARD Logo, Silver and Red (12-003-RED-GRD)",
+        "handle": "kemp-usa-5-5-wind-umbrella-with-life-guard-logo-silver-red",
+        "vendor": "Kemp USA",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/12-003_bdba0c61-4899-4f5b-96cd-55621db1b845.png?v=1786101238"
+      },
+      {
+        "title": "6' Viny Umbrella, Red (12-010-RED)",
+        "handle": "kemp-usa-6-viny-umbrella-solid-color-red",
+        "vendor": "Kemp USA",
+        "availableForSale": true,
+        "image": null
+      }
+    ]
+  },
+  {
+    "pathAndQuery": "/sup/images/productImages/ZTLE7VFV3C.gif",
+    "query": "Rx Destroyer drug disposal",
+    "candidates": [
+      {
+        "title": "Biohazard Bags, with Ties, 24\" x 25.6\", 500 Bags (43200)",
+        "handle": "biohazard-bag-39-x-33-100-bags-43203-copy",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/43200.png?v=1786100746"
+      },
+      {
+        "title": "Biohazard Bag, 39” x 33”, 100 Bags (43203)",
+        "handle": "biohazard-bag-39-x-33-100-bags-43203",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/43203.png?v=1786100745"
+      },
+      {
+        "title": "PILL CRUSHER AND SPLITTER LUMEX",
+        "handle": "pill-crusher-and-splitter-lumex",
+        "vendor": "Graham Field",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/pill-crusher-and-splitter-lumex__1.jpg?v=1786101387"
+      },
+      {
+        "title": "Fluid Solidifier, 1.7 oz. (48 g), 96pc/cs",
+        "handle": "fluid-solidifier-1-7-oz-48-g-96pc-cs",
+        "vendor": "Dynarex",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/vggoonwzrwipxp9vcgh5.png?v=1786101024"
+      },
+      {
+        "title": "File Storage Drawers, Pack of 4 (50042)",
+        "handle": "file-storage-drawers-pack-of-4-50042",
+        "vendor": "Rx Systems",
+        "availableForSale": true,
+        "image": "https://cdn.shopify.com/s/files/1/0821/0989/0793/files/50042.1.jpg?v=1786101020"
+      }
+    ]
+  }
+]

@@ -1,0 +1,432 @@
+[
+  {
+    "testCaseId": "A-906546d3",
+    "pathAndQuery": "/articles/types-of-needles.html",
+    "type": "article",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/needles-syringes",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-721886e6",
+    "pathAndQuery": "/articles/types-of-sutures.html",
+    "type": "article",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/surgical-sutures",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-8c195025",
+    "pathAndQuery": "/all-categories.html",
+    "type": "category",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/categories",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "B-3e405d9c",
+    "pathAndQuery": "/sup/images/free-shipping-yellow.png",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-153b819a",
+    "pathAndQuery": "/sup/images/IIUR93PAQ6.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "no-recovery-spam"
+  },
+  {
+    "testCaseId": "B-87030620",
+    "pathAndQuery": "/sup/images/JD8EJSY7CV.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "no-recovery-spam"
+  },
+  {
+    "testCaseId": "B-abe9b93e",
+    "pathAndQuery": "/sup/images/productImages/15ULWMDK6A.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-c9db2989",
+    "pathAndQuery": "/sup/images/productImages/3Y3PKD2E6Q.gif",
+    "type": "image",
+    "expectedStatus": 301,
+    "expectedLocationContains": "cdn.shopify.com",
+    "passthrough": false,
+    "classification": "preserve-301-image"
+  },
+  {
+    "testCaseId": "B-8978f67b",
+    "pathAndQuery": "/sup/images/productImages/53DADEVYIN.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-cb512a55",
+    "pathAndQuery": "/sup/images/productImages/5K5N96KZBM.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "no-recovery-spam"
+  },
+  {
+    "testCaseId": "B-3747032a",
+    "pathAndQuery": "/sup/images/productImages/7CXML2268H.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-27ebc433",
+    "pathAndQuery": "/sup/images/productImages/7HQXDFWJ49.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-7ec6f331",
+    "pathAndQuery": "/sup/images/productImages/979PEK3F66.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-8e62a959",
+    "pathAndQuery": "/sup/images/productImages/FF2KL9HABG.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-a9d95dc3",
+    "pathAndQuery": "/sup/images/productImages/FKJEB33I41.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-d5e316d0",
+    "pathAndQuery": "/sup/images/productImages/K8J9ZVU2GY.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-36ec1443",
+    "pathAndQuery": "/sup/images/productImages/MXCUT572QP.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-68f3881a",
+    "pathAndQuery": "/sup/images/productImages/PREGWANPVK.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-4ddc3517",
+    "pathAndQuery": "/sup/images/productImages/RQZYQP73KJ.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-b2a39e6a",
+    "pathAndQuery": "/sup/images/productImages/VLPUK8KBSY.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-e6903dc7",
+    "pathAndQuery": "/sup/images/productImages/WEVSAQ14IE.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-881f4197",
+    "pathAndQuery": "/sup/images/productImages/WRW2B797FM.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "B-74aa54de",
+    "pathAndQuery": "/sup/images/productImages/XMP2E37F1N.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "no-recovery-spam"
+  },
+  {
+    "testCaseId": "B-70e11d77",
+    "pathAndQuery": "/sup/images/productImages/XYZPG89DSJ.gif",
+    "type": "image",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true,
+    "classification": "needs-review"
+  },
+  {
+    "testCaseId": "B-dcede1eb",
+    "pathAndQuery": "/sup/images/productImages/ZTLE7VFV3C.gif",
+    "type": "image",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false,
+    "classification": "preserve-410"
+  },
+  {
+    "testCaseId": "A-13e09287",
+    "pathAndQuery": "/face-masks-n95-kn95.html",
+    "type": "page",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/face-masks",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-d9b62490",
+    "pathAndQuery": "/medical-supplies-Dynarex-Specimen-Containers-4oz-22I48F9UI7.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/partners/dynarex",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-0f1e5121",
+    "pathAndQuery": "/medical-supplies-Exel-Insulin-Syringe-05cc-29g-x-12-8DKB9DMTEX.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/needles-syringes",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-72812e50",
+    "pathAndQuery": "/medical-supplies-Feather-Sterile+Surgical+Blades+11-2ULXL3BIJK.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/wound-care",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-d7a484ed",
+    "pathAndQuery": "/Medical-Supplies-for-Doctors.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/industries/clinics-doctors-offices",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-467952ee",
+    "pathAndQuery": "/medical-supplies-Graham%20Medical-Drape+Sheet+White+40+x+60+2-Ply-XVUAKHW2KF.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/exam-room",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-c9705aec",
+    "pathAndQuery": "/medical-supplies-ndd%20Medical%20Technologies%20Inc.-EASYONE+SPIRETTES-I78AVCLDSL.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/respiratory",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "B-e2eedf0a",
+    "pathAndQuery": "/medical-supplies-Thorne%20Research-MediClear-SGS+Chocolate-UAQUGHR6DP.html",
+    "type": "product",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-3c2c3d26",
+    "pathAndQuery": "/medical-supplies-Thorne%20Research-VeganPro+Complex+Chocolate-TIH9JNRQT6.html",
+    "type": "product",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-2ec033a4",
+    "pathAndQuery": "/medical-supplies-Thorne%20Research-VeganPro+Complex+Vanilla-WQEMF6Q8IH.html",
+    "type": "product",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-035f41dc",
+    "pathAndQuery": "/Medical-Supply-Store.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/categories",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-0d1b413d",
+    "pathAndQuery": "/medical-supply-store/Emergency+Supplies/Immobilizers/Leg+Immobilizers-IQ9MV1MBEB.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/emergency-supplies",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-a43404b9",
+    "pathAndQuery": "/medical-supply-store/Face-Masks-CYR82C7EBL.html?&formularyId=S4MBN1JH2L",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/face-masks",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-7f76c42d",
+    "pathAndQuery": "/medical-supply-store/Gloves-G78R26U43E.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/gloves",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-ee418aa2",
+    "pathAndQuery": "/medical-supply-store/Hygiene-WQ2ENW7KU6.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/hygiene",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-a30ef7a7",
+    "pathAndQuery": "/medical-supply-store/Needles++Syringes/Syringes/10cc+Syringes+w+Needle-DMGAATSB9S.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/needles-syringes",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-fbbf5ab6",
+    "pathAndQuery": "/medical-supply-store/Pharmaceuticals/Injectables-U1GD8BVMR5.html",
+    "type": "product",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-dead5b33",
+    "pathAndQuery": "/medical-supply-store/Pharmaceuticals/Medication+Aids/Narcotics+Storage-GRF8SCRI15.html",
+    "type": "product",
+    "expectedStatus": 410,
+    "expectedLocationContains": null,
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-f155b404",
+    "pathAndQuery": "/medical-supply-store/Testing-and-Screening/Diagnostic-Tests/Lipid-Glucose-Testing-Z2IP7J6EF7.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/testing-screening",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-5dddd688",
+    "pathAndQuery": "/medical-supply-store/Wound++Skin+Care/Elastic+Bandages/Triangular+Bandages-ATPW8HKJSB.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/wound-care",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-de105172",
+    "pathAndQuery": "/medical-supply-store/Wound++Skin+Care/Wound+Care+Dressings/Emergency++Trauma+Dressings-1MRS82K82J.html",
+    "type": "product",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/category/wound-care",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "B-7d57d30c",
+    "pathAndQuery": "/",
+    "type": "root",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true
+  },
+  {
+    "testCaseId": "B-4b2ef5fe",
+    "pathAndQuery": "/",
+    "type": "root",
+    "expectedStatus": 200,
+    "expectedLocationContains": null,
+    "passthrough": true
+  },
+  {
+    "testCaseId": "A-af501593",
+    "pathAndQuery": "/Durable-Equipment-Medical.html",
+    "type": "vendor",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/partners/drive-medical",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-7ce151d6",
+    "pathAndQuery": "/supplies-by-vendor/Drive-Medical-VQTWVE3SWE.html",
+    "type": "vendor",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/partners/drive-medical",
+    "passthrough": false
+  },
+  {
+    "testCaseId": "A-41193183",
+    "pathAndQuery": "/supplies-by-vendor/Dynarex-MM7QQM8CLP.html",
+    "type": "vendor",
+    "expectedStatus": 301,
+    "expectedLocationContains": "/partners/dynarex",
+    "passthrough": false
+  }
+]
