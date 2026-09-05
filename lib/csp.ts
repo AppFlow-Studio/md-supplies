@@ -56,8 +56,8 @@ export function buildCsp(nonce: string, isDev: boolean): string {
  *  spike/csp-static findings). This weakens INLINE-script XSS protection only;
  *  external-script ('self'), object-src, base-uri and frame-ancestors are
  *  unchanged, and these pages render trusted Shopify data with no session or
- *  reflected user input. `experimental.sri` (next.config) adds integrity hashes
- *  to the external chunks as defense-in-depth. */
+ *  reflected user input. External scripts stay constrained to 'self' + the
+ *  explicit host allowlist (script-src). */
 export function buildStaticCsp(isDev: boolean): string {
   return [
     `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com${isDev ? " 'unsafe-eval'" : ''}`,

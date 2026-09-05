@@ -6,13 +6,13 @@ import type { NextConfig } from "next";
 // so they can be CDN-cached. See lib/csp.ts (buildCsp / buildStaticCsp) and the
 // spike/csp-static findings in docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md (M10).
 const nextConfig: NextConfig = {
-  // Subresource Integrity: emit sha256 integrity= on the external JS chunks at
-  // build time. Defense-in-depth that partially offsets dropping 'strict-dynamic'
-  // on the public (static-CSP) routes — the browser rejects any chunk whose bytes
-  // don't match the build hash. Independent of the CSP policy itself.
-  experimental: {
-    sri: { algorithm: "sha256" },
-  },
+  // NOTE: experimental.sri (hash-based Subresource Integrity) was tried here as
+  // defense-in-depth but REMOVED — with Turbopack it emits integrity hashes that
+  // do NOT match the runtime chunks actually served, so the browser blocked
+  // `turbopack-*.js` ("Failed to find a valid digest in the 'integrity' attribute
+  // … The resource has been blocked"), which broke client JS/hydration on
+  // deployed pages (navbar, forms, any prerendered page). Public routes constrain
+  // scripts via script-src 'self' + the explicit host allowlist instead.
 
   // Allow the dev server to be reached through ngrok. Next blocks cross-origin
   // dev requests by default, which breaks the HMR WebSocket and hydration when
