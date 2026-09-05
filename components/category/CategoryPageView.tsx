@@ -29,7 +29,6 @@ import { CatalogHero } from '@/components/category/CatalogHero'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
 import { isAllowedFilterInput } from '@/lib/filter-registry'
 import { withTrackingParams } from '@/lib/analytics/tracking-params'
-import { getNonce } from '@/lib/csp-nonce'
 import { getCategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { logServerError, logCategoryEvent } from '@/lib/log-error'
@@ -223,7 +222,6 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
 }
 
 export async function CategoryPageView({ slug, sp }: { slug: string; sp: CategorySearchParams }) {
-  const nonce = await getNonce()
   const activeFilterStrings = parseFilterParam(sp.filter)
   const { sortKey, reverse } = parseSortKey(sp.sort)
   const searchQuery = parseSearchParam(sp.q)
@@ -566,7 +564,6 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         <>
           <script
             type="application/ld+json"
-            nonce={nonce}
             suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(
@@ -588,7 +585,6 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
           />
           <script
             type="application/ld+json"
-            nonce={nonce}
             suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: jsonLdSafe(

@@ -24,15 +24,33 @@ import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
 
-// Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
-// route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
-// Freshness comes from the fetch-level data cache (productFetchOptions
-// below), invalidated by the Shopify webhook via cache tags
-// (app/api/revalidate), not route-level revalidate/generateStaticParams.
+// ISR (revalidate 300) + on-demand: the global CSP nonce that used to force
+// this route dynamic is gone, and the render path no longer awaits
+// searchParams, so it can now be cached. The first request for a handle
+// renders and caches (dynamicParams = true + an EMPTY generateStaticParams —
+// see the note on that export; no build-time enumeration of product handles);
+// subsequent requests are served from the cache until the 300s window elapses.
+// The server renders the DEFAULT variant; the client reconciles `?variant=`
+// from the URL after hydration (components/product/useSelectedVariant.ts).
+// Freshness still comes from the fetch-level data cache tags (productFetchOptions
+// below) + the Shopify products/* webhook (app/api/revalidate) — on top of the
+// route revalidate.
+export const revalidate = 300
+export const dynamicParams = true
+
+// Next 16: a dynamic route with `revalidate` is only ISR-on-demand if it
+// exports generateStaticParams — WITHOUT it the route renders dynamically on
+// every request (verified: no `x-nextjs-cache`, Cache-Control: no-store). We
+// return an EMPTY array on purpose: nothing is prerendered at build (enumerating
+// every product handle is too slow), and each handle renders + caches on its
+// first request, then serves from cache for `revalidate` seconds. See
+// node_modules/next/dist/docs/.../generate-static-params.md ("All paths at runtime").
+export function generateStaticParams() {
+  return []
+}
 
 interface Props {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ variant?: string }>
 }
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
@@ -79,9 +97,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ProductPage({ params, searchParams }: Props) {
+export default async function ProductPage({ params }: Props) {
   const { slug } = await params
-  const sp = await searchParams
 
   const rawData = await storefrontFetch<{ product: RawProduct | null }>(
     GET_PRODUCT,
@@ -116,11 +133,14 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const relatedProducts = attachCardShippingDisplay(recsData.related)
   const complementaryProducts = attachCardShippingDisplay(recsData.complementary)
 
-  // LG-03: resolved from `?variant=` when present and valid, otherwise the
-  // same default-variant selection ProductView seeds from (lib/purchasability.ts
-  // via resolveInitialVariant) — so the Product schema can never disagree with
-  // the visibly-selected price/SKU/availability, whichever variant that is.
-  const resolvedVariant = resolveInitialVariant(product.variants.nodes, sp.variant)
+  // LG-03: the server always renders the DEFAULT variant now (passing
+  // `undefined` — the route no longer reads `?variant` server-side, so it stays
+  // ISR-cacheable). The Product schema is built from this same default variant
+  // ProductView seeds from (lib/purchasability.ts via resolveInitialVariant), so
+  // it can never disagree with the visibly-selected price/SKU/availability. The
+  // `?variant=` deep-link is reconciled client-side after hydration
+  // (components/product/useSelectedVariant.ts); the canonical stays neutral.
+  const resolvedVariant = resolveInitialVariant(product.variants.nodes, undefined)
   const isAvailable = resolvedVariant?.availableForSale ?? product.availableForSale
   // Structured data and BreadcrumbSchema always point at the neutral,
   // query-free product URL — a selected variant is never canonicalized to a

@@ -15,7 +15,6 @@ import {
   getFeaturedSubcategoriesForParent,
   type ProductTagSummary,
 } from '@/lib/category-tree'
-import { getNonce } from '@/lib/csp-nonce'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 
 export const revalidate = 60
@@ -26,8 +25,6 @@ export const metadata = buildMetadata({
 })
 
 export default async function CategoriesPage() {
-  const nonce = await getNonce()
-
   // Two independent reads, fetched (and failed) independently: `allCollections`
   // supplies both the Popular Categories strip (nav-registry-sourced, out of
   // this ticket's scope) and tile artwork for the grid below; `l1Tiles` is the
@@ -221,7 +218,6 @@ export default async function CategoriesPage() {
 
       <script
         type="application/ld+json"
-        nonce={nonce}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: jsonLdSafe(

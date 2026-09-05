@@ -1,11 +1,19 @@
 import type { NextConfig } from "next";
 
-// Content-Security-Policy (enforcing + Report-Only) is NOT set here: it needs
-// a fresh nonce per request (lib/csp.ts), which this static headers() config
-// can't generate — it runs once at build/server-start, not per request. Both
-// CSP headers are set in proxy.ts instead. See
-// docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md (M10).
+// Content-Security-Policy is applied per-route in proxy.ts, not here: sensitive
+// always-dynamic routes (/account, /search) get a fresh per-request nonce, which
+// this static headers() config can't generate; public routes get a static policy
+// so they can be CDN-cached. See lib/csp.ts (buildCsp / buildStaticCsp) and the
+// spike/csp-static findings in docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md (M10).
 const nextConfig: NextConfig = {
+  // Subresource Integrity: emit sha256 integrity= on the external JS chunks at
+  // build time. Defense-in-depth that partially offsets dropping 'strict-dynamic'
+  // on the public (static-CSP) routes — the browser rejects any chunk whose bytes
+  // don't match the build hash. Independent of the CSP policy itself.
+  experimental: {
+    sri: { algorithm: "sha256" },
+  },
+
   // Allow the dev server to be reached through ngrok. Next blocks cross-origin
   // dev requests by default, which breaks the HMR WebSocket and hydration when
   // the app is loaded from a tunnel host instead of localhost. The wildcards

@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import productRedirects from './docs/redirects-ready.json'
-import { buildCsp, generateNonce } from '@/lib/csp'
+import { buildCsp, buildStaticCsp, generateNonce } from '@/lib/csp'
 import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE_SECONDS, serializeAttribution } from '@/lib/analytics/attribution'
 import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES, getCategorySlug } from '@/lib/category-tree'
 
@@ -41,12 +41,12 @@ export const LEGACY_PRODUCT_HANDLES = new Map<string, string>([
   ['aerowalk-ultra-lite-rollator-rolling-walker-grey', 'aerowalk-ultra-lite-rollator-rolling-walker'],
 ])
 
-function redirectLegacyProductHandle(pathname: string, request: NextRequest, nonce: string): Response | null {
+function redirectLegacyProductHandle(pathname: string, request: NextRequest): Response | null {
   const match = pathname.match(/^\/(?:product|category\/[^/]+)\/([^/]+)$/)
   if (!match) return null
   const canonical = LEGACY_PRODUCT_HANDLES.get(match[1])
   if (!canonical) return null
-  return withCsp(NextResponse.redirect(new URL(`/product/${canonical}`, request.url), 301), nonce)
+  return NextResponse.redirect(new URL(`/product/${canonical}`, request.url), 301)
 }
 
 // ─── Legacy Shopify /collections/<handle> URLs → canonical /category/<slug> ──
@@ -83,7 +83,7 @@ for (const sub of FEATURED_SUBCATEGORIES) {
   LEGACY_COLLECTION_SLUG_BY_HANDLE.set(sub.collectionHandle, sub.slug)
 }
 
-function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, nonce: string): Response | null {
+function redirectLegacyCollectionUrl(pathname: string, request: NextRequest): Response | null {
   const match = pathname.match(/^\/collections\/([^/]+)(\/.*)?$/)
   if (!match) return null
   const [, handle, rest] = match
@@ -107,7 +107,7 @@ function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, non
     const targetPath = consolidated ?? (renamed ? `/product/${renamed}` : `/product/${productHandle}`)
     const url = new URL(targetPath, request.url)
     url.search = request.nextUrl.search
-    return withCsp(NextResponse.redirect(url, 301), nonce)
+    return NextResponse.redirect(url, 301)
   }
 
   // OCC is browsed like a category but has one canonical route outside
@@ -116,7 +116,7 @@ function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, non
   if (handle === 'occ') {
     const url = new URL('/solutions/occ', request.url)
     url.search = request.nextUrl.search
-    return withCsp(NextResponse.redirect(url, 301), nonce)
+    return NextResponse.redirect(url, 301)
   }
 
   const slug = LEGACY_COLLECTION_SLUG_BY_HANDLE.get(handle)
@@ -124,7 +124,7 @@ function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, non
 
   const url = new URL(`/category/${slug}${rest ?? ''}`, request.url)
   url.search = request.nextUrl.search
-  return withCsp(NextResponse.redirect(url, 301), nonce)
+  return NextResponse.redirect(url, 301)
 }
 
 // ─── Self-titled category-duplicate collapse (final-review fix wave) ────────
@@ -149,7 +149,7 @@ function redirectLegacyCollectionUrl(pathname: string, request: NextRequest, non
 // category (Face Masks: public slug face-masks, Shopify handle
 // face-coverings) resolves correctly off its canonical slug rather than a
 // raw handle that would never appear in a /category/<slug>/... URL.
-function redirectSelfTitledCategoryDuplicate(pathname: string, request: NextRequest, nonce: string): Response | null {
+function redirectSelfTitledCategoryDuplicate(pathname: string, request: NextRequest): Response | null {
   const match = pathname.match(/^\/category\/([^/]+)\/([^/]+)$/)
   if (!match) return null
   const [, slug, subslug] = match
@@ -157,7 +157,7 @@ function redirectSelfTitledCategoryDuplicate(pathname: string, request: NextRequ
   if (!l1 || subslug !== l1.tag) return null
   const url = new URL(`/category/${slug}`, request.url)
   url.search = request.nextUrl.search
-  return withCsp(NextResponse.redirect(url, 301), nonce)
+  return NextResponse.redirect(url, 301)
 }
 
 // ─── Category-level 410s (§4.3) ───────────────────────────────────────────────
@@ -302,19 +302,28 @@ function captureAttribution(request: NextRequest, response: NextResponse): void 
   })
 }
 
-function withCsp(response: Response, nonce: string): Response {
-  const isDev = process.env.NODE_ENV === 'development'
-  const csp = buildCsp(nonce, isDev)
+function withCsp(response: Response, csp: string): Response {
   response.headers.set('Content-Security-Policy', csp)
   response.headers.set('Content-Security-Policy-Report-Only', csp)
   return response
 }
 
+// Routes that must keep the STRICT per-request-nonce CSP: they render per-user
+// or user-input-reflecting content and are already force-dynamic, so nothing
+// cacheable is lost. /account (auth, PII, orders) and /search (reflects the ?q
+// query into the page). Everything else gets buildStaticCsp so it can be
+// statically generated / CDN-cached. Keep this list to routes GUARANTEED to be
+// dynamic — a route served from static cache under the nonce policy would carry
+// no nonce and Next's inline scripts would be blocked.
+function isStrictCspPath(pathname: string): boolean {
+  return pathname === '/account'
+    || pathname.startsWith('/account/')
+    || pathname === '/search'
+    || pathname.startsWith('/search/')
+}
+
 export function proxy(request: NextRequest): Response {
-  // Generated once per request, before any branch below — every response
-  // path (redirect/410/rewrite/pass-through) must carry the same nonce a
-  // downstream Server Component would read via lib/csp-nonce.ts.
-  const nonce = generateNonce()
+  const isDev = process.env.NODE_ENV === 'development'
 
   const raw = request.nextUrl.pathname
   // Normalize encoded paths (+, %20) to match old Magento/WooCommerce-style URLs,
@@ -327,11 +336,20 @@ export function proxy(request: NextRequest): Response {
   // distinct paths that differed only by case.
   const pathname = raw.replace(/\+/g, ' ').replace(/^(.+)\/$/, '$1')
 
-  // Definitive removal first: permanently-gone categories (§4.3).
-  if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), nonce)
+  // Per-route CSP (spike/csp-static): strict per-request nonce for the few
+  // always-dynamic sensitive routes, static policy for everything else so it
+  // can be statically generated / ISR'd and served from the CDN. The static
+  // policy also works for a dynamically-rendered public page, so classifying a
+  // public route as static can never break it.
+  const strict = isStrictCspPath(pathname)
+  const nonce = strict ? generateNonce() : ''
+  const csp = strict ? buildCsp(nonce, isDev) : buildStaticCsp(isDev)
 
-  const legacyHandleRedirect = redirectLegacyProductHandle(pathname, request, nonce)
-  if (legacyHandleRedirect) return legacyHandleRedirect
+  // Definitive removal first: permanently-gone categories (§4.3).
+  if (isGoneCategory(pathname)) return withCsp(new Response(null, { status: 410 }), csp)
+
+  const legacyHandleRedirect = redirectLegacyProductHandle(pathname, request)
+  if (legacyHandleRedirect) return withCsp(legacyHandleRedirect, csp)
 
   // Self-titled category-duplicate collapse — checked before the
   // face-coverings subtree rewrite below so a URL already in its canonical
@@ -342,8 +360,8 @@ export function proxy(request: NextRequest): Response {
   // __tests__/proxy.test.ts's "ordering investigation" test — but it is not
   // a reachable URL under the current registry, since face-masks has no
   // live self-titled subcategory pair.)
-  const selfTitledRedirect = redirectSelfTitledCategoryDuplicate(pathname, request, nonce)
-  if (selfTitledRedirect) return selfTitledRedirect
+  const selfTitledRedirect = redirectSelfTitledCategoryDuplicate(pathname, request)
+  if (selfTitledRedirect) return withCsp(selfTitledRedirect, csp)
 
   // Face Masks canonical alias: Shopify collection handle is face-coverings; canonical
   // public URL is /category/face-masks. Subtree redirect so both the category root and
@@ -355,10 +373,10 @@ export function proxy(request: NextRequest): Response {
 
   for (const entry of REDIRECT_ENTRIES) {
     if (pathname !== entry.from) continue
-    if (entry.status === 410) return withCsp(new Response(null, { status: 410 }), nonce)
+    if (entry.status === 410) return withCsp(new Response(null, { status: 410 }), csp)
     const url = new URL(entry.to, request.url)
     url.search = request.nextUrl.search
-    return withCsp(NextResponse.redirect(url, 301), nonce)
+    return withCsp(NextResponse.redirect(url, 301), csp)
   }
 
   // Bulk product catalog 301s (consolidated/discontinued handles) — exact match.
@@ -366,7 +384,7 @@ export function proxy(request: NextRequest): Response {
   // naive plural→singular rewrite.
   const productTarget = PRODUCT_REDIRECTS.get(pathname)
   if (productTarget) {
-    return withCsp(NextResponse.redirect(new URL(productTarget, request.url), 301), nonce)
+    return withCsp(NextResponse.redirect(new URL(productTarget, request.url), 301), csp)
   }
 
   // Blanket plural→singular fallback: any other legacy `/products/<handle>` URL
@@ -374,13 +392,13 @@ export function proxy(request: NextRequest): Response {
   // with an unchanged handle (and so are not enumerated in redirects-ready.json).
   if (pathname.startsWith('/products/')) {
     const newPath = pathname.replace(/^\/products\//, '/product/')
-    return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), nonce)
+    return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), csp)
   }
 
   // Brands → Partners wildcard (T1 consolidation)
   if (pathname === '/brands' || pathname.startsWith('/brands/')) {
     const newPath = pathname.replace(/^\/brands/, '/partners')
-    return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), nonce)
+    return withCsp(NextResponse.redirect(new URL(newPath, request.url), 301), csp)
   }
 
   // ── /category/occ → /solutions/occ (single OCC route) ──────────────────────
@@ -392,7 +410,7 @@ export function proxy(request: NextRequest): Response {
   if (pathname === '/category/occ' || pathname === '/category/occ/') {
     const url = new URL('/solutions/occ', request.url)
     url.search = request.nextUrl.search
-    return withCsp(NextResponse.redirect(url, 301), nonce)
+    return withCsp(NextResponse.redirect(url, 301), csp)
   }
 
   // ── /collections/<handle> → /category/<handle> ────────────────────────────
@@ -401,8 +419,8 @@ export function proxy(request: NextRequest): Response {
   // linked externally. Coverage is driven entirely by lib/category-tree.ts
   // — a new CATEGORY_TREE_L1 or FEATURED_SUBCATEGORIES entry requires no
   // changes here.
-  const collectionRedirect = redirectLegacyCollectionUrl(pathname, request, nonce)
-  if (collectionRedirect) return collectionRedirect
+  const collectionRedirect = redirectLegacyCollectionUrl(pathname, request)
+  if (collectionRedirect) return withCsp(collectionRedirect, csp)
 
   // ── Category query variants: no rewrite (twin route removed) ───────────────
   //
@@ -418,29 +436,21 @@ export function proxy(request: NextRequest): Response {
   // /category/[slug] now reads searchParams directly and is the only category
   // route, so these interactions are ordinary in-segment client navigations.
 
-  // Pass-through: forward the nonce as a request header so downstream Server
-  // Components can read it via headers() (lib/csp-nonce.ts), and set it on
-  // the response so the browser enforces against the matching nonce'd
-  // inline scripts Next.js renders for this request.
+  // Pass-through. Only the strict (nonce) routes forward a per-request nonce:
+  // Next.js reads the CSP from the REQUEST header to discover the nonce it must
+  // stamp on the framework/chunk scripts it emits, and Server Components read it
+  // via lib/csp-nonce.ts. Public routes deliberately omit both headers so they
+  // stay statically generatable and CDN-cacheable — the static CSP allows Next's
+  // inline scripts via 'unsafe-inline', so no nonce is needed there.
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-nonce', nonce)
-
-  // Next.js reads the CSP from the REQUEST header to discover the nonce it
-  // must stamp on the script tags IT emits (bootstrap + chunk loaders). Next's
-  // own CSP guide sets both request and response headers; we only set the
-  // response, and the result was that a single chunk script rendered WITHOUT a
-  // nonce on /blog/[handle]. Under 'strict-dynamic' the 'self' source is
-  // ignored, so that one nonce-less same-origin script was blocked outright —
-  // the long-standing console error on that route.
-  //
-  // Setting it here does not widen the policy by one character: it is the
-  // identical string already sent on the response. It only tells Next which
-  // nonce is in force.
-  requestHeaders.set('Content-Security-Policy', buildCsp(nonce, process.env.NODE_ENV === 'development'))
+  if (strict) {
+    requestHeaders.set('x-nonce', nonce)
+    requestHeaders.set('Content-Security-Policy', csp)
+  }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } })
   captureAttribution(request, response)
-  return withCsp(response, nonce)
+  return withCsp(response, csp)
 }
 
 export const config = {
