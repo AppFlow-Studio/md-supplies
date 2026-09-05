@@ -14,7 +14,6 @@ import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_LOCALIZATION } from '@/lib/shopify/queries/markets'
 import { GET_MENU } from '@/lib/shopify/queries/menu'
 import { buildOrganizationSchema, jsonLdSafe } from '@/lib/schema'
-import { getNonce } from '@/lib/csp-nonce'
 import { IS_STAGING, SITE_ORIGIN } from '@/lib/site-config'
 import { fetchAllCollectionHandles, type CollectionHandle } from '@/lib/shopify/collection-handles.server'
 import { buildL2Tree, type L2Node } from '@/lib/category-tree'
@@ -34,18 +33,15 @@ export const metadata: Metadata = {
   description: 'Medical-Grade Supplies, Delivered Fast',
 }
 
-// This layout reads headers() for the CSP nonce (lib/csp-nonce.ts), which
-// opts every route into dynamic rendering — the accepted trade-off for M10
-// (nonce-based CSP enforcement): Next.js can only inject a nonce into inline
-// scripts at request time, so ISR/static generation and nonces are mutually
-// exclusive. See docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md
-// (supersedes the prior audit-H1 "no headers() here" constraint).
-// The cart hydrates client-side in CartProvider; the market_country cookie
-// is read client-side in the Footer currency switcher.
+// CSP is now applied per-route in proxy.ts — a static policy for public routes
+// so they can be statically rendered / CDN-cached, and a strict per-request
+// nonce only for sensitive routes (/account, /search). This layout no longer
+// reads request headers, so it no longer forces every route into dynamic
+// rendering. The cart hydrates client-side in CartProvider; the market_country
+// cookie is read client-side in the Footer currency switcher.
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const nonce = await getNonce()
   const [localization, collectionsData, menuData, l2Nodes] = await Promise.all([
     storefrontFetch<{ localization: LocalizationData }>(
       GET_LOCALIZATION,
@@ -78,7 +74,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} h-full antialiased`}>
       {!isStaging && process.env.NEXT_PUBLIC_GTM_ID && (
-        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} nonce={nonce} />
+        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
       )}
       <body className="min-h-full flex flex-col">
         {!isStaging && (
@@ -89,7 +85,6 @@ export default async function RootLayout({
         <SkipLink />
         <script
           type="application/ld+json"
-          nonce={nonce}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: jsonLdSafe(buildOrganizationSchema()) }}
         />

@@ -25,7 +25,6 @@ import { ScrollToResults } from '@/components/category/ScrollToResults'
 import { CatalogTransitionProvider } from '@/components/category/CatalogTransition'
 import { CatalogResultsState } from '@/components/category/CatalogResultsState'
 import { ROUTES } from '@/lib/routes'
-import { getNonce } from '@/lib/csp-nonce'
 
 // URL filter strings -> Storefront `ProductFilter` inputs.
 //
@@ -86,7 +85,6 @@ export async function CategoryResults({
   tabsAllLabel,
   tabsLeadingLinks,
 }: Props) {
-  const nonce = await getNonce()
   const searchText = searchQuery?.trim() || undefined
   const isFiltered = activeFilterStrings.length > 0 || Boolean(sortParam) || Boolean(searchText)
 
@@ -199,7 +197,6 @@ export async function CategoryResults({
       {!isFiltered && products.length > 0 && (
         <script
           type="application/ld+json"
-          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: jsonLdSafe(
               buildCollectionItemListSchema(

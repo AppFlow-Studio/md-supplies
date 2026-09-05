@@ -95,19 +95,27 @@ beforeEach(() => {
   })
 })
 
-async function renderProductPage(variant?: string) {
+// The server render is variant-NEUTRAL now: the page is ISR-cached, so it always
+// renders the DEFAULT variant regardless of any `?variant=` in the URL. The
+// `?variant=` deep-link is reconciled client-side in useSelectedVariant. This
+// helper therefore no longer forwards searchParams — the `variant` arg only
+// documents the URL a real visitor would have; it must NOT change server output.
+async function renderProductPage(_variant?: string) {
   const el = (await ProductPage({
     params: Promise.resolve({ slug: 'flame-glove' }),
-    searchParams: Promise.resolve({ variant }),
   })) as unknown as { props: { children: unknown[] } }
   const [, schemaEl, breadcrumbEl, productViewEl] = el.props.children as [unknown, SchemaEl, BreadcrumbEl, ProductViewEl]
   return { schemaEl, breadcrumbEl, productViewEl }
 }
 
-// LG-03 acceptance: ProductSchema/BreadcrumbSchema must reflect whichever
-// variant `?variant=` resolves to, not always the first/default one — and
-// the canonical/schema URL must stay neutral (no `?variant=`) regardless.
-describe('ProductPage — ?variant= resolution feeds ProductSchema, not just ProductView (LG-03)', () => {
+// Caching-era contract (ISR): the product page is statically cached, so the
+// SERVER render is variant-NEUTRAL — ProductSchema/ProductView/BreadcrumbSchema
+// always reflect the DEFAULT variant and the canonical stays neutral, whatever
+// `?variant=` is in the URL. The selected-variant view is reconciled client-side
+// (components/product/useSelectedVariant.ts). This supersedes the original LG-03
+// "server-side `?variant=` feeds the schema" behavior, which was incompatible
+// with caching (reading searchParams server-side forces dynamic rendering).
+describe('ProductPage — variant-neutral server render for ISR caching (supersedes LG-03)', () => {
   it('with no ?variant=, schema and ProductView both use the default (first purchasable) variant', async () => {
     const { schemaEl, breadcrumbEl, productViewEl } = await renderProductPage(undefined)
     expect(schemaEl.props.sku).toBe('SKU-BLUE')
@@ -118,27 +126,28 @@ describe('ProductPage — ?variant= resolution feeds ProductSchema, not just Pro
     expect(breadcrumbEl.props.currentUrl).toBe('https://mdsupplies.com/product/flame-glove')
   })
 
-  it('with a valid ?variant=, schema and ProductView both switch to Red — canonical URL stays neutral', async () => {
+  it('ignores ?variant= server-side (stays on default Blue) so the render is cacheable + neutral', async () => {
+    // Even with ?variant=Red in the URL, the cached server render stays on the
+    // default (Blue). The client switches to Red at runtime (useSelectedVariant).
     const { schemaEl, breadcrumbEl, productViewEl } = await renderProductPage(redVariant.id)
-    expect(schemaEl.props.sku).toBe('SKU-RED')
-    expect(schemaEl.props.price).toBe(11.99)
-    expect(schemaEl.props.availability).toBe('OutOfStock')
-    expect(productViewEl.props.initialVariant.id).toBe(redVariant.id)
-    // Neutral regardless of the selected variant — no `?variant=` leaks into
-    // structured data or the canonical-facing URL.
+    expect(schemaEl.props.sku).toBe('SKU-BLUE')
+    expect(schemaEl.props.price).toBe(9.99)
+    expect(schemaEl.props.availability).toBe('InStock')
+    expect(productViewEl.props.initialVariant.id).toBe(blueVariant.id)
+    // Neutral regardless — no `?variant=` leaks into structured data or canonical.
     expect(schemaEl.props.url).toBe('https://mdsupplies.com/product/flame-glove')
     expect(breadcrumbEl.props.currentUrl).toBe('https://mdsupplies.com/product/flame-glove')
   })
 
-  it('with an unknown ?variant= id, falls back to the default variant rather than erroring', async () => {
+  it('an unknown/absent variant still renders the default variant rather than erroring', async () => {
     const { schemaEl } = await renderProductPage('gid://shopify/ProductVariant/does-not-exist')
     expect(schemaEl.props.sku).toBe('SKU-BLUE')
   })
 
-  it('with a valid ?variant=, structured data mpn and image follow Red, not Blue', async () => {
+  it('structured data mpn and image stay on the default (Blue) even with ?variant=Red in the URL', async () => {
     const { schemaEl } = await renderProductPage(redVariant.id)
-    expect(schemaEl.props.mpn).toBe('MFR-RED-2')
-    expect(schemaEl.props.image).toBe('https://cdn.shopify.com/red.jpg')
+    expect(schemaEl.props.mpn).toBe('MFR-BLUE-1')
+    expect(schemaEl.props.image).toBe('https://cdn.shopify.com/blue.jpg')
   })
 
   it('with no ?variant=, structured data mpn and image use the default (Blue) variant', async () => {

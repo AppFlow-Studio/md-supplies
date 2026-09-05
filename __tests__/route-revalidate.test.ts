@@ -30,26 +30,22 @@ function signBody(body: string): string {
 const ISR_ROUTE_FILES = [
   'app/page.tsx',
   'app/blog/[handle]/page.tsx',
+  // /product/[slug] became ISR once the global CSP nonce was removed (CSP is now
+  // per-route in proxy.ts) and it stopped reading searchParams server-side —
+  // ?variant is reconciled client-side (components/product/useSelectedVariant.ts).
+  'app/product/[slug]/page.tsx',
 ]
 
-// Fully dynamic since e167141: the root layout reads headers() for the CSP
-// nonce, so these render per-request. Freshness is handled at the fetch layer
-// (storefrontFetch cache tags + the Shopify webhook via app/api/revalidate),
-// not by route-level ISR — a route-level `revalidate` export here would be
-// dead config that misleads readers about how caching works.
-//
-// solutions/occ joined this list with DEV-OCC-01: the page now reads
-// searchParams for the OCC catalog's filter/sort/search/page state, so it
-// cannot be statically revalidated. Its Storefront fetches carry
-// revalidate + collection cache tags instead.
+// These render per-request because they READ searchParams (filter/sort/search/
+// page state) — NOT because of any CSP nonce. The global force-dynamic from the
+// layout's headers() nonce read is gone (CSP is now applied per-route in
+// proxy.ts); reading searchParams is what forces dynamic here. A route-level
+// `revalidate` export would be dead config. Freshness comes from the fetch-level
+// cache tags in CategoryResults + the Shopify webhook (app/api/revalidate).
+// (Caching these is the deferred PPR / Cache Components phase.)
 const DYNAMIC_ROUTE_FILES = [
   'app/category/[slug]/page.tsx',
-  'app/product/[slug]/page.tsx',
   'app/solutions/occ/page.tsx',
-  // industries/[slug] joined for the same reason: supported industries now
-  // render the full discovery engine and read searchParams for filter/sort/
-  // search/page state, so route-level ISR cannot apply. Freshness comes from
-  // the fetch-level cache tags in CategoryResults.
   'app/industries/[industry-slug]/page.tsx',
 ]
 

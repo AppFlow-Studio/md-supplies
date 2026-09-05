@@ -825,30 +825,54 @@ describe('proxy — category query variants are NOT rewritten (twin route remove
   })
 })
 
-describe('proxy — CSP + nonce (M10)', () => {
-  it('sets an enforcing CSP with a nonce on every response', () => {
+describe('proxy — CSP (per-route: static for public, nonce for sensitive)', () => {
+  // Public routes get a STATIC policy so the page can be statically generated /
+  // CDN-cached: no per-request nonce, and 'unsafe-inline' allowed for scripts
+  // (Next 16 emits ~21 per-page inline RSC flight scripts a static config-level
+  // CSP can't nonce/hash — see spike/csp-static). strict-dynamic is dropped too.
+  it('public routes get a static CSP: unsafe-inline, no nonce, no strict-dynamic', () => {
     const res = proxy(req('/'))
-    const csp = res.headers.get('Content-Security-Policy')
-    expect(csp).toMatch(/'nonce-[^']+'/)
-    const scriptSrc = csp!.split('; ').find((d) => d.startsWith('script-src'))!
-    expect(scriptSrc).not.toContain('unsafe-inline')
+    const csp = res.headers.get('Content-Security-Policy')!
+    const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'))!
+    expect(scriptSrc).toContain("'unsafe-inline'")
+    expect(scriptSrc).not.toMatch(/'nonce-/)
+    expect(scriptSrc).not.toContain('strict-dynamic')
   })
 
-  it('sets a parallel Report-Only header', () => {
+  it('public routes do NOT forward an x-nonce request header (stay cacheable)', () => {
+    const res = proxy(req('/category/gloves'))
+    expect(res.headers.get('x-nonce-forwarded')).toBeFalsy()
+  })
+
+  it('sets a parallel Report-Only header on public routes', () => {
     const res = proxy(req('/'))
     expect(res.headers.get('Content-Security-Policy-Report-Only')).toBeTruthy()
   })
 
-  it('forwards the same nonce as a request header for Server Components to read', () => {
-    const res = proxy(req('/'))
+  // Sensitive, always-dynamic routes (auth/PII, and /search which reflects the
+  // ?q query into the page) keep the strict per-request-nonce policy.
+  it.each(['/account', '/account/orders', '/search'])(
+    'sensitive route %s gets a strict nonce CSP (nonce + strict-dynamic, no unsafe-inline)',
+    (path) => {
+      const res = proxy(req(path))
+      const csp = res.headers.get('Content-Security-Policy')!
+      const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'))!
+      expect(scriptSrc).toMatch(/'nonce-[^']+'/)
+      expect(scriptSrc).toContain("'strict-dynamic'")
+      expect(scriptSrc).not.toContain("'unsafe-inline'")
+    },
+  )
+
+  it('forwards the same nonce as a request header on sensitive routes', () => {
+    const res = proxy(req('/account'))
     const csp = res.headers.get('Content-Security-Policy')!
     const nonce = csp.match(/'nonce-([^']+)'/)![1]
     expect(res.headers.get('x-nonce-forwarded')).toBe(nonce)
   })
 
-  it('every request gets a different nonce', () => {
-    const n1 = proxy(req('/')).headers.get('Content-Security-Policy')
-    const n2 = proxy(req('/')).headers.get('Content-Security-Policy')
+  it('every sensitive-route request gets a different nonce', () => {
+    const n1 = proxy(req('/account')).headers.get('Content-Security-Policy')
+    const n2 = proxy(req('/account')).headers.get('Content-Security-Policy')
     expect(n1).not.toBe(n2)
   })
 
