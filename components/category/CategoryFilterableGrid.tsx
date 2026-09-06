@@ -6,6 +6,7 @@ import type { CollectionProduct, CollectionFilter } from '@/lib/shopify/types'
 import { parseSortKey, parseFilterParam, parseSearchParam } from '@/lib/catalog/category-params'
 import { parsePageSize } from '@/lib/catalog/page-size'
 import { CategoryResultsView } from '@/components/category/CategoryResultsView'
+import { CategoryResultsSkeleton } from '@/components/category/CategoryResultsSkeleton'
 
 // Client filter island for the STATIC category / subcategory routes.
 //
@@ -86,6 +87,12 @@ export function CategoryFilterableGrid({
   // The last successfully-rendered API data — kept on screen (dimmed) while the
   // next fetch is in flight, so switching filters never blanks the grid.
   const lastDataRef = useRef<CatalogApiResponse | null>(null)
+  // Gates the loading skeleton so it only shows AFTER hydration: a filtered deep
+  // link's FIRST render must be `defaultGrid` (matching SSR) to avoid a hydration
+  // mismatch; a filter pressed in-page (already mounted) shows the skeleton
+  // instantly.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
     // Bare URL (or tracking-params-only): show the static default, never fetch.
@@ -154,10 +161,14 @@ export function CategoryFilterableGrid({
   // fall back to the default grid so the shopper still sees products.
   const view = data ?? lastDataRef.current
   if (!view) {
-    // First-mount of a deep link: before the first response lands, keep showing
-    // the default grid (this also IS the Suspense fallback), dimmed while the
-    // fetch resolves. On error with no data, the default grid stays.
-    return <>{defaultGrid}</>
+    // First filtered load with no prior results. Once hydrated, show a
+    // layout-stable skeleton for INSTANT feedback the moment a filter is pressed,
+    // instead of flashing the unfiltered default grid (which read as "the page
+    // refreshed but nothing got filtered"). Before hydration — a filtered deep
+    // link's first render — we must still emit `defaultGrid` to match SSR.
+    // (A filter -> filter change keeps the PREVIOUS results dimmed via the branch
+    // below, so only the default -> first-filter case hits this skeleton.)
+    return mounted ? <CategoryResultsSkeleton /> : <>{defaultGrid}</>
   }
 
   // Rebuild the display state the same way the server did, from the URL — so the
