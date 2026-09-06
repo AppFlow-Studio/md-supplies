@@ -27,23 +27,23 @@ function signBody(body: string): string {
   return crypto.createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64')
 }
 
-const ISR_ROUTE_FILES = [
+// Cache Components migration: route-segment `revalidate` is incompatible with
+// cacheComponents and has been removed from EVERY route. These data-fetching
+// public routes are now statically prerendered (PPR) — the bare URL is a
+// CDN-served static shell — instead of ISR-via-`revalidate`. Freshness comes from
+// the fetch-level data-cache tags + the Shopify webhook (app/api/revalidate).
+const FORMER_ISR_ROUTE_FILES = [
   'app/page.tsx',
   'app/blog/[handle]/page.tsx',
-  // /product/[slug] became ISR once the global CSP nonce was removed (CSP is now
-  // per-route in proxy.ts) and it stopped reading searchParams server-side —
-  // ?variant is reconciled client-side (components/product/useSelectedVariant.ts).
   'app/product/[slug]/page.tsx',
 ]
 
-// These render per-request because they READ searchParams (filter/sort/search/
-// page state) — NOT because of any CSP nonce. The global force-dynamic from the
-// layout's headers() nonce read is gone (CSP is now applied per-route in
-// proxy.ts); reading searchParams is what forces dynamic here. A route-level
-// `revalidate` export would be dead config. Freshness comes from the fetch-level
-// cache tags in CategoryResults + the Shopify webhook (app/api/revalidate).
-// (Caching these is the deferred PPR / Cache Components phase.)
-const DYNAMIC_ROUTE_FILES = [
+// These were the always-dynamic, searchParams-reading routes. Under Cache
+// Components the server no longer reads searchParams — filters/sort/search moved
+// client-side (/category) or into a <Suspense> boundary (occ/industries) — so
+// they too prerender a static shell. None ever carried (or should carry) a
+// `revalidate` export.
+const FORMER_DYNAMIC_ROUTE_FILES = [
   'app/category/[slug]/page.tsx',
   'app/solutions/occ/page.tsx',
   'app/industries/[industry-slug]/page.tsx',
@@ -53,20 +53,25 @@ function read(file: string): string {
   return fs.readFileSync(path.resolve(__dirname, '..', file), 'utf-8')
 }
 
-describe('ISR: every data-fetching Track A/B route exports revalidate', () => {
-  for (const file of ISR_ROUTE_FILES) {
-    it(`${file} exports a numeric revalidate`, () => {
-      expect(read(file)).toMatch(/export const revalidate = \d+/)
-    })
-  }
-})
+describe('Cache Components: route-segment revalidate is gone', () => {
+  it('next.config.ts enables cacheComponents', () => {
+    expect(read('next.config.ts')).toMatch(/cacheComponents:\s*true/)
+  })
 
-describe('dynamic routes: tag-invalidated pages do not carry dead ISR config', () => {
-  for (const file of DYNAMIC_ROUTE_FILES) {
-    it(`${file} does not export revalidate`, () => {
+  for (const file of [...FORMER_ISR_ROUTE_FILES, ...FORMER_DYNAMIC_ROUTE_FILES]) {
+    it(`${file} no longer exports revalidate (incompatible with cacheComponents)`, () => {
       expect(read(file)).not.toMatch(/export const revalidate/)
     })
   }
+
+  it('/product/[slug], /category/[slug] and /category/[slug]/[product] prerender via generateStaticParams', () => {
+    expect(read('app/product/[slug]/page.tsx')).toMatch(/generateStaticParams/)
+    expect(read('app/category/[slug]/[product]/page.tsx')).toMatch(/generateStaticParams/)
+    // /category/[slug] re-exports it from CategoryPageView.
+    expect(
+      read('app/category/[slug]/page.tsx') + read('components/category/CategoryPageView.tsx'),
+    ).toMatch(/generateStaticParams/)
+  })
 })
 
 describe('POST /api/revalidate — products/* also invalidates the broad collections tag', () => {

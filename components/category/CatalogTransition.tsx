@@ -24,7 +24,22 @@ type CatalogTransitionValue = {
 
 const CatalogTransitionContext = createContext<CatalogTransitionValue | null>(null)
 
-export function CatalogTransitionProvider({ children }: { children: ReactNode }) {
+export function CatalogTransitionProvider({
+  children,
+  externalPending = false,
+}: {
+  children: ReactNode
+  /**
+   * Phase 3 — a pending signal owned OUTSIDE the router transition. On the
+   * static category route the grid is refreshed by the client filter island's
+   * own `fetch('/api/catalog')`, not a `router.push`, so `useTransition`'s
+   * pending never fires for it. Threading the island's own `loading` in here
+   * lets CatalogResultsState dim the current grid during that fetch exactly as
+   * it does during a same-page navigation — no blank flash. Defaults to false,
+   * so every other caller (real navigations) is unchanged.
+   */
+  externalPending?: boolean
+}) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
@@ -33,7 +48,7 @@ export function CatalogTransitionProvider({ children }: { children: ReactNode })
   }
 
   return (
-    <CatalogTransitionContext.Provider value={{ pending, navigate }}>
+    <CatalogTransitionContext.Provider value={{ pending: pending || externalPending, navigate }}>
       {children}
     </CatalogTransitionContext.Provider>
   )

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { storefrontFetch } from '@/lib/shopify/storefront'
@@ -7,8 +8,10 @@ import type { Product, CollectionProduct } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { CategoryResults } from '@/components/category/CategoryResults'
+import { CategoryFilterableGrid } from '@/components/category/CategoryFilterableGrid'
 import { SubcategoryNavigator } from '@/components/category/SubcategoryNavigator'
-import { parseSortKey, parseFilterParam, parseSearchParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
+import { DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
+import type { CategorySearchParams } from '@/components/category/CategoryPageView'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
@@ -42,42 +45,25 @@ import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
+import { getPriceValidUntil } from '@/lib/product/price-valid-until'
 import { compareFacetValues } from '@/lib/catalog/facet-order'
 
 // Combined route: serves BOTH L2 subcategory grids AND product detail pages.
-// This route stays DYNAMIC (rendered on demand, per request). It CANNOT be
-// ISR-cached like /product/[slug], because its SUBCATEGORY branch reads
-// filter/sort/search from `searchParams` server-side (to SSR the filtered grid
-// and to compute noindex/canonical metadata).
 //
-// Why not a per-branch hybrid? In Next 16 without PPR / Cache Components,
-// enabling ISR requires exporting generateStaticParams (revalidate + dynamicParams
-// alone leave a param'd route fully dynamic — verified at runtime: no
-// `x-nextjs-cache`, Cache-Control: no-store). But once generateStaticParams is
-// present, Next serves the route through its static-generation pipeline, and ANY
-// `searchParams` read on the render path throws DYNAMIC_SERVER_USAGE at request
-// time (a <Suspense> boundary does NOT rescue `searchParams` the way it does
-// cookies()/headers()). So this one route can't be both ISR (product branch) and
-// searchParams-dynamic (subcategory branch). The CANONICAL product URL
-// /product/<handle> (ROUTES.product — what every internal ProductCard links to)
-// IS ISR-cached; this nested URL renders the same product dynamically.
+// Phase 3 (Cache Components): NEITHER branch reads searchParams on the server
+// anymore, so the whole route is prerenderable rather than force-dynamic.
+//   · Subcategory branch: prerenders a FULLY STATIC default grid (page 1, no
+//     filters); filter/sort/search/pagination move client-side into
+//     CategoryFilterableGrid, which fetches the cached /api/catalog route. This
+//     is the same architecture as /category/[slug]. Reading searchParams here
+//     would (under cacheComponents) turn the route back into a per-request
+//     dynamic hole — the exact thing this migration removes.
+//   · Product branch: unchanged — it already avoided searchParams (server
+//     renders the default variant; the client reconciles `?variant=` after
+//     hydration via components/product/useSelectedVariant.ts).
 //
-// The product branch here still avoids reading searchParams (server renders the
-// default variant; the client reconciles `?variant=` after hydration via
-// components/product/useSelectedVariant.ts) — kept for parity with /product/[slug]
-// and so this branch could be lifted into an ISR route later if the subcategory
-// grid ever moves to a separate URL.
 // Freshness comes from the fetch-level data cache tags below + the Shopify
 // webhook (app/api/revalidate).
-export const dynamic = 'force-dynamic'
-
-// Offer freshness hint (M6): +30 days, date-only per Google's examples,
-// mirroring /product/[slug]/page.tsx's identical helper. A top-level
-// function rather than an inline `new Date(Date.now()...)` in the component
-// body — react-hooks/purity flags a direct impure call at render time.
-function buildPriceValidUntil(): string {
-  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-}
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
 // the Shopify webhooks via per-handle tags (app/api/revalidate).
@@ -87,19 +73,48 @@ function productFetchOptions(handle: string) {
 
 interface Props {
   params: Promise<{ slug: string; product: string }>
-  // LG-03: `variant` is only meaningful on the product-detail fallback below,
-  // not the L2 category-grid render — kept as an intersection rather than
-  // widening the shared CategorySearchParams type category pages also use.
+  // Phase 3: searchParams is declared (Next passes it to page props) but NEVER
+  // awaited on the server — reading it would turn this route into a per-request
+  // dynamic hole under cacheComponents. `?variant=` is reconciled client-side
+  // (useSelectedVariant); filter/sort/search are handled by the client island.
+  // The type is kept for the page-props contract, not because we read it.
   searchParams: Promise<CategorySearchParams & { variant?: string }>
 }
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+// Cache Components: a param'd route needs generateStaticParams returning >=1
+// param so the static shell can prerender (empty arrays hard-error; without it,
+// params/usePathname become runtime data and even the layout shell can't
+// prerender).
+//
+// Phase 3 replaces the SPIKE sentinel with ONE real slug/product pair that
+// resolves a genuine subcategory, so the prerendered sample exercises the real
+// subcategory branch (static default grid + client filter island) rather than a
+// synthetic 404. The pair is derived from live tag data (the same buildL2Tree
+// the sitemap and this route use); if that fetch is unavailable at build time we
+// fall back to the probe rather than fail the build. Every OTHER real
+// slug/product URL renders on-demand on first request (dynamicParams default).
+export async function generateStaticParams() {
+  try {
+    const l2Nodes = buildL2Tree(await fetchProductTagSummaries())
+    for (const node of l2Nodes) {
+      const parent = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)
+      if (parent) {
+        // slug = the parent L1's canonical URL slug; product = the L2 tag.
+        return [{ slug: getCategorySlug(parent), product: node.tag }]
+      }
+    }
+  } catch {
+    // Fall through to the probe below.
+  }
+  return [{ slug: '__prerender_probe__', product: '__prerender_probe__' }]
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
-  // NOTE: searchParams is awaited only inside the subcategory branch below (for
-  // the noindex/canonical filter check); the product-metadata branch never
-  // touches it. (The whole route is force-dynamic — see the top-of-file note —
-  // because the subcategory branch's server-side searchParams read can't coexist
-  // with ISR in this Next 16 config.)
+  // Phase 3: neither branch reads searchParams. The subcategory branch always
+  // serves the clean canonical view (filters are client-side only and never
+  // change the document a crawler sees), so the former isQueryVariant noindex
+  // branch is gone — metadata is always the clean, canonical subcategory copy.
   // `slug` is the PUBLIC URL slug, which diverges from the real Shopify
   // collection handle for Face Masks (slug "face-masks", handle
   // "face-coverings") — getL1ByCollectionHandle matches on collectionHandle,
@@ -128,16 +143,6 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
       const title = humanizeTag(node.tag)
       const canonical = `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`
-      // Filtered / sorted / searched L2 views are noindex and canonicalize to
-      // the clean route (plan §3.5). searchParams is awaited ONLY here, inside
-      // the subcategory branch — the product-metadata branch never touches it.
-      const sp = await searchParams
-      const isQueryVariant =
-        parseFilterParam(sp.filter).length > 0 || Boolean(sp.sort) || Boolean(parseSearchParam(sp.q))
-
-      if (isQueryVariant) {
-        return buildMetadata({ pageType: 'subcategory', title, canonical, noIndex: true })
-      }
 
       // Check SEO database for optimized title/description.
       const seoDB = getSubcategorySeo(slug, handle)
@@ -189,16 +194,10 @@ async function renderSubcategoryPage(
   l1: { tag: string; displayName: string; collectionHandle: string },
   node: L2Node,
   l2Nodes: L2Node[],
-  sp: CategorySearchParams,
   slug: string,
   handle: string,
 ) {
   const title = humanizeTag(node.tag)
-  const activeFilterStrings = parseFilterParam(sp.filter)
-  const { sortKey, reverse } = parseSortKey(sp.sort)
-  const searchQuery = parseSearchParam(sp.q)
-  const currentPage = parseInt(sp.page ?? '1', 10)
-  if (isNaN(currentPage) || currentPage < 1) notFound()
 
   const siblings = getSubcategoriesForParent(l1.tag, l2Nodes).filter((n) => n.tag !== node.tag)
   const crossLinkL1 = node.crossLinkParentTag
@@ -207,6 +206,38 @@ async function renderSubcategoryPage(
 
   const canonicalUrl = `${SITE_URL}${ROUTES.subcategory(slug, handle)}`
   const seoData = getSubcategorySeo(slug, handle)
+
+  // The tag ProductSource for this subcategory. Re-derived identically in
+  // app/api/catalog (from slug + sub=node.tag) so the client filter island's
+  // fetches hit the same product set + cacheTags.
+  const subcategorySource = {
+    kind: 'tag' as const,
+    query: buildSubcategoryTagQuery(l1.tag, node.tag),
+    title,
+    slug: node.tag,
+  }
+
+  // The DEFAULT unfiltered page-1 grid, rendered server-side (STATIC). Used as
+  // BOTH the Suspense fallback and the island's defaultGrid — bare subcategory
+  // URLs render this with no client fetch (zero function invocations for
+  // crawlers), and deep links show it (matching SSR) until the island swaps in
+  // the filtered view.
+  const defaultGrid = (
+    <CategoryResults
+      source={subcategorySource}
+      baseUrl={ROUTES.subcategory(slug, handle)}
+      facetKey={getCategorySlug(l1)}
+      sortKey="COLLECTION_DEFAULT"
+      reverse={false}
+      sortParam={undefined}
+      activeFilterStrings={[]}
+      currentPage={1}
+      pageSize={DEFAULT_PAGE_SIZE}
+      trackingParamsSource={{}}
+      searchQuery={undefined}
+      searchScopeTitle={title}
+    />
+  )
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -261,19 +292,20 @@ async function renderSubcategoryPage(
       />
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6">
-        <CategoryResults
-          source={{ kind: 'tag', query: buildSubcategoryTagQuery(l1.tag, node.tag), title, slug: node.tag }}
-          baseUrl={ROUTES.subcategory(slug, handle)}
-          facetKey={getCategorySlug(l1)}
-          sortKey={sortKey}
-          reverse={reverse}
-          sortParam={sp.sort}
-          activeFilterStrings={activeFilterStrings}
-          currentPage={currentPage}
-          trackingParamsSource={sp}
-          searchQuery={searchQuery}
-          searchScopeTitle={title}
-        />
+        {/* Static default grid is the Suspense fallback AND the island's
+            defaultGrid — bare subcategory URLs never fetch; deep links swap
+            after the island's mount effect (first client render === SSR). */}
+        <Suspense fallback={defaultGrid}>
+          <CategoryFilterableGrid
+            slug={slug}
+            sub={node.tag}
+            baseUrl={ROUTES.subcategory(slug, handle)}
+            searchScopeTitle={title}
+            sourceKindIsTag={true}
+            facetKey={getCategorySlug(l1)}
+            defaultGrid={defaultGrid}
+          />
+        </Suspense>
       </div>
 
       {/* FAQ section — below product grid (SEO database) */}
@@ -306,13 +338,13 @@ async function renderSubcategoryPage(
   )
 }
 
-export default async function CategoryProductPage({ params, searchParams }: Props) {
+export default async function CategoryProductPage({ params }: Props) {
   const { slug, product: handle } = await params
-  // searchParams is awaited ONLY inside the subcategory branch below (it drives
-  // the filtered grid). The product fall-through never reads it — it renders the
-  // default variant and lets the client reconcile `?variant=` after hydration.
-  // See generateMetadata above for why this must resolve through
-  // getShopifyHandle first, not the raw public slug.
+  // Phase 3: NEITHER branch reads searchParams on the server. The subcategory
+  // branch renders a static default grid (client island handles filters); the
+  // product branch renders the default variant and lets the client reconcile
+  // `?variant=` after hydration. See generateMetadata above for why this must
+  // resolve through getShopifyHandle first, not the raw public slug.
   const l1 = getL1ByCollectionHandle(getShopifyHandle(slug))
 
   // Self-titled duplicate (/category/hygiene/hygiene) — collapse onto the
@@ -337,12 +369,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     }
 
     if (node && node.parentTag === l1.tag) {
-      // Subcategory (L2) branch: reads filter/sort/search from searchParams to
-      // SSR the filtered grid — this is why the whole route is force-dynamic
-      // (see the top-of-file note). The product fall-through below does not read
-      // searchParams.
-      const sp = await searchParams
-      return renderSubcategoryPage(l1, node, l2Nodes, sp, slug, handle)
+      // Subcategory (L2) branch: renders a fully-static default grid; the
+      // client filter island (CategoryFilterableGrid) handles filter/sort/
+      // search/pagination against /api/catalog. No searchParams read here — that
+      // is what keeps this route prerenderable under cacheComponents.
+      return renderSubcategoryPage(l1, node, l2Nodes, slug, handle)
     }
   }
 
@@ -395,6 +426,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
   // own image/mpn so structured data can't disagree with what's rendered
   // (AeroWalk: White/Grey must never emit Blue's image/mpn here either).
   const isAvailable = resolvedVariant?.availableForSale ?? productData.product.availableForSale
+  const priceValidUntil = await getPriceValidUntil()
   const schemaProps = {
     name: productData.product.title,
     description: productData.product.description,
@@ -408,7 +440,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
-    priceValidUntil: buildPriceValidUntil(),
+    priceValidUntil,
     ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }

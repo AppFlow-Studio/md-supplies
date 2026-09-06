@@ -7,7 +7,8 @@ export const metadata: Metadata = {
 }
 
 // Private account route — never statically rendered or publicly cached (DEV-11).
-export const dynamic = 'force-dynamic'
+// The account group is deferred to request time by (noindex)/account/layout.tsx
+// (Suspense) under Cache Components, rather than a per-page force-dynamic.
 
 // /account/login — kick off PKCE flow if not already authenticated
 export default async function AccountLoginPage() {

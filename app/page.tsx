@@ -12,8 +12,6 @@ import type { CollectionProduct } from '@/lib/shopify/types';
 import { buildMetadata } from '@/lib/seo'
 import { buildWebSiteSchema, jsonLdSafe } from '@/lib/schema'
 
-export const revalidate = 60
-
 export const metadata = buildMetadata({ pageType: 'homepage' })
 
 // Top-selling products confirmed from sales report (2026-05-29 → 2026-06-28).

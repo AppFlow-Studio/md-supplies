@@ -22,8 +22,6 @@ import { FAQSection } from '@/components/b2b/FAQSection'
 import { LOGO_PATH } from "@/lib/bunnycdn";
 import { withBlogImage } from "@/lib/blog-images";
 
-export const revalidate = 3600;
-
 /** Shopify image URLs are absolute; BunnyCDN proxy paths are site-relative. */
 function toAbsoluteUrl(url: string): string {
   return url.startsWith('/') ? `${SITE_URL}${url}` : url;

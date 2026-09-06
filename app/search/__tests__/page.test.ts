@@ -5,7 +5,9 @@ vi.mock('@/lib/shopify/storefront', () => ({
 }))
 
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import SearchPage from '../page'
+// Phase 3: the default export is now a thin <Suspense> wrapper; the deep-page
+// fetch/redirect logic lives in the exported SearchResults component.
+import { SearchResults } from '../page'
 
 const mockFetch = vi.mocked(storefrontFetch)
 
@@ -26,7 +28,7 @@ describe('search page deterministic page-N pagination (DEV-LAUNCH-06)', () => {
       search: { totalCount: 0, productFilters: [], nodes: [] },
     })
 
-    await SearchPage({
+    await SearchResults({
       searchParams: Promise.resolve({ q: 'gloves', page: '3' }),
     })
 
@@ -41,7 +43,7 @@ describe('search page deterministic page-N pagination (DEV-LAUNCH-06)', () => {
 
     let caught: unknown
     try {
-      await SearchPage({
+      await SearchResults({
         searchParams: Promise.resolve({
           q: 'gloves',
           sort: 'PRICE_ASC',
@@ -62,7 +64,7 @@ describe('search page deterministic page-N pagination (DEV-LAUNCH-06)', () => {
   it('lets the error surface (no redirect) when the failure happens on page 1', async () => {
     mockFetch.mockRejectedValue(new Error('network down'))
 
-    const result = await SearchPage({
+    const result = await SearchResults({
       searchParams: Promise.resolve({ q: 'gloves' }),
     })
 
@@ -72,7 +74,7 @@ describe('search page deterministic page-N pagination (DEV-LAUNCH-06)', () => {
   it('redirects to page 1 when the requested page exceeds MAX_SEARCH_PAGE', async () => {
     let caught: unknown
     try {
-      await SearchPage({
+      await SearchResults({
         searchParams: Promise.resolve({ q: 'gloves', page: '999' }),
       })
     } catch (err) {
