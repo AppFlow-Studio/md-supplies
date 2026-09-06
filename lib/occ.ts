@@ -24,7 +24,7 @@ export const OCC_HUB: OCCHub = {
     },
     {
       question: 'What types of items are good for shoeboxes?',
-      answer: 'Popular shoebox items include hygiene kits (toothbrushes, soap, washcloths), school supplies (crayons, coloring books, pencils, rulers), small toys, backpacks, and soft stuffed animals. We stock all of these categories in bulk.',
+      answer: 'Popular shoebox items include hygiene items (toothbrushes, combs, washcloths), school supplies (crayons, coloring books, pencils, rulers), small toys, backpacks, and soft stuffed animals. We stock all of these categories in bulk. Accepted and restricted items can change from year to year, so check the current official packing guidelines before you shop.',
     },
     {
       question: 'How do I place a bulk OCC order?',

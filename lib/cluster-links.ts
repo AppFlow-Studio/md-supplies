@@ -92,6 +92,17 @@ export const CLUSTER_LINKS: Record<string, ClusterLinks> = {
     partnerLinks: [],
     occEligible: false,
   },
+
+  // Reciprocal link for the OCC Sardor brief (docs/audits/2026-09-06-occ-seo-strategy/OCC-SEO-STRATEGY.md
+  // §9): /solutions/occ already links out to Hygiene-adjacent subcategories,
+  // but nothing linked back from the general Hygiene category to the curated
+  // shoebox/charity-drive assortment. occEligible surfaces the existing "Shop
+  // by Need" OCC badge here, closing the gap without a new content type.
+  'hygiene': {
+    industryLinks: [],
+    partnerLinks: [],
+    occEligible: true,
+  },
 }
 
 /**

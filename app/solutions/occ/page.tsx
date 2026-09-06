@@ -44,13 +44,20 @@ function baseMetadata(): Metadata {
     title: OCC_HUB.seoTitle,
     description: OCC_HUB.seoDescription || OCC_HUB.intro,
   })
-  if (!_occSeo) return base
+  // resolveTitle()'s 'occ' case (lib/seo/metadata.ts) always returns the
+  // generic "OCC Solutions — MDSupplies" fallback and ignores the `title`
+  // passed above — it's the only pageType that does this, since 'occ' has
+  // exactly one route and never needed a per-instance title until OCC_HUB
+  // grew a real, approved one. Override here rather than in the shared
+  // resolver, same as the _occSeo branch below.
+  const title = _occSeo?.title ?? OCC_HUB.seoTitle
+  const description = _occSeo?.metaDescription ?? OCC_HUB.seoDescription ?? OCC_HUB.intro
   const og = (base.openGraph ?? {}) as Record<string, unknown>
   return {
     ...base,
-    title: _occSeo.title,
-    description: _occSeo.metaDescription,
-    openGraph: { ...og, title: _occSeo.title, description: _occSeo.metaDescription },
+    title,
+    description,
+    openGraph: { ...og, title, description },
   }
 }
 
