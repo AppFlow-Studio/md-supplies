@@ -479,11 +479,39 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         </section>
       )}
 
-      {/* ── Cluster: Industries & Partners ── */}
-      {clusterLinks && (clusterLinks.industryLinks.length > 0 || clusterLinks.partnerLinks.length > 0 || clusterLinks.occEligible) && (
+      {/* ── Cluster: Categories, Industries & Partners ── */}
+      {clusterLinks && (
+        (clusterLinks.categoryLinks?.length ?? 0) > 0 ||
+        clusterLinks.industryLinks.length > 0 ||
+        clusterLinks.partnerLinks.length > 0 ||
+        clusterLinks.occEligible
+      ) && (
         <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
           <h2 className="text-navy-900 text-[18px] font-semibold mb-6">Shop by Need</h2>
           <div className="flex flex-col gap-6 sm:flex-row sm:gap-10">
+            {/* SEO-CATEGORY-01 §8: evidence-backed cross-sell links to other
+                category pages (e.g. Needles & Syringes → Trocars & Trocar
+                Kits) — distinct from the generic "Related Categories" section
+                above, which only lists CATEGORY_TREE_L1 siblings and can't
+                reach a featured subcategory like Trocars. */}
+            {clusterLinks.categoryLinks && clusterLinks.categoryLinks.length > 0 && (
+              <div>
+                <p className="text-gray-500 text-[12px] font-semibold uppercase tracking-[0.48px] mb-3">
+                  Categories
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {clusterLinks.categoryLinks.map((cat) => (
+                    <Link
+                      key={cat.slug}
+                      href={ROUTES.category(cat.slug)}
+                      className="border border-gray-200 bg-white text-navy-900 text-[14px] px-4 py-2 hover:border-navy-900 transition-colors"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
             {clusterLinks.industryLinks.length > 0 && (
               <div>
                 <p className="text-gray-500 text-[12px] font-semibold uppercase tracking-[0.48px] mb-3">

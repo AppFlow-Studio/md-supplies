@@ -4,6 +4,15 @@ export interface ClusterLinks {
   industryLinks: { slug: string; name: string }[]
   partnerLinks:  { slug: string; name: string }[]
   occEligible:   boolean
+  /**
+   * Cross-sell links to OTHER category/subcategory pages (as opposed to
+   * industries/partners above). Optional because most categories don't need
+   * one — only add an entry here for an evidence-backed pair from an actual
+   * SEO brief (see SEO-CATEGORY-01 §6/§8: `categorySeo.ts`'s own
+   * `internalLinks` field is documented intent with no renderer anywhere in
+   * the codebase; this field is the real, rendered mechanism).
+   */
+  categoryLinks?: { slug: string; name: string }[]
 }
 
 /**
@@ -26,6 +35,10 @@ export const CLUSTER_LINKS: Record<string, ClusterLinks> = {
     occEligible: true,
   },
 
+  // SEO-CATEGORY-01 §8 Sardor brief: Needles & Syringes' own croNotes already
+  // flagged HRT/pellet buyers as high-LTV and recommended surfacing Trocar
+  // supplies here, but nothing ever wired the link — see
+  // docs/audits/2026-09-07-seo-category-01/SEO-CATEGORY-01-TROCARS-TIER1.md §6.
   'needles-syringes': {
     industryLinks: [
       { slug: 'hrt-clinics',    name: 'HRT Clinics' },
@@ -34,6 +47,9 @@ export const CLUSTER_LINKS: Record<string, ClusterLinks> = {
     ],
     partnerLinks: [
       { slug: 'dynarex', name: 'Dynarex' },
+    ],
+    categoryLinks: [
+      { slug: 'trocars-trocar-kits', name: 'Trocars & Trocar Kits' },
     ],
     occEligible: false,
   },
@@ -90,6 +106,24 @@ export const CLUSTER_LINKS: Record<string, ClusterLinks> = {
       { slug: 'community-health', name: 'Community Health' },
     ],
     partnerLinks: [],
+    occEligible: false,
+  },
+
+  // SEO-CATEGORY-01 §7/§8: the Trocars & Trocar Kits `categorySeo.ts` entry
+  // already researched and approved these links (HRT Clinics industry,
+  // Kadara Medical brand, and a reciprocal Needles & Syringes cross-sell —
+  // trocar kits ship with a syringe, see the FAQ's kit-contents answer) but
+  // had no CLUSTER_LINKS entry to actually render them.
+  'trocars-trocar-kits': {
+    industryLinks: [
+      { slug: 'hrt-clinics', name: 'HRT Clinics' },
+    ],
+    partnerLinks: [
+      { slug: 'kadara', name: 'Kadara Medical' },
+    ],
+    categoryLinks: [
+      { slug: 'needles-syringes', name: 'Needles & Syringes' },
+    ],
     occEligible: false,
   },
 

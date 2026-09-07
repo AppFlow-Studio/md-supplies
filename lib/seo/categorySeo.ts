@@ -276,7 +276,7 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     schemaTypes: ['BreadcrumbList', 'CollectionPage', 'FAQPage'],
     imageAltPattern: '[Brand] [size] [disposable/reusable] trocar [kit/individual] for procedural use',
     croNotes:
-      'Cross-link from Needles & Syringes for HRT/pellet buyers (currently one-directional — Needles & Syringes croNotes mentions this but its internalLinks array does not yet include this route); surface Kadara Medical and Trocar Supplies brand badges; case-quantity pricing prominent',
+      'Cross-link from Needles & Syringes for HRT/pellet buyers — implemented via lib/cluster-links.ts (SEO-CATEGORY-01 §8), not this internalLinks field (see the cross-cutting note above); surface Kadara Medical and Trocar Supplies brand badges — Kadara is live via cluster-links, Trocar Supplies has no /partners page yet; case-quantity pricing prominent',
     priority: 'P0',
     implementationStatus: 'complete',
     ahrefsResearchDate: '2026-09-07',
