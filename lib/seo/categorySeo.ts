@@ -224,6 +224,63 @@ const CATEGORY_SEO_DB: Record<string, PageSEO> = {
     implementationStatus: 'complete',
     ahrefsResearchDate: '2026-06-29',
   },
+
+  // Mandatory Tier-1 (SEO-CATEGORY-01, 2026-09-07): the client named Trocars &
+  // Trocar Kits one of its biggest existing sales areas, so this route is
+  // researched and approved ahead of a generic opportunity score. No Ahrefs/
+  // GSC/Keyword-Planner seat was available in this environment — the keyword
+  // set and audience below come from live SERP checks (multiple suppliers
+  // already rank dedicated trocar-kit category pages: ciamedical.com,
+  // trocarsupplies.com, kadaramedical.com) and from the collection's own
+  // live Shopify body copy (hormone pellet insertion, laparoscopic access,
+  // minor surgery, outpatient surgical centers), not a volume/KD tool. Full
+  // writeup: docs/audits/2026-09-07-seo-category-01/SEO-CATEGORY-01-TROCARS-TIER1.md.
+  'trocars-trocar-kits': {
+    route: '/category/trocars-trocar-kits',
+    pageType: 'category',
+    primaryKeyword: 'trocar kits',
+    secondaryKeywords: [
+      'disposable trocars',
+      'reusable trocars',
+      'trocar kit hormone pellet insertion',
+      '3.2mm trocar',
+      '4.5mm trocar',
+      'stainless steel trocar',
+    ],
+    searchIntent:
+      'transactional — HRT/hormone-pellet and minor-procedure buyer sourcing trocars and trocar kits',
+    targetAudience:
+      'HRT/hormone pellet clinics, outpatient surgical centers, urgent care and physician offices performing minor procedures',
+    title: 'Trocars & Trocar Kits | 3.2mm, 3.5mm & 4.5mm | MDSupplies',
+    metaDescription:
+      'Shop trocars and trocar kits — 3.2mm to 4.5mm, disposable and reusable, for hormone pellet insertion and minor procedures. Wholesale case pricing.',
+    // Registry name kept as-is (see lib/category-tree.ts FEATURED_SUBCATEGORIES)
+    // — it already matches the nav, breadcrumb and Shopify collection title,
+    // and is more accurate than the parent's own displayName since this page
+    // never carries the broader Surgery & Procedure product set.
+    h1: 'Trocars & Trocar Kits',
+    // Restates the collection's own live body-copy content (procedure/use
+    // context is factual product info) without the collection's separate,
+    // unverifiable "FDA Registered" seo.title claim — see the code comment on
+    // `useRegistryCopy` in components/category/CategoryPageView.tsx.
+    answerBlock:
+      'MDSupplies carries disposable and reusable trocars and trocar kits in 3.2mm, 3.5mm, and 4.5mm sizes for hormone pellet insertion, laparoscopic access, and other minor procedures, with case pricing for HRT clinics, urgent care, and outpatient surgical centers.',
+    contentSections: [],
+    faqs: CATEGORY_FAQS['trocars-trocar-kits'] ?? [],
+    internalLinks: [
+      '/category/surgery-procedure',
+      '/category/needles-syringes',
+      '/industries/hrt-clinics',
+      '/partners/kadara',
+    ],
+    schemaTypes: ['BreadcrumbList', 'CollectionPage', 'FAQPage'],
+    imageAltPattern: '[Brand] [size] [disposable/reusable] trocar [kit/individual] for procedural use',
+    croNotes:
+      'Cross-link from Needles & Syringes for HRT/pellet buyers (currently one-directional — Needles & Syringes croNotes mentions this but its internalLinks array does not yet include this route); surface Kadara Medical and Trocar Supplies brand badges; case-quantity pricing prominent',
+    priority: 'P0',
+    implementationStatus: 'complete',
+    ahrefsResearchDate: '2026-09-07',
+  },
 }
 
 // Keyed by the combined Shopify handle (e.g. 'surgical-sutures-absorbable-sutures').

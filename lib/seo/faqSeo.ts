@@ -197,6 +197,34 @@ export const CATEGORY_FAQS: Record<string, FAQItem[]> = {
         'Certification status varies by product. Check individual product listings for FDA clearance or NIOSH approval information. Our team can assist if you need a specific certified product type.',
     },
   ],
+
+  'trocars-trocar-kits': [
+    {
+      question: 'What sizes do MDSupplies trocars and trocar kits come in?',
+      answer:
+        'We carry trocars and trocar kits in 3.2mm, 3.5mm, and 4.5mm sizes, in both individual and complete kit configurations.',
+    },
+    {
+      question: 'What is the difference between disposable and reusable trocars?',
+      answer:
+        'Disposable trocars are single-use resin or stainless steel devices intended to be discarded after one procedure. Reusable trocars are stainless steel and designed to be cleaned and autoclaved between uses. We carry both.',
+    },
+    {
+      question: 'Are trocar kits used for hormone pellet insertion?',
+      answer:
+        '3.2mm–4.5mm trocars and trocar kits are commonly used for subcutaneous hormone pellet insertion, alongside laparoscopic access and other minor procedural uses.',
+    },
+    {
+      question: 'What is included in a trocar kit?',
+      answer:
+        'A typical MDSupplies trocar kit includes the trocar (cannula and obturator) plus procedure components such as gloves, antiseptic prep, a syringe, and a drape. Exact contents vary by kit — check the individual product listing.',
+    },
+    {
+      question: 'Can I order trocars and trocar kits in bulk?',
+      answer:
+        'Yes. MDSupplies supports case-quantity ordering for clinics, HRT practices, and outpatient surgical centers. Contact our B2B team for volume pricing.',
+    },
+  ],
 }
 
 // FAQ data for L2 subcategory pages, keyed by the combined Shopify handle (parentSlug-subSlug).
