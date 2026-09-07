@@ -177,7 +177,7 @@ What *is* defensible without that data, per the companion `CANONICAL-CATEGORY-UN
 - The 9 already-"complete" categories plus Trocars (this session) are Tier 1 by definition (already researched and approved, or the client's own named priority).
 - The 16 categories with zero `categorySeo.ts` entry are the real Tier-2/candidate pool. `surgery-procedure` (Trocar's own direct parent, 319 live products, currently fully uncontrolled metadata) is the most obviously-motivated next pick given it's already half-audited by this session — but that's a **recommendation**, not a scored Tier assignment, and it's called out as such rather than smuggled in as Tier 2 without the volume/KD/GSC evidence the ticket requires for a real tier call.
 
-**Action needed from Izzy (or whoever holds the GSC/Ahrefs/Keyword-Planner seats):** the same ask the OCC ticket made — pull query-level GSC data (12–16 months where available) and an Ahrefs volume/KD/referring-domains export for the candidate list above, so the next pass can build the reproducible priority model the ticket actually asks for, rather than a second directional-only pass.
+**Action needed from Izzy:** the same ask the OCC ticket made — pull query-level GSC data (12–16 months where available) and an Ahrefs volume/KD/referring-domains export for the candidate list above, so the next pass can build the reproducible priority model the ticket actually asks for, rather than a second directional-only pass.
 
 ---
 
