@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { CatalogGridSkeleton } from '@/components/category/CatalogGridSkeleton'
 import { buildMetadata } from '@/lib/seo'
 import { getSolutionSeo } from '@/lib/seo/solutionSeo'
 import { OCC_HUB } from '@/lib/occ'
@@ -54,34 +56,18 @@ function baseMetadata(): Metadata {
   }
 }
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const sp = await searchParams
-  const isQueryVariant =
-    parseFilterParam(sp.filter).length > 0 ||
-    Boolean(sp.sort) ||
-    Boolean(parseSearchParam(sp.q)) ||
-    Boolean(sp.page)
-
-  const base = baseMetadata()
-  if (!isQueryVariant) return base
-  // Filter/sort/search/page states are noindex and canonicalize to the clean
-  // route, exactly as on category pages (plan §3.5).
-  return {
-    ...base,
-    robots: { index: false, follow: true },
-    alternates: { canonical: `${SITE_URL}${ROUTES.solutions.occ}` },
-  }
+// Static metadata (Cache Components): searchParams is no longer read here, so the
+// route prerenders. Filter/sort/search/page variants are consolidated to this
+// clean URL by the self-referencing canonical below rather than a per-URL
+// noindex — the grid for those variants streams from the <Suspense> boundary in
+// the page. (SEO posture change vs the old per-URL noindex.)
+export const metadata: Metadata = {
+  ...baseMetadata(),
+  alternates: { canonical: `${SITE_URL}${ROUTES.solutions.occ}` },
 }
 
 export default async function OCCPage({ searchParams }: Props) {
-  const sp = await searchParams
   const occHandle = getOccCollectionHandle()
-
-  const activeFilterStrings = parseFilterParam(sp.filter)
-  const { sortKey, reverse } = parseSortKey(sp.sort)
-  const searchQuery = parseSearchParam(sp.q)
-  const currentPage = parseInt(sp.page ?? '1', 10)
-  if (isNaN(currentPage) || currentPage < 1) notFound()
 
   // Hero copy comes from the canonical collection when Shopify has it, falling
   // back to the curated OCC copy. `available: false` means the canonical
@@ -135,19 +121,9 @@ export default async function OCCPage({ searchParams }: Props) {
       {/* Toolbar + filters + grid + pagination — the shared catalog engine. */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
         {available ? (
-          <CategoryResults
-            source={{ kind: 'collection', handle: occHandle }}
-            baseUrl={ROUTES.solutions.occ}
-            facetKey="occ"
-            sortKey={sortKey}
-            reverse={reverse}
-            sortParam={sp.sort}
-            activeFilterStrings={activeFilterStrings}
-            currentPage={currentPage}
-            trackingParamsSource={sp}
-            searchQuery={searchQuery}
-            searchScopeTitle={title}
-          />
+          <Suspense fallback={<CatalogGridSkeleton />}>
+            <OCCResults searchParams={searchParams} occHandle={occHandle} title={title} />
+          </Suspense>
         ) : (
           // Canonical collection unresolved (see lib/occ-collection.ts):
           // neutral state, never a tag-scanned fallback assortment.
@@ -170,5 +146,37 @@ export default async function OCCPage({ searchParams }: Props) {
         <FAQSection faq={OCC_HUB.faq} />
       </div>
     </main>
+  )
+}
+
+// Reads searchParams → the request-time dynamic hole (Cache Components). The rest
+// of the page (hero, breadcrumb, subcategory nav, About, FAQ) is the prerendered
+// static shell around the <Suspense> boundary in OCCPage.
+async function OCCResults({ searchParams, occHandle, title }: {
+  searchParams: Props['searchParams']
+  occHandle: string
+  title: string
+}) {
+  const sp = await searchParams
+  const activeFilterStrings = parseFilterParam(sp.filter)
+  const { sortKey, reverse } = parseSortKey(sp.sort)
+  const searchQuery = parseSearchParam(sp.q)
+  const currentPage = parseInt(sp.page ?? '1', 10)
+  if (isNaN(currentPage) || currentPage < 1) notFound()
+
+  return (
+    <CategoryResults
+      source={{ kind: 'collection', handle: occHandle }}
+      baseUrl={ROUTES.solutions.occ}
+      facetKey="occ"
+      sortKey={sortKey}
+      reverse={reverse}
+      sortParam={sp.sort}
+      activeFilterStrings={activeFilterStrings}
+      currentPage={currentPage}
+      trackingParamsSource={sp}
+      searchQuery={searchQuery}
+      searchScopeTitle={title}
+    />
   )
 }

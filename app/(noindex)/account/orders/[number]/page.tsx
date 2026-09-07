@@ -14,7 +14,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export const dynamic = 'force-dynamic'
+// Cache Components: a dynamic route needs generateStaticParams (>=1) so the
+// root-layout shell (Header/usePathname) can prerender. The order number is
+// private/per-user, so a sentinel is correct — the account group's Suspense
+// layout ((noindex)/account/layout.tsx) defers the page body to request time;
+// real orders render on-demand.
+export function generateStaticParams() {
+  return [{ number: '__prerender_probe__' }]
+}
 
 type Props = {
   params: Promise<{ number: string }>

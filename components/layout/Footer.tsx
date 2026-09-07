@@ -16,6 +16,12 @@ const EXPLORE = [
   { label: 'Returns', href: ROUTES.returns },
 ]
 
+// Cache Components forbids reading the current time during a Server Component
+// render (next-prerender-current-time). The copyright year is evaluated once at
+// module load (build time) instead — deterministic, and the site redeploys often
+// enough that a build-stamped year is always current.
+const COPYRIGHT_YEAR = new Date().getFullYear()
+
 const COMPANY_HELP = [
   { label: 'About Us', href: ROUTES.about },
   { label: 'FAQ', href: ROUTES.faq },
@@ -163,7 +169,7 @@ export function Footer({ collections, availableCountries = [] }: FooterProps) {
         {/* Bottom bar */}
         <div className="mt-12 py-5 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-500">
-            © {new Date().getFullYear()} MDSupplies. All rights reserved.
+            © {COPYRIGHT_YEAR} MDSupplies. All rights reserved.
           </p>
 
           {availableCountries.length > 1 && (

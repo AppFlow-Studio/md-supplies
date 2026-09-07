@@ -13,7 +13,8 @@ vi.mock('@/lib/category-utils', () => ({
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCTS_BY_TAG } from '@/lib/shopify/queries/products'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
-import IndustryDetailPage from '../[industry-slug]/page'
+import IndustryDetailPage, { IndustryResults } from '../[industry-slug]/page'
+import { INDUSTRIES } from '@/lib/industries'
 
 const mockFetch = vi.mocked(storefrontFetch)
 
@@ -48,9 +49,13 @@ describe('industry detail page product fetch', () => {
   // discovery engine) scoped to the industry tag. The old six-product fetch was
   // the defect — an industry with thousands of SKUs is not a six-item page.
   it('renders the full landing page for a tag-mapped industry (urgent-care)', async () => {
-    const element = await IndustryDetailPage({
+    // Phase 3: the validated-assortment branch moved into IndustryResults, behind
+    // the page's <Suspense> boundary (it reads searchParams client-time-safely).
+    const urgentCare = INDUSTRIES.find((i) => i.slug === 'urgent-care')!
+    const element = await IndustryResults({
       searchParams: Promise.resolve({}),
-      params: Promise.resolve({ 'industry-slug': 'urgent-care' }),
+      industryStatic: urgentCare,
+      slug: 'urgent-care',
     })
 
     // No legacy six-product teaser fetch happens on this path.

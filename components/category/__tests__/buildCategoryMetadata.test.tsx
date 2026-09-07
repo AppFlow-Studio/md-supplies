@@ -35,34 +35,21 @@ function ogImageDimensions(m: Awaited<ReturnType<typeof buildCategoryMetadata>>)
 describe('buildCategoryMetadata — OG image', () => {
   it('passes the collection image through on the canonical (unfiltered, page 1) branch', async () => {
     mockFetch.mockResolvedValue({ collection })
-    const m = await buildCategoryMetadata('exam-gloves', {})
+    const m = await buildCategoryMetadata('exam-gloves')
     expect(ogImageUrl(m)).toBe('https://cdn.shopify.com/exam-gloves.jpg')
     const dims = ogImageDimensions(m)
     expect(dims?.width).toBe(800)
     expect(dims?.height).toBe(800)
   })
 
-  it('passes the collection image through on the filtered/sorted branch', async () => {
-    mockFetch.mockResolvedValue({ collection })
-    const m = await buildCategoryMetadata('exam-gloves', { sort: 'PRICE_ASC' })
-    expect(ogImageUrl(m)).toBe('https://cdn.shopify.com/exam-gloves.jpg')
-    const dims = ogImageDimensions(m)
-    expect(dims?.width).toBe(800)
-    expect(dims?.height).toBe(800)
-  })
-
-  it('passes the collection image through on the paginated branch', async () => {
-    mockFetch.mockResolvedValue({ collection })
-    const m = await buildCategoryMetadata('exam-gloves', { page: '2' })
-    expect(ogImageUrl(m)).toBe('https://cdn.shopify.com/exam-gloves.jpg')
-    const dims = ogImageDimensions(m)
-    expect(dims?.width).toBe(800)
-    expect(dims?.height).toBe(800)
-  })
+  // Phase 3: filter/sort/pagination are client-only now — buildCategoryMetadata
+  // takes only the slug and always returns the clean canonical metadata (there is
+  // no distinct server-rendered filtered/paginated metadata to diverge). The old
+  // per-variant OG-image tests are therefore folded into the canonical case above.
 
   it('falls back to the default OG image when the collection has no image', async () => {
     mockFetch.mockResolvedValue({ collection: { ...collection, image: null } })
-    const m = await buildCategoryMetadata('exam-gloves', {})
+    const m = await buildCategoryMetadata('exam-gloves')
     expect(ogImageUrl(m)).not.toBe('https://cdn.shopify.com/exam-gloves.jpg')
   })
 })
@@ -101,46 +88,50 @@ describe('buildCategoryMetadata — Surgery & Procedure vs Trocars identity', ()
 
   it('titles the broad parent "Surgery & Procedure"', async () => {
     mockFetch.mockResolvedValue({ collection: surgeryCollection })
-    const m = await buildCategoryMetadata('surgery-procedure', {})
+    const m = await buildCategoryMetadata('surgery-procedure')
     expect(JSON.stringify(m.title)).toContain('Surgery & Procedure')
     expect(JSON.stringify(m.title)).not.toContain('Trocar')
   })
 
   it('titles the Trocar route "Trocars & Trocar Kits", never "Surgery & Procedure"', async () => {
     mockFetch.mockResolvedValue({ collection: trocarCollection })
-    const m = await buildCategoryMetadata('trocars-trocar-kits', {})
+    const m = await buildCategoryMetadata('trocars-trocar-kits')
     expect(JSON.stringify(m.title)).toContain('Trocars & Trocar Kits')
     expect(JSON.stringify(m.title)).not.toMatch(/^.*Surgery & Procedure.*$/)
   })
 
   it('does not restate the unverifiable FDA-registration claim', async () => {
     mockFetch.mockResolvedValue({ collection: trocarCollection })
-    const m = await buildCategoryMetadata('trocars-trocar-kits', {})
+    const m = await buildCategoryMetadata('trocars-trocar-kits')
     const serialized = JSON.stringify({ title: m.title, description: m.description, og: m.openGraph })
     expect(serialized).not.toMatch(/FDA/i)
   })
 
   it('uses the approved registry description for the Trocar route', async () => {
     mockFetch.mockResolvedValue({ collection: trocarCollection })
-    const m = await buildCategoryMetadata('trocars-trocar-kits', {})
+    const m = await buildCategoryMetadata('trocars-trocar-kits')
     expect(m.description).toMatch(/3\.2mm/)
     expect(m.description).toMatch(/trocar kits/i)
   })
 
   it('canonicalises each route to its own URL', async () => {
     mockFetch.mockResolvedValue({ collection: surgeryCollection })
-    const surgery = await buildCategoryMetadata('surgery-procedure', {})
+    const surgery = await buildCategoryMetadata('surgery-procedure')
     mockFetch.mockResolvedValue({ collection: trocarCollection })
-    const trocars = await buildCategoryMetadata('trocars-trocar-kits', {})
+    const trocars = await buildCategoryMetadata('trocars-trocar-kits')
 
     expect(String(surgery.alternates?.canonical)).toContain('/category/surgery-procedure')
     expect(String(trocars.alternates?.canonical)).toContain('/category/trocars-trocar-kits')
     expect(String(surgery.alternates?.canonical)).not.toBe(String(trocars.alternates?.canonical))
   })
 
-  it('noindexes filtered states on both routes', async () => {
+  it('does NOT noindex the canonical route (Phase 3: filtered views are client-only, consolidated via the canonical, not a per-URL noindex)', async () => {
     mockFetch.mockResolvedValue({ collection: trocarCollection })
-    const m = await buildCategoryMetadata('trocars-trocar-kits', { sort: 'PRICE_ASC' })
-    expect(JSON.stringify(m.robots)).toMatch(/noindex|"index":false/)
+    const m = await buildCategoryMetadata('trocars-trocar-kits')
+    // There is no server-rendered filtered variant to noindex anymore — the
+    // client island handles filters over the canonical URL. A normal indexable
+    // category route must not carry a noindex directive (robots may be undefined,
+    // which defaults to index).
+    expect(JSON.stringify(m.robots ?? '')).not.toMatch(/noindex|"index":false/)
   })
 })

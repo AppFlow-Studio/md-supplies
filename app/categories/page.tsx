@@ -17,8 +17,6 @@ import {
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 
-export const revalidate = 60
-
 export const metadata = buildMetadata({
   pageType: 'categories-hub',
   description: 'Browse all medical supply categories — gloves, wound care, needles, IV therapy, and more. Serving clinics, urgent care, and B2B buyers.',

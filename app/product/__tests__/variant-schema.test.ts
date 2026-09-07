@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('@/lib/shopify/storefront', () => ({
   storefrontFetch: vi.fn(),
 }))
+// getPriceValidUntil is a `use cache` fn; cacheLife()/cacheTag() throw outside the
+// cacheComponents runtime (i.e. in vitest), so stub next/cache to no-ops.
+vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cacheTag: vi.fn() }))
 
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS, GET_ALL_PRODUCT_TAGS } from '@/lib/shopify/queries/products'

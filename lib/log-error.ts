@@ -1,12 +1,30 @@
 import 'server-only'
 
+// Wall-clock timestamp for a log line, sourced from `performance` rather than
+// `new Date()`/`Date.now()`.
+//
+// Under cacheComponents, Next extends the `Date` class so that reading the
+// clock during a prerender (`new Date()` / `Date.now()`) is treated as
+// uncached IO and ABORTS the prerender — which is what broke the newly-static
+// /category/[slug] build the moment its render logged a diagnostic (the
+// success log fires on every prerender). `performance` is deliberately left
+// unextended by Next ("reserve `Date` for output, `performance` for
+// introspection" — node-environment-extensions/date.js), so
+// `performance.timeOrigin + performance.now()` gives a real epoch-ms reading
+// that the prerender guard ignores, and `new Date(ms)` with an explicit
+// argument is likewise unguarded. Result: identical ISO output, no prerender
+// abort, no forced dynamic — these logs stay side-effects, never data.
+function logTimestamp(): string {
+  return new Date(performance.timeOrigin + performance.now()).toISOString()
+}
+
 export function logServerError(context: string, err: unknown): void {
   const message = err instanceof Error ? err.message : String(err)
   console.error(JSON.stringify({
     level: 'error',
     context,
     message,
-    ts: new Date().toISOString(),
+    ts: logTimestamp(),
   }))
 }
 
@@ -34,6 +52,6 @@ export function logCategoryEvent(event: {
     level: event.outcome === 'ok' ? 'info' : 'warn',
     context: 'category-page',
     ...event,
-    ts: new Date().toISOString(),
+    ts: logTimestamp(),
   }))
 }

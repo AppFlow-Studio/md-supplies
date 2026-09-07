@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
+import { GET_PRODUCT, GET_PRODUCT_RECS, GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 import { publicBrand } from '@/lib/brand'
@@ -23,30 +23,35 @@ import { gateFreeShippingClaims } from '@/lib/shipping-resolver/free-shipping-ga
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
+import { getPriceValidUntil } from '@/lib/product/price-valid-until'
 
-// ISR (revalidate 300) + on-demand: the global CSP nonce that used to force
-// this route dynamic is gone, and the render path no longer awaits
-// searchParams, so it can now be cached. The first request for a handle
-// renders and caches (dynamicParams = true + an EMPTY generateStaticParams —
-// see the note on that export; no build-time enumeration of product handles);
-// subsequent requests are served from the cache until the 300s window elapses.
-// The server renders the DEFAULT variant; the client reconciles `?variant=`
-// from the URL after hydration (components/product/useSelectedVariant.ts).
-// Freshness still comes from the fetch-level data cache tags (productFetchOptions
-// below) + the Shopify products/* webhook (app/api/revalidate) — on top of the
-// route revalidate.
-export const revalidate = 300
-export const dynamicParams = true
+// Cache Components: prerender a small live sample of real product pages at build
+// so the build validates the real render path; every other handle renders
+// on-demand on first request and is then cached (the long tail is intentionally
+// not enumerated — that would make builds slow, and on-demand ISR is the point).
+// The product data reads are cached via storefrontFetch's data-cache tags
+// (productFetchOptions) + the Shopify products/* webhook (app/api/revalidate);
+// getPriceValidUntil is a `use cache` scope. The route-segment configs
+// (revalidate / dynamicParams) are gone — both are incompatible with
+// cacheComponents. generateStaticParams must return >=1 (empty arrays hard-error:
+// empty-generate-static-params). The server renders the DEFAULT variant; the
+// client reconciles `?variant=` after hydration (components/product/useSelectedVariant.ts).
+const PRERENDER_SAMPLE_SIZE = 20
 
-// Next 16: a dynamic route with `revalidate` is only ISR-on-demand if it
-// exports generateStaticParams — WITHOUT it the route renders dynamically on
-// every request (verified: no `x-nextjs-cache`, Cache-Control: no-store). We
-// return an EMPTY array on purpose: nothing is prerendered at build (enumerating
-// every product handle is too slow), and each handle renders + caches on its
-// first request, then serves from cache for `revalidate` seconds. See
-// node_modules/next/dist/docs/.../generate-static-params.md ("All paths at runtime").
-export function generateStaticParams() {
-  return []
+export async function generateStaticParams() {
+  try {
+    const data = await storefrontFetch<{ products: { nodes: { handle: string }[] } }>(
+      GET_ALL_PRODUCT_HANDLES,
+      { first: PRERENDER_SAMPLE_SIZE, after: null },
+      { next: { revalidate: 3600, tags: ['shopify', 'products'] } },
+    )
+    const handles = data.products.nodes.map((n) => ({ slug: n.handle }))
+    return handles.length > 0 ? handles : [{ slug: '__prerender_probe__' }]
+  } catch {
+    // Storefront hiccup at build → probe keeps the build valid; real handles
+    // render on-demand.
+    return [{ slug: '__prerender_probe__' }]
+  }
 }
 
 interface Props {
@@ -57,13 +62,6 @@ interface Props {
 // the Shopify products/* webhook via the per-handle tag (app/api/revalidate).
 function productFetchOptions(slug: string) {
   return { next: { revalidate: 300, tags: ['shopify', 'products', `product:${slug}`] } }
-}
-
-// Offer freshness hint (M6): +30 days, date-only per Google's examples. The
-// page regenerates via ISR, so the window rolls forward on every
-// revalidation. Server-only helper — runs per-request, not in client render.
-function buildPriceValidUntil(): string {
-  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
 // Metafield flattening moved to lib/shopify/normalize.ts so the category
@@ -146,6 +144,7 @@ export default async function ProductPage({ params }: Props) {
   // query-free product URL — a selected variant is never canonicalized to a
   // variant-specific URL (LG-03 acceptance: "canonical remains neutral").
   const productUrl = buildCanonical({ path: `/product/${slug}`, strategy: 'base-product', basePath: `/product/${slug}` })
+  const priceValidUntil = await getPriceValidUntil()
 
   const schemaProps = {
     name: product.title,
@@ -170,7 +169,7 @@ export default async function ProductPage({ params }: Props) {
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
-    priceValidUntil: buildPriceValidUntil(),
+    priceValidUntil,
     ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }

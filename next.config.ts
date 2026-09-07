@@ -6,6 +6,22 @@ import type { NextConfig } from "next";
 // so they can be CDN-cached. See lib/csp.ts (buildCsp / buildStaticCsp) and the
 // spike/csp-static findings in docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md (M10).
 const nextConfig: NextConfig = {
+  // Cache Components (Next 16): Partial Prerendering is the default, `use cache`
+  // + cacheLife/cacheTag replace route-segment cache config (dynamic/revalidate/
+  // fetchCache), and searchParams/cookies/headers are allowed inside <Suspense>.
+  // This is what lets the two /category routes serve a fully-prerendered static
+  // shell from the CDN (zero function invocations for the bare-URL bot swarm)
+  // while filters/sort/search move client-side. See
+  // node_modules/next/dist/docs/01-app/.../config/.../cacheComponents.md.
+  cacheComponents: true,
+
+  // Build output dir. Defaults to `.next` (what Vercel and `next dev` use). Set
+  // CC_BUILD_DIR to build into an alternate dir — e.g. running a verification
+  // `next build` while a `next dev` server is live, so the production build does
+  // not clobber the dev server's `.next` chunk manifest. Harmless in production
+  // (the env var is unset there).
+  distDir: process.env.CC_BUILD_DIR || '.next',
+
   // NOTE: experimental.sri (hash-based Subresource Integrity) was tried here as
   // defense-in-depth but REMOVED — with Turbopack it emits integrity hashes that
   // do NOT match the runtime chunks actually served, so the browser blocked
