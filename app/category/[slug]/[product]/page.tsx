@@ -32,7 +32,7 @@ import {
   getCategorySlug,
   getShopifyHandle,
 } from '@/lib/category-tree'
-import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
+import { fetchProductTagSummaries, hasFlatCategoryCollection } from '@/lib/category-tree-data.server'
 import { getNonce } from '@/lib/csp-nonce'
 import { getSubcategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
@@ -94,52 +94,88 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
         noIndex: true,
       })
     }
+  }
 
-    const summaries = await fetchProductTagSummaries()
-    const l2Nodes = buildL2Tree(summaries)
-    const node = l2Nodes.find((n) => n.tag === handle)
+  // Resolved regardless of whether `slug` itself matched a known L1 —
+  // FIX-duplicate-category-urls Defect 2: a stale/renamed parent slug (e.g.
+  // `skin-preparation`, no longer a registered L1) must never let this route
+  // fall through to the raw product-handle lookup below, which can
+  // coincidentally collide with an unrelated live product and render it in a
+  // category's place (see the blood-collection-tubes / alcohol-prep-pads
+  // brief notes — both hit exactly this).
+  const summaries = await fetchProductTagSummaries()
+  const l2Nodes = buildL2Tree(summaries)
+  const node = l2Nodes.find((n) => n.tag === handle)
 
-    if (node && (node.parentTag === l1.tag || node.crossLinkParentTag === l1.tag)) {
-      const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
-      const title = humanizeTag(node.tag)
-      const canonical = `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`
-      // Filtered / sorted / searched L2 views are noindex and canonicalize to
-      // the clean route (plan §3.5).
-      const isQueryVariant =
-        parseFilterParam(sp.filter).length > 0 || Boolean(sp.sort) || Boolean(parseSearchParam(sp.q))
+  if (node) {
+    const title = humanizeTag(node.tag)
+    const isDominantMatch = Boolean(l1 && node.parentTag === l1.tag)
 
-      if (isQueryVariant) {
-        return buildMetadata({ pageType: 'subcategory', title, canonical, noIndex: true })
-      }
-
-      // Check SEO database for optimized title/description.
-      const seoDB = getSubcategorySeo(slug, handle)
-      if (seoDB) {
-        const base = buildMetadata({
-          pageType: 'subcategory',
-          slug: handle,
-          parentSlug: slug,
-          description: seoDB.metaDescription,
-          canonical,
-        })
-        const og = (base.openGraph ?? {}) as Record<string, unknown>
-        return {
-          ...base,
-          title: seoDB.title,
-          description: seoDB.metaDescription,
-          openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
-        }
-      }
-
-      // Neutral copy only — no shipping-speed or pricing promises in metadata
-      // (client-liability stop rule).
+    // Defect 1: this subcategory tag may ALSO be a standalone flat Shopify
+    // collection at /category/<tag>, holding richer, curated copy — the
+    // nested route only ever gets the neutral stub below. Flat is the chosen
+    // canonical (2026-09-05 Izzy brief: it holds the real content and
+    // existing rankings sit on it). Checked live rather than off a hardcoded
+    // pair list, so this covers the full tree, not just the 8 sampled pairs.
+    const flatExists = await hasFlatCategoryCollection(node.tag)
+    if (flatExists) {
       return buildMetadata({
         pageType: 'subcategory',
         title,
-        description: `Shop ${title} within ${canonicalL1.displayName} at MDSupplies.`,
-        canonical,
+        canonical: `${SITE_URL}${ROUTES.category(node.tag)}`,
+        noIndex: true,
       })
     }
+
+    if (!isDominantMatch) {
+      // Node exists somewhere in the tree, just not under THIS slug (a stale
+      // parent, or a boundary-override cross-link) — point to its real home.
+      const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
+      return buildMetadata({
+        pageType: 'subcategory',
+        title,
+        canonical: `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`,
+        noIndex: true,
+      })
+    }
+
+    const canonical = `${SITE_URL}${ROUTES.subcategory(slug, node.tag)}`
+    // Filtered / sorted / searched L2 views are noindex and canonicalize to
+    // the clean route (plan §3.5).
+    const isQueryVariant =
+      parseFilterParam(sp.filter).length > 0 || Boolean(sp.sort) || Boolean(parseSearchParam(sp.q))
+
+    if (isQueryVariant) {
+      return buildMetadata({ pageType: 'subcategory', title, canonical, noIndex: true })
+    }
+
+    // Check SEO database for optimized title/description.
+    const seoDB = getSubcategorySeo(slug, handle)
+    if (seoDB) {
+      const base = buildMetadata({
+        pageType: 'subcategory',
+        slug: handle,
+        parentSlug: slug,
+        description: seoDB.metaDescription,
+        canonical,
+      })
+      const og = (base.openGraph ?? {}) as Record<string, unknown>
+      return {
+        ...base,
+        title: seoDB.title,
+        description: seoDB.metaDescription,
+        openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
+      }
+    }
+
+    // Neutral copy only — no shipping-speed or pricing promises in metadata
+    // (client-liability stop rule).
+    return buildMetadata({
+      pageType: 'subcategory',
+      title,
+      description: `Shop ${title} within ${l1!.displayName} at MDSupplies.`,
+      canonical,
+    })
   }
 
   try {
@@ -299,21 +335,32 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     redirect(ROUTES.category(slug))
   }
 
-  let l2Nodes: L2Node[] | undefined
+  // Resolved regardless of whether `slug` matched a known L1 — see the
+  // matching comment in generateMetadata above (FIX-duplicate-category-urls
+  // Defect 2).
+  const summaries = await fetchProductTagSummaries()
+  const l2Nodes: L2Node[] = buildL2Tree(summaries)
+  const node = l2Nodes.find((n) => n.tag === handle)
 
-  if (l1) {
-    const summaries = await fetchProductTagSummaries()
-    l2Nodes = buildL2Tree(summaries)
-    const node = l2Nodes.find((n) => n.tag === handle)
+  if (node) {
+    const isDominantMatch = Boolean(l1 && node.parentTag === l1.tag)
 
-    if (node && node.crossLinkParentTag === l1.tag && node.parentTag !== l1.tag) {
-      const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
-      redirect(ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag))
+    // Defect 1: flat form is the chosen canonical when this tag also has its
+    // own standalone Shopify collection — see hasFlatCategoryCollection's
+    // doc comment.
+    if (await hasFlatCategoryCollection(node.tag)) {
+      redirect(ROUTES.category(node.tag))
     }
 
-    if (node && node.parentTag === l1.tag) {
-      return renderSubcategoryPage(nonce, l1, node, l2Nodes, sp, slug, handle)
+    if (isDominantMatch) {
+      return renderSubcategoryPage(nonce, l1!, node, l2Nodes, sp, slug, handle)
     }
+
+    // Node exists somewhere in the tree, just not under THIS slug (a stale
+    // parent, or a boundary-override cross-link) — send it to its real home
+    // instead of falling through to the product lookup below.
+    const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
+    redirect(ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag))
   }
 
   // Fall back to product
@@ -381,11 +428,10 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
   }
 
-  const resolvedL2Nodes = l2Nodes ?? buildL2Tree(await fetchProductTagSummaries())
   const { categories, subcategories } = parseProductTags(productData.product.tags)
   const categoryPath = getProductCategoryPath(
     { handle: productData.product.handle, categories, subcategories },
-    resolvedL2Nodes,
+    l2Nodes,
   )
 
   const breadcrumbs = categoryPath

@@ -198,31 +198,174 @@ export const CATEGORY_FAQS: Record<string, FAQItem[]> = {
     },
   ],
 
+  // SEO-CATEGORY-01 (2026-09-05 Izzy brief) — replaces a dev-authored FAQ
+  // set; see the categorySeo.ts comment on this same entry.
   'trocars-trocar-kits': [
     {
-      question: 'What sizes do MDSupplies trocars and trocar kits come in?',
+      question: 'What is a trocar kit used for?',
       answer:
-        'We carry trocars and trocar kits in 3.2mm, 3.5mm, and 4.5mm sizes, in both individual and complete kit configurations.',
+        'A trocar kit is used to create a small puncture for inserting instruments or implants during a procedure, most commonly hormone pellet insertion in HRT clinics, as well as other surgical and procedural applications. Kits typically include the trocar plus supporting components such as a cannula or scalpel.',
     },
     {
       question: 'What is the difference between disposable and reusable trocars?',
       answer:
-        'Disposable trocars are single-use resin or stainless steel devices intended to be discarded after one procedure. Reusable trocars are stainless steel and designed to be cleaned and autoclaved between uses. We carry both.',
+        'Disposable trocars are single-use and pre-sterilized, so there is no reprocessing between patients. Reusable trocars are designed for repeat sterilization and generally cost less per procedure at higher volume. MDSupplies carries both.',
     },
     {
-      question: 'Are trocar kits used for hormone pellet insertion?',
+      question: 'What tool is used to insert hormone pellets?',
       answer:
-        '3.2mm–4.5mm trocars and trocar kits are commonly used for subcutaneous hormone pellet insertion, alongside laparoscopic access and other minor procedural uses.',
+        'Hormone pellet insertion is typically performed with a trocar, most often in 3.2mm or 3.5mm sizes. MDSupplies stocks trocars and trocar kits sized for this use alongside related HRT clinic supplies.',
     },
     {
-      question: 'What is included in a trocar kit?',
+      question: 'What sizes of trocars does MDSupplies carry?',
       answer:
-        'A typical MDSupplies trocar kit includes the trocar (cannula and obturator) plus procedure components such as gloves, antiseptic prep, a syringe, and a drape. Exact contents vary by kit — check the individual product listing.',
+        'MDSupplies carries 3.2mm, 3.5mm, and 4.5mm trocars, in both disposable and reusable versions, and as full kits or trocar-only components.',
+    },
+  ],
+
+  'walking-boots': [
+    {
+      question: 'What does an orthopedic walking boot do?',
+      answer:
+        'An orthopedic walking boot immobilizes and supports the foot and ankle during recovery from a fracture, sprain, or surgery, while still allowing supervised weight-bearing movement.',
     },
     {
-      question: 'Can I order trocars and trocar kits in bulk?',
+      question: 'Is a walking boot comfortable to wear?',
       answer:
-        'Yes. MDSupplies supports case-quantity ordering for clinics, HRT practices, and outpatient surgical centers. Contact our B2B team for volume pricing.',
+        'MDSupplies\' walking boots include adjustable straps and cushioned liners designed for a secure, comfortable fit during extended wear as part of a recovery plan.',
+    },
+  ],
+
+  'toilet-safety-rails': [
+    {
+      question: 'Are toilet safety rails safe?',
+      answer:
+        'Toilet safety rails are designed to provide stable support when sitting and standing, and are widely used in home care and long-term care settings for fall prevention. Safe use depends on correct installation and staying within the weight capacity listed for the specific model.',
+    },
+    {
+      question: 'Where should grab bars be placed for a toilet?',
+      answer:
+        'Placement depends on the rail or grab bar model and the user\'s needs. Follow the installation instructions supplied with the product, which specify the correct height and mounting positions for that model.',
+    },
+  ],
+
+  'wheelchair-parts': [
+    {
+      question: 'What are the parts of a wheelchair?',
+      answer:
+        'A standard wheelchair is made up of the frame, seat and back upholstery, armrests, footrests or leg rests, caster (front) wheels, rear wheels and tires, hand rims, and brakes. Most of these are replaceable individually.',
+    },
+    {
+      question: 'What are common wheelchair accessories?',
+      answer:
+        'Common accessories include seat cushions, replacement armrests and footrests, anti-tip devices, carry bags and pouches, and cup holders. MDSupplies carries replacement components and accessories for leading wheelchair brands.',
+    },
+    {
+      question: 'Can you replace parts of a wheelchair?',
+      answer:
+        'Yes. Footrests, armrests, caster wheels, tires, and upholstery are all commonly replaced rather than replacing the whole chair. Check the part against your wheelchair model and size before ordering.',
+    },
+  ],
+
+  'first-aid-kits': [
+    {
+      question: 'What items are typically included in a first aid kit?',
+      answer:
+        'A standard first aid kit typically includes adhesive bandages, gauze pads, antiseptic wipes, medical tape, scissors, and gloves. Facility and clinic kits often add larger trauma dressings and instant cold packs. Browse the collection for kits matched to specific facility needs.',
+    },
+  ],
+
+  'insulin-pen-needles': [
+    {
+      question: 'What needle is used for an insulin pen?',
+      answer:
+        'Insulin pens use pen needles, ultra-fine, short needles that attach directly to the pen injector. MDSupplies carries pen needles from 29G to 33G in a range of lengths to match different pens and injection depths.',
+    },
+    {
+      question: 'How many times can an insulin pen needle be used?',
+      answer:
+        'Pen needles are labeled for single use. Reusing a needle can dull the tip and increase infection risk, so manufacturers and standard clinical guidance recommend a new needle for each injection.',
+    },
+  ],
+
+  'blood-collection-tubes': [
+    {
+      question: 'What are the types of blood collection tubes?',
+      answer:
+        'Blood collection tubes are distinguished by the additive they contain, such as EDTA, heparin, or a clot activator, and by whether they include a serum separator. The additive determines which diagnostic tests the sample can be used for.',
+    },
+    {
+      question: 'What are the 7 tubes of blood drawn?',
+      answer:
+        'A full draw commonly uses a set of tubes with different additives, each supporting a different group of tests. The specific tubes and the sequence they are drawn in are set by your laboratory\'s protocol, follow that protocol rather than a general list.',
+    },
+  ],
+
+  'surgical-gloves': [
+    {
+      question: 'What is the difference between surgical gloves and normal gloves?',
+      answer:
+        'Surgical gloves are sterile, sized more precisely, and manufactured to tighter tolerances than standard exam gloves, which are typically non-sterile and sold in general sizes. Surgical gloves are intended for procedures requiring a sterile field.',
+    },
+    {
+      question: 'What are surgical gloves used for?',
+      answer:
+        'Surgical gloves are used in procedures requiring a sterile field, including operating-room surgery, in-office procedures, and dental and veterinary procedures, to protect both the patient and the clinician.',
+    },
+    {
+      question: 'What are two common types of surgical gloves?',
+      answer:
+        'Latex and nitrile are the two most common surgical glove materials. Polyisoprene is a further synthetic option for latex-free environments. MDSupplies carries all three.',
+    },
+  ],
+
+  'wound-closure': [
+    {
+      question: 'What are the four types of wound closure?',
+      answer:
+        'Wound closure is generally grouped into primary, delayed primary, secondary, and tertiary closure, describing when and how a wound is closed. The products in this category support closure without sutures, using adhesive strips and skin adhesives.',
+    },
+    {
+      question: 'How can I close a wound without stitches?',
+      answer:
+        'Adhesive wound closure strips, butterfly closures, and topical skin adhesives are used to hold the edges of a wound together without sutures. Whether a given wound is suitable for these is a clinical judgement made at the point of care.',
+    },
+  ],
+
+  'crutches-1': [
+    {
+      question: 'Is a crutch better than a walking stick?',
+      answer:
+        'Crutches and walking sticks serve different recovery needs. Crutches provide more weight-bearing support and are typically recommended after a leg or foot injury, while a walking stick offers lighter balance support. Follow the specific guidance given for the injury or procedure.',
+    },
+  ],
+
+  'alcohol-prep-pads': [
+    {
+      question: 'What are alcohol prep pads used for?',
+      answer:
+        'Alcohol prep pads are used to clean and disinfect skin before an injection, blood draw, or minor procedure. Each pad is saturated with isopropyl alcohol and individually sealed to stay sterile until use.',
+    },
+    {
+      question: 'What is the difference between alcohol prep pads and alcohol wipes?',
+      answer:
+        'Alcohol prep pads are small, individually wrapped, and intended for skin antisepsis at a specific site before a procedure. General alcohol wipes are usually larger and intended for cleaning surfaces or equipment rather than skin preparation.',
+    },
+  ],
+
+  'wheelchair-cushions': [
+    {
+      question: 'What are the three types of wheelchair cushions?',
+      answer:
+        'Wheelchair cushions are generally grouped into foam, gel, and air types. Foam is the standard general-use option, gel distributes pressure across the seating surface, and air cushions are adjustable and typically used where pressure relief is the main concern.',
+    },
+  ],
+
+  'syringe-with-needle': [
+    {
+      question: 'What is a syringe with a needle called?',
+      answer:
+        'A syringe with a needle attached is generally called a hypodermic syringe or a hypodermic needle and syringe. They are sold pre-assembled and sterile, sized by barrel volume and needle gauge.',
     },
   ],
 }

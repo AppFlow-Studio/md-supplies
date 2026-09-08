@@ -1,29 +1,37 @@
 # Exceptions handoff — Izzy SEO review
 
 P0 SEO migration integrity follow-up to T4 · Redirects & Broken Backlinks.
-These targets have no confident, verified semantic replacement. Per the
-ticket's instruction ("If a destination is technically valid but semantically
-questionable, mark it Needs Izzy SEO review instead of improvising"), none of
-these were guessed at in code — they are left exactly as they behave today
-(pass-through → eventual 404) pending a human call.
 
-All of these were checked against the **QA** Shopify store (`SHOPIFY_STORE_DOMAIN`
-in `.env`), via `scripts/seo-migration/match-images.mts`, not production — re-run
-against the production Storefront API before treating any "no match" below as
-final. Full search hits are in `image-search-results.json` in this folder.
+**Update, 2026-09-07 — resolved against production.** The 8 rows below were
+originally matched against the QA store only. A production re-check (Shopify
+Admin API, `daebb2-76.myshopify.com`, see
+`../../../data/seo-backlinks-01/catalog-live-2026-09-07.json` and the
+production-recheck report) found QA-store matching was **wrong on 5 of 8**.
+All 8 are now resolved and implemented in `proxy.ts`:
 
-## Needs Izzy SEO review (plausible candidate, not implemented)
+- **3 recovered as 301s** to a live CDN image (not a `/product/` page, per the
+  ticket's own pattern for `3Y3PKD2E6Q.gif`): the goggles, the scalpels, and
+  the life jacket — the last of these to the *correct* Type II SKU family
+  (`20-001`), not the QA candidate's `20-002` family, which was not Type II.
+- **5 confirmed dead (410)**: the commode chair, the Trotter chair, the
+  hydrogel dressing, the vinyl gloves, and the spatula — see the table below
+  for why each stays dead even though some have a same-name live product.
 
-| Legacy URL | Anchor context | Candidate | Why uncertain |
-|---|---|---|---|
-| `/sup/images/productImages/15ULWMDK6A.gif` | "Safety goggles with side shields" | none found | Search returns bathtub safety rails, not eyewear — either no eye-protection line is stocked, or the search terms need refinement against production data. |
-| `/sup/images/productImages/53DADEVYIN.gif` | "PVC commode chair" | `/product/bariatric-drop-arm-bedside-commode-chair` (Drive Medical) | Material mismatch (PVC vs. bariatric/aluminum) — plausible family match, not a verified identity match. |
-| `/sup/images/productImages/979PEK3F66.gif` | "Trotter pediatric mobility chair" | none found | Catalog has adult commode/transport chairs only; no pediatric-specific line found. |
-| `/sup/images/productImages/FF2KL9HABG.gif` | "MedPride Hydrogel Wound Dressing Sheet 4x4" | none found | Search returns Shield Line adhesive bandages, not hydrogel dressings or the MedPride vendor. Needs a direct catalog check for MedPride hydrogel SKUs. |
-| `/sup/images/productImages/MXCUT572QP.gif` | "Synthetic vinyl gloves" | none found | Catalog carries nitrile/latex gloves; no vinyl-specific SKU surfaced. |
-| `/sup/images/productImages/PREGWANPVK.gif` | "Sterile disposable scalpels" | unverified | Top hit's handle (`qa-min-order-700`) looks like a synthetic QA-store fixture product, not a real catalog SKU — cannot be trusted from this environment. |
-| `/sup/images/productImages/RQZYQP73KJ.gif` | "Pharmaceutical spatula" | none found | Search returns sterilization pouches and a foot stool — no relevant hit. |
-| `/sup/images/productImages/XYZPG89DSJ.gif` | "USCG type 2 life jacket" | `/product/kemp-usa-life-jacket-red-black-adult` (Kemp USA) | Plausible title match, but USCG Type-II approval is a compliance-sensitive claim — should be confirmed by a human before redirecting under it, not assumed from a text search. |
+Storefront-side resolution of the 3 new redirects has not been separately
+re-verified post-deploy — only that the CDN image exists per the Admin API.
+
+## Needs Izzy SEO review (plausible candidate, not implemented) — RESOLVED, see update above
+
+| Legacy URL | Anchor context | Candidate | Why uncertain (original QA-only finding) | Resolution (production) |
+|---|---|---|---|---|
+| `/sup/images/productImages/15ULWMDK6A.gif` | "Safety goggles with side shields" | none found | Search returns bathtub safety rails, not eyewear. | **301** → Dynarex Protective Eye Goggles (2297), a product-type match; no live title says "side shields". |
+| `/sup/images/productImages/53DADEVYIN.gif` | "PVC commode chair" | `/product/bariatric-drop-arm-bedside-commode-chair` (Drive Medical) | Material mismatch — plausible family match, not verified identity. | **410 stands** — the only PVC product is a commode pail (89001), not a chair. No identity match. |
+| `/sup/images/productImages/979PEK3F66.gif` | "Trotter pediatric mobility chair" | none found | Catalog has adult commode/transport chairs only. | **410 stands** — Trotter line is live but only as 6 accessories; the base chair isn't in the catalog. |
+| `/sup/images/productImages/FF2KL9HABG.gif` | "MedPride Hydrogel Wound Dressing Sheet 4x4" | none found | Search returns Shield Line adhesive bandages, not hydrogel dressings. | **410 stands** — exact product is live (`sterile-hydrogel-burn-dressing-4-x-4`) but has zero images; its 2"x6"/16"x24" siblings do. |
+| `/sup/images/productImages/MXCUT572QP.gif` | "Synthetic vinyl gloves" | none found | Catalog carries nitrile/latex gloves; no vinyl-specific SKU surfaced. | **410 stands** — matching MedPlus vinyl gloves are live but have zero images; the only imaged vinyl glove is a different product (First Glove). |
+| `/sup/images/productImages/PREGWANPVK.gif` | "Sterile disposable scalpels" | unverified | Top hit's handle looked like a synthetic QA-store fixture. | **301** → MedPride Disposable Scalpels #11 (MPR-47111) — exact brand/product match against 10 live sterile scalpels. |
+| `/sup/images/productImages/RQZYQP73KJ.gif` | "Pharmaceutical spatula" | none found | Search returns sterilization pouches and a foot stool. | **410 stands** — only live "spatula" hits are a counting-tray/spatula combo and an unrelated suture needle shape. |
+| `/sup/images/productImages/XYZPG89DSJ.gif` | "USCG type 2 life jacket" | `/product/kemp-usa-life-jacket-red-black-adult` (Kemp USA) | Plausible title match, but Type-II approval is compliance-sensitive. | **301**, but **not** to the QA candidate — that SKU is family `20-002`, not Type II. Redirected to family `20-001`, which is Type II and says so in its own title. |
 
 ## Intentional no-recovery — spam/off-topic source (not a semantic question, no action needed)
 
@@ -49,14 +57,19 @@ Thorne VeganPro 410s: the vendor is confirmed absent from the live catalog.
 
 ## Not exceptions, but worth flagging to Izzy
 
-- **9 of 22 historic image targets got a 410** (Dynarex tattoo needle codes ×5,
-  a Vision Labs requisition form, a Hospira Lactated Ringers IV bag, an Rx
-  Destroyer unit, and the free-shipping badge). All were search-checked
-  against the QA catalog with no match. If any of these product lines are
-  still sold under a different name, a 301 is a five-minute fix once Izzy
-  confirms.
-- Only **one** image target (`3Y3PKD2E6Q.gif`, Alcohol Prep Pad) got a
-  confident Case-2 recovery — redirected straight to the live Dukal CDN image.
-  It was picked as the single unambiguous, low-compliance-risk commodity
-  match; the other 9 candidates above were judged too identity-uncertain (or,
-  for the life jacket, too compliance-sensitive) to guess at.
+- **14 of 22 historic image targets are 410** (the original 9 — Dynarex tattoo
+  needle codes ×5, a Vision Labs requisition form, a Hospira Lactated Ringers
+  IV bag, an Rx Destroyer unit, and the free-shipping badge — plus the 5 from
+  this update: the PVC commode chair, Trotter pediatric chair, hydrogel
+  dressing, vinyl gloves, and pharmaceutical spatula). The original 9 were
+  re-confirmed correct against production in the 2026-09-07 recheck.
+- **4 image targets got a confident recovery**: the original Case-2 match
+  (`3Y3PKD2E6Q.gif`, Alcohol Prep Pad) plus 3 more found in the 2026-09-07
+  production recheck (goggles, scalpels, life jacket) — all redirected
+  straight to a live CDN image, not a `/product/` page.
+- Two catalog defects surfaced during the production recheck, unrelated to
+  this ticket: `Sterile Hydrogel Burn Dressing` (7007102) and the MedPlus
+  vinyl glove records are active/published with zero images. Worth raising
+  separately — it's the only reason those two stay dead here.
+- Workstream E (host/protocol variants) is still unevidenced as of the
+  2026-09-07 recheck.

@@ -8,7 +8,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // "face-coverings") — so a real /category/face-masks/<subcategory> request
 // fails to resolve its L1 category at all today.
 vi.mock('@/lib/shopify/storefront', () => ({ storefrontFetch: vi.fn() }))
-vi.mock('@/lib/category-tree-data.server', () => ({ fetchProductTagSummaries: vi.fn(async () => []) }))
+vi.mock('@/lib/category-tree-data.server', () => ({
+  fetchProductTagSummaries: vi.fn(async () => []),
+  hasFlatCategoryCollection: vi.fn(async () => false),
+}))
 vi.mock('@/lib/csp-nonce', () => ({ getNonce: vi.fn(async () => 'test-nonce') }))
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(() => { throw new Error('NEXT_REDIRECT') }),

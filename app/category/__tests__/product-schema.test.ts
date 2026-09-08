@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/shopify/storefront', () => ({ storefrontFetch: vi.fn() }))
-vi.mock('@/lib/category-tree-data.server', () => ({ fetchProductTagSummaries: vi.fn(async () => []) }))
+vi.mock('@/lib/category-tree-data.server', () => ({
+  fetchProductTagSummaries: vi.fn(async () => []),
+  hasFlatCategoryCollection: vi.fn(async () => false),
+}))
 // CategoryProductPage calls getNonce() directly (outside any JSX descriptor),
 // which reads next/headers — unavailable outside a real request scope when
 // invoking the Server Component function directly in a unit test.

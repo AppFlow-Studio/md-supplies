@@ -54,10 +54,10 @@
     "testCaseId": "B-abe9b93e",
     "pathAndQuery": "/sup/images/productImages/15ULWMDK6A.gif",
     "type": "image",
-    "expectedStatus": 200,
-    "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "expectedStatus": 301,
+    "expectedLocationContains": "cdn.shopify.com",
+    "passthrough": false,
+    "classification": "preserve-301-image"
   },
   {
     "testCaseId": "B-c9db2989",
@@ -72,10 +72,10 @@
     "testCaseId": "B-8978f67b",
     "pathAndQuery": "/sup/images/productImages/53DADEVYIN.gif",
     "type": "image",
-    "expectedStatus": 200,
+    "expectedStatus": 410,
     "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "passthrough": false,
+    "classification": "preserve-410"
   },
   {
     "testCaseId": "B-cb512a55",
@@ -108,19 +108,19 @@
     "testCaseId": "B-7ec6f331",
     "pathAndQuery": "/sup/images/productImages/979PEK3F66.gif",
     "type": "image",
-    "expectedStatus": 200,
+    "expectedStatus": 410,
     "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "passthrough": false,
+    "classification": "preserve-410"
   },
   {
     "testCaseId": "B-8e62a959",
     "pathAndQuery": "/sup/images/productImages/FF2KL9HABG.gif",
     "type": "image",
-    "expectedStatus": 200,
+    "expectedStatus": 410,
     "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "passthrough": false,
+    "classification": "preserve-410"
   },
   {
     "testCaseId": "B-a9d95dc3",
@@ -144,28 +144,28 @@
     "testCaseId": "B-36ec1443",
     "pathAndQuery": "/sup/images/productImages/MXCUT572QP.gif",
     "type": "image",
-    "expectedStatus": 200,
+    "expectedStatus": 410,
     "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "passthrough": false,
+    "classification": "preserve-410"
   },
   {
     "testCaseId": "B-68f3881a",
     "pathAndQuery": "/sup/images/productImages/PREGWANPVK.gif",
     "type": "image",
-    "expectedStatus": 200,
-    "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "expectedStatus": 301,
+    "expectedLocationContains": "cdn.shopify.com",
+    "passthrough": false,
+    "classification": "preserve-301-image"
   },
   {
     "testCaseId": "B-4ddc3517",
     "pathAndQuery": "/sup/images/productImages/RQZYQP73KJ.gif",
     "type": "image",
-    "expectedStatus": 200,
+    "expectedStatus": 410,
     "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "passthrough": false,
+    "classification": "preserve-410"
   },
   {
     "testCaseId": "B-b2a39e6a",
@@ -207,10 +207,10 @@
     "testCaseId": "B-70e11d77",
     "pathAndQuery": "/sup/images/productImages/XYZPG89DSJ.gif",
     "type": "image",
-    "expectedStatus": 200,
-    "expectedLocationContains": null,
-    "passthrough": true,
-    "classification": "needs-review"
+    "expectedStatus": 301,
+    "expectedLocationContains": "cdn.shopify.com",
+    "passthrough": false,
+    "classification": "preserve-301-image"
   },
   {
     "testCaseId": "B-dcede1eb",

@@ -18,11 +18,16 @@ describe('cluster links (SEO-CATEGORY-01 §8 — Needles & Syringes ↔ Trocars 
     ])
   })
 
-  it('surfaces Trocars & Trocar Kits\' own HRT Clinics, Kadara Medical, and reciprocal Needles & Syringes links', () => {
+  it('surfaces Trocars & Trocar Kits\' own HRT Clinics, Procedure Trays, and reciprocal Needles & Syringes links', () => {
+    // 2026-09-05 Izzy brief: no partner link (the prior Kadara Medical badge
+    // was dev-added, not brief-sourced — see the cluster-links.ts comment).
     const links = getClusterLinks('trocars-trocar-kits')
     expect(links).not.toBeNull()
     expect(links!.industryLinks).toEqual([{ slug: 'hrt-clinics', name: 'HRT Clinics' }])
-    expect(links!.partnerLinks).toEqual([{ slug: 'kadara', name: 'Kadara Medical' }])
-    expect(links!.categoryLinks).toEqual([{ slug: 'needles-syringes', name: 'Needles & Syringes' }])
+    expect(links!.partnerLinks).toEqual([])
+    expect(links!.categoryLinks).toEqual([
+      { slug: 'needles-syringes', name: 'Needles & Syringes' },
+      { slug: 'procedure-tray', name: 'Procedure Trays' },
+    ])
   })
 })

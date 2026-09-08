@@ -91,7 +91,7 @@ describe('CategoryPageView — SEO-CATEGORY-01 §8 Needles & Syringes ↔ Trocar
     expect(link).toHaveAttribute('href', '/category/trocars-trocar-kits')
   })
 
-  it('renders HRT Clinics, Kadara Medical, and Needles & Syringes links in Shop by Need on the Trocars page', async () => {
+  it('renders HRT Clinics, Procedure Trays, and Needles & Syringes links in Shop by Need on the Trocars page', async () => {
     mockEmptyCollection('trocars-trocar-kits', 'Trocars & Trocar Kits')
 
     const element = await CategoryPageView({ slug: 'trocars-trocar-kits', sp: {} })
@@ -103,7 +103,7 @@ describe('CategoryPageView — SEO-CATEGORY-01 §8 Needles & Syringes ↔ Trocar
     const shopByNeed = screen.getByRole('heading', { name: 'Shop by Need' }).closest('section')!
     const scoped = within(shopByNeed)
     expect(scoped.getByRole('link', { name: 'HRT Clinics' })).toHaveAttribute('href', '/industries/hrt-clinics')
-    expect(scoped.getByRole('link', { name: 'Kadara Medical' })).toHaveAttribute('href', '/partners/kadara')
+    expect(scoped.getByRole('link', { name: 'Procedure Trays' })).toHaveAttribute('href', '/category/procedure-tray')
     expect(scoped.getByRole('link', { name: 'Needles & Syringes' })).toHaveAttribute('href', '/category/needles-syringes')
   })
 })

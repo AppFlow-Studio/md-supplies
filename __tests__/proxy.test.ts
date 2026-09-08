@@ -1018,21 +1018,29 @@ describe('proxy — direct legacy image backlinks (2026-09-01 Ahrefs export)', (
     expect(res.headers.get('Location')).toContain('?v=1786100370')
   })
 
-  it('spam/off-topic and unverified image targets are left alone (no invented relevance)', () => {
-    // These either have no product-identifying signal (spam anchor text) or
-    // no confident current-catalog match — see EXCEPTIONS.md. They must NOT
-    // redirect to an unrelated category/homepage just to preserve link
-    // equity, so the current pass-through (ultimately a 404) is correct.
+  it('spam/off-topic image targets are left alone (no invented relevance)', () => {
+    // These have no product-identifying signal (spam anchor text) — see
+    // EXCEPTIONS.md. They must NOT redirect to an unrelated category/homepage
+    // just to preserve link equity, so the current pass-through (ultimately a
+    // 404) is correct.
     const unresolved = [
       '/sup/images/IIUR93PAQ6.gif',
       '/sup/images/JD8EJSY7CV.gif',
       '/sup/images/productImages/5K5N96KZBM.gif',
       '/sup/images/productImages/XMP2E37F1N.gif',
-      '/sup/images/productImages/XYZPG89DSJ.gif',
     ]
     for (const path of unresolved) {
       expectPassThrough(proxy(req(path)))
     }
+  })
+
+  it('the life jacket redirects to the correct Type II SKU family, not the QA-store candidate', () => {
+    // Production re-check (2026-09-07): the original QA-store candidate was
+    // SKU family 20-002, which is not Type II. Redirecting there would have
+    // attached a USCG Type-II compliance claim to the wrong product.
+    const res = proxy(req('/sup/images/productImages/XYZPG89DSJ.gif'))
+    expect(res.status).toBe(301)
+    expect(res.headers.get('Location')).toContain('20-001_')
   })
 })
 

@@ -224,6 +224,17 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
   { from: '/sup/images/productImages/WRW2B797FM.gif',                status: 410 }, // Hospira Lactated Ringers IV bag — injectable pharmaceutical, same DEA/compliance retirement as Pharmaceuticals above
   { from: '/sup/images/productImages/ZTLE7VFV3C.gif',                status: 410 }, // Rx Destroyer drug disposal system — not in catalog
 
+  // Production re-check (2026-09-07) of the 8 "Needs Izzy SEO review" targets in
+  // EXCEPTIONS.md — that list was matched against the QA store only. Re-run against
+  // production (Shopify Admin API, daebb2-76.myshopify.com) confirmed these 5 as
+  // correctly dead: see docs/audits/2026-09-04-p0-seo-migration-integrity/EXCEPTIONS.md
+  // and the production-recheck report for the per-target reasoning.
+  { from: '/sup/images/productImages/FF2KL9HABG.gif',                status: 410 }, // MedPride Hydrogel Wound Dressing Sheet 4x4 — exact product live (sterile-hydrogel-burn-dressing-4-x-4) but has zero images; its other sizes do
+  { from: '/sup/images/productImages/MXCUT572QP.gif',                status: 410 }, // Synthetic vinyl gloves — matching MedPlus products are live but have zero images; the only imaged vinyl glove is a different product
+  { from: '/sup/images/productImages/53DADEVYIN.gif',                status: 410 }, // PVC commode chair — the only PVC product is a commode pail, not a chair; no identity match
+  { from: '/sup/images/productImages/979PEK3F66.gif',                status: 410 }, // Trotter pediatric mobility chair — Trotter line live as accessories only, base chair not in catalog
+  { from: '/sup/images/productImages/RQZYQP73KJ.gif',                status: 410 }, // Pharmaceutical spatula — no matching live product; only hits are a counting-tray/spatula combo and an unrelated suture needle shape
+
   // ── 301 Recoverable redirects ─────────────────────────────────────────────
 
   // Direct legacy image backlink, Case 2 (same product category exists, image
@@ -235,6 +246,18 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
   // straight to the CDN image asset (not the HTML product page) so a
   // third-party <img src> still renders instead of breaking.
   { from: '/sup/images/productImages/3Y3PKD2E6Q.gif',                                                to: 'https://cdn.shopify.com/s/files/1/0821/0989/0793/files/857-4000.jpg?v=1786100370', status: 301 },
+
+  // Production re-check (2026-09-07) of EXCEPTIONS.md's "Needs Izzy SEO review" list:
+  // QA-store matching was wrong on 5 of 8 exceptions. These 3 are confirmed identity
+  // matches (or, for the life jacket, the *correct* product where the original QA
+  // candidate was the wrong SKU family) against production. Redirects target a live
+  // CDN image, not a /product/ page, matching the pattern above and Google's guidance
+  // that redirecting to an unrelated destination reads as a soft 404
+  // (https://support.google.com/webmasters/answer/2445990). Storefront-side resolution
+  // of these three targets has not been separately re-verified post-deploy.
+  { from: '/sup/images/productImages/15ULWMDK6A.gif',                                               to: 'https://cdn.shopify.com/s/files/1/0711/6737/7624/files/wz119stlivhwmjvacvzx.jpg?v=1727223773', status: 301 }, // Safety goggles with side shields → Dynarex Protective Eye Goggles (2297) — product-type match, no live product says "side shields"
+  { from: '/sup/images/productImages/PREGWANPVK.gif',                                               to: 'https://cdn.shopify.com/s/files/1/0711/6737/7624/files/MPR-47111.jpg?v=1732507962',           status: 301 }, // Sterile disposable scalpels → MedPride Disposable Scalpels #11 (MPR-47111) — exact brand/product match; QA's top hit was a synthetic fixture
+  { from: '/sup/images/productImages/XYZPG89DSJ.gif',                                               to: 'https://cdn.shopify.com/s/files/1/0711/6737/7624/files/20-001_bbb502b4-5fcc-4487-a05f-8e93fe2b216a.png?v=1740930483', status: 301 }, // USCG type 2 life jacket → Kemp USA Type II Adult Life Jacket (20-001-ADULT) — QA's candidate was SKU family 20-002, not Type II; this is the correct family
 
   // Note: /category/face-coverings → /category/face-masks is handled as a subtree
   // redirect in the proxy() function below (covers both root and nested paths).
