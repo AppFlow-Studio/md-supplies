@@ -52,12 +52,11 @@ function storeTags(): string[] {
 
 export async function getStoreReviewSummary(): Promise<StoreReviewSummary | null> {
   try {
-    const res = await trustShopGet('/storefront/store/reviews/summary', {
+    const d = await trustShopGet('/storefront/store/reviews/summary', {
       operation: 'summary',
       schema: trustShopStoreSummarySchema,
       next: { revalidate: SUMMARY_TTL_SECONDS, tags: storeTags() },
     })
-    const d = res.data
     return {
       averageRating: d.average_review,
       totalReviews: d.total_review,

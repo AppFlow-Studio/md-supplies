@@ -95,10 +95,8 @@ export const trustShopWriteResponseSchema = z.object({
   status: z.string().optional(),
 })
 
-// Store summary shares the same field shape as product summary
-// (ratingSummaryDataSchema above) — only confirmed live for product so far;
-// store's `data` wrapper is kept as originally assumed pending its own
-// verification (not yet captured against the real API).
-export const trustShopStoreSummarySchema = z.object({
-  data: ratingSummaryDataSchema,
-})
+// Confirmed 2026-09-09 (same day as product): store summary is flat too, no
+// `data` wrapper — identical envelope to product summary, just with two
+// extra fields this app doesn't read (total_reviewers, recommend_review)
+// and a `shop` object, both dropped by Zod's strip mode.
+export const trustShopStoreSummarySchema = ratingSummaryDataSchema

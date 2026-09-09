@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { trustShopSummarySchema, trustShopReviewListSchema, trustShopMediaListSchema } from '../schemas'
+import { trustShopSummarySchema, trustShopReviewListSchema, trustShopMediaListSchema, trustShopStoreSummarySchema } from '../schemas'
 
 /**
  * Regression guard against the 2026-09-09 contract mismatch: these three
@@ -36,6 +36,23 @@ describe('TrustShop schemas — real API shape (captured 2026-09-09)', () => {
   it('parses the real product media-list response (no current_page, no has_next_page)', () => {
     const real = { data: [], next_cursor: false }
     const result = trustShopMediaListSchema.safeParse(real)
+    expect(result.success).toBe(true)
+  })
+
+  // Captured 2026-09-09 from /storefront/store/reviews/summary — the risk
+  // flagged when the product summary fix landed ("store's data wrapper is
+  // unverified") turned out to be real: store summary is flat too, same as
+  // product. Confirmed via the same temporary-instrumentation technique.
+  it('parses the real store review summary response (also flat, no data wrapper)', () => {
+    const real = {
+      total_review: 0,
+      total_reviewers: 0,
+      average_review: 0,
+      recommend_review: 0,
+      stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 0 },
+      shop: { name: 'MDSupplies', address: 'St Petersburg, FL', logo: 'https://ts-media.syd1.cdn.digitaloceanspaces.com/upload/71167377624/asset/logo-728f9013cd2aa319d359c1351110fd8b.png' },
+    }
+    const result = trustShopStoreSummarySchema.safeParse(real)
     expect(result.success).toBe(true)
   })
 })

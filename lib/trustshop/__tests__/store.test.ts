@@ -30,11 +30,9 @@ beforeEach(() => {
 describe('getStoreReviewSummary', () => {
   it('normalizes the store-specific field names (total_review/average_review/stars_review) into the shared summary shape', async () => {
     mockGet.mockResolvedValue({
-      data: {
-        average_review: 4.6,
-        total_review: 128,
-        stars_review: { star_1: 3, star_2: 1, star_3: 5, star_4: 40, star_5: 79 },
-      },
+      average_review: 4.6,
+      total_review: 128,
+      stars_review: { star_1: 3, star_2: 1, star_3: 5, star_4: 40, star_5: 79 },
     })
 
     const summary = await getStoreReviewSummary()
@@ -47,7 +45,7 @@ describe('getStoreReviewSummary', () => {
 
   it('normalizes a zero-review summary without fabricating a rating', async () => {
     mockGet.mockResolvedValue({
-      data: { average_review: 0, total_review: 0, stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 0 } },
+      average_review: 0, total_review: 0, stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 0 },
     })
     const summary = await getStoreReviewSummary()
     expect(summary?.totalReviews).toBe(0)
@@ -60,7 +58,7 @@ describe('getStoreReviewSummary', () => {
 
   it('never scopes the request to a Shopify product id', async () => {
     mockGet.mockResolvedValue({
-      data: { average_review: 4, total_review: 1, stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 1 } },
+      average_review: 4, total_review: 1, stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 1 },
     })
     await getStoreReviewSummary()
     const call = mockGet.mock.calls[0][1] as { shopifyProductId?: number; query?: Record<string, unknown> }
