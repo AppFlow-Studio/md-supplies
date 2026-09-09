@@ -1,5 +1,5 @@
 import { test, type Page } from '@playwright/test'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { firstPopulatedCategory, requireFixture } from './helpers/qa-fixtures'
 
@@ -8,15 +8,17 @@ import { firstPopulatedCategory, requireFixture } from './helpers/qa-fixtures'
  *
  * NOT a regression test — asserts nothing, writes only to docs/audits/.
  *
- * This environment has no TRUSTSHOP_INTEGRATION_KEY configured (P0 rule: the
- * exposed planning key must never be used; a rotated key was never
- * provisioned here). Every capture below therefore documents the
- * "TrustShop unreachable" path: zero-review PDP state, write-review form +
- * validation, and commerce continuing to work. Reviewed-product states
- * (distribution bars, filters, Verified Buyer, merchant reply, media
- * gallery, Load More) require a live key + seeded TrustShop fixtures and
- * cannot be captured until those are provisioned — see the ticket's
- * developer handoff notes for exactly what's still needed.
+ * As of 2026-09-09, TRUSTSHOP_API_BASE_URL + TRUSTSHOP_INTEGRATION_KEY are
+ * both live and reachable — every capture below is a REAL response, not a
+ * simulated-unreachable one. Every product sampled in this store (~140
+ * across 7 categories) still has zero seeded reviews, so these captures
+ * document the genuine zero-review state, not a fallback path. Reviewed-
+ * product states (distribution bars, filters, Verified Buyer, merchant
+ * reply, media gallery, Load More) require seeded TrustShop review data and
+ * cannot be captured until that exists — see the ticket's developer handoff
+ * notes for exactly what's still needed. The TrustShop-failure-simulation
+ * shot is captured separately (not in this file) by pointing
+ * TRUSTSHOP_API_BASE_URL at an unreachable host for one run.
  *
  * Run explicitly against a production build:
  *   npm run build && npm run start
@@ -130,5 +132,23 @@ test('page source contains no bearer/token material (paired with DevTools networ
   const html = await page.content()
   if (/TRUSTSHOP_INTEGRATION_KEY|Bearer [A-Za-z0-9._-]{10,}/.test(html)) {
     throw new Error('Bearer/token material found in page source — this must never happen')
+  }
+})
+
+test('Product JSON-LD — aggregateRating omitted for zero-review product', async ({ page }) => {
+  await page.goto(productUrl(), { waitUntil: 'domcontentloaded' })
+  const jsonLdBlocks = await page.locator('script[type="application/ld+json"]').allTextContents()
+  const productSchema = jsonLdBlocks
+    .map((raw) => JSON.parse(raw))
+    .find((obj) => obj['@type'] === 'Product')
+
+  writeFileSync(
+    join(OUT, '11-product-json-ld-zero-review.json'),
+    JSON.stringify(productSchema ?? { error: 'no Product JSON-LD block found' }, null, 2),
+  )
+
+  if (!productSchema) throw new Error('No Product JSON-LD block found on the PDP')
+  if ('aggregateRating' in productSchema) {
+    throw new Error('aggregateRating present on a zero-review product — must be omitted, never a fabricated 0')
   }
 })
