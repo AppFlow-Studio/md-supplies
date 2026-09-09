@@ -101,7 +101,12 @@ export function FavoriteButton({
   }
 
   return (
-    <span className="relative inline-flex">
+    // `className` (positioning/background, e.g. the card overlay's "absolute
+    // top-2 right-2 ...") must land on THIS root element, exactly like the
+    // guest branch's <a> above — not on the inner <button> below, whose own
+    // nearest positioned ancestor would then be this span instead of the
+    // card's image container, leaving the heart mispositioned/clipped.
+    <span className={`inline-flex rounded-full ${className}`}>
       <button
         type="button"
         onClick={handleClick}
@@ -110,7 +115,7 @@ export function FavoriteButton({
         aria-label={favorited ? `Remove ${productTitle} from favorites` : `Add ${productTitle} to favorites`}
         className={`inline-flex items-center justify-center ${dim} rounded-full transition-colors disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900 ${
           favorited ? 'text-red-500 hover:bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-        } ${className}`}
+        }`}
       >
         {isPending ? (
           <Loader2 size={iconSize} className="animate-spin" aria-hidden />
