@@ -44,6 +44,9 @@ import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
 import { compareFacetValues } from '@/lib/catalog/facet-order'
+import { getNumericShopifyProductId } from '@/lib/trustshop/product-id'
+import { getProductReviewSummary, listProductReviews, getProductReviewMedia } from '@/lib/trustshop/product'
+import type { ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
 
 // Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
 // route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
@@ -69,7 +72,9 @@ interface Props {
   // LG-03: `variant` is only meaningful on the product-detail fallback below,
   // not the L2 category-grid render — kept as an intersection rather than
   // widening the shared CategorySearchParams type category pages also use.
-  searchParams: Promise<CategorySearchParams & { variant?: string }>
+  // reviewFilter/reviewSort/reviewPage: same reasoning, mirroring
+  // /product/[slug]/page.tsx's dedicated searchParams shape.
+  searchParams: Promise<CategorySearchParams & { variant?: string; reviewFilter?: string; reviewSort?: string; reviewPage?: string }>
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -380,6 +385,28 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     (p) => p.isActive && p.vendorName === productData.product!.vendor,
   ) ?? null
 
+  // TrustShop reviews (parity with /product/[slug]/page.tsx): never allowed
+  // to fail the PDP — see that route's identical comment for why the outer
+  // try/catch is belt-and-suspenders alongside each call's own .catch(null).
+  let numericProductId: number | null = null
+  try {
+    numericProductId = getNumericShopifyProductId(productData.product.id)
+  } catch {
+    numericProductId = null
+  }
+
+  const reviewFilter = sp.reviewFilter as ProductReviewFilter | undefined
+  const reviewSort = sp.reviewSort as ProductReviewSort | undefined
+  const reviewPage = Number(sp.reviewPage) > 0 ? Number(sp.reviewPage) : 1
+
+  const [reviewSummary, reviewsPage, reviewMediaPage] = numericProductId
+    ? await Promise.all([
+        getProductReviewSummary(numericProductId).catch(() => null),
+        listProductReviews(numericProductId, { filter: reviewFilter, sort: reviewSort, currentPage: reviewPage }).catch(() => null),
+        getProductReviewMedia(numericProductId, { perPage: 20 }).catch(() => null),
+      ])
+    : [null, null, null]
+
   const recsData = await storefrontFetch<{
     related: CollectionProduct[]
     complementary: CollectionProduct[]
@@ -426,6 +453,19 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     priceValidUntil: buildPriceValidUntil(),
     ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
+    // Identical normalized TrustShop summary the visible UI uses — omitted
+    // entirely (not a fabricated 0/empty rating) for a zero-review product.
+    // Mirrors /product/[slug]/page.tsx's identical block.
+    ...(reviewSummary && reviewSummary.totalReviews > 0
+      ? {
+          aggregateRating: {
+            ratingValue: reviewSummary.averageRating,
+            reviewCount: reviewSummary.totalReviews,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
   }
 
   const { categories, subcategories } = parseProductTags(productData.product.tags)
@@ -464,6 +504,18 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
         breadcrumbs={breadcrumbs}
         partnerSlug={partner?.slug ?? null}
         variantShippingDisplays={variantShippingDisplays}
+        reviewSummary={reviewSummary}
+        reviewsSection={{
+          basePath: `/category/${slug}/${handle}`,
+          productGid: productData.product.id,
+          summary: reviewSummary,
+          reviews: reviewsPage?.reviews ?? null,
+          media: reviewMediaPage?.media ?? [],
+          currentFilter: reviewFilter ?? 'all',
+          currentSort: reviewSort ?? 'most_helpful',
+          currentPage: reviewsPage?.currentPage ?? reviewPage,
+          hasNextPage: reviewsPage?.hasNextPage ?? false,
+        }}
       />
     </main>
   )
