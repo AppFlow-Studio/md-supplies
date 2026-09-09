@@ -47,23 +47,22 @@ function tagsFor(numericId: number): string[] {
 
 export async function getProductReviewSummary(numericId: number): Promise<ProductReviewSummary | null> {
   try {
-    const res = await trustShopGet('/storefront/product/reviews/summary', {
+    const d = await trustShopGet('/storefront/product/reviews/summary', {
       operation: 'summary',
       shopifyProductId: numericId,
       query: { product_id: numericId },
       schema: trustShopSummarySchema,
       next: { revalidate: SUMMARY_TTL_SECONDS, tags: tagsFor(numericId) },
     })
-    const d = res.data
     return {
-      averageRating: d.average_rating,
-      totalReviews: d.total_reviews,
+      averageRating: d.average_review,
+      totalReviews: d.total_review,
       ratingsDistribution: {
-        1: d.ratings_distribution['1_star'],
-        2: d.ratings_distribution['2_star'],
-        3: d.ratings_distribution['3_star'],
-        4: d.ratings_distribution['4_star'],
-        5: d.ratings_distribution['5_star'],
+        1: d.stars_review.star_1,
+        2: d.stars_review.star_2,
+        3: d.stars_review.star_3,
+        4: d.stars_review.star_4,
+        5: d.stars_review.star_5,
       },
     }
   } catch (err) {
@@ -98,8 +97,8 @@ export async function listProductReviews(
 
     return {
       reviews: res.data.map(normalizeReview),
-      currentPage: res.current_page,
-      hasNextPage: nextPageFor(res.current_page, res.next_cursor) !== null,
+      currentPage,
+      hasNextPage: res.has_next_page,
     }
   } catch (err) {
     void err
@@ -131,8 +130,8 @@ export async function getProductReviewMedia(
 
     return {
       media: res.data.map((m) => normalizeMedia(m)),
-      currentPage: res.current_page,
-      hasNextPage: nextPageFor(res.current_page, res.next_cursor) !== null,
+      currentPage,
+      hasNextPage: nextPageFor(currentPage, res.next_cursor) !== null,
     }
   } catch (err) {
     void err

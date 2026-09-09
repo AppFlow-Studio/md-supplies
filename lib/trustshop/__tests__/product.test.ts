@@ -40,11 +40,9 @@ describe('nextPageFor', () => {
 describe('getProductReviewSummary', () => {
   it('normalizes a valid summary', async () => {
     mockGet.mockResolvedValue({
-      data: {
-        average_rating: 4.5,
-        total_reviews: 55,
-        ratings_distribution: { '1_star': 2, '2_star': 0, '3_star': 3, '4_star': 8, '5_star': 42 },
-      },
+      average_review: 4.5,
+      total_review: 55,
+      stars_review: { star_1: 2, star_2: 0, star_3: 3, star_4: 8, star_5: 42 },
     })
 
     const summary = await getProductReviewSummary(123)
@@ -57,11 +55,9 @@ describe('getProductReviewSummary', () => {
 
   it('normalizes a zero-review summary without fabricating a rating', async () => {
     mockGet.mockResolvedValue({
-      data: {
-        average_rating: 0,
-        total_reviews: 0,
-        ratings_distribution: { '1_star': 0, '2_star': 0, '3_star': 0, '4_star': 0, '5_star': 0 },
-      },
+      average_review: 0,
+      total_review: 0,
+      stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 0 },
     })
 
     const summary = await getProductReviewSummary(123)
@@ -113,13 +109,13 @@ describe('listProductReviews — review normalization', () => {
   }
 
   it('marks buyerVerified true when TrustShop returns buyer_verification: true', async () => {
-    mockGet.mockResolvedValue({ data: [baseReview], current_page: 1, next_cursor: false })
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: false })
     const page = await listProductReviews(123)
     expect(page?.reviews[0].buyerVerified).toBe(true)
   })
 
   it('marks buyerVerified false when TrustShop returns buyer_verification: false', async () => {
-    mockGet.mockResolvedValue({ data: [{ ...baseReview, buyer_verification: false }], current_page: 1, next_cursor: false })
+    mockGet.mockResolvedValue({ data: [{ ...baseReview, buyer_verification: false }], has_next_page: false })
     const page = await listProductReviews(123)
     expect(page?.reviews[0].buyerVerified).toBe(false)
   })
@@ -127,8 +123,7 @@ describe('listProductReviews — review normalization', () => {
   it('surfaces a merchant reply and reply date when present', async () => {
     mockGet.mockResolvedValue({
       data: [{ ...baseReview, reply: 'Thanks!', reply_date: '2026-01-02T00:00:00Z' }],
-      current_page: 1,
-      next_cursor: false,
+      has_next_page: false,
     })
     const page = await listProductReviews(123)
     expect(page?.reviews[0].reply).toBe('Thanks!')
@@ -136,7 +131,7 @@ describe('listProductReviews — review normalization', () => {
   })
 
   it('omits a merchant reply when absent', async () => {
-    mockGet.mockResolvedValue({ data: [baseReview], current_page: 1, next_cursor: false })
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: false })
     const page = await listProductReviews(123)
     expect(page?.reviews[0].reply).toBeNull()
   })
@@ -144,24 +139,29 @@ describe('listProductReviews — review normalization', () => {
   it('never surfaces a customer.md5_email field, even if upstream sends one', async () => {
     mockGet.mockResolvedValue({
       data: [{ ...baseReview, customer: { name: 'John Doe', md5_email: 'deadbeef' } }],
-      current_page: 1,
-      next_cursor: false,
+      has_next_page: false,
     })
     const page = await listProductReviews(123)
     expect(JSON.stringify(page)).not.toContain('deadbeef')
     expect(JSON.stringify(page)).not.toContain('md5_email')
   })
 
-  it('increments current_page only when next_cursor is true', async () => {
-    mockGet.mockResolvedValue({ data: [baseReview], current_page: 1, next_cursor: true })
+  it('reports hasNextPage true when TrustShop returns has_next_page: true', async () => {
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: true })
     const page = await listProductReviews(123)
     expect(page?.hasNextPage).toBe(true)
   })
 
-  it('does not indicate a next page when next_cursor is false', async () => {
-    mockGet.mockResolvedValue({ data: [baseReview], current_page: 1, next_cursor: false })
+  it('does not indicate a next page when has_next_page is false', async () => {
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: false })
     const page = await listProductReviews(123)
     expect(page?.hasNextPage).toBe(false)
+  })
+
+  it('reports the page it requested — TrustShop never echoes current_page back', async () => {
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: false })
+    const page = await listProductReviews(123, { currentPage: 3 })
+    expect(page?.currentPage).toBe(3)
   })
 
   it('returns null gracefully on a provider failure', async () => {
@@ -170,7 +170,7 @@ describe('listProductReviews — review normalization', () => {
   })
 
   it('passes only allowlisted filter/sort values through to the query', async () => {
-    mockGet.mockResolvedValue({ data: [], current_page: 1, next_cursor: false })
+    mockGet.mockResolvedValue({ data: [], has_next_page: false })
     await listProductReviews(123, { filter: '5_star', sort: 'newest' })
     const call = mockGet.mock.calls[0][1] as { query: Record<string, unknown> }
     expect(call.query.filter).toBe('5_star')
@@ -178,7 +178,7 @@ describe('listProductReviews — review normalization', () => {
   })
 
   it('drops a filter/sort value that is not in the allowlist', async () => {
-    mockGet.mockResolvedValue({ data: [], current_page: 1, next_cursor: false })
+    mockGet.mockResolvedValue({ data: [], has_next_page: false })
     await listProductReviews(123, { filter: 'DROP TABLE reviews', sort: 'sql_injection' })
     const call = mockGet.mock.calls[0][1] as { query: Record<string, unknown> }
     expect(call.query.filter).toBeUndefined()
@@ -190,7 +190,6 @@ describe('getProductReviewMedia', () => {
   it('normalizes media entries', async () => {
     mockGet.mockResolvedValue({
       data: [{ url: 'https://cdn.example.com/a.jpg', width: 800, height: 600, media_type: 'image', review_id: 'r1', rating_star: 5 }],
-      current_page: 1,
       next_cursor: false,
     })
     const page = await getProductReviewMedia(123)
@@ -253,7 +252,7 @@ describe('getManyProductReviewSummaries', () => {
 
   it('deduplicates repeated ids', async () => {
     mockGet.mockResolvedValue({
-      data: { average_rating: 5, total_reviews: 1, ratings_distribution: { '1_star': 0, '2_star': 0, '3_star': 0, '4_star': 0, '5_star': 1 } },
+      average_review: 5, total_review: 1, stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 1 },
     })
     await getManyProductReviewSummaries([1, 1, 1])
     expect(mockGet).toHaveBeenCalledTimes(1)
@@ -262,7 +261,7 @@ describe('getManyProductReviewSummaries', () => {
   it('one failing item does not fail the batch — others still resolve', async () => {
     mockGet.mockImplementation(async (_path, opts: { shopifyProductId?: number }) => {
       if (opts.shopifyProductId === 2) throw new TrustShopError('server error', 'server')
-      return { data: { average_rating: 4, total_reviews: 10, ratings_distribution: { '1_star': 0, '2_star': 0, '3_star': 0, '4_star': 0, '5_star': 10 } } }
+      return { average_review: 4, total_review: 10, stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 10 } }
     })
     const result = await getManyProductReviewSummaries([1, 2, 3])
     expect(result.get(1)).not.toBeNull()
@@ -278,7 +277,7 @@ describe('getManyProductReviewSummaries', () => {
       maxInFlight = Math.max(maxInFlight, inFlight)
       await new Promise((r) => setTimeout(r, 10))
       inFlight -= 1
-      return { data: { average_rating: 4, total_reviews: 1, ratings_distribution: { '1_star': 0, '2_star': 0, '3_star': 0, '4_star': 0, '5_star': 1 } } }
+      return { average_review: 4, total_review: 1, stars_review: { star_1: 0, star_2: 0, star_3: 0, star_4: 0, star_5: 1 } }
     })
 
     const ids = Array.from({ length: 48 }, (_, i) => i + 1)

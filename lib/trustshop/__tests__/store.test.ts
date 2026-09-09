@@ -88,19 +88,25 @@ describe('listStoreReviews', () => {
   }
 
   it('normalizes reviews using the same shape as product reviews', async () => {
-    mockGet.mockResolvedValue({ data: [baseReview], current_page: 1, next_cursor: false })
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: false })
     const page = await listStoreReviews()
     expect(page?.reviews[0]).toMatchObject({ id: 's1', starRating: 5, buyerVerified: true })
   })
 
-  it('increments current_page only when next_cursor is true', async () => {
-    mockGet.mockResolvedValue({ data: [baseReview], current_page: 2, next_cursor: true })
+  it('reports hasNextPage true when TrustShop returns has_next_page: true', async () => {
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: true })
     const page = await listStoreReviews({ currentPage: 2 })
     expect(page?.hasNextPage).toBe(true)
   })
 
+  it('reports the page it requested — TrustShop never echoes current_page back', async () => {
+    mockGet.mockResolvedValue({ data: [baseReview], has_next_page: true })
+    const page = await listStoreReviews({ currentPage: 2 })
+    expect(page?.currentPage).toBe(2)
+  })
+
   it('drops a filter/sort value that is not in the allowlist', async () => {
-    mockGet.mockResolvedValue({ data: [], current_page: 1, next_cursor: false })
+    mockGet.mockResolvedValue({ data: [], has_next_page: false })
     await listStoreReviews({ filter: 'nonsense', sort: 'nonsense' })
     const call = mockGet.mock.calls[0][1] as { query: Record<string, unknown> }
     expect(call.query.filter).toBeUndefined()
@@ -117,7 +123,6 @@ describe('getStoreReviewMedia', () => {
   it('normalizes media entries', async () => {
     mockGet.mockResolvedValue({
       data: [{ url: 'https://cdn.example.com/store-a.jpg', width: 640, height: 480, media_type: 'image', review_id: 's1', rating_star: 5 }],
-      current_page: 1,
       next_cursor: false,
     })
     const page = await getStoreReviewMedia()

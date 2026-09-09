@@ -98,8 +98,8 @@ export async function listStoreReviews(
 
     return {
       reviews: res.data.map(normalizeReview),
-      currentPage: res.current_page,
-      hasNextPage: nextPageFor(res.current_page, res.next_cursor) !== null,
+      currentPage,
+      hasNextPage: res.has_next_page,
     }
   } catch (err) {
     void err
@@ -128,8 +128,8 @@ export async function getStoreReviewMedia(
 
     return {
       media: res.data.map((m) => normalizeMedia(m)),
-      currentPage: res.current_page,
-      hasNextPage: nextPageFor(res.current_page, res.next_cursor) !== null,
+      currentPage,
+      hasNextPage: nextPageFor(currentPage, res.next_cursor) !== null,
     }
   } catch (err) {
     void err

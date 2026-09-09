@@ -10,21 +10,29 @@ import { z } from 'zod'
  * provider failure and fall back gracefully rather than crashing the PDP.
  */
 
-const ratingsDistributionSchema = z.object({
-  '1_star': z.number().int().nonnegative(),
-  '2_star': z.number().int().nonnegative(),
-  '3_star': z.number().int().nonnegative(),
-  '4_star': z.number().int().nonnegative(),
-  '5_star': z.number().int().nonnegative(),
+const starsReviewSchema = z.object({
+  star_1: z.number().int().nonnegative(),
+  star_2: z.number().int().nonnegative(),
+  star_3: z.number().int().nonnegative(),
+  star_4: z.number().int().nonnegative(),
+  star_5: z.number().int().nonnegative(),
 })
 
-export const trustShopSummarySchema = z.object({
-  data: z.object({
-    average_rating: z.number(),
-    total_reviews: z.number().int().nonnegative(),
-    ratings_distribution: ratingsDistributionSchema,
-  }),
+// Product and store summaries share one real shape — average_review/
+// total_review/stars_review.star_N — confirmed against the live API
+// 2026-09-09 (see schemas.test.ts for the verbatim capture). The originally
+// assumed product-only field names (average_rating/total_reviews/
+// ratings_distribution.N_star) never matched anything TrustShop actually
+// sends; every read failed Zod validation until this was caught. The one
+// remaining difference is the envelope: product's response is flat, store's
+// stays wrapped in `data` (see trustShopStoreSummarySchema below).
+const ratingSummaryDataSchema = z.object({
+  average_review: z.number(),
+  total_review: z.number().int().nonnegative(),
+  stars_review: starsReviewSchema,
 })
+
+export const trustShopSummarySchema = ratingSummaryDataSchema
 
 const idSchema = z.union([z.string(), z.number()]).transform(String)
 
@@ -61,17 +69,24 @@ export const trustShopReviewSchema = z.object({
   language_code: z.string().nullable().optional(),
 })
 
-// next_cursor is a boolean flag in TrustShop's contract ("another numbered
-// page exists"), not an actual cursor token — never treat it as one.
+// Confirmed against the live API 2026-09-09: the reviews-list response never
+// echoes back current_page at all (callers must track the page they
+// requested themselves) and signals more pages via has_next_page — a real
+// boolean, unlike the legacy next_cursor flag also present in the payload
+// but unused here. TrustShop also returns an opaque `ref` cursor token
+// (stripped — not adopted; page-number pagination stays the contract, per
+// 2026-09-09 decision).
 export const trustShopReviewListSchema = z.object({
   data: z.array(trustShopReviewSchema),
-  current_page: z.number().int().positive(),
-  next_cursor: z.boolean(),
+  has_next_page: z.boolean(),
 })
 
+// The media-list response has neither current_page nor has_next_page —
+// only next_cursor, confirmed 2026-09-09. Genuinely inconsistent with the
+// reviews-list response above; each schema reflects what its own endpoint
+// actually returns rather than assuming parity between them.
 export const trustShopMediaListSchema = z.object({
   data: z.array(trustShopMediaItemSchema),
-  current_page: z.number().int().positive(),
   next_cursor: z.boolean(),
 })
 
@@ -80,24 +95,10 @@ export const trustShopWriteResponseSchema = z.object({
   status: z.string().optional(),
 })
 
-// Store-review summary uses different field names than product-review
-// summary (total_review vs total_reviews, average_review vs average_rating,
-// stars_review.star_N vs ratings_distribution.N_star) — TrustShop's own
-// inconsistency between the two domains. Normalized to the identical
-// internal ProductReviewSummary/StoreReviewSummary shape in
-// lib/trustshop/store.ts so the same UI primitives can render either.
-const storeStarsSchema = z.object({
-  star_1: z.number().int().nonnegative(),
-  star_2: z.number().int().nonnegative(),
-  star_3: z.number().int().nonnegative(),
-  star_4: z.number().int().nonnegative(),
-  star_5: z.number().int().nonnegative(),
-})
-
+// Store summary shares the same field shape as product summary
+// (ratingSummaryDataSchema above) — only confirmed live for product so far;
+// store's `data` wrapper is kept as originally assumed pending its own
+// verification (not yet captured against the real API).
 export const trustShopStoreSummarySchema = z.object({
-  data: z.object({
-    average_review: z.number(),
-    total_review: z.number().int().nonnegative(),
-    stars_review: storeStarsSchema,
-  }),
+  data: ratingSummaryDataSchema,
 })
