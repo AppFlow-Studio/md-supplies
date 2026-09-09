@@ -13,7 +13,7 @@ export function ProductReviewSummaryLink({ summary }: { summary: ProductReviewSu
   if (!summary || summary.totalReviews === 0) {
     return (
       <Link
-        href="#reviews"
+        href="#write-a-review"
         className="w-fit text-gray-500 text-[13px] tracking-[0.26px] underline-offset-2 hover:text-teal-500 hover:underline transition-colors"
       >
         No reviews yet · Write a review

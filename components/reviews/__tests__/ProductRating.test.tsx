@@ -56,7 +56,7 @@ describe('ProductReviewSummaryLink', () => {
   it('shows a clean "No reviews yet" state, not a fake rating, for a zero-review product', () => {
     render(<ProductReviewSummaryLink summary={null} />)
     const link = screen.getByRole('link', { name: /No reviews yet/ })
-    expect(link).toHaveAttribute('href', '#reviews')
+    expect(link).toHaveAttribute('href', '#write-a-review')
     expect(screen.queryByText('0.0')).not.toBeInTheDocument()
   })
 })
