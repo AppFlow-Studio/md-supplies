@@ -243,6 +243,74 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
   })
 })
 
+// DEV-CATALOG (2026-09-10): Bilal's B2080C report — client marked only the
+// 3.5mm variant of "Disposable Blunt Tip, Trocar Combo Kit" as backordered
+// in Shopify, but no Backorder state ever appeared on the PDP for either
+// size. Root cause: custom.backorder was read at the product level only —
+// there was no code path to a variant-scoped value at all. selectedVariant.backorder
+// now takes precedence, falling back to product.backorder only when the
+// selected variant has no metafield value of its own (same "variant first,
+// product only when blank" rule as orderSize/unitsPerOrder).
+describe('ProductView — variant-scoped Backorder (DEV-CATALOG, B2080C)', () => {
+  const smallVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51022196736216',
+    sku: 'B2080C',
+    selectedOptions: [{ name: 'Size', value: '3.5mm' }],
+    backorder: { value: 'true' },
+  }
+  const largeVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51930534281432',
+    sku: 'B2083C',
+    selectedOptions: [{ name: 'Size', value: '4.5mm' }],
+    backorder: { value: 'false' },
+  }
+  const trocarProduct: Product = {
+    ...product,
+    options: [{ id: 'opt1', name: 'Size', values: ['3.5mm', '4.5mm'] }],
+    variants: { nodes: [smallVariant, largeVariant] },
+  }
+
+  it('shows the Backorder badge on the variant Izzy flagged, even though the product-level field is unset', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('hides the Backorder badge on the sibling variant instead of leaking the flagged variant\'s state', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Size: 4.5mm' }))
+    expect(screen.queryByText('Backorder')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the product-level value when the selected variant has no backorder metafield of its own', () => {
+    const variantWithNoOwnValue = { ...largeVariant, backorder: undefined }
+    render(
+      <ProductView
+        product={{ ...trocarProduct, backorder: { value: 'true' }, variants: { nodes: [smallVariant, variantWithNoOwnValue] } }}
+        initialVariant={variantWithNoOwnValue}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+})
+
 // DEV-SHIP-02: recommendation cards ("Similar Products" / "Frequently
 // Bought With") previously carried no shippingDisplay at all — RelatedProductCard
 // rendered no badges — so a genuinely free-shipping-eligible related product

@@ -108,6 +108,13 @@ export const GET_PRODUCT = `#graphql
           innerPackQuantity: metafield(namespace: "custom", key: "inner_pack_quantity") { value }
           packsPerCase: metafield(namespace: "custom", key: "packs_per_case") { value }
           totalOrderQuantity: metafield(namespace: "custom", key: "total_order_quantity") { value }
+
+          # DEV-CATALOG (2026-09-10): same custom.backorder key as the
+          # product-level field above, scoped to the Variant resource. Null
+          # on every variant until the definition is enabled for Variants in
+          # Shopify Admin (Izzy) and a value is set on the specific variant —
+          # ProductView falls back to the product-level value until then.
+          backorder: metafield(namespace: "custom", key: "backorder") { value }
         }
       }
       options {

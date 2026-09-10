@@ -198,9 +198,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // can never disagree. availableForSale only gates purchasability — it is
   // never presented as a real-time "In Stock" inventory claim. Backorder is
   // gated on the custom.backorder boolean alone, independent of availability.
+  //
+  // DEV-CATALOG (2026-09-10): selectedVariant.backorder first, product.backorder
+  // only when the selected variant has no metafield value of its own — a
+  // product with mixed variants (one backordered, one not, e.g. B2080C's
+  // 3.5mm/4.5mm trocar kit) must show the badge only on the variant Izzy
+  // actually flagged, not on every variant just because the product-level
+  // field (still the only thing most products set) happens to be true.
   const labels = resolveProductLabels({
     tags: product.tags,
-    isBackordered: product.backorder,
+    isBackordered: selectedVariant.backorder ?? product.backorder,
     estimatedRestockDate: product.estimatedRestockDate,
     // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the
     // PDP badge can never disagree with whether the cart will actually be gated.

@@ -69,6 +69,17 @@ export type VariantMetafields = {
       from innerPackQuantity * packsPerCase, since Each/Bag families don't
       decompose into two multiplicands. */
   totalOrderQuantity?: string | null;
+  /** Raw `custom.backorder`, read from the Variant resource (DEV-CATALOG,
+      2026-09-10). Same metafield key as `Product.backorder` — Shopify lets a
+      definition apply to both Product and Variant, so this is the SAME field
+      scoped narrower, never a second/duplicate backorder field. Kept raw
+      (not flattened to a plain boolean) to match Product.backorder, since
+      both feed isBackorderedMetafield/resolveBackorderLabel directly.
+      Absent/null means this variant has no metafield value of its own — the
+      PDP falls back to Product.backorder in that case (lib/product/resolve-variant-value.ts's
+      "variant value first, product value only when blank" rule), it does NOT
+      mean "not backordered". */
+  backorder?: { value: string } | null;
 };
 
 export type ProductVariant = {
