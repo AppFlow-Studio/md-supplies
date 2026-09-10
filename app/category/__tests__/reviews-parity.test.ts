@@ -9,9 +9,12 @@ vi.mock('@/lib/category-tree-data.server', () => ({
 // which reads next/headers — unavailable outside a real request scope when
 // invoking the Server Component function directly in a unit test.
 vi.mock('@/lib/csp-nonce', () => ({ getNonce: vi.fn(async () => 'test-nonce') }))
+// getPriceValidUntil is a `use cache` fn; cacheLife()/cacheTag() throw outside the
+// cacheComponents runtime (i.e. in vitest), so stub next/cache to no-ops.
+vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cacheTag: vi.fn() }))
 vi.mock('@/lib/trustshop/product-id', () => ({ getNumericShopifyProductId: vi.fn(() => 987654) }))
 vi.mock('@/lib/trustshop/product', () => ({
-  getProductReviewSummary: vi.fn(async () => ({
+  getCachedProductReviewSummary: vi.fn(async () => ({
     averageRating: 4.5,
     totalReviews: 12,
     ratingsDistribution: { 1: 0, 2: 0, 3: 1, 4: 3, 5: 8 },
@@ -84,7 +87,10 @@ describe('CategoryProductPage — reviews wiring (parity with /product/[slug])',
     expect(productViewEl!.props.reviewSummary).toEqual(
       expect.objectContaining({ averageRating: 4.5, totalReviews: 12 }),
     )
-    expect(productViewEl!.props.reviewsSection).toEqual(
+    // reviewsSection is a Promise now (Cache Components: awaited only inside
+    // the Suspense-wrapped ProductReviewsAsync, never at the top of the
+    // page) — await it here to assert on the resolved review data.
+    await expect(productViewEl!.props.reviewsSection).resolves.toEqual(
       expect.objectContaining({
         productGid: 'gid://shopify/Product/1',
         summary: expect.objectContaining({ totalReviews: 12 }),

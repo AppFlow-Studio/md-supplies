@@ -1,5 +1,4 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
-import { getNonce } from '@/lib/csp-nonce'
 import { hasUsablePrice } from '@/lib/purchasability'
 
 interface Props {
@@ -33,7 +32,7 @@ interface Props {
   }
 }
 
-export async function ProductSchema({
+export function ProductSchema({
   name,
   description,
   image,
@@ -64,7 +63,6 @@ export async function ProductSchema({
   // incomplete one.
   if (!hasUsablePrice(price)) return null
 
-  const nonce = await getNonce()
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -107,7 +105,6 @@ export async function ProductSchema({
   return (
     <script
       type="application/ld+json"
-      nonce={nonce}
       suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />

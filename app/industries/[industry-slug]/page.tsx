@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { CatalogGridSkeleton } from '@/components/category/CatalogGridSkeleton'
 import { buildMetadata } from '@/lib/seo'
 import { SITE_URL } from '@/lib/seo/constants'
 import { getIndustrySeo } from '@/lib/seo/industrySeo'
@@ -12,7 +14,7 @@ import {
   parseSearchParam,
   type CategorySearchParams,
 } from '@/components/category/CategoryPageView'
-import { parsePageSize, DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
+import { parsePageSize } from '@/lib/catalog/page-size'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION } from '@/lib/shopify/queries/collections'
 import { getSubcategories } from '@/lib/category-utils'
@@ -29,25 +31,13 @@ export function generateStaticParams() {
   return INDUSTRIES.map((i) => ({ 'industry-slug': i.slug }))
 }
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { 'industry-slug': slug } = await params
-  const sp = await searchParams
   const industry = INDUSTRIES.find((i) => i.slug === slug)
   if (!industry) return {}
 
   const seoDB = getIndustrySeo(slug)
   const canonical = `${SITE_URL}/industries/${industry.slug}`
-
-  // Filter/sort/search/page variants are noindex and canonicalize to the clean
-  // industry URL, so faceted combinations cannot multiply in the index.
-  const isQueryVariant =
-    parseFilterParam(sp.filter).length > 0 ||
-    Boolean(sp.sort) ||
-    Boolean(parseSearchParam(sp.q)) ||
-    Boolean(sp.page) ||
-    // Same reason as the category route: ?per_page= is the same content in a
-    // different quantity, not a distinct indexable page.
-    parsePageSize(sp.per_page) !== DEFAULT_PAGE_SIZE
 
   const base = buildMetadata({
     pageType: 'industry',
@@ -55,8 +45,11 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     description: seoDB?.metaDescription ?? industry.description,
     slug: industry.slug,
     image: `${SITE_URL}${industry.image}`,
-    // Thin OR unbacked by products ⇒ noindex,follow (lib/industries.ts).
-    noIndex: !isIndustryIndexable(industry) || isQueryVariant,
+    // Thin OR unbacked by products ⇒ noindex,follow (lib/industries.ts). Under
+    // Cache Components searchParams is no longer read here (so the route
+    // prerenders); filter/sort/search/page variants consolidate to this clean
+    // canonical instead of a per-URL noindex.
+    noIndex: !isIndustryIndexable(industry),
     canonical,
   })
 
@@ -75,36 +68,19 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 export default async function IndustryDetailPage({ params, searchParams }: Props) {
   const { 'industry-slug': slug } = await params
-  const sp = await searchParams
 
   const industryStatic = INDUSTRIES.find((i) => i.slug === slug)
   if (!industryStatic) notFound()
 
   // ── Supported industries: the full ecommerce landing page ────────────────
   // Anything with a validated assortment renders the same product-discovery
-  // system as category and OCC pages, not a six-product teaser.
+  // system as category and OCC pages, not a six-product teaser. It reads
+  // searchParams, so it streams from a <Suspense> boundary (Cache Components).
   if (hasValidatedAssortment(industryStatic)) {
-    const activeFilterStrings = parseFilterParam(sp.filter)
-    const { sortKey, reverse } = parseSortKey(sp.sort)
-    const searchQuery = parseSearchParam(sp.q)
-    const currentPage = parseInt(sp.page ?? '1', 10)
-    if (isNaN(currentPage) || currentPage < 1) notFound()
-
     return (
-      <IndustryLandingPage
-        industry={industryStatic}
-        tag={industryStatic.tag!}
-        sp={sp}
-        sortKey={sortKey}
-        reverse={reverse}
-        searchQuery={searchQuery}
-        activeFilterStrings={activeFilterStrings}
-        currentPage={currentPage}
-        categoryLinks={getIndustryCategoryLinks(industryStatic.slug)}
-        buyingGuide={getIndustryBuyingGuide(industryStatic.slug)}
-        pageSize={parsePageSize(sp.per_page)}
-        seoAnswer={getIndustrySeo(slug)?.answerBlock}
-      />
+      <Suspense fallback={<CatalogGridSkeleton />}>
+        <IndustryResults searchParams={searchParams} industryStatic={industryStatic} slug={slug} />
+      </Suspense>
     )
   }
 
@@ -155,4 +131,39 @@ export default async function IndustryDetailPage({ params, searchParams }: Props
   }
 
   return <IndustryPage industry={industry} />
+}
+
+// Reads searchParams → the request-time dynamic hole (Cache Components) for
+// validated industries. Wrapped in <Suspense> in IndustryDetailPage; the layout
+// is the static shell.
+// Exported for unit tests (the validated-assortment branch's landing-page render
+// lives here now, behind the page's <Suspense> boundary).
+export async function IndustryResults({ searchParams, industryStatic, slug }: {
+  searchParams: Props['searchParams']
+  industryStatic: (typeof INDUSTRIES)[number]
+  slug: string
+}) {
+  const sp = await searchParams
+  const activeFilterStrings = parseFilterParam(sp.filter)
+  const { sortKey, reverse } = parseSortKey(sp.sort)
+  const searchQuery = parseSearchParam(sp.q)
+  const currentPage = parseInt(sp.page ?? '1', 10)
+  if (isNaN(currentPage) || currentPage < 1) notFound()
+
+  return (
+    <IndustryLandingPage
+      industry={industryStatic}
+      tag={industryStatic.tag!}
+      sp={sp}
+      sortKey={sortKey}
+      reverse={reverse}
+      searchQuery={searchQuery}
+      activeFilterStrings={activeFilterStrings}
+      currentPage={currentPage}
+      categoryLinks={getIndustryCategoryLinks(industryStatic.slug)}
+      buyingGuide={getIndustryBuyingGuide(industryStatic.slug)}
+      pageSize={parsePageSize(sp.per_page)}
+      seoAnswer={getIndustrySeo(slug)?.answerBlock}
+    />
+  )
 }

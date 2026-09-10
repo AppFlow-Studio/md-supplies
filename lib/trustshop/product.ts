@@ -1,5 +1,5 @@
 import 'server-only'
-import { revalidateTag } from 'next/cache'
+import { revalidateTag, cacheLife } from 'next/cache'
 import { trustShopGet, trustShopPost, TrustShopError } from './client'
 import {
   trustShopSummarySchema,
@@ -71,6 +71,27 @@ export async function getProductReviewSummary(numericId: number): Promise<Produc
     void err
     return null
   }
+}
+
+/**
+ * `getProductReviewSummary` wrapped in `use cache` for the two PDP routes'
+ * top-level (non-Suspense-deferred) call, which feeds ProductSchema's
+ * aggregateRating and must stay part of the static/ISR shell those routes
+ * prerender for their generateStaticParams handle sample.
+ *
+ * Without this, the underlying TrustShop client's retry-timer `Date.now()`
+ * read (lib/trustshop/client.ts) happens before any access Next recognizes as
+ * establishing dynamism, and the build fails with "used Date.now() before
+ * accessing... uncached data" (next-prerender-current-time) — a `use cache`
+ * scope sidesteps that check entirely by caching the whole call as a unit.
+ * `hours` (not `minutes`): a cache profile under 5 minutes' revalidate
+ * becomes a dynamic hole excluded from the prerender, which would reintroduce
+ * the same problem one level up.
+ */
+export async function getCachedProductReviewSummary(numericId: number): Promise<ProductReviewSummary | null> {
+  'use cache'
+  cacheLife('hours')
+  return getProductReviewSummary(numericId)
 }
 
 export async function listProductReviews(
@@ -192,6 +213,18 @@ const SUMMARY_BATCH_CONCURRENCY = 6
 export async function getManyProductReviewSummaries(
   numericIds: number[],
 ): Promise<Map<number, ProductReviewSummary | null>> {
+  'use cache'
+  // Same reason as getCachedProductReviewSummary above: the underlying
+  // TrustShop client's Date.now() retry-timer read happens before any access
+  // Next recognizes as establishing dynamism, which fails the build for the
+  // category default-grid prerender (components/category/CategoryResults.tsx
+  // -> lib/catalog/resolve-catalog-view.ts -> this function, via
+  // getReviewSummariesByGid). `hours`, not `minutes`: a cache profile under 5
+  // minutes' revalidate becomes a dynamic hole excluded from the prerender,
+  // reintroducing the same problem one level up. The cache key is the
+  // (deduplicated, order-independent-in-effect) numericIds array; each
+  // distinct product set gets its own entry.
+  cacheLife('hours')
   const uniqueIds = Array.from(new Set(numericIds))
   const results = new Map<number, ProductReviewSummary | null>()
   let cursor = 0

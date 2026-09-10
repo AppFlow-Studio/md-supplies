@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { buildMetadata } from '@/lib/seo'
 import Link from 'next/link'
 import { X } from 'lucide-react'
@@ -23,8 +24,6 @@ import type { ProductReviewSummary } from '@/lib/trustshop/types'
 import { getFavoritedProductIds } from '@/app/actions/favorites'
 import { getSession } from '@/lib/shopify/session'
 
-export const dynamic = 'force-dynamic'
-
 interface Props {
   searchParams: Promise<{
     q?: string
@@ -42,14 +41,16 @@ interface SearchData {
   }
 }
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const sp = await searchParams
-  return buildMetadata({
-    pageType: 'utility',
-    title: sp.q ? `"${sp.q}" — Search` : 'Search',
-    slug: 'search',
-  })
-}
+// Static metadata (Cache Components): /search is always noindex, so folding the
+// query into the title was purely cosmetic. Keeping metadata param-free lets the
+// route prerender its shell while the query-dependent results stream in the
+// <Suspense> boundary below (the page component no longer reads searchParams at
+// the top — SearchResults does, inside Suspense).
+export const metadata: Metadata = buildMetadata({
+  pageType: 'utility',
+  title: 'Search',
+  slug: 'search',
+})
 
 function parseFilterParam(filter?: string | string[]): string[] {
   if (!filter) return []
@@ -80,7 +81,32 @@ const SUGGESTED = [
   { label: 'Syringes', href: '/category/syringes' },
 ]
 
-export default async function SearchPage({ searchParams }: Props) {
+export default function SearchPage({ searchParams }: Props) {
+  return (
+    <Suspense fallback={<SearchShell />}>
+      <SearchResults searchParams={searchParams} />
+    </Suspense>
+  )
+}
+
+// Prerendered static shell for every /search hit — the search chrome with an
+// empty bar. Query-dependent results stream in once searchParams resolves.
+function SearchShell() {
+  return (
+    <main id="main-content" className="bg-[#f9fafc] min-h-screen">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
+          <h1 className="text-navy-900 text-[20px] font-semibold mb-4">Search</h1>
+          <SearchBarForm defaultQuery="" />
+        </div>
+      </div>
+    </main>
+  )
+}
+
+// Exported for unit tests (the deep-page fetch/redirect logic lives here now,
+// not in the thin Suspense-wrapper default export).
+export async function SearchResults({ searchParams }: Props) {
   const sp = await searchParams
   const q = sp.q ?? ''
 

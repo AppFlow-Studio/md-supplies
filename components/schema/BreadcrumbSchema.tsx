@@ -1,5 +1,4 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
-import { getNonce } from '@/lib/csp-nonce'
 import { buildBreadcrumbListSchema } from '@/lib/schema/breadcrumb'
 
 interface BreadcrumbItem {
@@ -15,13 +14,11 @@ interface Props {
   currentUrl?: string
 }
 
-export async function BreadcrumbSchema({ items, currentUrl }: Props) {
-  const nonce = await getNonce()
+export function BreadcrumbSchema({ items, currentUrl }: Props) {
   const schema = buildBreadcrumbListSchema(items, currentUrl)
   return (
     <script
       type="application/ld+json"
-      nonce={nonce}
       suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />

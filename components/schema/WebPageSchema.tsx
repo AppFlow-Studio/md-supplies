@@ -1,5 +1,4 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
-import { getNonce } from '@/lib/csp-nonce'
 
 interface Props {
   name: string
@@ -7,8 +6,7 @@ interface Props {
   url: string
 }
 
-export async function WebPageSchema({ name, description, url }: Props) {
-  const nonce = await getNonce()
+export function WebPageSchema({ name, description, url }: Props) {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
@@ -19,7 +17,6 @@ export async function WebPageSchema({ name, description, url }: Props) {
   return (
     <script
       type="application/ld+json"
-      nonce={nonce}
       suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />

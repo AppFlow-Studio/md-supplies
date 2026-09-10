@@ -7,34 +7,34 @@ import {
 
 export type { CategorySearchParams }
 
-// THE canonical category route. It reads searchParams directly, so filter,
-// sort, search and pagination are ordinary App Router client navigations
-// within one route segment — no rewrite, no twin route, no remount.
+// THE canonical category route.
 //
-// History: this route used to refuse searchParams, and proxy.ts rewrote
-// /category/<slug>?<query> onto a duplicate at /category-browse/<slug>. That
-// existed because the route was statically generated and could not read the
-// query at request time. Since the root layout began reading headers() for the
-// CSP nonce (M10) every route renders per-request anyway, so the twin only
-// added a route-boundary change between the clean and filtered views — which
-// is what made filtering feel like a full page load. Both are now gone.
+// Phase 3 (Cache Components): this route NO LONGER reads searchParams. The bare
+// URL prerenders a FULLY STATIC default grid (page 1, no filters), so bare-URL
+// crawler traffic costs zero function invocations. Filter/sort/search/pagination
+// are client-side navigations handled inside CategoryFilterableGrid, which
+// fetches the cached /api/catalog route — none of that touches this server
+// render or its metadata. Reading searchParams here would (under cacheComponents)
+// turn the whole route back into a per-request dynamic hole, which is exactly
+// what this migration removes.
 //
-// Freshness comes from the fetch-level data cache in CategoryPageView, not
-// route-level revalidate.
+// generateStaticParams (exported from CategoryPageView) lists every L1 + the
+// featured-subcategory slugs so those pages prerender ahead of time. Freshness
+// comes from the fetch-level data cache tags + the Shopify webhook
+// (app/api/revalidate), not route-level revalidate.
+
+export { generateStaticParams } from '@/components/category/CategoryPageView'
 
 interface Props {
   params: Promise<{ slug: string }>
-  searchParams: Promise<CategorySearchParams>
 }
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const sp = await searchParams
-  return buildCategoryMetadata(slug, sp)
+  return buildCategoryMetadata(slug)
 }
 
-export default async function CategoryPage({ params, searchParams }: Props) {
+export default async function CategoryPage({ params }: Props) {
   const { slug } = await params
-  const sp = await searchParams
-  return <CategoryPageView slug={slug} sp={sp} />
+  return <CategoryPageView slug={slug} />
 }

@@ -50,6 +50,34 @@ export async function getFavoritedProductIds(): Promise<string[]> {
   }
 }
 
+/**
+ * Client-callable favorites hydration (lib/favorites/FavoritesContext.tsx).
+ *
+ * Category default/filtered grids and product pages are now statically
+ * prerendered and/or shared-cached (Cache Components) — embedding a
+ * server-computed isSignedIn/favoritedProductIds in that HTML would leak one
+ * viewer's favorites into a page served to everyone else. This is called
+ * client-side, after mount, from a per-viewer request (a server action call
+ * is a POST, never subject to the GET route/page cache), so the real answer
+ * only ever reaches the browser that asked for it. One combined call instead
+ * of a separate isSignedIn check + getFavoritedProductIds() to avoid a second
+ * cookie-read round trip.
+ */
+export async function getFavoritesState(): Promise<{
+  isSignedIn: boolean
+  favoritedProductIds: string[]
+}> {
+  const customerId = await getCustomerId()
+  if (!customerId) return { isSignedIn: false, favoritedProductIds: [] }
+  try {
+    const favorites = await getCustomerFavorites(customerId)
+    return { isSignedIn: true, favoritedProductIds: favorites.map((f) => f.productId) }
+  } catch (err) {
+    console.error('[favorites] getFavoritesState failed:', err)
+    return { isSignedIn: true, favoritedProductIds: [] }
+  }
+}
+
 export type ToggleFavoriteResult =
   | { ok: true; favorited: boolean }
   | { ok: false; error: string }

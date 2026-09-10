@@ -14,6 +14,7 @@ import { hasUsablePrice } from '@/lib/purchasability'
 import { ProductRating } from '@/components/reviews/ProductRating'
 import type { ProductReviewSummary } from '@/lib/trustshop/types'
 import { FavoriteButton } from '@/components/product/FavoriteButton'
+import { useFavoritesState } from '@/lib/favorites/FavoritesContext'
 
 interface Props {
   product: CollectionProduct
@@ -39,7 +40,18 @@ interface Props {
   onFavoriteRemoved?: (productId: string) => void
 }
 
-export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false, reviewSummary = null, isSignedIn, isFavorited = false, onFavoriteRemoved }: Props) {
+export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false, reviewSummary = null, isSignedIn, isFavorited, onFavoriteRemoved }: Props) {
+  // Falls back to the client-hydrated context (lib/favorites/FavoritesContext)
+  // whenever the caller doesn't explicitly wire favorites itself — the case
+  // for every grid fed by a statically-prerendered or shared-cached response
+  // (category default grid, /api/catalog), where a server-computed per-viewer
+  // value can never be embedded in the HTML/JSON without leaking across
+  // viewers. A caller with a genuinely per-request render (search, the
+  // account favorites grid) still passes explicit props, which win here.
+  const favoritesState = useFavoritesState()
+  const resolvedIsSignedIn = isSignedIn ?? (favoritesState.ready ? favoritesState.isSignedIn : undefined)
+  const resolvedIsFavorited = isFavorited ?? favoritesState.favoritedProductIds.has(product.id)
+
   const variant = product.variants.nodes[0]
   const price = parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount)
   const compareAt = variant?.compareAtPrice
@@ -101,14 +113,14 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             rule RelatedProductCard follows). Only rendered once the caller
             has wired favorites up for this surface (isSignedIn !== undefined,
             see the Props comment above). */}
-        {isSignedIn !== undefined && (
+        {resolvedIsSignedIn !== undefined && (
           <FavoriteButton
             productId={product.id}
             productHandle={product.handle}
             productTitle={product.title}
             variantId={product.variants.nodes[0]?.id ?? null}
-            isSignedIn={isSignedIn}
-            initialFavorited={isFavorited}
+            isSignedIn={resolvedIsSignedIn}
+            initialFavorited={resolvedIsFavorited}
             list="card"
             size="sm"
             className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white"

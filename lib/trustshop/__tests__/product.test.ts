@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidateTag: vi.fn(), cacheLife: vi.fn() }))
 vi.mock('../client', async () => {
   const actual = await vi.importActual<typeof import('../client')>('../client')
   return {

@@ -27,29 +27,25 @@ function signBody(body: string): string {
   return crypto.createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64')
 }
 
-const ISR_ROUTE_FILES = [
+// Cache Components migration: route-segment `revalidate` is incompatible with
+// cacheComponents and has been removed from EVERY route. These data-fetching
+// public routes are now statically prerendered (PPR) — the bare URL is a
+// CDN-served static shell — instead of ISR-via-`revalidate`. Freshness comes from
+// the fetch-level data-cache tags + the Shopify webhook (app/api/revalidate).
+const FORMER_ISR_ROUTE_FILES = [
   'app/page.tsx',
   'app/blog/[handle]/page.tsx',
+  'app/product/[slug]/page.tsx',
 ]
 
-// Fully dynamic since e167141: the root layout reads headers() for the CSP
-// nonce, so these render per-request. Freshness is handled at the fetch layer
-// (storefrontFetch cache tags + the Shopify webhook via app/api/revalidate),
-// not by route-level ISR — a route-level `revalidate` export here would be
-// dead config that misleads readers about how caching works.
-//
-// solutions/occ joined this list with DEV-OCC-01: the page now reads
-// searchParams for the OCC catalog's filter/sort/search/page state, so it
-// cannot be statically revalidated. Its Storefront fetches carry
-// revalidate + collection cache tags instead.
-const DYNAMIC_ROUTE_FILES = [
+// These were the always-dynamic, searchParams-reading routes. Under Cache
+// Components the server no longer reads searchParams — filters/sort/search moved
+// client-side (/category) or into a <Suspense> boundary (occ/industries) — so
+// they too prerender a static shell. None ever carried (or should carry) a
+// `revalidate` export.
+const FORMER_DYNAMIC_ROUTE_FILES = [
   'app/category/[slug]/page.tsx',
-  'app/product/[slug]/page.tsx',
   'app/solutions/occ/page.tsx',
-  // industries/[slug] joined for the same reason: supported industries now
-  // render the full discovery engine and read searchParams for filter/sort/
-  // search/page state, so route-level ISR cannot apply. Freshness comes from
-  // the fetch-level cache tags in CategoryResults.
   'app/industries/[industry-slug]/page.tsx',
 ]
 
@@ -57,20 +53,25 @@ function read(file: string): string {
   return fs.readFileSync(path.resolve(__dirname, '..', file), 'utf-8')
 }
 
-describe('ISR: every data-fetching Track A/B route exports revalidate', () => {
-  for (const file of ISR_ROUTE_FILES) {
-    it(`${file} exports a numeric revalidate`, () => {
-      expect(read(file)).toMatch(/export const revalidate = \d+/)
-    })
-  }
-})
+describe('Cache Components: route-segment revalidate is gone', () => {
+  it('next.config.ts enables cacheComponents', () => {
+    expect(read('next.config.ts')).toMatch(/cacheComponents:\s*true/)
+  })
 
-describe('dynamic routes: tag-invalidated pages do not carry dead ISR config', () => {
-  for (const file of DYNAMIC_ROUTE_FILES) {
-    it(`${file} does not export revalidate`, () => {
+  for (const file of [...FORMER_ISR_ROUTE_FILES, ...FORMER_DYNAMIC_ROUTE_FILES]) {
+    it(`${file} no longer exports revalidate (incompatible with cacheComponents)`, () => {
       expect(read(file)).not.toMatch(/export const revalidate/)
     })
   }
+
+  it('/product/[slug], /category/[slug] and /category/[slug]/[product] prerender via generateStaticParams', () => {
+    expect(read('app/product/[slug]/page.tsx')).toMatch(/generateStaticParams/)
+    expect(read('app/category/[slug]/[product]/page.tsx')).toMatch(/generateStaticParams/)
+    // /category/[slug] re-exports it from CategoryPageView.
+    expect(
+      read('app/category/[slug]/page.tsx') + read('components/category/CategoryPageView.tsx'),
+    ).toMatch(/generateStaticParams/)
+  })
 })
 
 describe('POST /api/revalidate — products/* also invalidates the broad collections tag', () => {

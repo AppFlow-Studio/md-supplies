@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
-import { render, screen, cleanup, within, fireEvent } from '@testing-library/react'
+import { render, screen, cleanup, within, fireEvent, act } from '@testing-library/react'
 import { ProductView } from '../ProductView'
 import type { Product, CollectionProduct } from '@/lib/shopify/types'
 
@@ -519,59 +519,50 @@ describe('ProductView — reviews wiring', () => {
     hasNextPage: false,
   }
 
-  it('renders the compact summary as a plain #reviews anchor near the title', () => {
-    const { container } = render(
-      <ProductView
-        product={product}
-        initialVariant={product.variants.nodes[0]}
-        relatedProducts={[]}
-        complementaryProducts={[]}
-        reviewSummary={reviewsSection.summary}
-        reviewsSection={reviewsSection}
-      />,
-    )
-    expect(container.querySelector('a[href="#reviews"]')).toBeInTheDocument()
-  })
+  // reviewsSection is now a Promise (Cache Components: ProductReviewsAsync
+  // `use()`s it inside a <Suspense> boundary rather than the page awaiting it
+  // up front). React needs the INITIAL render itself awaited inside act() so
+  // the suspend-then-resolve retry actually flushes in a test renderer —
+  // render()'s own internal act() call is synchronous and un-awaited, which
+  // leaves a component that suspends during it stuck forever (React warns
+  // "A component suspended inside an act scope, but the act call was not
+  // awaited"). Wrapping the render call itself in `await act(async () => …)`
+  // is what lets the promise's resolution actually flush.
+  async function renderWithReviews(reviewsSection: unknown, reviewSummary: unknown) {
+    let container!: HTMLElement
+    await act(async () => {
+      ;({ container } = render(
+        <ProductView
+          product={product}
+          initialVariant={product.variants.nodes[0]}
+          relatedProducts={[]}
+          complementaryProducts={[]}
+          reviewSummary={reviewSummary as never}
+          reviewsSection={reviewsSection as never}
+        />,
+      ))
+    })
+    return container
+  }
 
-  it('renders a real, scrollable #reviews section id, not a hidden tab panel', () => {
-    const { container } = render(
-      <ProductView
-        product={product}
-        initialVariant={product.variants.nodes[0]}
-        relatedProducts={[]}
-        complementaryProducts={[]}
-        reviewSummary={reviewsSection.summary}
-        reviewsSection={reviewsSection}
-      />,
-    )
+  it('renders the compact summary as a plain #reviews anchor near the title', async () => {
+    const container = await renderWithReviews(Promise.resolve(reviewsSection), reviewsSection.summary)
+    expect(container.querySelector('a[href="#reviews"]')).toBeInTheDocument()
     expect(container.querySelector('#reviews')).toBeInTheDocument()
   })
 
-  it('shows a "Write a review" CTA (not a fake rating) for a zero-review product', () => {
-    render(
-      <ProductView
-        product={product}
-        initialVariant={product.variants.nodes[0]}
-        relatedProducts={[]}
-        complementaryProducts={[]}
-        reviewSummary={null}
-        reviewsSection={{ ...reviewsSection, summary: null }}
-      />,
-    )
+  it('renders a real, scrollable #reviews section id, not a hidden tab panel', async () => {
+    const container = await renderWithReviews(Promise.resolve(reviewsSection), reviewsSection.summary)
+    expect(container.querySelector('#reviews')).toBeInTheDocument()
+  })
+
+  it('shows a "Write a review" CTA (not a fake rating) for a zero-review product', async () => {
+    await renderWithReviews(Promise.resolve({ ...reviewsSection, summary: null }), null)
     expect(screen.getByRole('link', { name: /No reviews yet · Write a review/ })).toBeInTheDocument()
   })
 
-  it('no longer renders a REVIEWS tab pill — reviews live in a standalone section', () => {
-    render(
-      <ProductView
-        product={product}
-        initialVariant={product.variants.nodes[0]}
-        relatedProducts={[]}
-        complementaryProducts={[]}
-        reviewSummary={reviewsSection.summary}
-        reviewsSection={reviewsSection}
-      />,
-    )
+  it('no longer renders a REVIEWS tab pill — reviews live in a standalone section', async () => {
+    await renderWithReviews(Promise.resolve(reviewsSection), reviewsSection.summary)
     expect(screen.queryByRole('tab', { name: 'REVIEWS' })).not.toBeInTheDocument()
   })
 })

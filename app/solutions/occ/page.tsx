@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { CatalogGridSkeleton } from '@/components/category/CatalogGridSkeleton'
 import { buildMetadata } from '@/lib/seo'
 import { getSolutionSeo } from '@/lib/seo/solutionSeo'
 import { OCC_HUB } from '@/lib/occ'
@@ -21,6 +23,7 @@ import { WebPageSchema } from '@/components/schema/WebPageSchema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
+import Link from 'next/link'
 
 // OCC is a CATEGORY, not a marketing hub — it is one canonical Shopify
 // collection browsed like any other. This route therefore mirrors
@@ -61,6 +64,22 @@ function baseMetadata(): Metadata {
   }
 }
 
+// generateMetadata reads searchParams, same as the old (pre-Cache-Components)
+// version — this is deliberate, not an oversight from the PR #73 merge. Under
+// Cache Components this does NOT force the whole route dynamic: OCCResults
+// below already defers to request time inside its own <Suspense> boundary, so
+// the hero/nav/FAQ shell still prerenders and metadata streams alongside the
+// grid (see "generateMetadata … With Cache Components" in the Next docs —
+// streaming metadata only errors when the rest of the page is otherwise fully
+// prerenderable, which this page isn't).
+//
+// Filter/sort/search/page variants get an explicit noindex + canonical back to
+// the clean route, on top of the self-referencing canonical baseMetadata()
+// already sets. Unlike /category/[slug] (which moved filtering fully
+// client-side in the same migration, so there is no separate crawlable HTML
+// per filter state), OCC still server-renders distinct content per query
+// string via CategoryResults — canonical alone is a weaker signal than
+// noindex for content that differs per URL, so we keep both.
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const sp = await searchParams
   const isQueryVariant =
@@ -71,8 +90,6 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
   const base = baseMetadata()
   if (!isQueryVariant) return base
-  // Filter/sort/search/page states are noindex and canonicalize to the clean
-  // route, exactly as on category pages (plan §3.5).
   return {
     ...base,
     robots: { index: false, follow: true },
@@ -81,14 +98,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function OCCPage({ searchParams }: Props) {
-  const sp = await searchParams
   const occHandle = getOccCollectionHandle()
-
-  const activeFilterStrings = parseFilterParam(sp.filter)
-  const { sortKey, reverse } = parseSortKey(sp.sort)
-  const searchQuery = parseSearchParam(sp.q)
-  const currentPage = parseInt(sp.page ?? '1', 10)
-  if (isNaN(currentPage) || currentPage < 1) notFound()
 
   // Hero copy comes from the canonical collection when Shopify has it, falling
   // back to the curated OCC copy. `available: false` means the canonical
@@ -142,19 +152,9 @@ export default async function OCCPage({ searchParams }: Props) {
       {/* Toolbar + filters + grid + pagination — the shared catalog engine. */}
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-4">
         {available ? (
-          <CategoryResults
-            source={{ kind: 'collection', handle: occHandle }}
-            baseUrl={ROUTES.solutions.occ}
-            facetKey="occ"
-            sortKey={sortKey}
-            reverse={reverse}
-            sortParam={sp.sort}
-            activeFilterStrings={activeFilterStrings}
-            currentPage={currentPage}
-            trackingParamsSource={sp}
-            searchQuery={searchQuery}
-            searchScopeTitle={title}
-          />
+          <Suspense fallback={<CatalogGridSkeleton />}>
+            <OCCResults searchParams={searchParams} occHandle={occHandle} title={title} />
+          </Suspense>
         ) : (
           // Canonical collection unresolved (see lib/occ-collection.ts):
           // neutral state, never a tag-scanned fallback assortment.
@@ -169,7 +169,24 @@ export default async function OCCPage({ searchParams }: Props) {
       <section className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8 border-t border-gray-200">
         <h2 className="text-navy-900 text-[18px] font-semibold mb-3">About the OCC Collection</h2>
         <p className="text-gray-500 text-[15px] leading-[1.75] max-w-[880px]">
-          {OCC_HUB.programExplanation}
+          Shoebox gift drives collect small, practical gifts — hygiene items, school
+          supplies, toys, and more — and deliver them to children in need around the
+          world. MDSupplies supplies churches, mission teams, nonprofits, and
+          community groups with bulk{' '}
+          <Link href={ROUTES.category('hygiene')} className="text-teal-500 font-medium hover:underline">
+            Hygiene
+          </Link>{' '}
+          kits — including{' '}
+          <Link href={ROUTES.category('toothbrushes')} className="text-teal-500 font-medium hover:underline">
+            Toothbrushes
+          </Link>{' '}
+          by the case — plus school-kit fillers from{' '}
+          <Link href={ROUTES.category('office-supplies')} className="text-teal-500 font-medium hover:underline">
+            Office Supplies
+          </Link>
+          , backpacks, crayons, coloring books, and gift items that fill those boxes.
+          Whether you pack ten shoeboxes or ten thousand, we stock the quantities and
+          variety you need to make every gift count.
         </p>
       </section>
 
@@ -177,5 +194,37 @@ export default async function OCCPage({ searchParams }: Props) {
         <FAQSection faq={OCC_HUB.faq} />
       </div>
     </main>
+  )
+}
+
+// Reads searchParams → the request-time dynamic hole (Cache Components). The rest
+// of the page (hero, breadcrumb, subcategory nav, About, FAQ) is the prerendered
+// static shell around the <Suspense> boundary in OCCPage.
+async function OCCResults({ searchParams, occHandle, title }: {
+  searchParams: Props['searchParams']
+  occHandle: string
+  title: string
+}) {
+  const sp = await searchParams
+  const activeFilterStrings = parseFilterParam(sp.filter)
+  const { sortKey, reverse } = parseSortKey(sp.sort)
+  const searchQuery = parseSearchParam(sp.q)
+  const currentPage = parseInt(sp.page ?? '1', 10)
+  if (isNaN(currentPage) || currentPage < 1) notFound()
+
+  return (
+    <CategoryResults
+      source={{ kind: 'collection', handle: occHandle }}
+      baseUrl={ROUTES.solutions.occ}
+      facetKey="occ"
+      sortKey={sortKey}
+      reverse={reverse}
+      sortParam={sp.sort}
+      activeFilterStrings={activeFilterStrings}
+      currentPage={currentPage}
+      trackingParamsSource={sp}
+      searchQuery={searchQuery}
+      searchScopeTitle={title}
+    />
   )
 }

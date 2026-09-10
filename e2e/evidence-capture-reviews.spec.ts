@@ -105,12 +105,12 @@ test('Write a Review form — invalid submission validation state', async ({ pag
 test('Collection page — cards with no rating row (zero reviews everywhere)', async ({ page }) => {
   const fixture = requireFixture(firstPopulatedCategory(), 'a populated L1 category')
   await page.setViewportSize(DESKTOP)
-  await page.goto(`/category/${fixture.slug}`, { waitUntil: 'domcontentloaded' })
+  await page.goto(`/category/${fixture.routeSlug}`, { waitUntil: 'domcontentloaded' })
   await settle(page)
   await shot(page, '07-collection-cards-no-rating-row-desktop')
 
   await page.setViewportSize(MOBILE)
-  await page.goto(`/category/${fixture.slug}`, { waitUntil: 'domcontentloaded' })
+  await page.goto(`/category/${fixture.routeSlug}`, { waitUntil: 'domcontentloaded' })
   await settle(page)
   await shot(page, '08-collection-cards-no-rating-row-mobile')
 })

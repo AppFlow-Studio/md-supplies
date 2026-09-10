@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export const dynamic = 'force-dynamic'
-
 export default async function AccountFavoritesPage() {
   const session = await getSession()
   if (!session) redirect('/api/auth/login?next=/account/favorites')

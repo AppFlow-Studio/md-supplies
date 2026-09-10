@@ -79,7 +79,7 @@ export function ProductGrid({
           imagePriority={index < 3}
           reviewSummary={reviewSummaries?.get(product.id) ?? null}
           isSignedIn={isSignedIn}
-          isFavorited={favoritedProductIds?.has(product.id) ?? false}
+          isFavorited={favoritedProductIds?.has(product.id)}
           onFavoriteRemoved={onFavoriteRemoved}
         />
       ))}

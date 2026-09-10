@@ -10,8 +10,6 @@ import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
 import { SITE_URL } from '@/lib/seo/constants'
 import {FadeIn} from "@/components/ui/FadeIn";
 
-export const revalidate = 3600;
-
 export const metadata = buildMetadata({
   pageType: 'blog-hub',
   description: 'Tips, guides, and industry updates for healthcare professionals and facility managers.',

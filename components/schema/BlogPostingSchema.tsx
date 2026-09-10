@@ -1,5 +1,4 @@
 import { safeJsonLd } from '@/lib/safe-json-ld'
-import { getNonce } from '@/lib/csp-nonce'
 
 interface Props {
   title: string
@@ -13,7 +12,7 @@ interface Props {
   publisherLogo: string
 }
 
-export async function BlogPostingSchema({
+export function BlogPostingSchema({
   title,
   description,
   url,
@@ -24,7 +23,6 @@ export async function BlogPostingSchema({
   publisherName,
   publisherLogo,
 }: Props) {
-  const nonce = await getNonce()
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -50,7 +48,6 @@ export async function BlogPostingSchema({
   return (
     <script
       type="application/ld+json"
-      nonce={nonce}
       suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />

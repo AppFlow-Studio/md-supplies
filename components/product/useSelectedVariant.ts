@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import type { Product, ProductImage, ProductVariant } from '@/lib/shopify/types'
+import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 
 /**
  * The single selected-variant view model for both PDP routes (LG-03).
@@ -48,11 +49,37 @@ export function useSelectedVariant(product: Product, initialVariant: ProductVari
       ? []
       : product.images.nodes
 
+  // Deep-link reconciliation (Phase 3): both PDP routes now render the DEFAULT
+  // variant server-side (they no longer read `?variant=` on the server — that's
+  // what lets /product/[slug] be ISR-cacheable, and keeps /category/[slug]/[product]
+  // free of a per-variant render). To keep shareable deep links working, the
+  // client corrects to the URL's `?variant=` AFTER hydration. This MUST run in
+  // an effect (never during render): the server-rendered default and the
+  // client's first render must match, or React reports a hydration mismatch.
+  // A brief default→variant correction on deep-links is acceptable. Reading
+  // `window.location.search` (not useSearchParams) avoids the static-generation
+  // bailout and the Suspense requirement useSearchParams would impose.
+  useEffect(() => {
+    const urlVariantId = new URLSearchParams(window.location.search).get('variant')
+    if (!urlVariantId) return
+    // resolveInitialVariant validates the id against real variants and falls
+    // back to the default for an unknown id — so an invalid `?variant=` is a
+    // no-op here (it resolves back to the already-selected default).
+    const resolved = resolveInitialVariant(product.variants.nodes, urlVariantId)
+    if (resolved.id !== selectedVariant.id) {
+      setSelectedVariant(resolved)
+    }
+    // Re-run only when the URL variant or the variant set changes; the default
+    // (no-`?variant`) path is untouched (the early return above).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.variants.nodes])
+
   function select(variant: ProductVariant) {
     setSelectedVariant(variant)
     // Shallow update only — no scroll jump, no full navigation. Shareable
     // deep link: `?variant=<id>` rehydrates the same selected state on
-    // refresh (resolveInitialVariant, read server-side by both page.tsx routes).
+    // refresh (reconciled by the useEffect above on the client — the server
+    // now renders the default variant, so it no longer needs to read `?variant`).
     router.replace(`${pathname}?variant=${encodeURIComponent(variant.id)}`, { scroll: false })
   }
 

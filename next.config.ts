@@ -1,11 +1,35 @@
 import type { NextConfig } from "next";
 
-// Content-Security-Policy (enforcing + Report-Only) is NOT set here: it needs
-// a fresh nonce per request (lib/csp.ts), which this static headers() config
-// can't generate — it runs once at build/server-start, not per request. Both
-// CSP headers are set in proxy.ts instead. See
-// docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md (M10).
+// Content-Security-Policy is applied per-route in proxy.ts, not here: sensitive
+// always-dynamic routes (/account, /search) get a fresh per-request nonce, which
+// this static headers() config can't generate; public routes get a static policy
+// so they can be CDN-cached. See lib/csp.ts (buildCsp / buildStaticCsp) and the
+// spike/csp-static findings in docs/superpowers/plans/2026-07-12-csp-nonce-enforcement.md (M10).
 const nextConfig: NextConfig = {
+  // Cache Components (Next 16): Partial Prerendering is the default, `use cache`
+  // + cacheLife/cacheTag replace route-segment cache config (dynamic/revalidate/
+  // fetchCache), and searchParams/cookies/headers are allowed inside <Suspense>.
+  // This is what lets the two /category routes serve a fully-prerendered static
+  // shell from the CDN (zero function invocations for the bare-URL bot swarm)
+  // while filters/sort/search move client-side. See
+  // node_modules/next/dist/docs/01-app/.../config/.../cacheComponents.md.
+  cacheComponents: true,
+
+  // Build output dir. Defaults to `.next` (what Vercel and `next dev` use). Set
+  // CC_BUILD_DIR to build into an alternate dir — e.g. running a verification
+  // `next build` while a `next dev` server is live, so the production build does
+  // not clobber the dev server's `.next` chunk manifest. Harmless in production
+  // (the env var is unset there).
+  distDir: process.env.CC_BUILD_DIR || '.next',
+
+  // NOTE: experimental.sri (hash-based Subresource Integrity) was tried here as
+  // defense-in-depth but REMOVED — with Turbopack it emits integrity hashes that
+  // do NOT match the runtime chunks actually served, so the browser blocked
+  // `turbopack-*.js` ("Failed to find a valid digest in the 'integrity' attribute
+  // … The resource has been blocked"), which broke client JS/hydration on
+  // deployed pages (navbar, forms, any prerendered page). Public routes constrain
+  // scripts via script-src 'self' + the explicit host allowlist instead.
+
   // Allow the dev server to be reached through ngrok. Next blocks cross-origin
   // dev requests by default, which breaks the HMR WebSocket and hydration when
   // the app is loaded from a tunnel host instead of localhost. The wildcards

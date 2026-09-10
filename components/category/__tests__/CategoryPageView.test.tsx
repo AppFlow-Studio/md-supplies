@@ -3,7 +3,15 @@ import { render, screen, within, cleanup } from '@testing-library/react'
 
 vi.mock('@/lib/shopify/storefront', () => ({ storefrontFetch: vi.fn() }))
 vi.mock('@/lib/category-tree-data.server', () => ({ fetchProductTagSummaries: vi.fn() }))
-vi.mock('next/navigation', () => ({ notFound: vi.fn(() => { throw new Error('NEXT_NOT_FOUND') }), redirect: vi.fn() }))
+// useSearchParams: CategoryFilterableGrid (the Phase 3 client filter island
+// CategoryPageView renders inside a Suspense boundary) reads it to decide
+// bare-URL vs. filtered view — an empty URLSearchParams matches the bare-URL
+// case this suite exercises, same as CategoryResults.test.tsx's mock.
+vi.mock('next/navigation', () => ({
+  notFound: vi.fn(() => { throw new Error('NEXT_NOT_FOUND') }),
+  redirect: vi.fn(),
+  useSearchParams: () => new URLSearchParams(),
+}))
 // getNonce() reads next/headers' headers(), which throws outside a real
 // request scope — same pattern as CategoryResults.test.tsx.
 vi.mock('@/lib/csp-nonce', () => ({ getNonce: async () => undefined }))
@@ -45,7 +53,7 @@ describe('CategoryPageView — subcategory-scan resilience', () => {
     })
     mockSummaries.mockRejectedValue(new Error('storefront timeout'))
 
-    const result = await CategoryPageView({ slug: 'mobility', sp: {} })
+    const result = await CategoryPageView({ slug: 'mobility' })
     // A React element tree came back rather than the function throwing —
     // the page rendered even though the tag scan failed.
     expect(result).toBeTruthy()
@@ -66,7 +74,7 @@ describe('CategoryPageView — subcategory-scan resilience', () => {
     })
     mockSummaries.mockResolvedValue([])
 
-    await expect(CategoryPageView({ slug: 'mobility', sp: {} })).rejects.toThrow('storefront hero fetch failed')
+    await expect(CategoryPageView({ slug: 'mobility' })).rejects.toThrow('storefront hero fetch failed')
   })
 })
 
@@ -84,7 +92,7 @@ describe('CategoryPageView — SEO-CATEGORY-01 §8 Needles & Syringes ↔ Trocar
   it('renders a Trocars & Trocar Kits link in Shop by Need on the Needles & Syringes page', async () => {
     mockEmptyCollection('needles-syringes', 'Needles & Syringes')
 
-    const element = await CategoryPageView({ slug: 'needles-syringes', sp: {} })
+    const element = await CategoryPageView({ slug: 'needles-syringes' })
     render(element)
 
     const link = screen.getByRole('link', { name: 'Trocars & Trocar Kits' })
@@ -94,7 +102,7 @@ describe('CategoryPageView — SEO-CATEGORY-01 §8 Needles & Syringes ↔ Trocar
   it('renders HRT Clinics, Procedure Trays, and Needles & Syringes links in Shop by Need on the Trocars page', async () => {
     mockEmptyCollection('trocars-trocar-kits', 'Trocars & Trocar Kits')
 
-    const element = await CategoryPageView({ slug: 'trocars-trocar-kits', sp: {} })
+    const element = await CategoryPageView({ slug: 'trocars-trocar-kits' })
     render(element)
 
     // "Needles & Syringes" also appears in the generic "Related Categories"

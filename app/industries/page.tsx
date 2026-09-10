@@ -8,8 +8,6 @@ import { getIndustryImagePath } from '@/lib/bunnycdn'
 import { approvedClaims } from '@/lib/claims'
 import { OCC_PANEL_HEADING, OCC_PANEL_SUBHEAD, OCC_PANEL_CTA } from '@/lib/occ-copy'
 
-export const revalidate = 3600
-
 const HERO_IMAGE = getIndustryImagePath("industry-clinics-&-doctor's-offices.jpeg")
 
 export const metadata = buildMetadata({

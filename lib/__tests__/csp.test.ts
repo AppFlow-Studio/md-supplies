@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { buildCsp, generateNonce, CSP_REPORT_URI } from '@/lib/csp'
+import { buildCsp, buildStaticCsp, generateNonce, CSP_REPORT_URI } from '@/lib/csp'
 
 describe('generateNonce', () => {
   it('produces a fresh value every call', () => {
@@ -51,5 +51,30 @@ describe('buildCsp', () => {
     const csp = buildCsp('n', false)
     expect(csp).not.toContain('myshopify.com')
     vi.unstubAllEnvs()
+  })
+})
+
+describe('buildStaticCsp (public, cacheable routes)', () => {
+  it('allows inline scripts (no nonce, no strict-dynamic) so pages can be statically generated', () => {
+    const scriptSrc = buildStaticCsp(false).split('; ').find((d) => d.startsWith('script-src'))!
+    expect(scriptSrc).toContain("'unsafe-inline'")
+    expect(scriptSrc).not.toMatch(/'nonce-/)
+    expect(scriptSrc).not.toContain('strict-dynamic')
+    expect(scriptSrc).toContain('https://www.googletagmanager.com')
+  })
+
+  it('adds unsafe-eval only in dev', () => {
+    expect(buildStaticCsp(true)).toContain("'unsafe-eval'")
+    expect(buildStaticCsp(false)).not.toContain("'unsafe-eval'")
+  })
+
+  it('keeps every non-script directive identical to the strict policy (only script-src differs)', () => {
+    const stripScriptSrc = (csp: string) =>
+      csp.split('; ').filter((d) => !d.startsWith('script-src')).join('; ')
+    expect(stripScriptSrc(buildStaticCsp(false))).toBe(stripScriptSrc(buildCsp('n', false)))
+  })
+
+  it('carries the report-uri directive (Report-Only canary still active)', () => {
+    expect(buildStaticCsp(false)).toContain(`report-uri ${CSP_REPORT_URI}`)
   })
 })

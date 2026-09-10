@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   ShieldCheck, Truck, RotateCcw, Plus, Minus,
@@ -26,6 +26,7 @@ import { ProductReviewSummaryLink } from '@/components/reviews/ProductReviewSumm
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 import type { ProductReviewSummary, ProductReview, ProductReviewMedia, ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
 import { FavoriteButton } from '@/components/product/FavoriteButton'
+import { useFavoritesState } from '@/lib/favorites/FavoritesContext'
 
 type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS'
 const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS']
@@ -34,7 +35,7 @@ const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RET
 // fourth tab-panel) — a plain `<a href="#reviews">` compact summary link can
 // then scroll to it with zero client JS, and it never fights the tab
 // system's conditional mount/unmount of the other three panels.
-interface ReviewsSectionProps {
+export interface ReviewsSectionProps {
   basePath: string
   productGid: string
   summary: ProductReviewSummary | null
@@ -101,6 +102,16 @@ interface BreadcrumbItem {
   href?: string
 }
 
+// `use()` suspends THIS component only until the promise resolves — the
+// Suspense boundary around it (in ProductView below) is what lets the rest
+// of the page render immediately instead of waiting on the review filter/
+// sort/page fetch.
+function ProductReviewsAsync({ reviewsSection }: { reviewsSection: Promise<ReviewsSectionProps | undefined> }) {
+  const resolved = use(reviewsSection)
+  if (!resolved) return null
+  return <ProductReviews {...resolved} />
+}
+
 interface Props {
   product: Product
   /** Server-resolved from `?variant=` (or the default) — see
@@ -113,14 +124,32 @@ interface Props {
   partnerSlug?: string | null
   variantShippingDisplays?: Record<string, ShippingDisplay>
   reviewSummary?: ProductReviewSummary | null
-  reviewsSection?: ReviewsSectionProps
+  /**
+   * A Promise rather than resolved data: reviewFilter/reviewSort/reviewPage
+   * are searchParams, and under Cache Components reading those at the top of
+   * the page would force the whole PDP dynamic (it would no longer
+   * prerender/ISR). The page calls its review-fetching function WITHOUT
+   * awaiting it and hands the Promise straight through; `use()` inside the
+   * Suspense-wrapped subcomponent below is what actually awaits it, so only
+   * the reviews list streams in at request time while the rest of the page
+   * (gallery, price, spec tabs) stays part of the static shell.
+   */
+  reviewsSection?: Promise<ReviewsSectionProps | undefined>
   /** Favorites (DEV-FAV-01) — server-computed session state and the
       customer's saved status for THIS product. */
   isSignedIn?: boolean
   isFavorited?: boolean
 }
 
-export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {}, reviewSummary = null, reviewsSection, isSignedIn = false, isFavorited = false }: Props) {
+export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {}, reviewSummary = null, reviewsSection, isSignedIn, isFavorited }: Props) {
+  // Falls back to the client-hydrated context (lib/favorites/FavoritesContext)
+  // when the page doesn't pass explicit props — the case now that PDP routes
+  // are statically prerendered/ISR'd for a sample of handles and can no
+  // longer safely embed a server-computed per-viewer favorite state. See
+  // ShopifyProductCard's identical fallback for the category-grid version.
+  const favoritesState = useFavoritesState()
+  const resolvedIsSignedIn = isSignedIn ?? favoritesState.isSignedIn
+  const resolvedIsFavorited = isFavorited ?? favoritesState.favoritedProductIds.has(product.id)
   // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
   // Medchain, …) and must never be presented as a brand — when brand_name is
   // absent the brand line, spec row, and analytics item_brand are all omitted.
@@ -361,8 +390,8 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                 productHandle={product.handle}
                 productTitle={displayTitle}
                 variantId={selectedVariant.id}
-                isSignedIn={isSignedIn}
-                initialFavorited={isFavorited}
+                isSignedIn={resolvedIsSignedIn}
+                initialFavorited={resolvedIsFavorited}
                 list="pdp"
                 className="shrink-0 border border-gray-200"
               />
@@ -730,7 +759,9 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
       {reviewsSection && (
         <section className="bg-white border-t border-gray-200">
           <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
-            <ProductReviews {...reviewsSection} />
+            <Suspense fallback={null}>
+              <ProductReviewsAsync reviewsSection={reviewsSection} />
+            </Suspense>
           </div>
         </section>
       )}

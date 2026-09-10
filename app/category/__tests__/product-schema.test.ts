@@ -9,6 +9,9 @@ vi.mock('@/lib/category-tree-data.server', () => ({
 // which reads next/headers — unavailable outside a real request scope when
 // invoking the Server Component function directly in a unit test.
 vi.mock('@/lib/csp-nonce', () => ({ getNonce: vi.fn(async () => 'test-nonce') }))
+// getPriceValidUntil is a `use cache` fn; cacheLife()/cacheTag() throw outside the
+// cacheComponents runtime (i.e. in vitest), so stub next/cache to no-ops.
+vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cacheTag: vi.fn() }))
 
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'

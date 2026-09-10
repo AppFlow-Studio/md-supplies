@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { storefrontFetch } from '@/lib/shopify/storefront'
-import { GET_PRODUCT, GET_PRODUCT_RECS } from '@/lib/shopify/queries/products'
+import { GET_PRODUCT, GET_PRODUCT_RECS, GET_ALL_PRODUCT_HANDLES } from '@/lib/shopify/queries/products'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 import { publicBrand } from '@/lib/brand'
@@ -24,20 +24,50 @@ import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
 import { getNumericShopifyProductId } from '@/lib/trustshop/product-id'
-import { getProductReviewSummary, listProductReviews, getProductReviewMedia } from '@/lib/trustshop/product'
-import type { ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
-import { getFavoritedProductIds } from '@/app/actions/favorites'
-import { getSession } from '@/lib/shopify/session'
+import { getCachedProductReviewSummary, listProductReviews, getProductReviewMedia } from '@/lib/trustshop/product'
+import type { ProductReviewFilter, ProductReviewSort, ProductReviewSummary } from '@/lib/trustshop/types'
+import { getPriceValidUntil } from '@/lib/product/price-valid-until'
 
-// Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
-// route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
-// Freshness comes from the fetch-level data cache (productFetchOptions
-// below), invalidated by the Shopify webhook via cache tags
-// (app/api/revalidate), not route-level revalidate/generateStaticParams.
+// Cache Components: prerender a small live sample of real product pages at build
+// so the build validates the real render path; every other handle renders
+// on-demand on first request and is then cached (the long tail is intentionally
+// not enumerated — that would make builds slow, and on-demand ISR is the point).
+// The product data reads are cached via storefrontFetch's data-cache tags
+// (productFetchOptions) + the Shopify products/* webhook (app/api/revalidate);
+// getPriceValidUntil is a `use cache` scope. The route-segment configs
+// (revalidate / dynamicParams) are gone — both are incompatible with
+// cacheComponents. generateStaticParams must return >=1 (empty arrays hard-error:
+// empty-generate-static-params). The server renders the DEFAULT variant; the
+// client reconciles `?variant=` after hydration (components/product/useSelectedVariant.ts).
+const PRERENDER_SAMPLE_SIZE = 20
+
+export async function generateStaticParams() {
+  try {
+    const data = await storefrontFetch<{ products: { nodes: { handle: string }[] } }>(
+      GET_ALL_PRODUCT_HANDLES,
+      { first: PRERENDER_SAMPLE_SIZE, after: null },
+      { next: { revalidate: 3600, tags: ['shopify', 'products'] } },
+    )
+    const handles = data.products.nodes.map((n) => ({ slug: n.handle }))
+    return handles.length > 0 ? handles : [{ slug: '__prerender_probe__' }]
+  } catch {
+    // Storefront hiccup at build → probe keeps the build valid; real handles
+    // render on-demand.
+    return [{ slug: '__prerender_probe__' }]
+  }
+}
 
 interface Props {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{
+  // Phase 3: declared (Next passes it) but never awaited at the top of the
+  // page — `?variant=` is reconciled client-side (useSelectedVariant); the
+  // review filter/sort/page fields are awaited only inside the Suspense-
+  // deferred reviewsSection promise below (buildReviewsSection), so reading
+  // them can never force this route's static shell dynamic.
+  // Optional: a caller exercising the variant-neutral server render (some
+  // tests) may omit it entirely — buildReviewsSection below defaults to an
+  // empty object rather than throwing.
+  searchParams?: Promise<{
     variant?: string
     reviewFilter?: string
     reviewSort?: string
@@ -49,13 +79,6 @@ interface Props {
 // the Shopify products/* webhook via the per-handle tag (app/api/revalidate).
 function productFetchOptions(slug: string) {
   return { next: { revalidate: 300, tags: ['shopify', 'products', `product:${slug}`] } }
-}
-
-// Offer freshness hint (M6): +30 days, date-only per Google's examples. The
-// page regenerates via ISR, so the window rolls forward on every
-// revalidation. Server-only helper — runs per-request, not in client render.
-function buildPriceValidUntil(): string {
-  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
 // Metafield flattening moved to lib/shopify/normalize.ts so the category
@@ -89,9 +112,49 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+// Fetches the review list/media for the current filter/sort/page — awaits
+// `searchParams` itself, but is called WITHOUT `await` by the page and handed
+// to <ProductView> as a Promise. `use()` inside that Suspense-wrapped
+// component (components/product/ProductView.tsx) is what actually awaits it,
+// so this can never force the page's static shell into a per-request dynamic
+// render (see the Props.searchParams comment above).
+async function buildReviewsSection(
+  searchParams: Props['searchParams'],
+  numericProductId: number | null,
+  basePath: string,
+  productGid: string,
+  reviewSummary: ProductReviewSummary | null,
+) {
+  if (!numericProductId) return undefined
+  // Reviews must never fail the PDP (see the outer try/catch's comment on
+  // numericProductId above) — a caller that omits searchParams entirely
+  // (some tests exercise the variant-neutral server render this way) falls
+  // back to the clean, unfiltered review list rather than throwing.
+  const sp = (await searchParams) ?? {}
+  const reviewFilter = sp.reviewFilter as ProductReviewFilter | undefined
+  const reviewSort = sp.reviewSort as ProductReviewSort | undefined
+  const reviewPage = Number(sp.reviewPage) > 0 ? Number(sp.reviewPage) : 1
+
+  const [reviewsPage, reviewMediaPage] = await Promise.all([
+    listProductReviews(numericProductId, { filter: reviewFilter, sort: reviewSort, currentPage: reviewPage }).catch(() => null),
+    getProductReviewMedia(numericProductId, { perPage: 20 }).catch(() => null),
+  ])
+
+  return {
+    basePath,
+    productGid,
+    summary: reviewSummary,
+    reviews: reviewsPage?.reviews ?? null,
+    media: reviewMediaPage?.media ?? [],
+    currentFilter: reviewFilter ?? 'all',
+    currentSort: reviewSort ?? 'most_helpful',
+    currentPage: reviewsPage?.currentPage ?? reviewPage,
+    hasNextPage: reviewsPage?.hasNextPage ?? false,
+  }
+}
+
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params
-  const sp = await searchParams
 
   const rawData = await storefrontFetch<{ product: RawProduct | null }>(
     GET_PRODUCT,
@@ -118,24 +181,27 @@ export default async function ProductPage({ params, searchParams }: Props) {
     numericProductId = null
   }
 
-  const reviewFilter = sp.reviewFilter as ProductReviewFilter | undefined
-  const reviewSort = sp.reviewSort as ProductReviewSort | undefined
-  const reviewPage = Number(sp.reviewPage) > 0 ? Number(sp.reviewPage) : 1
+  // Aggregate rating only — not searchParams-dependent (needed synchronously
+  // for ProductSchema's aggregateRating and the compact summary link), so
+  // this stays a normal awaited fetch rather than part of the deferred
+  // reviewsSection promise below.
+  const reviewSummary = numericProductId
+    ? await getCachedProductReviewSummary(numericProductId).catch(() => null)
+    : null
 
-  const [reviewSummary, reviewsPage, reviewMediaPage] = numericProductId
-    ? await Promise.all([
-        getProductReviewSummary(numericProductId).catch(() => null),
-        listProductReviews(numericProductId, { filter: reviewFilter, sort: reviewSort, currentPage: reviewPage }).catch(() => null),
-        getProductReviewMedia(numericProductId, { perPage: 20 }).catch(() => null),
-      ])
-    : [null, null, null]
+  const reviewsSection = buildReviewsSection(
+    searchParams,
+    numericProductId,
+    `/product/${slug}`,
+    product.id,
+    reviewSummary,
+  )
 
-  // Favorites (DEV-FAV-01): getSession() is a cheap cookie read, so a guest
-  // never touches the Admin API — the heart still renders (guest, unsaved),
-  // it just skips the fetch that decides its initial saved state.
-  const isSignedIn = Boolean(await getSession())
-  const favoritedProductIds = isSignedIn ? await getFavoritedProductIds() : []
-  const isFavorited = favoritedProductIds.includes(product.id)
+  // Favorites (DEV-FAV-01): no server-side session/favorites read here
+  // anymore — this route is statically prerendered/ISR'd for a live handle
+  // sample (generateStaticParams above), so a server-computed per-viewer
+  // value would leak into shared HTML. ProductView falls back to the
+  // client-hydrated FavoritesContext instead (lib/favorites/FavoritesContext.tsx).
 
   const recsData = await storefrontFetch<{ related: CollectionProduct[]; complementary: CollectionProduct[] }>(
     GET_PRODUCT_RECS,
@@ -157,16 +223,20 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const relatedProducts = attachCardShippingDisplay(recsData.related)
   const complementaryProducts = attachCardShippingDisplay(recsData.complementary)
 
-  // LG-03: resolved from `?variant=` when present and valid, otherwise the
-  // same default-variant selection ProductView seeds from (lib/purchasability.ts
-  // via resolveInitialVariant) — so the Product schema can never disagree with
-  // the visibly-selected price/SKU/availability, whichever variant that is.
-  const resolvedVariant = resolveInitialVariant(product.variants.nodes, sp.variant)
+  // LG-03: the server always renders the DEFAULT variant now (passing
+  // `undefined` — the route no longer reads `?variant` server-side, so it stays
+  // ISR-cacheable). The Product schema is built from this same default variant
+  // ProductView seeds from (lib/purchasability.ts via resolveInitialVariant), so
+  // it can never disagree with the visibly-selected price/SKU/availability. The
+  // `?variant=` deep-link is reconciled client-side after hydration
+  // (components/product/useSelectedVariant.ts); the canonical stays neutral.
+  const resolvedVariant = resolveInitialVariant(product.variants.nodes, undefined)
   const isAvailable = resolvedVariant?.availableForSale ?? product.availableForSale
   // Structured data and BreadcrumbSchema always point at the neutral,
   // query-free product URL — a selected variant is never canonicalized to a
   // variant-specific URL (LG-03 acceptance: "canonical remains neutral").
   const productUrl = buildCanonical({ path: `/product/${slug}`, strategy: 'base-product', basePath: `/product/${slug}` })
+  const priceValidUntil = await getPriceValidUntil()
 
   const schemaProps = {
     name: product.title,
@@ -191,7 +261,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
-    priceValidUntil: buildPriceValidUntil(),
+    priceValidUntil,
     ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
     // Identical normalized TrustShop summary the visible UI uses — omitted
@@ -249,19 +319,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         partnerSlug={partner?.slug ?? null}
         variantShippingDisplays={variantShippingDisplays}
         reviewSummary={reviewSummary}
-        isSignedIn={isSignedIn}
-        isFavorited={isFavorited}
-        reviewsSection={{
-          basePath: `/product/${slug}`,
-          productGid: product.id,
-          summary: reviewSummary,
-          reviews: reviewsPage?.reviews ?? null,
-          media: reviewMediaPage?.media ?? [],
-          currentFilter: reviewFilter ?? 'all',
-          currentSort: reviewSort ?? 'most_helpful',
-          currentPage: reviewsPage?.currentPage ?? reviewPage,
-          hasNextPage: reviewsPage?.hasNextPage ?? false,
-        }}
+        reviewsSection={reviewsSection}
       />
     </main>
   )

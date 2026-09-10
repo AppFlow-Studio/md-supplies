@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { Heart, Loader2 } from 'lucide-react'
 import { toggleFavorite } from '@/app/actions/favorites'
 import { track } from '@/lib/analytics/track'
@@ -38,6 +38,12 @@ export function FavoriteButton({
   onRemoved,
 }: Props) {
   const [favorited, setFavorited] = useState(initialFavorited)
+  // `initialFavorited` can arrive late: on a statically-shared grid/page it
+  // starts false (see FavoritesContext) and only reflects the real saved
+  // state once the client-side favorites fetch resolves after mount. A
+  // caller with a real per-request value never changes this prop post-mount,
+  // so this effect is a no-op there.
+  useEffect(() => setFavorited(initialFavorited), [initialFavorited])
   // Empty until the first interaction — the aria-live region must never
   // announce anything on initial mount/hydration (a grid of 20 cards would
   // otherwise each speak their state to every screen-reader visitor).

@@ -1,17 +1,18 @@
 import type { Metadata } from 'next'
-import { notFound, redirect } from 'next/navigation'
+import { Suspense } from 'react'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_COLLECTION_HERO } from '@/lib/shopify/queries/collections'
 import type { CollectionHero } from '@/lib/shopify/types'
 import { CategoryResults } from '@/components/category/CategoryResults'
+import { CategoryFilterableGrid } from '@/components/category/CategoryFilterableGrid'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildCollectionPageSchema, buildBreadcrumbListSchema, jsonLdSafe } from '@/lib/schema'
 import { SITE_URL } from '@/lib/seo/constants'
 import { ROUTES } from '@/lib/routes'
 import { getClusterLinks } from '@/lib/cluster-links'
-import { MAX_CATEGORY_PAGE } from '@/lib/category-utils'
-import { parsePageSize, DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
+import { DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
 import type { ProductSource } from '@/lib/category-results-source'
 import {
   buildL2Tree,
@@ -19,6 +20,7 @@ import {
   getL1ByCollectionHandle,
   humanizeTag,
   CATEGORY_TREE_L1,
+  FEATURED_SUBCATEGORIES,
   getCategorySlug,
   getShopifyHandle,
   getFeaturedSubcategoryBySlug,
@@ -27,36 +29,33 @@ import {
 import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
 import { CatalogHero } from '@/components/category/CatalogHero'
 import { getCategoryBannerConfig } from '@/lib/bunnycdn'
-import { isAllowedFilterInput } from '@/lib/filter-registry'
-import { withTrackingParams } from '@/lib/analytics/tracking-params'
-import { getNonce } from '@/lib/csp-nonce'
 import { getCategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { logServerError, logCategoryEvent } from '@/lib/log-error'
 import type { ProductTagSummary } from '@/lib/category-tree'
 
 // Server-rendered category view for the single canonical route
-// app/category/[slug], which reads searchParams directly. The former
-// /category-browse twin and its proxy rewrite were removed in Phase 5: having
-// the clean and filtered views on different route segments forced a remount on
-// every filter/sort/search interaction.
+// app/category/[slug].
+//
+// Phase 3 (Cache Components): this component NO LONGER reads searchParams. Under
+// cacheComponents, any server-side searchParams read turns the whole route into
+// a per-request dynamic hole — so the bare URL prerenders a FULLY STATIC default
+// grid (page 1, no filters, default sort), and all filter/sort/search/pagination
+// moves CLIENT-SIDE into CategoryFilterableGrid, which fetches the cached
+// /api/catalog route. The default grid is rendered once here and used BOTH as
+// the Suspense fallback AND as the island's `defaultGrid` prop, so a bare-URL
+// crawler render costs zero extra function invocations and never double-fetches.
 
-export type CategorySearchParams = {
-  sort?: string
-  filter?: string | string[]
-  page?: string
-  /** DEV-SEARCH-01: collection-scoped search text. */
-  q?: string | string[]
-  /** "Show [N] per page" — validated by lib/catalog/page-size. */
-  per_page?: string | string[]
-}
-
-/** ?q= must be a single sane string; arrays and junk collapse to undefined. */
-export function parseSearchParam(q?: string | string[]): string | undefined {
-  if (typeof q !== 'string') return undefined
-  const trimmed = q.trim()
-  return trimmed ? trimmed.slice(0, 80) : undefined
-}
+// Re-export the pure param parsers/type from their new home so every existing
+// import site (the L2 product page, OCC, industries, tests) keeps working
+// unchanged — the implementations moved to lib/catalog/category-params to be
+// importable from client code without dragging this module's server-only graph.
+export {
+  parseSearchParam,
+  parseSortKey,
+  parseFilterParam,
+  type CategorySearchParams,
+} from '@/lib/catalog/category-params'
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
 // the Shopify collections/* webhook via the per-handle tag (app/api/revalidate).
@@ -64,54 +63,24 @@ function collectionFetchOptions(slug: string) {
   return { next: { revalidate: 300, tags: ['shopify', 'collections', `collection:${slug}`] } }
 }
 
-export function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
-  switch (sort) {
-    case 'PRICE_ASC':    return { sortKey: 'PRICE', reverse: false }
-    case 'PRICE_DESC':   return { sortKey: 'PRICE', reverse: true }
-    case 'BEST_SELLING': return { sortKey: 'BEST_SELLING', reverse: false }
-    case 'CREATED':      return { sortKey: 'CREATED', reverse: true }
-    default:             return { sortKey: 'COLLECTION_DEFAULT', reverse: false }
-  }
+// Cache Components: the static category shell must prerender for every canonical
+// slug. Every L1 plus the featured-subcategory slugs (the hot Trocar page) are
+// listed so those pages are built ahead of time; other slugs render on-demand.
+export function generateStaticParams() {
+  return [
+    ...CATEGORY_TREE_L1.map((c) => ({ slug: getCategorySlug(c) })),
+    ...FEATURED_SUBCATEGORIES.map((s) => ({ slug: s.slug })),
+  ]
 }
 
-export function parseFilterParam(filter?: string | string[]): string[] {
-  if (!filter) return []
-  const raw = Array.isArray(filter) ? filter : [filter]
-  // Default-deny URL-supplied inputs (rejects tag filters and unknown keys)
-  // before they reach the Storefront API, chips, or pagination links.
-  return raw.filter(isAllowedFilterInput)
-}
-
-// Beyond MAX_CATEGORY_PAGE (the product index's own cap) a request is a
-// crawler or a hand-edited URL — bounce to page 1 instead of erroring,
-// mirroring the fetch-failure fallback in CategoryResults.
-function page1RedirectUrl(slug: string, sp: CategorySearchParams, activeFilterStrings: string[]): string {
-  const p = new URLSearchParams()
-  if (sp.sort) p.set('sort', sp.sort)
-  activeFilterStrings.forEach((f) => p.append('filter', f))
-  const q = parseSearchParam(sp.q)
-  if (q) p.set('q', q)
-  const perPage = parsePageSize(sp.per_page)
-  if (perPage !== DEFAULT_PAGE_SIZE) p.set('per_page', String(perPage))
-  withTrackingParams(p, sp)
-  const qs = p.toString()
-  return qs ? `${ROUTES.category(slug)}?${qs}` : ROUTES.category(slug)
-}
-
-export async function buildCategoryMetadata(slug: string, sp: CategorySearchParams): Promise<Metadata> {
+export async function buildCategoryMetadata(slug: string): Promise<Metadata> {
   const base = SITE_URL
 
-  const activeFilterStrings = parseFilterParam(sp.filter)
-  // Search and page-size states are noindex like filtered states (plan §3.5).
-  // ?per_page= renders the same products in a different quantity, so leaving it
-  // indexable would mint five addresses per category for one set of content.
-  const isFiltered =
-    activeFilterStrings.length > 0 ||
-    Boolean(sp.sort) ||
-    Boolean(parseSearchParam(sp.q)) ||
-    parsePageSize(sp.per_page) !== DEFAULT_PAGE_SIZE
-  const requestedPage = parseInt(sp.page ?? '1', 10)
-  const currentPage = requestedPage > MAX_CATEGORY_PAGE ? 1 : requestedPage
+  // Phase 3: the route serves ONE server-rendered state — the clean, unfiltered
+  // page 1 — so metadata has a single path. The former isFiltered / currentPage>1
+  // noindex branches are gone (those states are now client-side only and never
+  // change the document the crawler sees). Canonical is always the clean
+  // /category/<slug> URL.
 
   // `slug` is the public canonical URL segment; a handful of categories
   // (e.g. face-masks) alias it to a differently-named live Shopify
@@ -163,35 +132,10 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
       ? (l1?.shortDescription ?? featured!.shortDescription)
       : trimDescription(seo?.description || description || '', 155) || undefined
 
-    if (isFiltered) {
-      return buildMetadata({
-        pageType: 'category',
-        title: metaTitle,
-        description: metaDescription,
-        canonical: `${base}/category/${slug}`,
-        noIndex: true,
-        image: data.collection.image?.url,
-        imageWidth: data.collection.image?.width,
-        imageHeight: data.collection.image?.height,
-      })
-    }
-
-    if (currentPage > 1) {
-      return buildMetadata({
-        pageType: 'category',
-        title: metaTitle,
-        description: metaDescription,
-        canonical: `${base}/category/${slug}?page=${currentPage}`,
-        image: data.collection.image?.url,
-        imageWidth: data.collection.image?.width,
-        imageHeight: data.collection.image?.height,
-      })
-    }
-
-    // Unfiltered page 1: use SEO database values when available.
+    // Clean unfiltered page 1: use SEO database values when available.
     const seoDB = getCategorySeo(slug)
     if (seoDB) {
-      const base = buildMetadata({
+      const metaBase = buildMetadata({
         pageType: 'category',
         slug,
         description: seoDB.metaDescription,
@@ -199,9 +143,9 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
         imageWidth: data.collection.image?.width,
         imageHeight: data.collection.image?.height,
       })
-      const og = (base.openGraph ?? {}) as Record<string, unknown>
+      const og = (metaBase.openGraph ?? {}) as Record<string, unknown>
       return {
-        ...base,
+        ...metaBase,
         title: seoDB.title,
         description: seoDB.metaDescription,
         openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
@@ -213,6 +157,7 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
       title: metaTitle,
       slug,
       description: metaDescription,
+      canonical: `${base}/category/${slug}`,
       image: data.collection.image?.url,
       imageWidth: data.collection.image?.width,
       imageHeight: data.collection.image?.height,
@@ -222,22 +167,7 @@ export async function buildCategoryMetadata(slug: string, sp: CategorySearchPara
   }
 }
 
-export async function CategoryPageView({ slug, sp }: { slug: string; sp: CategorySearchParams }) {
-  const nonce = await getNonce()
-  const activeFilterStrings = parseFilterParam(sp.filter)
-  const { sortKey, reverse } = parseSortKey(sp.sort)
-  const searchQuery = parseSearchParam(sp.q)
-  const currentPage = parseInt(sp.page ?? '1', 10)
-  const pageSize = parsePageSize(sp.per_page)
-  const isFiltered =
-    activeFilterStrings.length > 0 ||
-    Boolean(sp.sort) ||
-    Boolean(searchQuery) ||
-    pageSize !== DEFAULT_PAGE_SIZE
-
-  if (isNaN(currentPage) || currentPage < 1) notFound()
-  if (currentPage > MAX_CATEGORY_PAGE) redirect(page1RedirectUrl(slug, sp, activeFilterStrings))
-
+export async function CategoryPageView({ slug }: { slug: string }) {
   // `slug` is the public canonical URL segment; a handful of categories
   // (e.g. face-masks) alias it to a differently-named live Shopify
   // collection (face-coverings) — see lib/category-tree.ts's
@@ -369,8 +299,35 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
       ? ['shopify', 'products', 'category-tree', `category:${l1!.tag}`]
       : ['shopify', 'products', 'collections', `collection:${shopifyHandle}`]
 
-  // SEO database — H1 override, answer block, and FAQ on unfiltered page 1.
-  const seoData = (!isFiltered && currentPage === 1) ? getCategorySeo(slug) : undefined
+  // SEO database — H1 override, answer block, and FAQ. The server render is
+  // always the canonical unfiltered page 1, so this is always resolved (the
+  // former `!isFiltered && currentPage === 1` gate is now implicit).
+  const seoData = getCategorySeo(slug)
+
+  // The DEFAULT unfiltered page-1 grid, rendered server-side (STATIC). Passed to
+  // the client island as BOTH the Suspense fallback and its `defaultGrid`, so a
+  // bare URL renders this exact tree with no client fetch, and a deep link shows
+  // it (matching SSR — no hydration mismatch) until the island swaps in filters.
+  const defaultGrid = (
+    <CategoryResults
+      source={productSource}
+      baseUrl={ROUTES.category(slug)}
+      facetKey={slug}
+      facetKind="category"
+      pageSize={DEFAULT_PAGE_SIZE}
+      cacheTags={cacheTags}
+      sortKey="COLLECTION_DEFAULT"
+      reverse={false}
+      sortParam={undefined}
+      activeFilterStrings={[]}
+      currentPage={1}
+      trackingParamsSource={{}}
+      searchQuery={undefined}
+      searchScopeTitle={displayName}
+      tabsAllLabel={`All ${displayName}`}
+      tabsLeadingLinks={featuredChildren}
+    />
+  )
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -392,10 +349,8 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
 
       {/* Answer-first block (AEO). The hero carries the approved category
           description; this is the longer, question-resolving paragraph from the
-          SEO database, and it renders only on the canonical unfiltered page 1
-          where it is accurate. It used to be squeezed into the hero under a
-          two-line clamp, which truncated it mid-sentence and displaced the
-          approved description. */}
+          SEO database. It renders on the canonical unfiltered page 1 — which is
+          the only state this server component renders now. */}
       {seoData?.answerBlock && (
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 pt-5">
           <p className="text-gray-600 text-[15px] leading-[1.7] max-w-[72ch]">
@@ -405,24 +360,21 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
       )}
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6">
-        <CategoryResults
-          source={productSource}
-          baseUrl={ROUTES.category(slug)}
-          facetKey={slug}
-          facetKind="category"
-          pageSize={pageSize}
-          cacheTags={cacheTags}
-          sortKey={sortKey}
-          reverse={reverse}
-          sortParam={sp.sort}
-          activeFilterStrings={activeFilterStrings}
-          currentPage={currentPage}
-          trackingParamsSource={sp}
-          searchQuery={searchQuery}
-          searchScopeTitle={displayName}
-          tabsAllLabel={`All ${displayName}`}
-          tabsLeadingLinks={featuredChildren}
-        />
+        {/* Static default grid is the Suspense fallback AND the island's
+            defaultGrid — bare URLs never fetch, deep links swap after the
+            island's mount effect (hydration-safe: first client render === SSR). */}
+        <Suspense fallback={defaultGrid}>
+          <CategoryFilterableGrid
+            slug={slug}
+            baseUrl={ROUTES.category(slug)}
+            searchScopeTitle={displayName}
+            tabsAllLabel={`All ${displayName}`}
+            tabsLeadingLinks={featuredChildren}
+            sourceKindIsTag={productSource.kind === 'tag'}
+            facetKey={slug}
+            defaultGrid={defaultGrid}
+          />
+        </Suspense>
       </div>
 
       {/* FAQ section — below product grid (SEO database) */}
@@ -590,47 +542,45 @@ export async function CategoryPageView({ slug, sp }: { slug: string; sp: Categor
         </section>
       )}
 
-      {!isFiltered && (
-        <>
-          <script
-            type="application/ld+json"
-            nonce={nonce}
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{
-              __html: jsonLdSafe(
-                buildCollectionPageSchema({
-                  name: displayName,
-                  url: `${SITE_URL}/category/${slug}`,
-                  // Structured data is customer-facing (it feeds rich results),
-                  // so it follows the SAME copy rule as the title, meta
-                  // description and About block — a featured subcategory does
-                  // not emit the Shopify collection description, whose Trocar
-                  // text asserts "FDA-registered". Suppressing that claim in
-                  // three places and then shipping it in the fourth would have
-                  // published it anyway.
-                  ...(schemaDescription ? { description: schemaDescription } : {}),
-                  ...(collection.image?.url ? { image: collection.image.url } : {}),
-                }),
-              ),
-            }}
-          />
-          <script
-            type="application/ld+json"
-            nonce={nonce}
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{
-              __html: jsonLdSafe(
-                buildBreadcrumbListSchema(
-                  // Same array the visible trail renders, so the structured
-                  // data can never claim a different hierarchy than the page.
-                  breadcrumb,
-                  `${SITE_URL}/category/${slug}`,
-                ),
-              ),
-            }}
-          />
-        </>
-      )}
+      {/* Phase 3: the bare, unfiltered URL is now the ONLY state this server
+          component renders, so the CollectionPage / BreadcrumbList schemas that
+          were `!isFiltered`-gated emit unconditionally — the crawler only ever
+          sees this clean render. */}
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: jsonLdSafe(
+            buildCollectionPageSchema({
+              name: displayName,
+              url: `${SITE_URL}/category/${slug}`,
+              // Structured data is customer-facing (it feeds rich results),
+              // so it follows the SAME copy rule as the title, meta
+              // description and About block — a featured subcategory does
+              // not emit the Shopify collection description, whose Trocar
+              // text asserts "FDA-registered". Suppressing that claim in
+              // three places and then shipping it in the fourth would have
+              // published it anyway.
+              ...(schemaDescription ? { description: schemaDescription } : {}),
+              ...(collection.image?.url ? { image: collection.image.url } : {}),
+            }),
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: jsonLdSafe(
+            buildBreadcrumbListSchema(
+              // Same array the visible trail renders, so the structured
+              // data can never claim a different hierarchy than the page.
+              breadcrumb,
+              `${SITE_URL}/category/${slug}`,
+            ),
+          ),
+        }}
+      />
     </main>
   )
 }

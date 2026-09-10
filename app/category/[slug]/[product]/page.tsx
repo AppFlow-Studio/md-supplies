@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { storefrontFetch } from '@/lib/shopify/storefront'
@@ -7,8 +8,10 @@ import type { Product, CollectionProduct } from '@/lib/shopify/types'
 import { ProductView } from '@/components/product/ProductView'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { CategoryResults } from '@/components/category/CategoryResults'
+import { CategoryFilterableGrid } from '@/components/category/CategoryFilterableGrid'
 import { SubcategoryNavigator } from '@/components/category/SubcategoryNavigator'
-import { parseSortKey, parseFilterParam, parseSearchParam, type CategorySearchParams } from '@/components/category/CategoryPageView'
+import { DEFAULT_PAGE_SIZE } from '@/lib/catalog/page-size'
+import type { CategorySearchParams } from '@/components/category/CategoryPageView'
 import { buildMetadata, trimDescription } from '@/lib/seo'
 import { buildBreadcrumbListSchema, buildCollectionPageSchema, jsonLdSafe } from '@/lib/schema'
 import { BreadcrumbSchema } from '@/components/schema/BreadcrumbSchema'
@@ -33,7 +36,6 @@ import {
   getShopifyHandle,
 } from '@/lib/category-tree'
 import { fetchProductTagSummaries, hasFlatCategoryCollection } from '@/lib/category-tree-data.server'
-import { getNonce } from '@/lib/csp-nonce'
 import { getSubcategorySeo } from '@/lib/seo/categorySeo'
 import { FAQSection } from '@/components/b2b/FAQSection'
 import { resolveVariantsForProduct } from '@/lib/shipping-resolver/resolve'
@@ -43,23 +45,28 @@ import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { normalizeProduct, type RawProduct } from '@/lib/shopify/normalize'
 import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { buildCanonical } from '@/lib/seo/canonical'
+import { getPriceValidUntil } from '@/lib/product/price-valid-until'
 import { compareFacetValues } from '@/lib/catalog/facet-order'
 import { getNumericShopifyProductId } from '@/lib/trustshop/product-id'
-import { getProductReviewSummary, listProductReviews, getProductReviewMedia } from '@/lib/trustshop/product'
-import type { ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
+import { getCachedProductReviewSummary, listProductReviews, getProductReviewMedia } from '@/lib/trustshop/product'
+import type { ProductReviewFilter, ProductReviewSort, ProductReviewSummary } from '@/lib/trustshop/types'
 
-// Fully dynamic (root layout reads headers() for the CSP nonce, M10, so this
-// route can't be static/ISR'd — see the trade-off note in app/layout.tsx).
-// Freshness comes from the fetch-level data cache below, not route-level
-// revalidate/generateStaticParams.
-
-// Offer freshness hint (M6): +30 days, date-only per Google's examples,
-// mirroring /product/[slug]/page.tsx's identical helper. A top-level
-// function rather than an inline `new Date(Date.now()...)` in the component
-// body — react-hooks/purity flags a direct impure call at render time.
-function buildPriceValidUntil(): string {
-  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-}
+// Combined route: serves BOTH L2 subcategory grids AND product detail pages.
+//
+// Phase 3 (Cache Components): NEITHER branch reads searchParams on the server
+// anymore, so the whole route is prerenderable rather than force-dynamic.
+//   · Subcategory branch: prerenders a FULLY STATIC default grid (page 1, no
+//     filters); filter/sort/search/pagination move client-side into
+//     CategoryFilterableGrid, which fetches the cached /api/catalog route. This
+//     is the same architecture as /category/[slug]. Reading searchParams here
+//     would (under cacheComponents) turn the route back into a per-request
+//     dynamic hole — the exact thing this migration removes.
+//   · Product branch: unchanged — it already avoided searchParams (server
+//     renders the default variant; the client reconciles `?variant=` after
+//     hydration via components/product/useSelectedVariant.ts).
+//
+// Freshness comes from the fetch-level data cache tags below + the Shopify
+// webhook (app/api/revalidate).
 
 // Data cache: 5-minute background revalidate, plus on-demand invalidation from
 // the Shopify webhooks via per-handle tags (app/api/revalidate).
@@ -74,12 +81,50 @@ interface Props {
   // widening the shared CategorySearchParams type category pages also use.
   // reviewFilter/reviewSort/reviewPage: same reasoning, mirroring
   // /product/[slug]/page.tsx's dedicated searchParams shape.
+  //
+  // Phase 3: declared (Next passes it to page props) but never awaited at the
+  // top of either branch — reading it there would turn this route into a
+  // per-request dynamic hole under cacheComponents. `?variant=` is reconciled
+  // client-side (useSelectedVariant); filter/sort/search are handled by the
+  // client island; reviewFilter/reviewSort/reviewPage are awaited only inside
+  // the Suspense-deferred reviewsSection promise (buildReviewsSection).
   searchParams: Promise<CategorySearchParams & { variant?: string; reviewFilter?: string; reviewSort?: string; reviewPage?: string }>
 }
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+// Cache Components: a param'd route needs generateStaticParams returning >=1
+// param so the static shell can prerender (empty arrays hard-error; without it,
+// params/usePathname become runtime data and even the layout shell can't
+// prerender).
+//
+// Phase 3 replaces the SPIKE sentinel with ONE real slug/product pair that
+// resolves a genuine subcategory, so the prerendered sample exercises the real
+// subcategory branch (static default grid + client filter island) rather than a
+// synthetic 404. The pair is derived from live tag data (the same buildL2Tree
+// the sitemap and this route use); if that fetch is unavailable at build time we
+// fall back to the probe rather than fail the build. Every OTHER real
+// slug/product URL renders on-demand on first request (dynamicParams default).
+export async function generateStaticParams() {
+  try {
+    const l2Nodes = buildL2Tree(await fetchProductTagSummaries())
+    for (const node of l2Nodes) {
+      const parent = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)
+      if (parent) {
+        // slug = the parent L1's canonical URL slug; product = the L2 tag.
+        return [{ slug: getCategorySlug(parent), product: node.tag }]
+      }
+    }
+  } catch {
+    // Fall through to the probe below.
+  }
+  return [{ slug: '__prerender_probe__', product: '__prerender_probe__' }]
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, product: handle } = await params
-  const sp = await searchParams
+  // Phase 3: neither branch reads searchParams. The subcategory branch always
+  // serves the clean canonical view (filters are client-side only and never
+  // change the document a crawler sees), so the former isQueryVariant noindex
+  // branch is gone — metadata is always the clean, canonical subcategory copy.
   // `slug` is the PUBLIC URL slug, which diverges from the real Shopify
   // collection handle for Face Masks (slug "face-masks", handle
   // "face-coverings") — getL1ByCollectionHandle matches on collectionHandle,
@@ -114,14 +159,16 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   if (node) {
     const title = humanizeTag(node.tag)
-    const isDominantMatch = Boolean(l1 && node.parentTag === l1.tag)
 
     // Defect 1: this subcategory tag may ALSO be a standalone flat Shopify
     // collection at /category/<tag>, holding richer, curated copy — the
     // nested route only ever gets the neutral stub below. Flat is the chosen
     // canonical (2026-09-05 Izzy brief: it holds the real content and
     // existing rankings sit on it). Checked live rather than off a hardcoded
-    // pair list, so this covers the full tree, not just the 8 sampled pairs.
+    // pair list, so this covers the full tree, not just the sampled pairs.
+    // Takes priority over the dominant/cross-link distinction below — a flat
+    // duplicate is a flat duplicate regardless of which parent slug it's
+    // nested under.
     const flatExists = await hasFlatCategoryCollection(node.tag)
     if (flatExists) {
       return buildMetadata({
@@ -132,54 +179,54 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       })
     }
 
-    if (!isDominantMatch) {
-      // Node exists somewhere in the tree, just not under THIS slug (a stale
-      // parent, or a boundary-override cross-link) — point to its real home.
+    // A node renders (with its own SEO copy) under its true parent OR a
+    // registered cross-link parent; canonicalL1 resolves to the TRUE parent
+    // in both cases, so a cross-link render still canonicalizes to the
+    // dominant URL while a true-parent render canonicalizes to itself.
+    const isDominantMatch = Boolean(l1 && node.parentTag === l1.tag)
+    const isCrossLinkMatch = Boolean(l1 && node.crossLinkParentTag === l1.tag)
+
+    if (isDominantMatch || isCrossLinkMatch) {
       const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
+      const canonical = `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`
+
+      // Check SEO database for optimized title/description.
+      const seoDB = getSubcategorySeo(slug, handle)
+      if (seoDB) {
+        const base = buildMetadata({
+          pageType: 'subcategory',
+          slug: handle,
+          parentSlug: slug,
+          description: seoDB.metaDescription,
+          canonical,
+        })
+        const og = (base.openGraph ?? {}) as Record<string, unknown>
+        return {
+          ...base,
+          title: seoDB.title,
+          description: seoDB.metaDescription,
+          openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
+        }
+      }
+
+      // Neutral copy only — no shipping-speed or pricing promises in metadata
+      // (client-liability stop rule).
       return buildMetadata({
         pageType: 'subcategory',
         title,
-        canonical: `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`,
-        noIndex: true,
-      })
-    }
-
-    const canonical = `${SITE_URL}${ROUTES.subcategory(slug, node.tag)}`
-    // Filtered / sorted / searched L2 views are noindex and canonicalize to
-    // the clean route (plan §3.5).
-    const isQueryVariant =
-      parseFilterParam(sp.filter).length > 0 || Boolean(sp.sort) || Boolean(parseSearchParam(sp.q))
-
-    if (isQueryVariant) {
-      return buildMetadata({ pageType: 'subcategory', title, canonical, noIndex: true })
-    }
-
-    // Check SEO database for optimized title/description.
-    const seoDB = getSubcategorySeo(slug, handle)
-    if (seoDB) {
-      const base = buildMetadata({
-        pageType: 'subcategory',
-        slug: handle,
-        parentSlug: slug,
-        description: seoDB.metaDescription,
+        description: `Shop ${title} within ${canonicalL1.displayName} at MDSupplies.`,
         canonical,
       })
-      const og = (base.openGraph ?? {}) as Record<string, unknown>
-      return {
-        ...base,
-        title: seoDB.title,
-        description: seoDB.metaDescription,
-        openGraph: { ...og, title: seoDB.title, description: seoDB.metaDescription },
-      }
     }
 
-    // Neutral copy only — no shipping-speed or pricing promises in metadata
-    // (client-liability stop rule).
+    // Node exists somewhere in the tree, just not under THIS slug (a stale
+    // parent, and no cross-link registered either) — point to its real home.
+    const canonicalL1 = CATEGORY_TREE_L1.find((c) => c.tag === node.parentTag)!
     return buildMetadata({
       pageType: 'subcategory',
       title,
-      description: `Shop ${title} within ${l1!.displayName} at MDSupplies.`,
-      canonical,
+      canonical: `${SITE_URL}${ROUTES.subcategory(getCategorySlug(canonicalL1), node.tag)}`,
+      noIndex: true,
     })
   }
 
@@ -200,20 +247,13 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 }
 
 async function renderSubcategoryPage(
-  nonce: string | undefined,
   l1: { tag: string; displayName: string; collectionHandle: string },
   node: L2Node,
   l2Nodes: L2Node[],
-  sp: CategorySearchParams,
   slug: string,
   handle: string,
 ) {
   const title = humanizeTag(node.tag)
-  const activeFilterStrings = parseFilterParam(sp.filter)
-  const { sortKey, reverse } = parseSortKey(sp.sort)
-  const searchQuery = parseSearchParam(sp.q)
-  const currentPage = parseInt(sp.page ?? '1', 10)
-  if (isNaN(currentPage) || currentPage < 1) notFound()
 
   const siblings = getSubcategoriesForParent(l1.tag, l2Nodes).filter((n) => n.tag !== node.tag)
   const crossLinkL1 = node.crossLinkParentTag
@@ -222,6 +262,38 @@ async function renderSubcategoryPage(
 
   const canonicalUrl = `${SITE_URL}${ROUTES.subcategory(slug, handle)}`
   const seoData = getSubcategorySeo(slug, handle)
+
+  // The tag ProductSource for this subcategory. Re-derived identically in
+  // app/api/catalog (from slug + sub=node.tag) so the client filter island's
+  // fetches hit the same product set + cacheTags.
+  const subcategorySource = {
+    kind: 'tag' as const,
+    query: buildSubcategoryTagQuery(l1.tag, node.tag),
+    title,
+    slug: node.tag,
+  }
+
+  // The DEFAULT unfiltered page-1 grid, rendered server-side (STATIC). Used as
+  // BOTH the Suspense fallback and the island's defaultGrid — bare subcategory
+  // URLs render this with no client fetch (zero function invocations for
+  // crawlers), and deep links show it (matching SSR) until the island swaps in
+  // the filtered view.
+  const defaultGrid = (
+    <CategoryResults
+      source={subcategorySource}
+      baseUrl={ROUTES.subcategory(slug, handle)}
+      facetKey={getCategorySlug(l1)}
+      sortKey="COLLECTION_DEFAULT"
+      reverse={false}
+      sortParam={undefined}
+      activeFilterStrings={[]}
+      currentPage={1}
+      pageSize={DEFAULT_PAGE_SIZE}
+      trackingParamsSource={{}}
+      searchQuery={undefined}
+      searchScopeTitle={title}
+    />
+  )
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
@@ -276,19 +348,20 @@ async function renderSubcategoryPage(
       />
 
       <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-6">
-        <CategoryResults
-          source={{ kind: 'tag', query: buildSubcategoryTagQuery(l1.tag, node.tag), title, slug: node.tag }}
-          baseUrl={ROUTES.subcategory(slug, handle)}
-          facetKey={getCategorySlug(l1)}
-          sortKey={sortKey}
-          reverse={reverse}
-          sortParam={sp.sort}
-          activeFilterStrings={activeFilterStrings}
-          currentPage={currentPage}
-          trackingParamsSource={sp}
-          searchQuery={searchQuery}
-          searchScopeTitle={title}
-        />
+        {/* Static default grid is the Suspense fallback AND the island's
+            defaultGrid — bare subcategory URLs never fetch; deep links swap
+            after the island's mount effect (first client render === SSR). */}
+        <Suspense fallback={defaultGrid}>
+          <CategoryFilterableGrid
+            slug={slug}
+            sub={node.tag}
+            baseUrl={ROUTES.subcategory(slug, handle)}
+            searchScopeTitle={title}
+            sourceKindIsTag={true}
+            facetKey={getCategorySlug(l1)}
+            defaultGrid={defaultGrid}
+          />
+        </Suspense>
       </div>
 
       {/* FAQ section — below product grid (SEO database) */}
@@ -300,7 +373,6 @@ async function renderSubcategoryPage(
 
       <script
         type="application/ld+json"
-        nonce={nonce}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: jsonLdSafe(buildCollectionPageSchema({ name: title, url: canonicalUrl })),
@@ -308,7 +380,6 @@ async function renderSubcategoryPage(
       />
       <script
         type="application/ld+json"
-        nonce={nonce}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: jsonLdSafe(
@@ -323,12 +394,54 @@ async function renderSubcategoryPage(
   )
 }
 
+// Fetches the review list/media for the current filter/sort/page — awaits
+// `searchParams` itself, but is called WITHOUT `await` and handed to
+// <ProductView> as a Promise. `use()` inside that Suspense-wrapped component
+// (components/product/ProductView.tsx) is what actually awaits it, so this
+// can never force the page's static shell into a per-request dynamic render
+// (see the Props.searchParams comment above). Mirrors /product/[slug]'s
+// identical helper.
+async function buildReviewsSection(
+  searchParams: Props['searchParams'],
+  numericProductId: number | null,
+  basePath: string,
+  productGid: string,
+  reviewSummary: ProductReviewSummary | null,
+) {
+  if (!numericProductId) return undefined
+  // Reviews must never fail the PDP — a caller that omits searchParams
+  // entirely falls back to the clean, unfiltered review list rather than
+  // throwing. Mirrors /product/[slug]'s identical guard.
+  const sp = (await searchParams) ?? {}
+  const reviewFilter = sp.reviewFilter as ProductReviewFilter | undefined
+  const reviewSort = sp.reviewSort as ProductReviewSort | undefined
+  const reviewPage = Number(sp.reviewPage) > 0 ? Number(sp.reviewPage) : 1
+
+  const [reviewsPage, reviewMediaPage] = await Promise.all([
+    listProductReviews(numericProductId, { filter: reviewFilter, sort: reviewSort, currentPage: reviewPage }).catch(() => null),
+    getProductReviewMedia(numericProductId, { perPage: 20 }).catch(() => null),
+  ])
+
+  return {
+    basePath,
+    productGid,
+    summary: reviewSummary,
+    reviews: reviewsPage?.reviews ?? null,
+    media: reviewMediaPage?.media ?? [],
+    currentFilter: reviewFilter ?? 'all',
+    currentSort: reviewSort ?? 'most_helpful',
+    currentPage: reviewsPage?.currentPage ?? reviewPage,
+    hasNextPage: reviewsPage?.hasNextPage ?? false,
+  }
+}
+
 export default async function CategoryProductPage({ params, searchParams }: Props) {
-  const nonce = await getNonce()
   const { slug, product: handle } = await params
-  const sp = await searchParams
-  // See generateMetadata above for why this must resolve through
-  // getShopifyHandle first, not the raw public slug.
+  // Phase 3: NEITHER branch reads searchParams on the server. The subcategory
+  // branch renders a static default grid (client island handles filters); the
+  // product branch renders the default variant and lets the client reconcile
+  // `?variant=` after hydration. See generateMetadata above for why this must
+  // resolve through getShopifyHandle first, not the raw public slug.
   const l1 = getL1ByCollectionHandle(getShopifyHandle(slug))
 
   // Self-titled duplicate (/category/hygiene/hygiene) — collapse onto the
@@ -358,7 +471,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     }
 
     if (isDominantMatch) {
-      return renderSubcategoryPage(nonce, l1!, node, l2Nodes, sp, slug, handle)
+      // Subcategory (L2) branch: renders a fully-static default grid; the
+      // client filter island (CategoryFilterableGrid) handles filter/sort/
+      // search/pagination against /api/catalog. No searchParams read here — that
+      // is what keeps this route prerenderable under cacheComponents.
+      return renderSubcategoryPage(l1!, node, l2Nodes, slug, handle)
     }
 
     // Node exists somewhere in the tree, just not under THIS slug (a stale
@@ -395,17 +512,21 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     numericProductId = null
   }
 
-  const reviewFilter = sp.reviewFilter as ProductReviewFilter | undefined
-  const reviewSort = sp.reviewSort as ProductReviewSort | undefined
-  const reviewPage = Number(sp.reviewPage) > 0 ? Number(sp.reviewPage) : 1
+  // Aggregate rating only — not searchParams-dependent (needed synchronously
+  // for ProductSchema's aggregateRating and the compact summary link), so
+  // this stays a normal awaited fetch rather than part of the deferred
+  // reviewsSection promise below.
+  const reviewSummary = numericProductId
+    ? await getCachedProductReviewSummary(numericProductId).catch(() => null)
+    : null
 
-  const [reviewSummary, reviewsPage, reviewMediaPage] = numericProductId
-    ? await Promise.all([
-        getProductReviewSummary(numericProductId).catch(() => null),
-        listProductReviews(numericProductId, { filter: reviewFilter, sort: reviewSort, currentPage: reviewPage }).catch(() => null),
-        getProductReviewMedia(numericProductId, { perPage: 20 }).catch(() => null),
-      ])
-    : [null, null, null]
+  const reviewsSection = buildReviewsSection(
+    searchParams,
+    numericProductId,
+    `/category/${slug}/${handle}`,
+    productData.product.id,
+    reviewSummary,
+  )
 
   const recsData = await storefrontFetch<{
     related: CollectionProduct[]
@@ -421,9 +542,11 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     ? gateFreeShippingClaims(resolveVariantsForProduct(productData.product.id), productData.product.freeShipping)
     : {}
 
-  // LG-03: same `?variant=` resolution as /product/[slug] — see
-  // lib/product/resolve-variant.ts — so this route can't drift from it.
-  const resolvedVariant = resolveInitialVariant(productData.product.variants.nodes, sp.variant)
+  // LG-03: the product branch renders the DEFAULT variant server-side (passing
+  // `undefined` — it never reads `?variant` here, so it stays ISR-cacheable),
+  // mirroring /product/[slug]. The `?variant=` deep-link is reconciled
+  // client-side after hydration (components/product/useSelectedVariant.ts).
+  const resolvedVariant = resolveInitialVariant(productData.product.variants.nodes, undefined)
   // Neutral, query-free URL regardless of the selected variant.
   const productUrl = buildCanonical({
     path: `/category/${slug}/${handle}`,
@@ -437,6 +560,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
   // own image/mpn so structured data can't disagree with what's rendered
   // (AeroWalk: White/Grey must never emit Blue's image/mpn here either).
   const isAvailable = resolvedVariant?.availableForSale ?? productData.product.availableForSale
+  const priceValidUntil = await getPriceValidUntil()
   const schemaProps = {
     name: productData.product.title,
     description: productData.product.description,
@@ -450,7 +574,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     availability: (isAvailable ? 'InStock' : 'OutOfStock') as 'InStock' | 'OutOfStock' | 'PreOrder',
     url: productUrl,
     seller: 'MDSupplies',
-    priceValidUntil: buildPriceValidUntil(),
+    priceValidUntil,
     ...(OFFER_SHIPPING_DETAILS ? { shippingDetails: OFFER_SHIPPING_DETAILS } : {}),
     ...(MERCHANT_RETURN_POLICY ? { returnPolicy: MERCHANT_RETURN_POLICY } : {}),
     // Identical normalized TrustShop summary the visible UI uses — omitted
@@ -505,17 +629,7 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
         partnerSlug={partner?.slug ?? null}
         variantShippingDisplays={variantShippingDisplays}
         reviewSummary={reviewSummary}
-        reviewsSection={{
-          basePath: `/category/${slug}/${handle}`,
-          productGid: productData.product.id,
-          summary: reviewSummary,
-          reviews: reviewsPage?.reviews ?? null,
-          media: reviewMediaPage?.media ?? [],
-          currentFilter: reviewFilter ?? 'all',
-          currentSort: reviewSort ?? 'most_helpful',
-          currentPage: reviewsPage?.currentPage ?? reviewPage,
-          hasNextPage: reviewsPage?.hasNextPage ?? false,
-        }}
+        reviewsSection={reviewsSection}
       />
     </main>
   )
