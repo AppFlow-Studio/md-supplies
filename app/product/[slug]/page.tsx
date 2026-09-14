@@ -210,11 +210,16 @@ export default async function ProductPage({ params, searchParams }: Props) {
   ).catch(() => ({ related: [] as CollectionProduct[], complementary: [] as CollectionProduct[] }))
 
   // DEV-SHIP-02: custom.free_shipping ANDs with the resolver's per-variant
-  // confirmation — see lib/shipping-resolver/free-shipping-gate.ts. The
-  // metafield is product-level (like custom.backorder), so the same raw
-  // value gates every variant's entry in this map.
+  // confirmation — see lib/shipping-resolver/free-shipping-gate.ts. Like
+  // custom.backorder, the metafield can also be set on the Variant resource
+  // (DEV-SHIP-02 scoping, 2026-09-14) — a variant's own value wins, falling
+  // back to the product-level value only when the variant has none of its
+  // own, same rule as backorder.
+  const variantFreeShippingRaw = Object.fromEntries(
+    product.variants.nodes.map((v) => [v.id, v.freeShipping]),
+  )
   const variantShippingDisplays = isShippingResolverEnabled()
-    ? gateFreeShippingClaims(resolveVariantsForProduct(product.id), product.freeShipping)
+    ? gateFreeShippingClaims(resolveVariantsForProduct(product.id), product.freeShipping, variantFreeShippingRaw)
     : {}
 
   // Recommendations previously got no shippingDisplay at all (RelatedProductCard

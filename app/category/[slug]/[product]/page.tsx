@@ -536,10 +536,14 @@ export default async function CategoryProductPage({ params, searchParams }: Prop
     complementary: [] as CollectionProduct[],
   }))
 
-  // DEV-SHIP-02: same AND-gate as /product/[slug] — see
+  // DEV-SHIP-02: same AND-gate as /product/[slug], including the
+  // variant-scoped custom.free_shipping fallback (2026-09-14) — see
   // lib/shipping-resolver/free-shipping-gate.ts.
+  const variantFreeShippingRaw = Object.fromEntries(
+    productData.product.variants.nodes.map((v) => [v.id, v.freeShipping]),
+  )
   const variantShippingDisplays = isShippingResolverEnabled()
-    ? gateFreeShippingClaims(resolveVariantsForProduct(productData.product.id), productData.product.freeShipping)
+    ? gateFreeShippingClaims(resolveVariantsForProduct(productData.product.id), productData.product.freeShipping, variantFreeShippingRaw)
     : {}
 
   // LG-03: the product branch renders the DEFAULT variant server-side (passing

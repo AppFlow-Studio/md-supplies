@@ -106,10 +106,19 @@ export const GET_COLLECTION = `#graphql
             nodes {
               id
               title
+              sku
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale
               image { id url altText width height }
+              # DEV-CATALOG (2026-09-14): Quick Add's own variant picker has
+              # the same leak the PDP had — same key as Product.backorder
+              # above, scoped to the Variant resource; see
+              # lib/product/resolve-variant-value.ts's fallback rule.
+              backorder: metafield(namespace: "custom", key: "backorder") { value }
+              # Same variant scoping for custom.free_shipping — see
+              # lib/shipping-resolver/free-shipping-gate.ts.
+              freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
             }
           }
         }

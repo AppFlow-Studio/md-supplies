@@ -35,7 +35,9 @@ function toCardData(product: CollectionProduct): ProductCardData {
     vendor: '',
     price,
     compareAtPrice,
-    sku: '',
+    // Default-variant SKU only — QuickAddContent's own selectedVariant.sku
+    // (falling back to this) is what actually renders, same rule as the PDP.
+    sku: firstVariant?.sku ?? '',
     available: product.availableForSale,
     shippingDisplay: product.shippingDisplay ?? null,
     isBackordered: isBackorderedMetafield(product.backorder),
@@ -48,6 +50,7 @@ function toCardData(product: CollectionProduct): ProductCardData {
     variants: product.variants.nodes.map((v) => ({
       id: v.id,
       title: v.title,
+      sku: v.sku,
       price: Math.round(parseFloat(v.price.amount) * 100),
       compareAtPrice: v.compareAtPrice
         ? Math.round(parseFloat(v.compareAtPrice.amount) * 100)
@@ -56,6 +59,8 @@ function toCardData(product: CollectionProduct): ProductCardData {
       image: v.image
         ? { url: v.image.url, altText: cleanShopifyAlt(v.image.altText) ?? product.title, width: v.image.width, height: v.image.height }
         : null,
+      backorder: v.backorder ?? null,
+      shippingDisplay: v.shippingDisplay ?? null,
     })),
   }
 }

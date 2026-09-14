@@ -14,6 +14,7 @@ import {
   resolveBackorderLabel,
   type ProductLabel,
 } from '@/lib/labels/labels'
+import { resolveVariantAwareTitle } from '@/lib/product/resolve-variant-title'
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
@@ -87,13 +88,23 @@ export function QuickAddContent({ product, titleId }: Props) {
         source: 'tag',
       }
     : null
+  // Bilal, 2026-09-14: same "variant value first, product value only when
+  // the variant has no metafield of its own" rule as the PDP (an explicit
+  // false on the variant must override a product-level true) — Quick Add's
+  // own variant picker had the same B2080C-class leak the PDP did.
   const backorderLabel = resolveBackorderLabel({
-    isBackordered: product.isBackordered,
+    isBackordered: selectedVariant?.backorder != null ? selectedVariant.backorder : product.isBackordered,
     estimatedRestockDate: product.backorderRestockDate,
   })
   const labels: ProductLabel[] = [rxLabel, backorderLabel].filter(
     (l): l is ProductLabel => l !== null,
   )
+
+  // Same SKU-in-title rule as the PDP (lib/product/resolve-variant-title.ts):
+  // replace a baked-in default-variant SKU suffix with the selected
+  // variant's own SKU, never touching a title with no matching suffix.
+  const displayTitle = resolveVariantAwareTitle(product.title, product.variants, selectedVariant ?? { sku: null })
+  const displaySku = selectedVariant?.sku ?? product.sku
 
   function handleAdd() {
     if (!canAdd || !selectedVariantId) return
@@ -172,13 +183,13 @@ export function QuickAddContent({ product, titleId }: Props) {
           id={titleId}
           className="text-[25px] font-semibold text-black leading-[30px] tracking-[0.5px]"
         >
-          {product.title}
+          {displayTitle}
         </h2>
 
         {/* SKU */}
-        {product.sku && (
+        {displaySku && (
           <p className="text-[#666664] text-[15px] font-semibold leading-[28px] tracking-[0.3px]">
-            SKU: {product.sku}
+            SKU: {displaySku}
           </p>
         )}
 
@@ -207,7 +218,7 @@ export function QuickAddContent({ product, titleId }: Props) {
         <ProductLabelBadges
           className="self-start"
           labels={labels}
-          shippingDisplay={product.shippingDisplay}
+          shippingDisplay={selectedVariant?.shippingDisplay ?? product.shippingDisplay}
           size="md"
         />
 

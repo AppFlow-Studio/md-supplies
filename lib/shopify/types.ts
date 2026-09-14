@@ -80,6 +80,13 @@ export type VariantMetafields = {
       "variant value first, product value only when blank" rule), it does NOT
       mean "not backordered". */
   backorder?: { value: string } | null;
+  /** Raw `custom.free_shipping`, read from the Variant resource (DEV-SHIP-02
+      scoping, 2026-09-14). Same metafield key as `Product.freeShipping` — the
+      SAME field scoped narrower, never a duplicate. Absent/null means this
+      variant has no metafield value of its own — gateFreeShippingClaims
+      falls back to Product.freeShipping in that case (same "variant value
+      first, product value only when blank" rule as backorder above). */
+  freeShipping?: { value: string } | null;
 };
 
 export type ProductVariant = {
@@ -211,7 +218,22 @@ export type CollectionProduct = {
   // variant selection instead of always showing the product's first image
   // regardless of which color is picked — the same defect LG-03 fixed on the
   // PDP, present here too because this type never carried variant media.
-  variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable' | 'image'>[] };
+  variants: {
+    nodes: (Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable' | 'image' | 'backorder' | 'freeShipping'> & {
+      /** Optional (not a strict Pick) so existing fixtures/queries that
+          predate DEV-CATALOG's variant-aware title/backorder work still
+          type-check without adding it. Real GET_COLLECTION/SEARCH_PRODUCTS_BY_TAG
+          responses always include it now. */
+      sku?: ProductVariant['sku'];
+      /** Attached by attachCardShippingDisplay (2026-09-14), same rule as the
+          PDP's variantShippingDisplays — resolveVariantShippingDisplay's own
+          per-variant class, gated by this variant's own custom.free_shipping
+          (falling back to the product-level one when blank). Quick Add reads
+          this instead of the card-aggregate `shippingDisplay` above, which
+          collapses to FALLBACK whenever a product's variants disagree. */
+      shippingDisplay?: ShippingDisplay | null;
+    })[];
+  };
   shippingDisplay?: ShippingDisplay | null;
 };
 

@@ -311,6 +311,78 @@ describe('ProductView — variant-scoped Backorder (DEV-CATALOG, B2080C)', () =>
   })
 })
 
+// Bilal, 2026-09-14: same B2080C/B2083C product — the shared Shopify title
+// bakes in the 3.5mm SKU ("... (B2080C)"), which reads wrong once the
+// customer picks 4.5mm/B2083C. The H1 must track the selected variant's own
+// SKU, without hardcoding either SKU or stripping unrelated parentheses.
+describe('ProductView — variant-aware title (DEV-CATALOG, B2080C)', () => {
+  const smallVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51022196736216',
+    sku: 'B2080C',
+    selectedOptions: [{ name: 'Size', value: '3.5mm' }],
+  }
+  const largeVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51930534281432',
+    sku: 'B2083C',
+    selectedOptions: [{ name: 'Size', value: '4.5mm' }],
+  }
+  const trocarProduct: Product = {
+    ...product,
+    title: 'Disposable Blunt Tip, Trocar Combo Kit (B2080C)',
+    options: [{ id: 'opt1', name: 'Size', values: ['3.5mm', '4.5mm'] }],
+    variants: { nodes: [smallVariant, largeVariant] },
+  }
+
+  it('shows the baked-in SKU for the initially selected variant', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Disposable Blunt Tip, Trocar Combo Kit (B2080C)',
+    )
+  })
+
+  it('swaps the SKU suffix when the customer switches variants, without a refresh', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Size: 4.5mm' }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Disposable Blunt Tip, Trocar Combo Kit (B2083C)',
+    )
+    expect(screen.queryByText(/B2080C/)).not.toBeInTheDocument()
+  })
+
+  it('leaves a single-variant product title untouched, even with a trailing parenthetical', () => {
+    const singleVariantProduct: Product = {
+      ...product,
+      title: 'Nitrile Exam Gloves (Sterile)',
+      variants: { nodes: [{ ...product.variants.nodes[0], sku: 'GLV-100' }] },
+    }
+    render(
+      <ProductView
+        product={singleVariantProduct}
+        initialVariant={singleVariantProduct.variants.nodes[0]}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Nitrile Exam Gloves (Sterile)')
+  })
+})
+
 // DEV-SHIP-02: recommendation cards ("Similar Products" / "Frequently
 // Bought With") previously carried no shippingDisplay at all — RelatedProductCard
 // rendered no badges — so a genuinely free-shipping-eligible related product

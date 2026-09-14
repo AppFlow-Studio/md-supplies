@@ -117,3 +117,49 @@ describe('gateFreeShippingClaims (per-variant map)', () => {
     expect(gateFreeShippingClaims({}, { value: 'true' })).toEqual({})
   })
 })
+
+// Bilal, 2026-09-14: custom.free_shipping, like custom.backorder, can also be
+// set on the Variant resource — a mixed-variant product (e.g. an
+// oversized/heavier size) may be free-shipping-eligible on one variant and
+// not another. "Variant value first, product value only when blank" — same
+// rule as lib/product/resolve-variant-value.ts.
+describe('gateFreeShippingClaims — per-variant custom.free_shipping override', () => {
+  const displays = {
+    'v-small': STANDARD_FREE,
+    'v-large': STANDARD_FREE,
+  }
+
+  it("prefers a variant's own value over the product-level fallback, in both directions", () => {
+    expect(
+      gateFreeShippingClaims(displays, { value: 'true' }, {
+        'v-small': { value: 'true' },
+        'v-large': { value: 'false' },
+      }),
+    ).toEqual({ 'v-small': STANDARD_FREE, 'v-large': FALLBACK })
+  })
+
+  it('falls back to the product-level value for a variant with no metafield of its own', () => {
+    expect(
+      gateFreeShippingClaims(displays, { value: 'true' }, {
+        'v-small': { value: 'false' },
+        // v-large omitted entirely — must fall back to the product value.
+      }),
+    ).toEqual({ 'v-small': FALLBACK, 'v-large': STANDARD_FREE })
+  })
+
+  it('falls back to the product-level value when the variant map has an explicit null/undefined entry', () => {
+    expect(
+      gateFreeShippingClaims(displays, { value: 'true' }, {
+        'v-small': null,
+        'v-large': undefined,
+      }),
+    ).toEqual({ 'v-small': STANDARD_FREE, 'v-large': STANDARD_FREE })
+  })
+
+  it('behaves exactly like the product-only overload when no variant map is passed', () => {
+    expect(gateFreeShippingClaims(displays, { value: 'true' })).toEqual({
+      'v-small': STANDARD_FREE,
+      'v-large': STANDARD_FREE,
+    })
+  })
+})

@@ -115,6 +115,14 @@ export const GET_PRODUCT = `#graphql
           # Shopify Admin (Izzy) and a value is set on the specific variant —
           # ProductView falls back to the product-level value until then.
           backorder: metafield(namespace: "custom", key: "backorder") { value }
+
+          # DEV-SHIP-02 variant scoping (2026-09-14): same custom.free_shipping
+          # key as the product-level field above, scoped to the Variant
+          # resource — a mixed-variant product (e.g. a heavier/oversized size)
+          # can be free-shipping-eligible on one variant and not another, the
+          # same "variant first, product only when blank" rule as backorder.
+          # See lib/shipping-resolver/free-shipping-gate.ts.
+          freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
         }
       }
       options {
@@ -329,10 +337,17 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
             nodes {
               id
               title
+              sku
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale
               image { id url altText width height }
+              # DEV-CATALOG (2026-09-14): same variant-scoped custom.backorder
+              # as GET_COLLECTION — Quick Add reads it off this same shape.
+              backorder: metafield(namespace: "custom", key: "backorder") { value }
+              # Same variant scoping for custom.free_shipping — see
+              # lib/shipping-resolver/free-shipping-gate.ts.
+              freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
             }
           }
         }

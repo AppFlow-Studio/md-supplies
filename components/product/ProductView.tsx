@@ -21,6 +21,7 @@ import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
 import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
+import { resolveVariantAwareTitle } from '@/lib/product/resolve-variant-title'
 import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
 import { ProductReviewSummaryLink } from '@/components/reviews/ProductReviewSummaryLink'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
@@ -233,7 +234,12 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   const selectedColor = isMultiColor
     ? selectedVariant.selectedOptions.find((o) => o.name.toLowerCase() === 'color')?.value
     : undefined
-  const displayTitle = selectedColor ? `${product.title} — ${selectedColor}` : product.title
+  // Bilal, 2026-09-14: keep the client's SKU-in-title convention but make it
+  // variant-aware — H1 only, never the SEO title/canonical (this stays a
+  // client-side computation off the same product/selectedVariant props, not
+  // a metadata rewrite).
+  const skuAwareTitle = resolveVariantAwareTitle(product.title, product.variants.nodes, selectedVariant)
+  const displayTitle = selectedColor ? `${skuAwareTitle} — ${selectedColor}` : skuAwareTitle
 
   const SPEC_ROWS: { label: string; value: string | null }[] = [
     { label: 'Material',         value: product.material },
