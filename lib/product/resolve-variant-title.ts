@@ -12,6 +12,14 @@
  * own variant SKUs. A product with fewer than two distinct variant SKUs has
  * nothing to disambiguate, so its title is returned unchanged (covers both
  * "no variant SKUs" and "only one real SKU across variants").
+ *
+ * 2026-09-15 (B6705 follow-up): some catalog titles bake in a truncated SKU
+ * that's missing a trailing code letter the real variant SKU has (title
+ * "(B6705)", live SKU "B6705C") — a data-entry gap, not a different naming
+ * scheme. Treat the suffix as the same baked-in SKU when it's a strict
+ * prefix of exactly one distinct variant SKU, so the ambiguous case (the
+ * prefix could belong to two different variants) still falls through
+ * untouched rather than guessing.
  */
 export function resolveVariantAwareTitle(
   title: string,
@@ -27,7 +35,12 @@ export function resolveVariantAwareTitle(
   const match = title.match(/^(.*\S)\s*\(([^()]+)\)\s*$/)
   if (!match) return title
   const [, baseTitle, suffix] = match
-  if (!variantSkus.includes(suffix)) return title
+
+  const isExactSku = variantSkus.includes(suffix)
+  const prefixCandidates = new Set(
+    variantSkus.filter((sku) => sku !== suffix && sku.startsWith(suffix)),
+  )
+  if (!isExactSku && prefixCandidates.size !== 1) return title
 
   return selectedVariant.sku ? `${baseTitle} (${selectedVariant.sku})` : baseTitle
 }

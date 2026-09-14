@@ -57,4 +57,27 @@ describe('resolveVariantAwareTitle', () => {
       resolveVariantAwareTitle('4-Wheel Rollator Walker (RW-100)', rollatorVariants, { sku: 'RW-200' }),
     ).toBe('4-Wheel Rollator Walker (RW-200)')
   })
+
+  // B6705 (2026-09-15): title bakes "(B6705)" but the real variant SKU is
+  // "B6705C" — a trailing code letter missing from the title text.
+  describe('when the baked-in suffix is a truncated SKU (B6705 case)', () => {
+    const trocarVariants = [{ sku: 'B6705C' }, { sku: 'B7419C' }, { sku: 'B1954C' }]
+
+    it('still replaces the suffix when it is a prefix of exactly one variant SKU', () => {
+      expect(
+        resolveVariantAwareTitle(
+          '3.2mm Resin Trocar, Wrapped Kit, with Antiseptic, Medium Glove (B6705)',
+          trocarVariants,
+          { sku: 'B7419C' },
+        ),
+      ).toBe('3.2mm Resin Trocar, Wrapped Kit, with Antiseptic, Medium Glove (B7419C)')
+    })
+
+    it('leaves the title unchanged when the truncated suffix is a prefix of more than one variant SKU', () => {
+      const ambiguousVariants = [{ sku: 'B67050C' }, { sku: 'B67051C' }]
+      expect(
+        resolveVariantAwareTitle('Ambiguous Kit (B6705)', ambiguousVariants, { sku: 'B67051C' }),
+      ).toBe('Ambiguous Kit (B6705)')
+    })
+  })
 })
