@@ -505,3 +505,27 @@ export const GET_ALL_PRODUCT_TAGS = `#graphql
     }
   }
 `;
+
+// scripts/audit-variant-candidates.ts: one full-catalog pass (title, vendor,
+// tags) is enough to run BOTH of that audit's checks — the size-word variant
+// grouping and the mattress-cover mis-tag scan — without a second live
+// query. Deliberately NOT scoped with a `query:` tag filter server-side: the
+// mattress-cover check has to see every product regardless of category (the
+// whole point is catching one tagged somewhere unexpected), so filtering
+// happens client-side in lib/catalog/variant-candidates.ts instead.
+export const GET_ALL_PRODUCTS_BASIC = `#graphql
+  query GetAllProductsBasic($first: Int!, $after: String) {
+    products(first: $first, after: $after) {
+      nodes {
+        handle
+        title
+        vendor
+        tags
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
