@@ -11,11 +11,27 @@ type RedirectEntry = Redirect301 | Gone410
 
 // ─── Product catalog 301s (bulk) ──────────────────────────────────────────────
 //
-// 1,285 legacy product URLs from the old store, loaded from docs/redirects-ready.json
-// into a Map keyed by `from` for O(1) lookup (a linear scan over 1,285 rows on every
-// request is wasteful). The data file is validated clean: 1,285 unique `from` keys,
-// no self-redirects, and ZERO chains (no `to` is itself a `from`), so a single hop
+// Legacy/consolidated product URLs, loaded from docs/redirects-ready.json into a
+// Map keyed by `from` for O(1) lookup (a linear scan on every request is
+// wasteful). The data file is validated clean: unique `from` keys, no
+// self-redirects, and ZERO chains (no `to` is itself a `from`), so a single hop
 // always lands on a live page.
+//
+// docs/redirects-ready.json is a generated snapshot of Shopify's own URL
+// Redirect list, NOT hand-compiled — regenerate it with
+// `npx tsx scripts/sync-redirects.ts --write` (see that script's header) any
+// time products are merged/retired in Shopify. This replaced a hand-compiled
+// file after the 2026-09-15 incident where it was frozen since June and every
+// consolidation after that point 404'd on this site while still 301ing
+// correctly on checkout.mdsupplies.com (which reads Shopify's redirect list
+// directly) — see docs/launch/2026-08-18-redirect-audit-report.md and the
+// fd96a2c commit that first caught up the backlog. Shopify itself stays the
+// source of truth; this Map is deliberately NOT populated by a live fetch
+// per-request — Proxy is documented as unsuitable for slow data fetching
+// (node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md) and this
+// file's matcher covers nearly every route, so a live Admin API call per
+// request is both against that guidance and a needless dependency for every
+// page load on one more external service staying up.
 //
 // The old store served every product at `/products/<handle>` (plural); this site
 // serves them at `/product/<handle>` (singular). Both `from` and `to` in the JSON
