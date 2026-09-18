@@ -112,6 +112,12 @@ function isValidNonExpiredEta(value: string, now?: Date): boolean {
  * unparseable one falls back to the plain "Backorder" text. A date must
  * never by itself create or shape Backorder status — the boolean gate above
  * runs first and independently.
+ *
+ * Client wording change (2026-09-17 MD Supplies meeting): never say a
+ * backordered product "ships" on a given date — the supplier date can move,
+ * and "ships" reads as a promise. The customer-facing label is "Backorder,
+ * ETA <date>" instead. Variant-specific backorder gating (the boolean check
+ * above) is unchanged — this only touches the appended date's wording.
  */
 export function resolveBackorderLabel(input: {
   isBackordered?: { value: string } | string | boolean | null
@@ -126,8 +132,8 @@ export function resolveBackorderLabel(input: {
   return {
     type: 'backorder',
     // "Backorder", not "Back-ordered" (Bilal's spec / Juliette's guide).
-    text: eta ? `Backorder, ships ${eta}` : 'Backorder',
-    accessibleText: eta ? `Backorder, ships ${eta}` : 'Backorder',
+    text: eta ? `Backorder, ETA ${eta}` : 'Backorder',
+    accessibleText: eta ? `Backorder, ETA ${eta}` : 'Backorder',
     priority: 20,
     source: 'metafield',
   }

@@ -182,3 +182,111 @@ export function shipmentStatusLabel(shipment: {
     default: return 'Shipped'
   }
 }
+
+// ─── Order-level status badge (DEV-ACCOUNT-02) ──────────────────────────────
+//
+// Client report, 2026-09-17: Orders #3435/#3436 showed "Delivered" in the
+// account while UPS still had them at "Label Created" (tracking
+// 1ZV56J320311548011). Root cause: the account dashboard, /account/orders,
+// and the /account/orders/[number] header each had their own
+// getFulfillmentDisplay(order.fulfillmentStatus) that mapped Shopify's
+// order-level FULFILLED straight to "Delivered". FULFILLED only means every
+// line item has been fulfilled (a warehouse/label fact) — never that a
+// carrier delivered the package. Real delivery progress lives on each
+// fulfillment's latestShipmentStatus, which the shipment cards on the detail
+// page already used correctly (shipmentStatusLabel above). This resolver
+// consolidates that correct semantics into the one thing every account
+// surface should call for its order-level badge, so the header can never
+// show a different status than what the shipment cards underneath it show.
+
+export type OrderStatusFulfillmentInput = {
+  status: string | null
+  latestShipmentStatus: string | null
+  isPickedUp: boolean
+}
+
+export type OrderStatusInput = {
+  /** Shopify order-level fulfillmentStatus (UNFULFILLED / PARTIALLY_FULFILLED / FULFILLED / IN_PROGRESS / ...). */
+  fulfillmentStatus: string
+  fulfillments: OrderStatusFulfillmentInput[]
+}
+
+export type OrderStatusDisplay = { label: string; style: string }
+
+type OrderStage =
+  | 'ISSUE' | 'ATTEMPTED' | 'PROCESSING' | 'PARTIAL'
+  | 'LABEL_CREATED' | 'SHIPPED' | 'IN_TRANSIT' | 'OUT_FOR_DELIVERY' | 'DELIVERED'
+
+// Ordered least-advanced (most urgent to surface) → most-advanced.
+// resolveOrderStatus always shows the EARLIEST stage present across every
+// active fulfillment (plus a synthetic PARTIAL stage for any still-
+// unfulfilled portion) — so a mix of states, or one shipment lagging behind
+// another, can never read as more complete than the order's actual weakest
+// link. LABEL_CREATED ranks below SHIPPED: a fulfillment confirmed still
+// "preparing" is less progressed than one confirmed to have left the
+// warehouse (SHIPPED) even though SHIPPED carries no further carrier detail.
+const ORDER_STAGE_PRIORITY: OrderStage[] = [
+  'ISSUE', 'ATTEMPTED', 'PROCESSING', 'PARTIAL',
+  'LABEL_CREATED', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED',
+]
+
+const ORDER_STAGE_DISPLAY: Record<OrderStage, OrderStatusDisplay> = {
+  ISSUE:            { label: 'Delivery Issue',     style: 'bg-red-100 text-red-700' },
+  ATTEMPTED:        { label: 'Delivery Attempted', style: 'bg-orange-100 text-orange-700' },
+  PROCESSING:       { label: 'Processing',         style: 'bg-yellow-100 text-yellow-700' },
+  PARTIAL:          { label: 'Partial',            style: 'bg-blue-100 text-blue-700' },
+  LABEL_CREATED:    { label: 'Label Created',      style: 'bg-blue-100 text-blue-700' },
+  SHIPPED:          { label: 'Shipped',            style: 'bg-blue-100 text-blue-700' },
+  IN_TRANSIT:       { label: 'In Transit',         style: 'bg-blue-100 text-blue-700' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery',   style: 'bg-blue-100 text-blue-700' },
+  DELIVERED:        { label: 'Delivered',          style: 'bg-green-100 text-green-700' },
+}
+
+function fulfillmentOrderStage(f: OrderStatusFulfillmentInput): OrderStage {
+  if (f.isPickedUp) return 'DELIVERED'
+  switch (f.latestShipmentStatus) {
+    case 'DELIVERED':         return 'DELIVERED'
+    case 'OUT_FOR_DELIVERY':  return 'OUT_FOR_DELIVERY'
+    case 'IN_TRANSIT':
+    case 'READY_FOR_PICKUP':  return 'IN_TRANSIT'
+    case 'ATTEMPTED_DELIVERY': return 'ATTEMPTED'
+    case 'FAILURE':           return 'ISSUE'
+    case 'CONFIRMED':
+    case 'LABEL_PRINTED':
+    case 'LABEL_PURCHASED':   return 'LABEL_CREATED'
+  }
+  // No carrier-level shipment event yet — fall back to the fulfillment's own
+  // status. A successful fulfillment with no shipment event is real progress
+  // ("Shipped"), but on its own is never enough evidence to claim "Delivered".
+  return f.status === 'ERROR' || f.status === 'FAILURE' ? 'ISSUE' : 'SHIPPED'
+}
+
+/**
+ * Single source of truth for the order-level status badge on the account
+ * dashboard (Recent Orders), /account/orders, and the /account/orders/
+ * [number] header — replaces the three separate getFulfillmentDisplay()
+ * copies that each conflated Shopify's order-level FULFILLED with carrier
+ * delivery.
+ */
+export function resolveOrderStatus(order: OrderStatusInput): OrderStatusDisplay {
+  // Fulfillments Shopify itself canceled never shipped anything — they
+  // shouldn't gate the badge on the fulfillments that did.
+  const activeFulfillments = order.fulfillments.filter((f) => f.status !== 'CANCELLED')
+
+  if (activeFulfillments.length === 0) {
+    return ORDER_STAGE_DISPLAY[order.fulfillmentStatus === 'FULFILLED' ? 'SHIPPED' : 'PROCESSING']
+  }
+
+  const stages = activeFulfillments.map(fulfillmentOrderStage)
+  // FULFILLED is Shopify's only signal that no line-item quantity remains
+  // unfulfilled — anything else (PARTIALLY_FULFILLED, IN_PROGRESS, ON_HOLD,
+  // UNFULFILLED, ...) means part of the order hasn't shipped yet, so the
+  // badge must never read more complete than "Partial" no matter how
+  // advanced the fulfillments that do exist are.
+  if (order.fulfillmentStatus !== 'FULFILLED') stages.push('PARTIAL')
+
+  const worst = stages.reduce((acc, stage) =>
+    ORDER_STAGE_PRIORITY.indexOf(stage) < ORDER_STAGE_PRIORITY.indexOf(acc) ? stage : acc,
+  )
+  return ORDER_STAGE_DISPLAY[worst]
+}

@@ -20,9 +20,9 @@ import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
-import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
+import { resolveVariantValue } from '@/lib/product/resolve-variant-value'
 import { resolveVariantAwareTitle } from '@/lib/product/resolve-variant-title'
-import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, shopifyRichTextToHtml, plainTextToHtml, type RichTextSpan } from '@/lib/policy/rich-text'
 import { ProductReviewSummaryLink } from '@/components/reviews/ProductReviewSummaryLink'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 import type { ProductReviewSummary, ProductReview, ProductReviewMedia, ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
@@ -286,26 +286,26 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
     resolvedOrderSize || resolvedUnitsPerOrder || innerPackQuantity || packsPerCase || totalOrderQuantity,
   )
 
-  // Variant Description supplements the product Description tab — never
-  // shown if blank, never shown if it would just repeat the product
-  // description verbatim (resolveVariantSupplement — Bilal's rule 3).
-  // custom.variant_description turned out to be a rich_text_field on Izzy's
-  // actual QA write (confirmed 2026-08-15 by querying the live AeroWalk
-  // data: .value is a JSON AST, same shape as custom.shipping_returns
-  // below), not the plain multi-line text the field contract proposed — flatten
-  // it the same way, or the JSON literally renders on the page. Falls back to
-  // the raw value when it isn't parseable rich-text JSON (shopifyRichTextToPlainParagraphs
-  // returns [] for non-JSON input, by design — see lib/policy/rich-text.ts),
-  // so a plain-text value keeps working if the definition type is ever changed.
-  const variantDescriptionParagraphs = shopifyRichTextToPlainParagraphs(selectedVariant.description)
-  const flattenedVariantDescription =
-    variantDescriptionParagraphs.length > 0
-      ? variantDescriptionParagraphs.join('\n\n')
-      : selectedVariant.description || null
-  const variantDescriptionSupplement = resolveVariantSupplement(
-    flattenedVariantDescription,
-    product.description,
-  )
+  // Variant Description REPLACES the product Description for the selected
+  // variant (client correction, 2026-09-17 — supersedes the older
+  // "Variant Details supplement underneath the parent description"
+  // behavior). The client's issue: showing the parent description AND a
+  // variant-details supplement still left the wrong SKU's description
+  // visible on the page after switching variants. Falls back to the parent
+  // product description only when the selected variant has none.
+  // custom.variant_description is a rich_text_field on Izzy's actual QA
+  // write (confirmed 2026-08-15 by querying the live AeroWalk data: .value
+  // is a JSON AST, same shape as custom.shipping_returns below) — rendered
+  // via shopifyRichTextToHtml to preserve headings/lists/bold/italic/links
+  // rather than degrading it to flattened plain text. Falls back to
+  // plainTextToHtml for a raw (non-JSON) value, so a plain-text value keeps
+  // working if the metafield definition type is ever changed; both return
+  // null for a blank/missing value, which is what triggers the parent
+  // description fallback below.
+  const variantDescriptionHtml =
+    shopifyRichTextToHtml(selectedVariant.description) ??
+    (selectedVariant.description ? plainTextToHtml(selectedVariant.description) : null)
+  const resolvedDescriptionHtml = variantDescriptionHtml || product.descriptionHtml || product.description || null
 
   // H-01 — Vendor Shipping & Returns: custom.shipping_returns (rich text),
   // confirmed by Izzy's 2026-08-14 field contract as the live theme's actual
@@ -626,12 +626,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
           >
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-8 max-w-[760px]">
-                {/* Manufacturer Item Number and Internal SKU — kept as two
+                {/* Manufacturer Item Number and MDSupplies SKU — kept as two
                     separate, separately-labeled rows. Previously this tab
                     showed one heading, "Item Number", over `variantSku` (the
                     INTERNAL sku) — silently conflating the two identifiers
                     the launch plan's non-negotiable rule requires kept
-                    apart (Figure 3). */}
+                    apart (Figure 3). Client, 2026-09-17: the "Internal SKU"
+                    heading is customer-facing label copy only — renamed to
+                    "MDSupplies SKU"; the underlying source (`variantSku`,
+                    native Shopify variant `sku`) is unchanged. */}
                 {selectedVariant.manufacturerNumber && (
                   <div>
                     <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Manufacturer Item Number</h2>
@@ -639,7 +642,7 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                   </div>
                 )}
                 <div>
-                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Internal SKU</h2>
+                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">MDSupplies SKU</h2>
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantSku}</p>
                 </div>
 
@@ -651,24 +654,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                   </div>
                 )}
 
-                {/* Description */}
-                {(product.descriptionHtml || product.description) && (
+                {/* Description — the selected variant's description when it
+                    has one, else the parent product description (never
+                    both: see resolvedDescriptionHtml above). */}
+                {resolvedDescriptionHtml && (
                   <div>
                     <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Description</h2>
                     <div
                       className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] prose max-w-none prose-p:mb-4 prose-ul:pl-5 prose-li:mb-1"
-                      dangerouslySetInnerHTML={{ __html: product.descriptionHtml || product.description }}
+                      dangerouslySetInnerHTML={{ __html: resolvedDescriptionHtml }}
                     />
-                  </div>
-                )}
-
-                {/* Variant Details — supplements the description above only
-                    when the archived source had genuinely variant-specific
-                    content; never a duplicate of it (resolveVariantSupplement). */}
-                {variantDescriptionSupplement && (
-                  <div>
-                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Variant Details</h2>
-                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] whitespace-pre-line">{variantDescriptionSupplement}</p>
                   </div>
                 )}
 

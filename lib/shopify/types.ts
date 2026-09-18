@@ -53,9 +53,10 @@ export type VariantMetafields = {
   /** `custom.units_per_order` (variant-owned). Falls back to
       `Product.unitsPerOrder` / `Product.quantityOfUnits` when blank. */
   unitsPerOrder?: string | null;
-  /** `custom.variant_description` (variant-owned, proposed). Only ever
-      rendered as a supplement to `Product.description`, and only when it
-      differs from it — see resolveVariantSupplement. */
+  /** `custom.variant_description` (variant-owned, proposed). Client,
+      2026-09-17: replaces `Product.description` for the selected variant's
+      Description section when present; falls back to the parent product
+      description when blank — see ProductView's resolvedDescriptionHtml. */
   description?: string | null;
   /** `custom.inner_pack_quantity` (LG-04, variant-owned, Number integer).
       No product-level fallback. Blank means no data, not zero — Izzy only

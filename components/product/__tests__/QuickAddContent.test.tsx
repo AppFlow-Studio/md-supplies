@@ -158,7 +158,7 @@ describe('QuickAddContent — Backorder state', () => {
         titleId="t"
       />,
     )
-    expect(screen.getByText('Backorder, ships 2099-01-01')).toBeInTheDocument()
+    expect(screen.getByText('Backorder, ETA 2099-01-01')).toBeInTheDocument()
   })
 })
 

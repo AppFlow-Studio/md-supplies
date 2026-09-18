@@ -6,6 +6,7 @@ import { getSession, isSessionExpiring } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { GET_CUSTOMER_ORDERS } from '@/lib/shopify/queries/customer'
 import type { CustomerOrder } from '@/components/account/AccountView'
+import { resolveOrderStatus } from '@/lib/fulfillment'
 
 export const metadata: Metadata = {
   title: 'Order History | MD Supplies',
@@ -22,15 +23,6 @@ function formatPrice(amount: string, currencyCode: string): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency', currency: currencyCode,
   }).format(parseFloat(amount))
-}
-
-function getFulfillmentDisplay(status: string): { label: string; style: string } {
-  switch (status) {
-    case 'FULFILLED':           return { label: 'Delivered',  style: 'bg-green-100 text-green-700'   }
-    case 'IN_PROGRESS':         return { label: 'Shipped',    style: 'bg-blue-100 text-blue-700'     }
-    case 'PARTIALLY_FULFILLED': return { label: 'Partial',    style: 'bg-blue-100 text-blue-700'     }
-    default:                    return { label: 'Processing', style: 'bg-yellow-100 text-yellow-700' }
-  }
 }
 
 export default async function AccountOrdersPage() {
@@ -87,7 +79,10 @@ export default async function AccountOrdersPage() {
                 </thead>
                 <tbody>
                   {orders.map((order, i) => {
-                    const { label: statusLabel, style: statusStyle } = getFulfillmentDisplay(order.fulfillmentStatus)
+                    const { label: statusLabel, style: statusStyle } = resolveOrderStatus({
+                      fulfillmentStatus: order.fulfillmentStatus,
+                      fulfillments: order.fulfillments.nodes,
+                    })
                     return (
                       <tr key={order.id} className={i < orders.length - 1 ? 'border-b border-gray-200' : ''}>
                         <td className="px-8 py-5 text-navy-900 text-[15px] font-semibold">#{order.number}</td>

@@ -7,7 +7,7 @@ import { customerFetch } from '@/lib/shopify/customer'
 import { GET_ORDER_DETAILS } from '@/lib/shopify/queries/customer'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { cleanShopifyAlt } from '@/lib/alt-text'
-import { computeFulfillmentSummary, shipmentStatusLabel } from '@/lib/fulfillment'
+import { computeFulfillmentSummary, shipmentStatusLabel, resolveOrderStatus } from '@/lib/fulfillment'
 
 export const metadata: Metadata = {
   title: 'Order Details | MD Supplies',
@@ -89,15 +89,6 @@ function formatPrice(money: Money): string {
   }).format(parseFloat(money.amount))
 }
 
-function getFulfillmentDisplay(status: string): { label: string; style: string } {
-  switch (status) {
-    case 'FULFILLED':           return { label: 'Delivered',  style: 'bg-green-100 text-green-700'   }
-    case 'IN_PROGRESS':         return { label: 'Shipped',    style: 'bg-blue-100 text-blue-700'     }
-    case 'PARTIALLY_FULFILLED': return { label: 'Partial',    style: 'bg-blue-100 text-blue-700'     }
-    default:                    return { label: 'Processing', style: 'bg-yellow-100 text-yellow-700' }
-  }
-}
-
 export default async function OrderDetailPage({ params }: Props) {
   const { number: numberParam } = await params
   const orderNumber = Number(numberParam)
@@ -126,7 +117,17 @@ export default async function OrderDetailPage({ params }: Props) {
 
   if (!order) notFound()
 
-  const { label: statusLabel, style: statusStyle } = getFulfillmentDisplay(order.fulfillmentStatus)
+  // DEV-ACCOUNT-02: the same resolver the shipment cards below are built on
+  // (shipmentStatusLabel) — so this header can never show "Delivered" while
+  // a shipment card underneath it still says "In transit" or "Label Created".
+  const { label: statusLabel, style: statusStyle } = resolveOrderStatus({
+    fulfillmentStatus: order.fulfillmentStatus,
+    fulfillments: order.fulfillments.nodes.map((f) => ({
+      status: f.status,
+      latestShipmentStatus: f.latestShipmentStatus,
+      isPickedUp: f.isPickedUp,
+    })),
+  })
 
   // DEV-ACCOUNT-01: per-shipment item/quantity detail plus exact remaining
   // quantities — never just an order-level "Partial" badge.

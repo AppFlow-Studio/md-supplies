@@ -98,13 +98,14 @@ const product: Product = {
 }
 
 describe('ProductView PDP semantic markup (Audit M13)', () => {
-  it('exposes Internal SKU, Brand Name, Description, and Specifications as headings', () => {
+  it('exposes MDSupplies SKU, Brand Name, Description, and Specifications as headings', () => {
     render(<ProductView product={product} initialVariant={product.variants.nodes[0]} relatedProducts={[]} complementaryProducts={[]} />)
 
     // AeroWalk fix (2026-08-14): "Item Number" was renamed to "Internal SKU"
     // and split from a separate "Manufacturer Item Number" heading (rendered
     // only when the variant carries one — this fixture's variant doesn't).
-    expect(screen.getByRole('heading', { name: 'Internal SKU' })).toBeInTheDocument()
+    // Client, 2026-09-17: "Internal SKU" relabeled to "MDSupplies SKU".
+    expect(screen.getByRole('heading', { name: 'MDSupplies SKU' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Brand Name' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Description' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Specifications' })).toBeInTheDocument()
@@ -167,14 +168,16 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
       />,
     )
     expect(screen.getByText('Backorder')).toBeInTheDocument()
-    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder, ETA/)).not.toBeInTheDocument()
   })
 
   // Bilal, 2026-08-18: a valid, non-expired ETA IS appended to the text
   // (supersedes DEV-SHIP-04's "always exactly Backorder" rule). The ETA is
   // still never a trigger on its own — see the "absent" and "stale" cases
   // above/below, which still show no label / plain "Backorder".
-  it('appends the ship date when the boolean is true and the ETA is a valid, non-expired date', () => {
+  // Client, 2026-09-17: wording changed from "ships <date>" to "ETA <date>"
+  // — a backorder date is never presented as a ship-date promise.
+  it('appends the ETA date when the boolean is true and the ETA is a valid, non-expired date', () => {
     render(
       <ProductView
         product={{
@@ -187,7 +190,8 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
         complementaryProducts={[]}
       />,
     )
-    expect(screen.getByText('Backorder, ships 2099-01-01')).toBeInTheDocument()
+    expect(screen.getByText('Backorder, ETA 2099-01-01')).toBeInTheDocument()
+    expect(screen.queryByText(/ships \d{4}-\d{2}-\d{2}/)).not.toBeInTheDocument()
   })
 
   // Backorder is the merchant's own declaration, independent of real-time
@@ -483,7 +487,7 @@ describe('ProductView — recommendation cards Backorder label (DEV-SHIP-04)', (
       />,
     )
     expect(screen.getByText('Backorder')).toBeInTheDocument()
-    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder, ETA/)).not.toBeInTheDocument()
   })
 
   it('shows exactly "Backorder" on a complementary product with custom.backorder=true', () => {

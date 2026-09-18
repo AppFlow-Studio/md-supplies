@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans } from '../rich-text'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, shopifyRichTextToHtml, plainTextToHtml } from '../rich-text'
 
 describe('shopifyRichTextToPlainParagraphs', () => {
   it('returns [] for null/undefined/empty input', () => {
@@ -123,5 +123,148 @@ describe('shopifyRichTextToParagraphSpans', () => {
         { text: '\nCustomer pays return freight.', bold: false },
       ],
     ])
+  })
+})
+
+describe('shopifyRichTextToHtml', () => {
+  it('returns null for null/undefined/empty/malformed input', () => {
+    expect(shopifyRichTextToHtml(null)).toBeNull()
+    expect(shopifyRichTextToHtml(undefined)).toBeNull()
+    expect(shopifyRichTextToHtml('')).toBeNull()
+    expect(shopifyRichTextToHtml('not json')).toBeNull()
+  })
+
+  it('renders a paragraph as <p>', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Ships within 2 business days.' }] }],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe('<p>Ships within 2 business days.</p>')
+  })
+
+  it('preserves bold and italic as <strong>/<em> instead of flattening to plain text', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'Contact ' },
+          { type: 'text', value: 'support', bold: true },
+          { type: 'text', value: ' before ' },
+          { type: 'text', value: 'returning', italic: true },
+          { type: 'text', value: '.' },
+        ],
+      }],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe('<p>Contact <strong>support</strong> before <em>returning</em>.</p>')
+  })
+
+  it('renders a heading clamped to h3, and a list as <ul>/<li>', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [
+        { type: 'heading', level: 1, children: [{ type: 'text', value: 'Returns' }] },
+        {
+          type: 'list',
+          listType: 'unordered',
+          children: [
+            { type: 'list-item', children: [{ type: 'paragraph', children: [{ type: 'text', value: 'RGA required' }] }] },
+            { type: 'list-item', children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Buyer pays return shipping' }] }] },
+          ],
+        },
+      ],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe(
+      '<h3>Returns</h3><ul><li>RGA required</li><li>Buyer pays return shipping</li></ul>',
+    )
+  })
+
+  it('renders an ordered list as <ol>', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'list',
+        listType: 'ordered',
+        children: [
+          { type: 'list-item', children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Step one' }] }] },
+        ],
+      }],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe('<ol><li>Step one</li></ol>')
+  })
+
+  it('renders a link with a safe href, target=_blank and rel=noopener', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [{ type: 'link', url: 'https://example.com/sizing', children: [{ type: 'text', value: 'sizing guide' }] }],
+      }],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe(
+      '<p><a href="https://example.com/sizing" target="_blank" rel="noopener noreferrer">sizing guide</a></p>',
+    )
+  })
+
+  it('degrades a javascript: link href to "#" rather than trusting it into innerHTML', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [{ type: 'link', url: 'javascript:alert(1)', children: [{ type: 'text', value: 'click me' }] }],
+      }],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe('<p><a href="#" target="_blank" rel="noopener noreferrer">click me</a></p>')
+  })
+
+  it('HTML-escapes text content so a value containing markup cannot inject tags', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{ type: 'paragraph', children: [{ type: 'text', value: '<img src=x onerror=alert(1)>' }] }],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe('<p>&lt;img src=x onerror=alert(1)&gt;</p>')
+  })
+
+  it('splits a blank line inside one AST paragraph into two <p> blocks (matches real custom.shipping_returns-style QA data)', () => {
+    const raw = JSON.stringify({
+      type: 'root',
+      children: [{
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'Shipping Policy: ', bold: true },
+          { type: 'text', value: 'Free ground shipping.\n\n' },
+          { type: 'text', value: 'Return Policy:', bold: true },
+        ],
+      }],
+    })
+    expect(shopifyRichTextToHtml(raw)).toBe(
+      '<p><strong>Shipping Policy: </strong>Free ground shipping.</p><p><strong>Return Policy:</strong></p>',
+    )
+  })
+
+  it('returns null for an AST with no renderable content', () => {
+    const raw = JSON.stringify({ type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', value: '   ' }] }] })
+    expect(shopifyRichTextToHtml(raw)).toBeNull()
+  })
+})
+
+describe('plainTextToHtml', () => {
+  it('wraps a single line in <p>', () => {
+    expect(plainTextToHtml('Ships within 2 business days.')).toBe('<p>Ships within 2 business days.</p>')
+  })
+
+  it('splits blank-line-separated text into separate <p> blocks and a single newline into <br/>', () => {
+    expect(plainTextToHtml('Line one.\nLine two.\n\nSecond paragraph.')).toBe(
+      '<p>Line one.<br/>Line two.</p><p>Second paragraph.</p>',
+    )
+  })
+
+  it('HTML-escapes content', () => {
+    expect(plainTextToHtml('<b>bold</b>')).toBe('<p>&lt;b&gt;bold&lt;/b&gt;</p>')
+  })
+
+  it('returns null for empty/whitespace-only input', () => {
+    expect(plainTextToHtml('')).toBeNull()
+    expect(plainTextToHtml('   ')).toBeNull()
   })
 })

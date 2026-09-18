@@ -4,6 +4,7 @@ import {
   Package, ChevronRight, LogOut, User,
   Zap, Activity, Home, Heart, Building2, Shield,
 } from "lucide-react";
+import { resolveOrderStatus, type OrderStatusFulfillmentInput } from "@/lib/fulfillment";
 
 // ─── Exported types (consumed by the account page and orders page) ─────────────
 
@@ -27,6 +28,10 @@ export interface CustomerOrder {
   financialStatus:   string
   fulfillmentStatus: string
   totalPrice:        { amount: string; currencyCode: string }
+  /** Minimal carrier-level fields (status/latestShipmentStatus/isPickedUp
+      only) — just enough for resolveOrderStatus to avoid conflating
+      Shopify's order-level FULFILLED with actual carrier delivery. */
+  fulfillments:      { nodes: OrderStatusFulfillmentInput[] }
 }
 
 export interface Customer {
@@ -79,15 +84,6 @@ function formatPrice(amount: string, currencyCode: string): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency", currency: currencyCode,
   }).format(parseFloat(amount));
-}
-
-function getFulfillmentDisplay(status: string): { label: string; style: string } {
-  switch (status) {
-    case "FULFILLED":            return { label: "Delivered",  style: "bg-green-100 text-green-700"  };
-    case "IN_PROGRESS":          return { label: "Shipped",    style: "bg-blue-100 text-blue-700"    };
-    case "PARTIALLY_FULFILLED":  return { label: "Partial",    style: "bg-blue-100 text-blue-700"    };
-    default:                     return { label: "Processing", style: "bg-yellow-100 text-yellow-700" };
-  }
 }
 
 function addressLabel(address: CustomerAddress, defaultId: string | undefined, index: number): string {
@@ -345,7 +341,10 @@ function LoggedInDashboard({
                   </thead>
                   <tbody>
                     {orders.map((order, i) => {
-                      const { label: statusLabel, style: statusStyle } = getFulfillmentDisplay(order.fulfillmentStatus);
+                      const { label: statusLabel, style: statusStyle } = resolveOrderStatus({
+                        fulfillmentStatus: order.fulfillmentStatus,
+                        fulfillments: order.fulfillments.nodes,
+                      });
                       return (
                         <tr key={order.id} className={i < orders.length - 1 ? "border-b border-gray-200" : ""}>
                           <td className="px-8 py-5 text-navy-900 text-[15px] font-semibold">#{order.number}</td>
