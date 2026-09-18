@@ -333,4 +333,21 @@ describe('resolveOrderStatus', () => {
     expect(resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ isPickedUp: true })] }).label)
       .toBe('Delivered')
   })
+
+  // Izzy, 2026-09-18: live Shopify values for the two orders the client
+  // reported. #3435 fulfillment.displayStatus is IN_TRANSIT (tracking
+  // 1ZV56J320311548011); #3436 is CONFIRMED (tracking 1ZV56J320311547905) —
+  // two different orders, two different tracking numbers, neither mixed up.
+  // Confirms the fix reads both correctly instead of "Delivered".
+  it('live #3435 data (IN_TRANSIT) resolves to In Transit', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'IN_TRANSIT' })] }),
+    ).toEqual({ label: 'In Transit', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  it('live #3436 data (CONFIRMED) resolves to Label Created', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'CONFIRMED' })] }),
+    ).toEqual({ label: 'Label Created', style: 'bg-blue-100 text-blue-700' })
+  })
 })

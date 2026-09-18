@@ -70,6 +70,16 @@ there. So today the boolean can differ per variant but the ETA date cannot.
 authored per-variant; if so, this needs a new variant-scoped field added to
 the query/types before the ETA can follow variant selection.
 
+**Resolved — Izzy, 2026-09-18:** queried the metafield definitions directly.
+`estimated_back_order_restock_date` has 0 definitions at `PRODUCTVARIANT`
+scope and exactly 1 at `PRODUCT` scope
+(`gid://shopify/MetafieldDefinition/41121775832`, type `date`). So the field
+is product-level only in Shopify today — nothing to add on our side; the
+code already matches reality. If a variant-scoped ETA is ever wanted, that
+requires Izzy to create a new `PRODUCTVARIANT`-scoped metafield definition
+in Admin first, which would then need a corresponding field added to
+`VariantMetafields` and `resolveProductLabels`. No code change needed now.
+
 ## 4. HB01/HB02 — no change, left with Izzy per your note
 
 ## 5. Push / state
@@ -148,3 +158,38 @@ right order number.
 
 Once you send the live values, I'll verify #3435/#3436 render the correct
 badge in the account against them.
+
+**Resolved — Izzy, 2026-09-18, live Shopify values:**
+
+| | Order #3435 | Order #3436 |
+|---|---|---|
+| Shopify ID | `gid://shopify/Order/7193024495832` | `gid://shopify/Order/7193025675480` |
+| Fulfillment `status` | SUCCESS | SUCCESS |
+| `displayStatus` | IN_TRANSIT | CONFIRMED |
+| Tracking number | `1ZV56J320311548011` | `1ZV56J320311547905` |
+
+Both orders have exactly one fulfillment. The tracking-number question is
+resolved, not a mix-up: `1ZV56J320311548011` is #3435's own number and
+`1ZV56J320311547905` is #3436's own number — the client's message and the
+screenshot were each correct, just describing two different orders.
+
+`displayStatus` is the Customer Account API's name for what our types call
+`latestShipmentStatus`; `resolveOrderStatus` (`lib/fulfillment.ts`) already
+maps `CONFIRMED` to the same `LABEL_CREATED` stage as `LABEL_PRINTED`/
+`LABEL_PURCHASED` (line 254) and `IN_TRANSIT` to `IN_TRANSIT` (line 250-251),
+so no code change was needed to handle these specific values — added
+regression tests pinned to this exact live data
+(`lib/__tests__/fulfillment.test.ts`, "live #3435 data (IN_TRANSIT)" /
+"live #3436 data (CONFIRMED)") to lock it in. Verified:
+
+- **#3435:** `FULFILLED` + `IN_TRANSIT` → **"In Transit"** (blue), never
+  "Delivered". Previously showed "Delivered" under the old
+  `fulfillmentStatus === 'FULFILLED'` → "Delivered" mapping — this is the
+  live confirmation of the client's original bug report.
+- **#3436:** `FULFILLED` + `CONFIRMED` → **"Label Created"** (blue), never
+  "Delivered". Same story — "CONFIRMED" (UPS has the label but hasn't
+  scanned the package yet) is exactly the "Label Created" case the fix was
+  built for.
+
+Full test suite (30/30) passes with these cases included. Both orders now
+render the correct badge in the account; considering this item closed.
