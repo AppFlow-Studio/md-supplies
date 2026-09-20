@@ -137,9 +137,8 @@ export async function customerFetch<T>(
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    // DEBUG (temporary): surface why the Customer Account API call fails
     console.error(
-      `[customerFetch] HTTP ${res.status} ${res.statusText}\n  url:   ${url}\n  token: ${accessToken?.slice(0, 9)}… (len ${accessToken?.length})\n  body:  ${body.slice(0, 600)}`,
+      `[customerFetch] HTTP ${res.status} ${res.statusText}\n  url:   ${url}\n  body:  ${body.slice(0, 600)}`,
     );
     throw new Error(`Customer API HTTP ${res.status}: ${res.statusText}`);
   }
@@ -147,7 +146,6 @@ export async function customerFetch<T>(
   const json: ShopifyResponse<T> = await res.json();
 
   if (json.errors?.length) {
-    // DEBUG (temporary)
     console.error(`[customerFetch] GraphQL errors @ ${url}\n`, JSON.stringify(json.errors, null, 2));
     throw new Error(json.errors.map((e) => e.message).join('\n'));
   }

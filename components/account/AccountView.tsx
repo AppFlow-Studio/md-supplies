@@ -226,12 +226,14 @@ function LoggedInDashboard({
   orders,
   addresses,
   favoritesCount,
+  ordersHasMore,
   rxCard,
 }: {
   customer:  Customer;
   orders:    CustomerOrder[];
   addresses: CustomerAddress[];
   favoritesCount: number;
+  ordersHasMore: boolean;
   rxCard?:   React.ReactNode;
 }) {
   const displayName  = [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "there";
@@ -275,7 +277,7 @@ function LoggedInDashboard({
       <section className="w-full bg-neutral-100">
         <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 grid grid-cols-2 sm:grid-cols-3 gap-5">
           {[
-            { icon: <Package size={20} className="text-teal-500" />, value: String(orders.length),    label: "Total Orders",    href: "/account/orders"    },
+            { icon: <Package size={20} className="text-teal-500" />, value: ordersHasMore ? `${orders.length}+` : String(orders.length), label: "Total Orders", href: "/account/orders" },
             { icon: <MapPin  size={20} className="text-teal-500" />, value: String(addresses.length), label: "Saved Addresses", href: undefined            },
             { icon: <Heart   size={20} className="text-teal-500" />, value: String(favoritesCount),   label: "Favorites",       href: "/account/favorites" },
           ].map(({ icon, value, label, href }) => {
@@ -442,15 +444,20 @@ interface AccountViewProps {
   orders:    CustomerOrder[]
   addresses: CustomerAddress[]
   favoritesCount?: number
+  /** True when the customer has more orders than the fetched page (Bilal,
+      2026-09-20: "Total Orders" showed orders.length capped at the page size,
+      e.g. 10 for a customer with 16). Drives the "N+" tile instead of a false
+      exact count — the same pattern /partners/[slug]/products uses. */
+  ordersHasMore?: boolean
   /** RX prescription-document card (server-fetched state), logged-in only. */
   rxCard?:   React.ReactNode
 }
 
-export function AccountView({ customer, orders, addresses, favoritesCount = 0, rxCard }: AccountViewProps) {
+export function AccountView({ customer, orders, addresses, favoritesCount = 0, ordersHasMore = false, rxCard }: AccountViewProps) {
   return (
     <main id="main-content">
       {customer ? (
-        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} favoritesCount={favoritesCount} rxCard={rxCard} />
+        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} favoritesCount={favoritesCount} ordersHasMore={ordersHasMore} rxCard={rxCard} />
       ) : (
         <LoggedOutView />
       )}

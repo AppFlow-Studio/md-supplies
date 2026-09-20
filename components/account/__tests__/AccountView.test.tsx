@@ -71,3 +71,21 @@ describe('AccountView — Recent Orders status badge (DEV-ACCOUNT-02)', () => {
     expect(screen.getByText('Processing')).toBeInTheDocument()
   })
 })
+
+// Bilal, 2026-09-20: "Total Orders" stops at 10 for a customer with 16 orders
+// — the dashboard fetches only the first page (GET_CUSTOMER_ORDERS first: 10)
+// and shows orders.length as if it were the true total. Mirrors the "24+"
+// pattern already used on /partners/[slug]/products for the same
+// page-size-vs-true-count gap.
+describe('AccountView — Total Orders tile (page-size vs true total)', () => {
+  it('shows the exact count when the fetched page is the whole list', () => {
+    render(<AccountView customer={customer} orders={[order(), order({ number: 3436 })]} addresses={[]} />)
+    expect(screen.getByText('2')).toBeInTheDocument()
+  })
+
+  it('shows "N+" instead of a false exact count when more orders exist than were fetched', () => {
+    render(<AccountView customer={customer} orders={[order()]} addresses={[]} ordersHasMore />)
+    expect(screen.getByText('1+')).toBeInTheDocument()
+    expect(screen.queryByText('1')).not.toBeInTheDocument()
+  })
+})

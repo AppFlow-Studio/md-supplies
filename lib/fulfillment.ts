@@ -156,27 +156,42 @@ export function computeFulfillmentSummary(
   return { shipments, pending, refundedOnly, hasShipments: shipments.length > 0 }
 }
 
-/** Customer-facing labels for Fulfillment.status / latestShipmentStatus. */
+/**
+ * Customer-facing labels for Fulfillment.status / latestShipmentStatus.
+ *
+ * Bilal, 2026-09-20 QA pass on b3d36ac (3 follow-ups from testing #3435/#3436):
+ *  - CONFIRMED/LABEL_PRINTED/LABEL_PURCHASED now all read "Label Created" —
+ *    the exact wording resolveOrderStatus's LABEL_CREATED stage uses, so the
+ *    shipment card below never disagrees with the order header above it
+ *    (order #3436 today: header said "Label Created", card said "Confirmed").
+ *  - `status === 'CANCELLED'` is checked BEFORE latestShipmentStatus: a
+ *    cancelled fulfillment can still carry a stale pre-cancellation shipment
+ *    status (e.g. CONFIRMED), which previously won the switch and showed
+ *    "Confirmed" instead of "Canceled".
+ *  - DELAYED is now its own label — it used to fall through both switches to
+ *    the default "Shipped", hiding the delay from the customer entirely.
+ */
 export function shipmentStatusLabel(shipment: {
   status: string | null
   latestShipmentStatus: string | null
   isPickedUp: boolean
 }): string {
   if (shipment.isPickedUp) return 'Picked up'
+  if (shipment.status === 'CANCELLED') return 'Canceled'
   switch (shipment.latestShipmentStatus) {
     case 'DELIVERED':    return 'Delivered'
     case 'OUT_FOR_DELIVERY': return 'Out for delivery'
     case 'IN_TRANSIT':   return 'In transit'
+    case 'DELAYED':       return 'Delayed'
     case 'ATTEMPTED_DELIVERY': return 'Delivery attempted'
     case 'FAILURE':      return 'Delivery issue'
     case 'READY_FOR_PICKUP': return 'Ready for pickup'
-    case 'CONFIRMED':    return 'Confirmed'
+    case 'CONFIRMED':
     case 'LABEL_PRINTED':
-    case 'LABEL_PURCHASED': return 'Preparing shipment'
+    case 'LABEL_PURCHASED': return 'Label Created'
   }
   switch (shipment.status) {
     case 'SUCCESS': return 'Shipped'
-    case 'CANCELLED': return 'Canceled'
     case 'ERROR':
     case 'FAILURE': return 'Shipment issue'
     default: return 'Shipped'
@@ -214,7 +229,7 @@ export type OrderStatusInput = {
 export type OrderStatusDisplay = { label: string; style: string }
 
 type OrderStage =
-  | 'ISSUE' | 'ATTEMPTED' | 'PROCESSING' | 'PARTIAL'
+  | 'ISSUE' | 'ATTEMPTED' | 'DELAYED' | 'PROCESSING' | 'PARTIAL'
   | 'LABEL_CREATED' | 'SHIPPED' | 'IN_TRANSIT' | 'OUT_FOR_DELIVERY' | 'DELIVERED'
 
 // Ordered least-advanced (most urgent to surface) → most-advanced.
@@ -225,14 +240,19 @@ type OrderStage =
 // link. LABEL_CREATED ranks below SHIPPED: a fulfillment confirmed still
 // "preparing" is less progressed than one confirmed to have left the
 // warehouse (SHIPPED) even though SHIPPED carries no further carrier detail.
+// DELAYED ranks alongside ATTEMPTED (Bilal, 2026-09-20: a carrier DELAYED
+// status previously fell through to "Shipped", hiding the delay) — a shipment
+// the carrier has flagged as behind schedule needs the same urgency as one
+// with a failed delivery attempt, not the quiet default "on track" reading.
 const ORDER_STAGE_PRIORITY: OrderStage[] = [
-  'ISSUE', 'ATTEMPTED', 'PROCESSING', 'PARTIAL',
+  'ISSUE', 'ATTEMPTED', 'DELAYED', 'PROCESSING', 'PARTIAL',
   'LABEL_CREATED', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED',
 ]
 
 const ORDER_STAGE_DISPLAY: Record<OrderStage, OrderStatusDisplay> = {
   ISSUE:            { label: 'Delivery Issue',     style: 'bg-red-100 text-red-700' },
   ATTEMPTED:        { label: 'Delivery Attempted', style: 'bg-orange-100 text-orange-700' },
+  DELAYED:          { label: 'Delayed',            style: 'bg-orange-100 text-orange-700' },
   PROCESSING:       { label: 'Processing',         style: 'bg-yellow-100 text-yellow-700' },
   PARTIAL:          { label: 'Partial',            style: 'bg-blue-100 text-blue-700' },
   LABEL_CREATED:    { label: 'Label Created',      style: 'bg-blue-100 text-blue-700' },
@@ -250,6 +270,7 @@ function fulfillmentOrderStage(f: OrderStatusFulfillmentInput): OrderStage {
     case 'IN_TRANSIT':
     case 'READY_FOR_PICKUP':  return 'IN_TRANSIT'
     case 'ATTEMPTED_DELIVERY': return 'ATTEMPTED'
+    case 'DELAYED':           return 'DELAYED'
     case 'FAILURE':           return 'ISSUE'
     case 'CONFIRMED':
     case 'LABEL_PRINTED':

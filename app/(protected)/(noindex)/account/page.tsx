@@ -28,6 +28,7 @@ export default async function AccountPage() {
 
   let customer: Customer | null
   let orders: CustomerOrder[]
+  let ordersHasMore: boolean
   let addresses: CustomerAddress[]
 
   try {
@@ -36,7 +37,7 @@ export default async function AccountPage() {
         GET_CUSTOMER,
         session.accessToken,
       ),
-      customerFetch<{ customer: { orders: { nodes: CustomerOrder[] } } }>(
+      customerFetch<{ customer: { orders: { nodes: CustomerOrder[]; pageInfo: { hasNextPage: boolean } } } }>(
         GET_CUSTOMER_ORDERS,
         session.accessToken,
         { first: 10 },
@@ -48,16 +49,15 @@ export default async function AccountPage() {
       ),
     ])
 
-    // DEBUG (temporary): 200 OK but customer null = token valid yet no customer returned
     if (!customerResult.customer) {
-      console.warn('[account] API returned customer: null (token prefix:', session.accessToken.slice(0, 9), ')')
+      console.warn('[account] API returned customer: null')
     }
 
     customer = customerResult.customer
     orders = ordersResult.customer.orders.nodes
+    ordersHasMore = ordersResult.customer.orders.pageInfo.hasNextPage
     addresses = addressesResult.customer.addresses.nodes
   } catch (err) {
-    // DEBUG (temporary): log instead of silently swallowing
     console.error('[account] customer fetch failed — showing logged-out view:\n', err)
     return <AccountView customer={null} orders={[]} addresses={[]} />
   }
@@ -70,6 +70,7 @@ export default async function AccountPage() {
       customer={customer}
       orders={orders}
       addresses={addresses}
+      ordersHasMore={ordersHasMore}
       favoritesCount={favoritesCount}
       rxCard={
         customer ? (

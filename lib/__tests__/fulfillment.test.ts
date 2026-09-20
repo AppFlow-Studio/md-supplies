@@ -227,6 +227,30 @@ describe('shipmentStatusLabel', () => {
     expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: null, isPickedUp: false })).toBe('Shipped')
     expect(shipmentStatusLabel({ status: 'CANCELLED', latestShipmentStatus: null, isPickedUp: false })).toBe('Canceled')
   })
+
+  // Bilal, 2026-09-20 QA pass on b3d36ac: label-only order #3436 says "Label
+  // Created" in the order header but "Confirmed" on the shipment card below —
+  // the card must use the same wording as resolveOrderStatus's LABEL_CREATED
+  // stage (lib/fulfillment.ts's ORDER_STAGE_DISPLAY).
+  it('CONFIRMED/LABEL_PRINTED/LABEL_PURCHASED all read "Label Created", matching the order header', () => {
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'CONFIRMED', isPickedUp: false })).toBe('Label Created')
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'LABEL_PRINTED', isPickedUp: false })).toBe('Label Created')
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'LABEL_PURCHASED', isPickedUp: false })).toBe('Label Created')
+  })
+
+  // Bilal: a cancelled shipment's card says "Confirmed" instead of "Canceled"
+  // — the fulfillment's own CANCELLED status must win over a stale
+  // latestShipmentStatus left over from before it was cancelled.
+  it('a cancelled fulfillment always reads Canceled, regardless of its last shipment status', () => {
+    expect(shipmentStatusLabel({ status: 'CANCELLED', latestShipmentStatus: 'CONFIRMED', isPickedUp: false })).toBe('Canceled')
+    expect(shipmentStatusLabel({ status: 'CANCELLED', latestShipmentStatus: 'IN_TRANSIT', isPickedUp: false })).toBe('Canceled')
+  })
+
+  // Bilal: a carrier DELAYED status shows as "Shipped", so the customer never
+  // sees the delay.
+  it('a carrier DELAYED status is surfaced, not silently shown as Shipped', () => {
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'DELAYED', isPickedUp: false })).toBe('Delayed')
+  })
 })
 
 // DEV-ACCOUNT-02 (client report, 2026-09-17): Orders #3435/#3436 showed
@@ -349,5 +373,13 @@ describe('resolveOrderStatus', () => {
     expect(
       resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'CONFIRMED' })] }),
     ).toEqual({ label: 'Label Created', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  // Bilal, 2026-09-20: a carrier DELAYED status showed as "Shipped" at the
+  // order level too, so the customer never saw the delay.
+  it('DELAYED resolves to its own Delayed label, never Shipped', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'DELAYED' })] }),
+    ).toEqual({ label: 'Delayed', style: 'bg-orange-100 text-orange-700' })
   })
 })
