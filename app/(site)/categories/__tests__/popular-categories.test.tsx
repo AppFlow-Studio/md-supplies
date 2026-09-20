@@ -117,7 +117,7 @@ describe('/categories page wiring (P0.3)', () => {
   it('uses the paginated handle fetcher, never the truncated single-page query', async () => {
     const { readFileSync } = await import('node:fs')
     const { join } = await import('node:path')
-    const src = readFileSync(join(process.cwd(), 'app', 'categories', 'page.tsx'), 'utf8')
+    const src = readFileSync(join(process.cwd(), 'app', '(site)', 'categories', 'page.tsx'), 'utf8')
     // Strip comments first: the file explains the truncation bug by name, and
     // a prose mention of GET_COLLECTIONS must not read as a usage.
     const code = src

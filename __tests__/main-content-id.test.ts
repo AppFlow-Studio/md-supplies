@@ -7,14 +7,14 @@ function read(file: string): string {
 }
 
 const FILES = [
-  'app/page.tsx',
+  'app/(site)/page.tsx',
   // /category/[slug] renders this shared view
   'components/category/CategoryPageView.tsx',
-  'app/category/[slug]/[product]/page.tsx',
-  'app/product/[slug]/page.tsx',
-  'app/industries/page.tsx',
-  'app/blog/[handle]/page.tsx',
-  'app/(noindex)/cart/page.tsx',
+  'app/(site)/category/[slug]/[product]/page.tsx',
+  'app/(site)/product/[slug]/page.tsx',
+  'app/(site)/industries/page.tsx',
+  'app/(site)/blog/[handle]/page.tsx',
+  'app/(site)/(noindex)/cart/page.tsx',
   'components/account/AccountView.tsx',
 ]
 

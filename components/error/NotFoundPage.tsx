@@ -1,6 +1,9 @@
 import Link from 'next/link'
 
-export default function NotFound() {
+// Shared by app/(site)/not-found.tsx and app/(protected)/not-found.tsx — two
+// root layouts (Next's "multiple root layouts", see app/(protected)/layout.tsx)
+// need two not-found.tsx files, but one UI.
+export function NotFoundPage() {
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen flex flex-col items-center justify-center px-4 text-center">
       <p className="text-teal-500 text-[15px] font-semibold tracking-[0.75px] uppercase mb-4">

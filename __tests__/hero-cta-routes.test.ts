@@ -19,8 +19,8 @@ describe('HeroSection hero CTAs resolve to canonical, live routes', () => {
   })
 
   it('both CTA targets have a real app route (page.tsx) backing them', () => {
-    expect(fs.existsSync(path.resolve(__dirname, '../app/categories/page.tsx'))).toBe(true)
-    expect(fs.existsSync(path.resolve(__dirname, '../app/solutions/occ/page.tsx'))).toBe(true)
+    expect(fs.existsSync(path.resolve(__dirname, '../app/(site)/categories/page.tsx'))).toBe(true)
+    expect(fs.existsSync(path.resolve(__dirname, '../app/(site)/solutions/occ/page.tsx'))).toBe(true)
   })
 
   it('renders a single H1 for the hero heading', () => {

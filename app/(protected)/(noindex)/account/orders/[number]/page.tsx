@@ -14,11 +14,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-// Cache Components: a dynamic route needs generateStaticParams (>=1) so the
-// root-layout shell (Header/usePathname) can prerender. The order number is
-// private/per-user, so a sentinel is correct — the account group's Suspense
-// layout ((noindex)/account/layout.tsx) defers the page body to request time;
-// real orders render on-demand.
+// Cache Components: a dynamic `[number]` segment needs generateStaticParams
+// (>=1). The order number is private/per-user, so a sentinel is correct —
+// nothing under this route actually prerenders: app/(protected)/layout.tsx
+// (this route's root) forces the whole group to render per-request (see its
+// doc comment), and the account group's own Suspense layout
+// ((noindex)/account/layout.tsx) additionally defers this page's body for
+// streaming. Real orders render on-demand either way.
 export function generateStaticParams() {
   return [{ number: '__prerender_probe__' }]
 }

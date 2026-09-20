@@ -41,8 +41,11 @@ function findPageFiles(dir: string, appRoot: string = dir): string[] {
 
 const read = (relPath: string) => readFileSync(path.join(APP_DIR, relPath), 'utf8')
 
-/** Routes that live in the `(noindex)` group are intentionally private. */
-const isNoindexGroup = (relPath: string) => relPath.startsWith('(noindex)/')
+/** Routes that live in the `(noindex)` group are intentionally private.
+ *  Nested under either root layout group today — (site)/(noindex)/cart and
+ *  (protected)/(noindex)/account — so this checks for the segment anywhere
+ *  in the path, not just as a leading prefix. */
+const isNoindexGroup = (relPath: string) => relPath.split('/').includes('(noindex)')
 
 /** A redirect stub renders no content and legitimately has no metadata. */
 const isRedirectStub = (src: string) =>
@@ -54,13 +57,13 @@ const isRedirectStub = (src: string) =>
  * regression on a launch page.
  */
 const CONDITIONAL_NOINDEX_ALLOWLIST: Record<string, string> = {
-  'category/[slug]/page.tsx': 'filtered/sorted views canonical to the unfiltered page',
-  'industries/[industry-slug]/page.tsx': 'thin industry pages stay out of the index until FAQ copy lands',
+  '(site)/category/[slug]/page.tsx': 'filtered/sorted views canonical to the unfiltered page',
+  '(site)/industries/[industry-slug]/page.tsx': 'thin industry pages stay out of the index until FAQ copy lands',
   // DEV-SEARCH-01 / DEV-OCC-01 (plan §3.5): filter/sort/search/page query
   // variants are noindex and canonical to the clean route. The clean routes
   // themselves stay indexable.
-  'category/[slug]/[product]/page.tsx': 'filtered/sorted/searched L2 views canonical to the clean subcategory route',
-  'solutions/occ/page.tsx': 'filtered/sorted/searched/paginated OCC views canonical to /solutions/occ',
+  '(site)/category/[slug]/[product]/page.tsx': 'filtered/sorted/searched L2 views canonical to the clean subcategory route',
+  '(site)/solutions/occ/page.tsx': 'filtered/sorted/searched/paginated OCC views canonical to /solutions/occ',
 }
 
 /** Signals in page source that would keep a page out of the index. */
