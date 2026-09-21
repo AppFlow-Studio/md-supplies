@@ -1,5 +1,21 @@
 # Vendor campaign reporting (Jant, and any other vendor)
 
+> ## ⚠️ CURRENT STATUS (verified 2026-09-21) — NOT YET LIVE
+>
+> Everything below describes what the **code** does. Two external things must
+> happen before any of it produces data:
+>
+> 1. **The GTM container is empty.** `GTM-5BQJLLJV` is an *Empty Container* —
+>    0 tags, 0 triggers, 0 variables. The site emits a complete, correct
+>    dataLayer and GTM loads on every page, but nothing in the container reads
+>    it, so **no storefront data has ever reached GA4**. Build spec:
+>    [`gtm-container-spec.md`](./gtm-container-spec.md).
+> 2. **The storefront fixes are not deployed.** Production is running code
+>    without the SKU/variant data, the `ecommerce` reset, or the order
+>    attribution stamping.
+>
+> Until both are done, **no Jant campaign reporting is possible from GA4**.
+
 There is no "Jant tracking system". Jant uses the same GA4/GTM ecommerce
 measurement every other campaign on the site uses. This document states exactly
 what that measurement can answer, and where each answer comes from.
@@ -17,7 +33,12 @@ on the site accepts UTMs; the proxy captures them on arrival.
 
 ## Reporting matrix
 
-| Metric | Source | Tracked today? | Reliable? | Changed in this pass? | Where to retrieve it |
+**Read this as "once the two blockers above are cleared".** The "Emitted by the
+site?" column describes what the storefront code sends into the dataLayer — all
+of which is verified working. None of it reaches GA4 until the GTM container is
+built, so nothing in this table is retrievable today.
+
+| Metric | Source | Emitted by the site? | Reliable? | Changed in this pass? | Where to retrieve it (after GTM build) |
 |---|---|---|---|---|---|
 | Sessions from `utm_source=jant` | GA4 | Yes | Yes | No | Reports → Acquisition → Traffic acquisition, filter Session source = `jant` |
 | Campaign (`utm_campaign`) | GA4 | Yes | Yes | No | Same report, dimension Session campaign |
@@ -117,3 +138,89 @@ this monthly.
 5. **Per-email-recipient attribution.** `utm_content` identifies the email
    *version*, not the person. Recipient-level identifiers are deliberately not
    written onto orders.
+
+
+---
+
+# For Juliette — the Jant reporting workflow in plain language
+
+## What happens, step by step
+
+1. **Jant sends a campaign link.** They add the tags to any MDSupplies URL —
+   usually a product page. Nothing needs to be set up on our side for a new
+   campaign; the tags are read automatically on arrival.
+
+2. **A customer clicks it.** The moment they land, our server records the
+   campaign in two private cookies on their browser: the *first* campaign that
+   ever brought them to us, and the *most recent* one. These last 90 days and
+   cannot be read by anything on the page — only by our own server.
+
+3. **They browse.** Every product view, add-to-cart, cart view and checkout
+   start is recorded as an analytics event carrying the product, SKU, variant,
+   price and quantity. Moving around the site, refreshing the page, or coming
+   back later does **not** erase the campaign.
+
+4. **They add something to the cart.** At that moment the campaign is written
+   onto the Shopify cart itself. This is the important part: it means the
+   campaign travels with the order, not just with the browsing session.
+
+5. **They check out.** The campaign details are already attached to the cart,
+   so they land on the finished order permanently.
+
+6. **The order appears in Shopify** with the campaign stamped on it, alongside
+   the products, quantities, revenue and any discount code used.
+
+## Where to find each number
+
+### Campaign traffic and behaviour → **GA4**
+
+Go to **Reports → Acquisition → Traffic acquisition**, then filter
+*Session source* = `jant`.
+
+- **Visits** — the "Sessions" column
+- **Which campaign** — add *Session campaign* as a secondary dimension
+- **Which email version** — add *Session manual ad content* (this is
+  `utm_content`, e.g. `email_1_main_cta` vs `email_2_follow_up`)
+- **Which pages they landed on** — Reports → Engagement → Landing page
+- **Product views / add-to-carts / checkouts** — Explore → free-form
+  exploration, with *Event name* as a row and *Session source* as a filter
+- **Conversion rate** — the "Session key event rate" column in Traffic
+  acquisition
+
+### Orders, products, revenue and coupons → **Shopify**
+
+Shopify is the system of record for anything involving money. GA4 measures
+money; Shopify *is* the money.
+
+Open any order in Shopify Admin and look at **Additional details** — the
+campaign fields appear there:
+
+```
+md_utm_source        jant
+md_utm_medium        email
+md_utm_campaign      h_pylori_gi_clinics_q4_2026
+md_utm_content       email_2_follow_up     ← the most recent email they clicked
+md_first_utm_content email_1_main_cta      ← the first email that ever brought them
+```
+
+### Pulling a month of Jant orders
+
+Shopify's order list cannot filter on these fields in the UI. The practical
+options are:
+
+- **Ask a developer to run a one-off export** using the query in the section
+  above — quickest for a one-time question.
+- **Set up a monthly export** if this becomes routine. Worth doing once the
+  volume justifies it.
+
+## What to be careful about
+
+- **Tags must be lowercase.** GA4 treats `Jant` and `jant` as two different
+  sources, which silently splits a campaign's numbers in half.
+- **GA4 and Shopify will not match exactly.** GA4 misses people who block
+  cookies or decline tracking; Shopify sees every order. Treat Shopify as
+  correct for revenue and GA4 as correct for behaviour.
+- **`utm_content` identifies the email, not the person.** We deliberately do
+  not record anything that identifies an individual recipient on an order.
+- **Someone who buys on a different device** than the one they clicked the
+  email on cannot be connected to the campaign. No tracking setup fixes this.
