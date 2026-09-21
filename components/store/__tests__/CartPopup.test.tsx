@@ -19,8 +19,13 @@ vi.mock('next/link', () => ({
 
 // Mock analytics so CartPopup renders without side effects
 vi.mock('@/lib/analytics/track', () => ({ track: vi.fn() }))
-vi.mock('@/lib/analytics/events', () => ({ buildBeginCheckoutEvent: vi.fn(() => ({})) }))
-vi.mock('@/app/actions/cart', () => ({ setCartAttribute: vi.fn() }))
+vi.mock('@/lib/analytics/events', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/analytics/events')>()
+  return { ...actual, buildBeginCheckoutEvent: vi.fn(actual.buildBeginCheckoutEvent) }
+})
+vi.mock('@/lib/analytics/checkout-handoff', () => ({
+  bridgeAnalyticsToCheckout: vi.fn(async () => {}),
+}))
 vi.mock('@/app/actions/rx', () => ({ getRxGateStatus: vi.fn(), prepareCheckout: vi.fn() }))
 
 afterEach(cleanup)

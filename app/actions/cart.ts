@@ -2,6 +2,7 @@
 import 'server-only'
 
 import { cookies } from 'next/headers'
+import { after } from 'next/server'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { attachCartShippingDisplay } from '@/lib/shipping-resolver/cart'
 import {
@@ -18,6 +19,11 @@ import {
   GET_CART,
   SET_CART_ATTRIBUTES,
 } from '@/lib/shopify/queries/cart'
+import {
+  buildOrderAttributionAttributes,
+  readStoredAttribution,
+  readLastTouchAttribution,
+} from '@/lib/analytics/attribution'
 import type { Cart } from '@/lib/shopify/types'
 
 const CART_COOKIE = 'cart_id'
@@ -76,6 +82,21 @@ async function createCart(variantId: string, quantity: number): Promise<AddToCar
     path: '/',
     maxAge: 60 * 60 * 24 * 30,
   })
+  // Stamp campaign attribution the moment the cart exists, not at checkout —
+  // an abandoned cart is still worth attributing, and doing it here means the
+  // data is already on the cart if the customer checks out from a later
+  // session. `after()` runs it once the response is already on its way, so the
+  // extra Storefront round-trip never sits in front of the customer's
+  // add-to-cart (Next.js docs, functions/after).
+  // Wrapped: `after()` throws outright when called outside a request scope.
+  // Cart creation is the most critical path on the site and must never fail
+  // because the telemetry hook was unavailable — commerce beats telemetry.
+  try {
+    after(() => stampCartAttribution())
+  } catch (err) {
+    console.error('[createCart] could not schedule attribution stamp:', err)
+  }
+
   const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartCreate')
   // A line that arrived but cannot be priced for the destination is a different
   // problem from one that never arrived, and only this one is fixable by the
@@ -161,14 +182,74 @@ export async function removeFromCart(lineId: string): Promise<Cart> {
   return attachCartShippingDisplay(data.cartLinesRemove.cart)
 }
 
-export async function setCartAttribute(key: string, value: string): Promise<Cart> {
-  const cartId = (await cookies()).get(CART_COOKIE)?.value
-  if (!cartId) throw new Error('No cart')
+/**
+ * Writes cart attributes, MERGING with whatever the cart already carries.
+ *
+ * Shopify's `cartAttributesUpdate` REPLACES the entire attributes array — it
+ * does not merge. The previous single-key implementation sent only its own
+ * `[{key, value}]`, so any attribute already on the cart was silently dropped.
+ * That was harmless while `ga_client_id` was the only attribute in existence
+ * and invisible the moment a second one was added: stamping campaign data at
+ * cart creation and then the GA client id at checkout would have erased the
+ * campaign data on the way out the door — exactly the handoff it was added to
+ * survive. Read-merge-write is therefore the only safe shape for this call.
+ */
+async function writeCartAttributes(cartId: string, updates: Record<string, string>): Promise<Cart> {
+  const existing = await storefrontFetch<{ cart: Cart | null }>(GET_CART, { cartId }, NO_STORE)
+  const merged = new Map<string, string>(
+    (existing.cart?.attributes ?? []).map((a) => [a.key, a.value]),
+  )
+  for (const [key, value] of Object.entries(updates)) merged.set(key, value)
+
   const data = await storefrontFetch<{ cartAttributesUpdate: { cart: Cart; userErrors: UserError[] } }>(
     SET_CART_ATTRIBUTES,
-    { cartId, attributes: [{ key, value }] },
+    {
+      cartId,
+      attributes: [...merged].map(([key, value]) => ({ key, value })),
+    },
     NO_STORE,
   )
   assertNoUserErrors(data.cartAttributesUpdate.userErrors, 'cartAttributesUpdate')
   return attachCartShippingDisplay(data.cartAttributesUpdate.cart)
+}
+
+export async function setCartAttribute(key: string, value: string): Promise<Cart> {
+  const cartId = (await cookies()).get(CART_COOKIE)?.value
+  if (!cartId) throw new Error('No cart')
+  return writeCartAttributes(cartId, { [key]: value })
+}
+
+/**
+ * Stamps campaign attribution onto the Shopify cart so it lands on the Order.
+ *
+ * This is what makes vendor campaign reporting answerable from Shopify rather
+ * than GA4 alone: GA4 can report that a `jant`/`email` session converted, but
+ * order-level truth — which SKUs, what quantity, which discount code, what the
+ * order was actually worth — lives in Shopify, and Shopify otherwise has no
+ * idea the visit came from a campaign. A cart attribute is recorded
+ * server-side, survives the checkout handoff by construction (it is a property
+ * of the cart Shopify is checking out), and is exportable from the Orders API
+ * and admin indefinitely. It is not consent- or cookie-dependent the way GA4
+ * measurement is.
+ *
+ * Reads the httpOnly attribution cookies directly: the campaign values never
+ * need to touch client JS, so they don't.
+ *
+ * Best-effort by design — every caller ignores the outcome. A cart that cannot
+ * be annotated must still check out. Commerce beats telemetry.
+ */
+export async function stampCartAttribution(): Promise<void> {
+  const cartId = (await cookies()).get(CART_COOKIE)?.value
+  if (!cartId) return
+  try {
+    const [firstTouch, lastTouch] = await Promise.all([
+      readStoredAttribution(),
+      readLastTouchAttribution(),
+    ])
+    const attributes = buildOrderAttributionAttributes({ firstTouch, lastTouch })
+    if (Object.keys(attributes).length === 0) return
+    await writeCartAttributes(cartId, attributes)
+  } catch (err) {
+    console.error('[stampCartAttribution] failed:', err)
+  }
 }

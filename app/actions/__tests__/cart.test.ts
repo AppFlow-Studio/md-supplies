@@ -202,3 +202,56 @@ describe('addToCart', () => {
     expect(cookieStore.delete).not.toHaveBeenCalled()
   })
 })
+
+/**
+ * DEV-TRACK-01 — cart attributes must MERGE.
+ *
+ * Shopify's `cartAttributesUpdate` replaces the whole attributes array rather
+ * than merging into it. The previous single-key implementation sent only its
+ * own pair, so every other attribute on the cart was silently dropped. That
+ * was invisible while `ga_client_id` was the only attribute in existence and
+ * becomes data loss the moment campaign attribution is stamped alongside it.
+ */
+describe('setCartAttribute', () => {
+  beforeEach(() => {
+    cookieStore.get.mockReturnValue({ value: 'gid://shopify/Cart/1' })
+  })
+
+  it('preserves attributes already on the cart instead of replacing them', async () => {
+    const { setCartAttribute } = await import('@/app/actions/cart')
+    const existing = cartFixture({
+      attributes: [
+        { key: 'md_utm_source', value: 'jant' },
+        { key: 'md_utm_campaign', value: 'h_pylori_gi_clinics_q4_2026' },
+      ],
+    })
+    storefrontFetch.mockReset()
+    storefrontFetch
+      .mockResolvedValueOnce({ cart: existing })
+      .mockResolvedValueOnce({ cartAttributesUpdate: { cart: existing, userErrors: [] } })
+
+    await setCartAttribute('ga_client_id', '555.666')
+
+    const sent = storefrontFetch.mock.calls[1][1] as {
+      attributes: { key: string; value: string }[]
+    }
+    const keys = sent.attributes.map((a) => a.key).sort()
+    expect(keys).toEqual(['ga_client_id', 'md_utm_campaign', 'md_utm_source'])
+  })
+
+  it('overwrites a key that is already present rather than duplicating it', async () => {
+    const { setCartAttribute } = await import('@/app/actions/cart')
+    const existing = cartFixture({ attributes: [{ key: 'ga_client_id', value: 'old' }] })
+    storefrontFetch.mockReset()
+    storefrontFetch
+      .mockResolvedValueOnce({ cart: existing })
+      .mockResolvedValueOnce({ cartAttributesUpdate: { cart: existing, userErrors: [] } })
+
+    await setCartAttribute('ga_client_id', 'new')
+
+    const sent = storefrontFetch.mock.calls[1][1] as {
+      attributes: { key: string; value: string }[]
+    }
+    expect(sent.attributes).toEqual([{ key: 'ga_client_id', value: 'new' }])
+  })
+})

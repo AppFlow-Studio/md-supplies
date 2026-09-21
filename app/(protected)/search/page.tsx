@@ -10,6 +10,7 @@ import { SearchSort } from '@/components/search/SearchSort'
 import { SearchFilterDrawer } from '@/components/search/SearchFilterDrawer'
 import { SearchBarForm } from '@/components/search/SearchBarForm'
 import { SearchResultsSection } from '@/components/search/SearchResultsSection'
+import { SearchEventTracker } from '@/components/search/SearchEventTracker'
 import { CategoryPagination } from '@/components/category/CategoryPagination'
 import type { CollectionProduct, CollectionFilter } from '@/lib/shopify/types'
 import { notFound, redirect } from 'next/navigation'
@@ -259,6 +260,10 @@ export async function SearchResults({ searchParams }: Props) {
           {/* Result count + sort bar */}
           {q.trim() && (
             <div className="flex items-center justify-between mb-6">
+              {/* GA4 `search`. Rendered here rather than inside
+                  SearchResultsSection so a zero-result query still reports —
+                  that section renders nothing when there are no products. */}
+              <SearchEventTracker term={q} results={totalCount} />
               <p className="text-gray-500 text-[15px] tracking-[0.3px]">
                 {totalCount > 0
                   ? `${totalCount} result${totalCount !== 1 ? 's' : ''} for "${q}"`

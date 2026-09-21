@@ -2,7 +2,12 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import productRedirects from './docs/redirects-ready.json'
 import { buildCsp, buildStaticCsp, generateNonce } from '@/lib/csp'
-import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE_SECONDS, serializeAttribution } from '@/lib/analytics/attribution'
+import {
+  ATTRIBUTION_COOKIE,
+  ATTRIBUTION_MAX_AGE_SECONDS,
+  LAST_TOUCH_COOKIE,
+  serializeAttribution,
+} from '@/lib/analytics/attribution'
 import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES, getCategorySlug } from '@/lib/category-tree'
 
 type Redirect301 = { from: string; to: string; status: 301 }
@@ -366,15 +371,27 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
 // redirect/410 paths, so scoping it there covers the real case without
 // touching every response branch. Never overwrites an existing capture.
 function captureAttribution(request: NextRequest, response: NextResponse): void {
-  if (request.cookies.has(ATTRIBUTION_COOKIE)) return
   const value = serializeAttribution(request.nextUrl.searchParams)
+  // No campaign params on this request. Crucially this is a no-op, NOT a
+  // clear: an internal click or a direct return must never erase the campaign
+  // that brought the customer here.
   if (!value) return
-  response.cookies.set(ATTRIBUTION_COOKIE, value, {
+
+  const options = {
     maxAge: ATTRIBUTION_MAX_AGE_SECONDS,
     path: '/',
-    sameSite: 'lax',
+    sameSite: 'lax' as const,
     httpOnly: true,
-  })
+  }
+
+  // First touch is written once and then frozen for the cookie's lifetime.
+  if (!request.cookies.has(ATTRIBUTION_COOKIE)) {
+    response.cookies.set(ATTRIBUTION_COOKIE, value, options)
+  }
+  // Last touch is overwritten by every campaign-carrying arrival, so it tracks
+  // the most recent campaign the way GA4's last-non-direct-click model does.
+  // See lib/analytics/attribution.ts for why both are kept.
+  response.cookies.set(LAST_TOUCH_COOKIE, value, options)
 }
 
 // ─── Legacy-path encoding normalization (P0 SEO migration integrity) ────────

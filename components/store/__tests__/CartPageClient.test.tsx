@@ -22,12 +22,19 @@ vi.mock('next/link', () => ({
   }) => <a href={href} {...rest}>{children}</a>,
 }))
 vi.mock('@/lib/analytics/track', () => ({ track: vi.fn() }))
-vi.mock('@/lib/analytics/events', () => ({
-  buildViewCartEvent: vi.fn(() => ({})),
-  buildBeginCheckoutEvent: vi.fn(() => ({})),
+// Partial mock: the real builders still run, so these tests assert the actual
+// GA4 payload rather than only that a spy was called.
+vi.mock('@/lib/analytics/events', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/analytics/events')>()
+  return {
+    ...actual,
+    buildViewCartEvent: vi.fn(actual.buildViewCartEvent),
+    buildBeginCheckoutEvent: vi.fn(actual.buildBeginCheckoutEvent),
+  }
+})
+vi.mock('@/lib/analytics/checkout-handoff', () => ({
+  bridgeAnalyticsToCheckout: vi.fn(async () => {}),
 }))
-vi.mock('@/app/actions/cart', () => ({ setCartAttribute: vi.fn() }))
-vi.mock('@/lib/analytics/clientId', () => ({ clientIdFromGaCookie: vi.fn(() => null) }))
 vi.mock('@/app/actions/rx', () => ({ getRxGateStatus: vi.fn(), prepareCheckout: vi.fn() }))
 
 afterEach(cleanup)
@@ -290,18 +297,40 @@ describe('CartPageClient', () => {
     ).toHaveAttribute('href', 'https://shop.example.com/checkout')
   })
 
-  it('fires view_cart analytics event on mount when cart is populated', () => {
+  it('fires view_cart on mount when cart is populated, with SKU and variant', () => {
+    // Regression (DEV-TRACK-01): this effect used an empty dependency array,
+    // so it evaluated on the mount where `cart` is still null (CartProvider
+    // hydrates it asynchronously) and /cart emitted no view_cart at all.
     setupUseCart()
     render(<CartPageClient />)
     expect(vi.mocked(buildViewCartEvent)).toHaveBeenCalledOnce()
     expect(vi.mocked(track)).toHaveBeenCalledOnce()
+    expect(vi.mocked(track).mock.calls[0][0]).toMatchObject({
+      event: 'view_cart',
+      ecommerce: {
+        currency: 'USD',
+        items: [{ item_id: 'variant-1', item_sku: 'SKU-001', item_variant: 'Size: M', quantity: 2 }],
+      },
+    })
   })
 
-  it('fires begin_checkout analytics event when checkout link is clicked', async () => {
+  it('does not refire view_cart when the cart object re-renders', () => {
+    setupUseCart()
+    const { rerender } = render(<CartPageClient />)
+    rerender(<CartPageClient />)
+    expect(vi.mocked(buildViewCartEvent)).toHaveBeenCalledOnce()
+  })
+
+  it('fires begin_checkout with the real cart payload when checkout is clicked', async () => {
     setupUseCart()
     render(<CartPageClient />)
+    vi.mocked(track).mockClear()
     fireEvent.click(screen.getByRole('link', { name: /proceed to checkout/i }))
     expect(vi.mocked(buildBeginCheckoutEvent)).toHaveBeenCalledOnce()
+    expect(vi.mocked(track).mock.calls[0][0]).toMatchObject({
+      event: 'begin_checkout',
+      ecommerce: { currency: 'USD', items: [{ item_id: 'variant-1', item_sku: 'SKU-001' }] },
+    })
   })
 
   // DEV-LAUNCH-08: RX state must be visible on the cart page, not just
