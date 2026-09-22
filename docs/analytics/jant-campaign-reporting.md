@@ -1,20 +1,23 @@
 # Vendor campaign reporting (Jant, and any other vendor)
 
-> ## ⚠️ CURRENT STATUS (verified 2026-09-21) — NOT YET LIVE
+> ## ⚠️ CURRENT STATUS (updated 2026-09-21) — ONE BLOCKER LEFT
 >
-> Everything below describes what the **code** does. Two external things must
-> happen before any of it produces data:
+> Everything below describes what the **code** does. The Google side is now
+> done; one thing remains:
 >
-> 1. **The GTM container is empty.** `GTM-5BQJLLJV` is an *Empty Container* —
->    0 tags, 0 triggers, 0 variables. The site emits a complete, correct
->    dataLayer and GTM loads on every page, but nothing in the container reads
->    it, so **no storefront data has ever reached GA4**. Build spec:
->    [`gtm-container-spec.md`](./gtm-container-spec.md).
-> 2. **The storefront fixes are not deployed.** Production is running code
->    without the SKU/variant data, the `ecommerce` reset, or the order
->    attribution stamping.
+> 1. ~~The GTM container is empty.~~ **RESOLVED.** `GTM-5BQJLLJV` was an *Empty
+>    Container* (0 tags) since 2026-06-15 — so no storefront data had ever
+>    reached GA4. **Version 2** is now published: Google Tag `G-GSMEPRM9RX`
+>    (`send_page_view=false`), 9 GA4 event tags, 9 custom-event triggers, 9
+>    Data Layer variables. GA4 DebugView has confirmed receipt of live events.
+>    Build record: [`gtm-container-spec.md`](./gtm-container-spec.md).
+> 2. **The storefront fixes are not deployed yet.** Production still runs code
+>    without the SKU/variant payloads, the `ecommerce` reset, the PDP
+>    `view_item`/`page_view` fixes, or the Shopify order attribution stamping.
+>    Until that ships, GA4 receives `page_view` only.
 >
-> Until both are done, **no Jant campaign reporting is possible from GA4**.
+> So: campaign *sessions* are measurable now; the ecommerce funnel and
+> order-level attribution become measurable once this branch is deployed.
 
 There is no "Jant tracking system". Jant uses the same GA4/GTM ecommerce
 measurement every other campaign on the site uses. This document states exactly
@@ -33,10 +36,11 @@ on the site accepts UTMs; the proxy captures them on arrival.
 
 ## Reporting matrix
 
-**Read this as "once the two blockers above are cleared".** The "Emitted by the
-site?" column describes what the storefront code sends into the dataLayer — all
-of which is verified working. None of it reaches GA4 until the GTM container is
-built, so nothing in this table is retrievable today.
+**Read this as "once the storefront deploy lands".** The "Emitted by the site?"
+column describes what the storefront code sends into the dataLayer — all of it
+verified working against a real production build. The GTM container now
+forwards these to GA4, so each row becomes retrievable as soon as the deployed
+code actually emits the event.
 
 | Metric | Source | Emitted by the site? | Reliable? | Changed in this pass? | Where to retrieve it (after GTM build) |
 |---|---|---|---|---|---|

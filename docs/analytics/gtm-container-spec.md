@@ -1,14 +1,20 @@
 # GTM container build specification — GTM-5BQJLLJV
 
-**Status: NOT BUILT.** As of 2026-09-21 the container is an *Empty Container*
-(version 1, published 2026-06-15 by seo@appflowstudio.io): 0 tags, 0 triggers,
-0 variables. The storefront pushes a complete, correct dataLayer and GTM loads
-on every page — but there is nothing in the container to act on it, so **no
-storefront data has ever reached GA4**.
+**Status: BUILT AND PUBLISHED — Version 2, 2026-09-21.**
 
-This file is the exact build needed to close that gap. It is written so it can
-be executed by whoever is authorised to publish this container, and so the
-result is reviewable.
+Until then the container was an *Empty Container* (version 1, published
+2026-06-15): 0 tags, 0 triggers, 0 variables. The storefront pushed a complete,
+correct dataLayer and GTM loaded on every page, but nothing in the container
+acted on it — so **no storefront data had ever reached GA4**.
+
+Version 2 implements everything below: **10 tags, 9 triggers, 14 variables**
+(9 Data Layer variables + 5 built-ins). Verified after publishing:
+`google_tag_manager` on mdsupplies.com now contains both `GTM-5BQJLLJV` and
+`G-GSMEPRM9RX`, real `/g/collect` hits fire with the campaign intact, and GA4
+DebugView confirmed event receipt.
+
+This file remains the specification of record — read it as "what is deployed",
+and as the checklist for anyone reviewing or rebuilding the container.
 
 ## Verified identifiers
 

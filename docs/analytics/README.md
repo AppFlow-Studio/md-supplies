@@ -222,10 +222,23 @@ Analytics-specific suites: `lib/analytics/__tests__/`,
 `app/actions/__tests__/cart.test.ts`, `__tests__/proxy.test.ts`,
 `components/store/__tests__/`.
 
-## 11. External configuration — NOT verifiable from this repository
+## 11. External configuration — lives outside Git
 
-Everything below lives outside Git. It was **not** verified by the audit and
-must be checked in the relevant UI.
+Everything below lives outside Git. Status as of **2026-09-21**:
+
+**Done.** Items 1 and 5 are verified. GTM container `GTM-5BQJLLJV` **Version 2**
+is published — Google Tag `G-GSMEPRM9RX` with `send_page_view=false`, 9 GA4
+event tags on matching custom-event triggers with *Send Ecommerce data → Data
+Layer*, 9 Data Layer variables, and deliberately no purchase tag. GA4 DebugView
+has confirmed event receipt.
+
+**Note on a false alarm:** every `/g/collect` request appears as HTTP **503** in
+Chrome-extension network logs. That is an observation artefact of GTM's
+`sendBeacon`/keepalive transport — a direct `fetch` to the same endpoint and
+property returns **204**, and DebugView shows the events. Do not chase it.
+
+**Still open.** Everything else below is unverified and must be checked in the
+relevant UI.
 
 | # | Item | Where | What to confirm |
 |---|---|---|---|
