@@ -1,23 +1,36 @@
 # Vendor campaign reporting (Jant, and any other vendor)
 
-> ## ⚠️ CURRENT STATUS (updated 2026-09-21) — ONE BLOCKER LEFT
+> ## SCOPE STATUS (updated 2026-09-22)
 >
-> Everything below describes what the **code** does. The Google side is now
-> done; one thing remains:
+> ### Available under the current MDSupplies scope
 >
-> 1. ~~The GTM container is empty.~~ **RESOLVED.** `GTM-5BQJLLJV` was an *Empty
->    Container* (0 tags) since 2026-06-15 — so no storefront data had ever
->    reached GA4. **Version 2** is now published: Google Tag `G-GSMEPRM9RX`
->    (`send_page_view=false`), 9 GA4 event tags, 9 custom-event triggers, 9
->    Data Layer variables. GA4 DebugView has confirmed receipt of live events.
->    Build record: [`gtm-container-spec.md`](./gtm-container-spec.md).
-> 2. **The storefront fixes are not deployed yet.** Production still runs code
->    without the SKU/variant payloads, the `ecommerce` reset, the PDP
->    `view_item`/`page_view` fixes, or the Shopify order attribution stamping.
->    Until that ships, GA4 receives `page_view` only.
+> - Jant may send UTM-tagged product links today; nothing needs registering.
+> - Standard GA4 campaign traffic (source / medium / campaign / content) can be
+>   measured.
+> - Product-page views, add-to-cart, cart and checkout activity can be measured.
+> - Standard purchase activity can be measured.
+> - SKU, variant, price, quantity and currency are on every ecommerce event.
 >
-> So: campaign *sessions* are measurable now; the ecommerce funnel and
-> order-level attribution become measurable once this branch is deployed.
+> ### Pending separate scope / funding approval
+>
+> The following are **built and tested but switched off** behind
+> `ENABLE_PERSISTENT_VENDOR_ATTRIBUTION` (default `false`). They are **not
+> active** and must not be described to the vendor as though they were:
+>
+> - custom multi-day first-touch persistence for vendor campaigns
+> - vendor attribution surviving later return visits independently of GA4
+> - campaign metadata stamped directly onto Shopify cart/orders
+> - deterministic vendor-campaign → order linkage ("which Jant email sold this
+>   order?")
+> - specialised vendor order-level reporting built on that metadata
+>
+> ### Also still outstanding (unrelated to scope)
+>
+> This branch is not yet deployed, so production currently emits `page_view`
+> only. The GTM container itself is done — `GTM-5BQJLLJV` **Version 2** is
+> published with Google Tag `G-GSMEPRM9RX` (`send_page_view=false`), 9 GA4
+> event tags and 9 Data Layer variables, and GA4 DebugView has confirmed
+> receipt.
 
 There is no "Jant tracking system". Jant uses the same GA4/GTM ecommerce
 measurement every other campaign on the site uses. This document states exactly
@@ -38,9 +51,12 @@ on the site accepts UTMs; the proxy captures them on arrival.
 
 **Read this as "once the storefront deploy lands".** The "Emitted by the site?"
 column describes what the storefront code sends into the dataLayer — all of it
-verified working against a real production build. The GTM container now
-forwards these to GA4, so each row becomes retrievable as soon as the deployed
-code actually emits the event.
+verified working against a real production build. The GTM container forwards
+these to GA4, so each row becomes retrievable as soon as the deployed code
+emits the event.
+
+Rows marked **⛔ GATED** depend on the persistent vendor-attribution layer and
+stay unavailable until that scope is funded — see the status box above.
 
 | Metric | Source | Emitted by the site? | Reliable? | Changed in this pass? | Where to retrieve it (after GTM build) |
 |---|---|---|---|---|---|
@@ -58,7 +74,7 @@ code actually emits the event.
 | Products & quantities purchased | **Shopify** | Yes | Yes | No | Shopify Admin → Orders (also GA4 item reports, less authoritative) |
 | Order revenue | **Shopify** | Yes | Yes | No | Shopify Admin → Orders |
 | Coupon / discount code used | **Shopify** | Yes | Yes | Yes — also now on the GA4 `purchase` as `coupon` | Shopify Admin → Orders |
-| Order-level campaign attribution | **Shopify** | **No** | Now yes | Yes — campaign written onto the order as attributes | Shopify Admin → Order → Additional details |
+| Order-level campaign attribution | **Shopify** | ⛔ **GATED** | n/a while off | Implemented, disabled pending funding | Shopify Admin → Order → Additional details (**only once enabled**) |
 
 ## Which system answers what
 
@@ -70,11 +86,14 @@ did the campaign perform".
 which discount code. Shopify is the system of record; GA4's revenue is a
 measurement of it, not the truth of it.
 
-**They no longer need a manual join for campaign attribution.** Before this
-pass, Shopify had no idea a visit came from a campaign, so answering "what did
-Jant's October email actually sell" meant exporting GA4 and Shopify separately
-and reconciling by timestamp — approximate at best. Every cart now carries its
-campaign onto the order:
+**Order-level campaign attribution is the gated capability.** Shopify has no
+idea a visit came from a campaign, so answering "what did Jant's October email
+actually sell" means exporting GA4 and Shopify separately and reconciling by
+timestamp — approximate at best. That is the position today, and it is what the
+funded work would change.
+
+⛔ **Not active.** Once `ENABLE_PERSISTENT_VENDOR_ATTRIBUTION=true`, every cart
+would carry its campaign onto the order:
 
 ```
 md_utm_source     = jant
@@ -84,11 +103,12 @@ md_utm_content    = email_2_follow_up      ← last touch
 md_first_utm_content = email_1_main_cta    ← first touch
 ```
 
-So "every order attributable to Jant, with line items and revenue" is now a
+…making "every order attributable to Jant, with line items and revenue" a
 single Shopify query, independent of cookies, consent, ad blockers and GA4
-sampling.
+sampling. **Until the feature is enabled, that query returns nothing** — the
+attributes are not written.
 
-### For Juliette — pulling Jant orders from Shopify
+### For Juliette — pulling Jant orders from Shopify (once enabled)
 
 Shopify Admin → Orders does not filter on cart attributes in the UI. Use the
 Admin API:
@@ -129,6 +149,9 @@ this monthly.
 
 ## What is NOT supported without further work
 
+0. **Everything in the "pending funding approval" list above.** It is built and
+   tested, but disabled. Enabling it is a configuration change, not new
+   engineering.
 1. **Cross-device attribution.** Opening the email on a phone and buying on a
    desktop breaks the chain. Would require GA4 User-ID wired to the logged-in
    customer, which is only possible for signed-in purchases.

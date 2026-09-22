@@ -1,7 +1,7 @@
 # PR body — `catalog-cro-review` → `main`
 
-Ready to paste. Prepared 2026-09-21; could not be opened because the push was
-blocked (see "Blocker" at the bottom).
+Ready to paste. Prepared 2026-09-21, updated 2026-09-22 with the vendor
+attribution scope gate.
 
 **Suggested title:** `Catalog CRO, storefront improvements, and analytics hardening`
 
@@ -57,14 +57,13 @@ Also in this PR:
 - **`add_to_cart` is success-gated** — it fires only after Shopify returns a
   cart actually containing the requested line, never on a button click.
 - **`remove_from_cart` and `search`** events added (both were missing).
-- **UTM / click-ID capture** — first-touch (`md_attr`) and last-touch
-  (`md_attr_last`) httpOnly cookies, 90 days; `gclid`/`gbraid`/`wbraid`/
-  `msclkid`/`fbclid` and every `utm_*`. A request with no campaign params is a
-  no-op, never a reset.
-- **Shopify order attribution** — campaign stamped onto the cart at creation
-  (via `after()`, off the critical path) and therefore onto the order, so
-  "what did this campaign actually sell" is answerable from Shopify
-  independently of cookies, consent and GA4 sampling.
+- **UTM / click-ID capture** — first-touch (`md_attr`) httpOnly cookie, 90
+  days, capturing `gclid`/`gbraid`/`wbraid`/`msclkid`/`fbclid` and every
+  `utm_*`. A request with no campaign params is a no-op, never a reset. The
+  last-touch companion (`md_attr_last`) is **gated** — see the scope section.
+- **Shopify order attribution** — ⛔ **gated, off by default.** When enabled,
+  the campaign is stamped onto the cart at creation (via `after()`, off the
+  critical path) and therefore onto the order. Not active in this merge.
 - **GA client/session forwarding** — the purchase pixel now receives
   `ga_client_id` *and* `ga_session`. `client_id` alone starts a new GA4 session,
   which has no campaign parameters and resolves to `(direct)`, detaching revenue
@@ -78,13 +77,71 @@ Also in this PR:
 `purchase` is deliberately emitted by the Shopify Customer Events pixel only —
 the storefront cannot emit one, and a second source would double-count revenue.
 
-## Quality gates
+## Vendor Attribution Scope Gate
 
-Run on `822d044`:
+**The branch contains the implementation for persistent vendor/order
+attribution, but it is intentionally disabled by default behind
+`ENABLE_PERSISTENT_VENDOR_ATTRIBUTION`. This feature remains inactive pending
+separate funding/scope approval. Standard GA4/GTM ecommerce tracking remains
+active and is not gated.**
+
+The code is here so it does not rot and so activation is a configuration change
+rather than a rebuild — not because it is switching on with this merge.
+
+| | |
+|---|---|
+| Flag | `ENABLE_PERSISTENT_VENDOR_ATTRIBUTION` (server-only, not `NEXT_PUBLIC_`) |
+| Default | `false` — fails closed on unset, blank, `0`, `false`, `TRUE`, typos |
+| Helper | `lib/analytics/vendor-attribution-flag.ts` |
+| Gate points | `proxy.ts` (last-touch cookie) · `app/actions/cart.ts` (Shopify stamping, gated at the call site **and** inside the server action) |
+
+**Inactive until funded:** the `md_attr_last` cookie; multi-session persistence
+of vendor campaign identity independent of GA4; `md_utm_*` / `md_first_utm_*` /
+`md_<clickid>` fields stamped onto the Shopify cart and order; deterministic
+"which vendor email sold this order" linkage; vendor order-level reporting.
+
+**Explicitly NOT gated — all still active:** UTM intake and GA4
+source/medium/campaign; `page_view`, `view_item`, `view_item_list`,
+`select_item`, `search`, `add_to_cart`, `remove_from_cart`, `view_cart`,
+`begin_checkout`; standard Shopify → GA4 `purchase`; SKU/variant/brand/price/
+quantity/currency; Google Ads click ids; PII redaction; duplicate-conversion
+protection.
+
+Three deliberate carve-outs reviewers should check:
+
+1. **`md_attr` (first touch) is NOT gated.** It predates this work
+   (DEV-LAUNCH-12) and is in scope — `app/api/contact` and `app/api/sourcing`
+   read it so a rep sees which campaign produced a lead. Gating it would remove
+   shipped, agreed functionality.
+2. **`ga_client_id` / `ga_session` are NOT gated.** They exist so a Shopify
+   purchase lands in its originating GA4 session; without them it starts a new
+   session, resolves to `(direct)`, and standard revenue attribution breaks.
+   Core analytics, not the vendor layer.
+3. **The `cartAttributesUpdate` read-merge-write fix is NOT gated.** It is a
+   general correctness fix — Shopify *replaces* the attributes array, so the
+   old single-key write silently destroyed existing attributes.
+
+Enforcement is server-side at both points, so the boundary cannot be flipped
+from a URL, the console, or browser storage.
+
+Proven at runtime against real production builds:
+
+| | `md_attr` (in scope) | `md_attr_last` (gated) |
+|---|---|---|
+| Flag unset (production default) | written | **not written** |
+| Flag `=true` | written | written |
+
+…with `page_view`, `view_item` (SKU `2655`, brand, price, currency) and
+`add_to_cart` (qty 1, SKU, value 106) all firing normally in **both** states.
+
+**To activate after approval:** set `ENABLE_PERSISTENT_VENDOR_ATTRIBUTION=true`
+in the approved environment and redeploy. No code change.
+
+## Quality gates
 
 | Gate | Result |
 |---|---|
-| **Tests** | **PASS** — 2186 passed, 194 files |
+| **Tests** | **PASS** — 2216 passed, 195 files (was 2186/194; **+30** scope-gate tests covering flag on, flag off, and the unset-variable safety case) |
 | **Build** | **PASS** — `next build` compiles clean |
 | **Typecheck** | 1 **pre-existing** error in `app/api/catalog/__tests__/route.test.ts`; no new errors from this branch |
 | **Lint** | 18 **pre-existing** errors in `CategoryFilterableGrid.tsx` (16), `FavoriteButton.tsx` (1), `useSelectedVariant.ts` (1); **zero** in any analytics file |

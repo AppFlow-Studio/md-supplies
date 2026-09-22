@@ -27,6 +27,62 @@ The short version for a vendor conversation:
 `NEXT_PUBLIC_GTM_ID` gates all of it; `IS_STAGING` suppresses it on preview
 deploys so staging traffic never reaches the production property.
 
+## 1a. Persistent Vendor Attribution Feature Gate
+
+| | |
+|---|---|
+| **Standard analytics** | **ACTIVE** — not affected by this flag |
+| **Advanced persistent vendor attribution** | **IMPLEMENTED BUT DISABLED** |
+| **Activation requirement** | Separate scope / funding approval |
+| **Feature flag** | `ENABLE_PERSISTENT_VENDOR_ATTRIBUTION` (server-only) |
+| **Default** | `false` — fails closed on unset, blank, `0`, `false`, `TRUE`, or any typo |
+| **Helper** | `lib/analytics/vendor-attribution-flag.ts` → `isPersistentVendorAttributionEnabled()` |
+
+MDSupplies' agreed analytics scope covers ordinary campaign and ecommerce
+measurement. A vendor (Jant) additionally asked for a durable attribution layer
+that sits outside it. That work is built and tested but must not run in
+production until the extra scope is funded.
+
+**What activation adds** (all currently inert):
+
+- the `md_attr_last` last-touch cookie
+- multi-session persistence of vendor campaign identity, independent of GA4's
+  own session attribution
+- `md_utm_*`, `md_first_utm_*` and `md_<clickid>` campaign fields stamped onto
+  the Shopify cart, and therefore onto the **order**
+- deterministic vendor-campaign → order linkage — "which Jant email sold this
+  order?"
+- vendor-specific order-level reporting built on that metadata
+
+**What stays active without it** — everything in the standard stack:
+
+- UTM intake and GA4 source / medium / campaign behaviour
+- `page_view`, `view_item`, `view_item_list`, `select_item`, `search`,
+  `add_to_cart`, `remove_from_cart`, `view_cart`, `begin_checkout`
+- standard Shopify → GA4 `purchase`
+- SKU, variant, brand, price, quantity, currency
+- Google Ads `gclid` / `gbraid` / `wbraid` handling
+- PII redaction (never gated, under any flag state)
+- duplicate-conversion protections
+- the `md_attr` **first-touch** cookie — this one predates the vendor work
+  (DEV-LAUNCH-12) and is in scope: `app/api/contact` and `app/api/sourcing`
+  read it so a sales rep can see which campaign produced a lead
+- `ga_client_id` / `ga_session` cart attributes — core GA4 purchase continuity,
+  see §4; without them a purchase starts a fresh session and resolves to
+  `(direct)`
+- the `cartAttributesUpdate` read-merge-write safety — a general correctness
+  fix, not part of the vendor layer
+
+**Enforcement is server-side.** Both gated paths run on the server —
+`proxy.ts` (the cookie write) and `app/actions/cart.ts` (the Shopify stamping,
+gated at the call site *and* inside `stampCartAttribution()` itself). The flag
+is deliberately not `NEXT_PUBLIC_`, so nothing a visitor controls — URL, console
+or browser storage — can turn it on.
+
+**To activate after approval:** set
+`ENABLE_PERSISTENT_VENDOR_ATTRIBUTION=true` in the approved environment and
+redeploy. No code change required.
+
 ## 2. Events
 
 | Event | Trigger | Source file | Dedup |
@@ -73,10 +129,10 @@ Rules this implementation holds to:
 `proxy.ts` captures marketing params on any request that carries them, into two
 httpOnly cookies (90 days, `SameSite=Lax`):
 
-| Cookie | Semantics |
-|---|---|
-| `md_attr` | **First touch.** Written once, never overwritten. |
-| `md_attr_last` | **Last touch.** Overwritten by every later campaign arrival. |
+| Cookie | Semantics | Scope |
+|---|---|---|
+| `md_attr` | **First touch.** Written once, never overwritten. | In scope — always active (lead-email attribution) |
+| `md_attr_last` | **Last touch.** Overwritten by every later campaign arrival. | **GATED** — only written when `ENABLE_PERSISTENT_VENDOR_ATTRIBUTION=true` |
 
 Captured keys: every `utm_*`, plus `gclid`, `gbraid`, `wbraid`, `dclid`,
 `msclkid`, `fbclid`, `ttclid`, `twclid`, `li_fat_id`, `yclid`, `igshid`,
@@ -93,6 +149,10 @@ same-page discovery navigation (filter/sort/search/pagination) by
 Canonical URLs strip them (`lib/seo/canonical.ts`).
 
 ### Onto the Shopify order
+
+> **GATED — off by default.** This whole subsection describes the out-of-scope
+> vendor layer. While `ENABLE_PERSISTENT_VENDOR_ATTRIBUTION` is not `true`, no
+> `md_*` campaign attribute is written to any cart or order. See §1a.
 
 At cart creation (`app/actions/cart.ts` → `stampCartAttribution`, via `after()`
 so it never delays the customer), an allow-listed subset is written onto the

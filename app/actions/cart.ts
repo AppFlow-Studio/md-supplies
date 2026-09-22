@@ -24,6 +24,7 @@ import {
   readStoredAttribution,
   readLastTouchAttribution,
 } from '@/lib/analytics/attribution'
+import { isPersistentVendorAttributionEnabled } from '@/lib/analytics/vendor-attribution-flag'
 import type { Cart } from '@/lib/shopify/types'
 
 const CART_COOKIE = 'cart_id'
@@ -91,10 +92,17 @@ async function createCart(variantId: string, quantity: number): Promise<AddToCar
   // Wrapped: `after()` throws outright when called outside a request scope.
   // Cart creation is the most critical path on the site and must never fail
   // because the telemetry hook was unavailable — commerce beats telemetry.
-  try {
-    after(() => stampCartAttribution())
-  } catch (err) {
-    console.error('[createCart] could not schedule attribution stamp:', err)
+  //
+  // Commercial scope gate: the Shopify order-attribution layer is out of the
+  // agreed MDSupplies scope and stays off until that scope is funded. Checked
+  // here as well as inside stampCartAttribution() so the Storefront round-trip
+  // is not even scheduled while the feature is disabled.
+  if (isPersistentVendorAttributionEnabled()) {
+    try {
+      after(() => stampCartAttribution())
+    } catch (err) {
+      console.error('[createCart] could not schedule attribution stamp:', err)
+    }
   }
 
   const missing = findMissingMerchandise(cart, [{ merchandiseId: variantId, quantity }], 'cartCreate')
@@ -237,8 +245,20 @@ export async function setCartAttribute(key: string, value: string): Promise<Cart
  *
  * Best-effort by design — every caller ignores the outcome. A cart that cannot
  * be annotated must still check out. Commerce beats telemetry.
+ *
+ * SCOPE: this is the out-of-scope vendor-attribution layer and is DISABLED by
+ * default (lib/analytics/vendor-attribution-flag.ts). While disabled, no
+ * `md_*` campaign attribute is written to any cart or order. The read-merge-
+ * write safety in writeCartAttributes() and the `ga_client_id` / `ga_session`
+ * attributes are NOT part of this gate — those are standard analytics and stay
+ * active.
  */
 export async function stampCartAttribution(): Promise<void> {
+  // Authoritative gate. Duplicated from the call site deliberately: this is a
+  // server action and therefore its own entry point, so the boundary must hold
+  // even if something invokes it directly. Anything other than the exact
+  // string 'true' in ENABLE_PERSISTENT_VENDOR_ATTRIBUTION leaves it inert.
+  if (!isPersistentVendorAttributionEnabled()) return
   const cartId = (await cookies()).get(CART_COOKIE)?.value
   if (!cartId) return
   try {

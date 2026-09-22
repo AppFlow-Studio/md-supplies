@@ -8,6 +8,7 @@ import {
   LAST_TOUCH_COOKIE,
   serializeAttribution,
 } from '@/lib/analytics/attribution'
+import { isPersistentVendorAttributionEnabled } from '@/lib/analytics/vendor-attribution-flag'
 import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES, getCategorySlug } from '@/lib/category-tree'
 
 type Redirect301 = { from: string; to: string; status: 301 }
@@ -385,13 +386,24 @@ function captureAttribution(request: NextRequest, response: NextResponse): void 
   }
 
   // First touch is written once and then frozen for the cookie's lifetime.
+  //
+  // NOT gated by the vendor-attribution flag. This cookie predates that work
+  // (DEV-LAUNCH-12) and is in scope: app/api/contact and app/api/sourcing read
+  // it so a sales rep can see which campaign produced a lead. Gating it would
+  // break shipped, agreed functionality.
   if (!request.cookies.has(ATTRIBUTION_COOKIE)) {
     response.cookies.set(ATTRIBUTION_COOKIE, value, options)
   }
-  // Last touch is overwritten by every campaign-carrying arrival, so it tracks
-  // the most recent campaign the way GA4's last-non-direct-click model does.
-  // See lib/analytics/attribution.ts for why both are kept.
-  response.cookies.set(LAST_TOUCH_COOKIE, value, options)
+
+  // Last touch exists ONLY for the persistent vendor-attribution layer: it is
+  // the value stamped onto the Shopify cart so an order can be tied back to
+  // the most recent vendor campaign. Nothing in the standard analytics stack
+  // reads it — GA4 does its own last-non-direct-click attribution from the URL
+  // without our help. So it is gated behind the commercial scope flag and
+  // simply is not written until that scope is approved.
+  if (isPersistentVendorAttributionEnabled()) {
+    response.cookies.set(LAST_TOUCH_COOKIE, value, options)
+  }
 }
 
 // ─── Legacy-path encoding normalization (P0 SEO migration integrity) ────────

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { CREATE_CART, ADD_CART_LINES } from '@/lib/shopify/queries/cart'
 import type { Cart } from '@/lib/shopify/types'
 
@@ -253,5 +253,98 @@ describe('setCartAttribute', () => {
       attributes: { key: string; value: string }[]
     }
     expect(sent.attributes).toEqual([{ key: 'ga_client_id', value: 'new' }])
+  })
+})
+
+/**
+ * Commercial scope gate — ENABLE_PERSISTENT_VENDOR_ATTRIBUTION.
+ *
+ * The Shopify order-attribution layer is out of the agreed MDSupplies scope
+ * and must not run until that scope is funded. What must KEEP working while it
+ * is off: the read-merge-write safety (a general correctness fix) and the
+ * ga_client_id / ga_session attributes (core GA4 purchase continuity — without
+ * them a purchase starts a fresh session and resolves to Direct).
+ */
+describe('persistent vendor attribution scope gate', () => {
+  const VAR = 'ENABLE_PERSISTENT_VENDOR_ATTRIBUTION'
+  const original = process.env[VAR]
+
+  beforeEach(() => {
+    cookieStore.get.mockReturnValue({ value: 'gid://shopify/Cart/1' })
+    storefrontFetch.mockReset()
+  })
+  afterEach(() => {
+    if (original === undefined) delete process.env[VAR]
+    else process.env[VAR] = original
+  })
+
+  it('DISABLED (unset): stampCartAttribution is inert — no Shopify call at all', async () => {
+    delete process.env[VAR]
+    const { stampCartAttribution } = await import('@/app/actions/cart')
+    await stampCartAttribution()
+    expect(storefrontFetch).not.toHaveBeenCalled()
+  })
+
+  it.each(['false', '0', '', 'TRUE'])('DISABLED for %j: still inert', async (value) => {
+    process.env[VAR] = value
+    const { stampCartAttribution } = await import('@/app/actions/cart')
+    await stampCartAttribution()
+    expect(storefrontFetch).not.toHaveBeenCalled()
+  })
+
+  it('DISABLED: ga_client_id is still written — standard GA4 continuity is not gated', async () => {
+    delete process.env[VAR]
+    const { setCartAttribute } = await import('@/app/actions/cart')
+    const existing = cartFixture({ attributes: [] })
+    storefrontFetch
+      .mockResolvedValueOnce({ cart: existing })
+      .mockResolvedValueOnce({ cartAttributesUpdate: { cart: existing, userErrors: [] } })
+
+    await setCartAttribute('ga_client_id', '555.666')
+
+    const sent = storefrontFetch.mock.calls[1][1] as { attributes: { key: string; value: string }[] }
+    expect(sent.attributes).toEqual([{ key: 'ga_client_id', value: '555.666' }])
+  })
+
+  it('DISABLED: read-merge-write safety still preserves unrelated attributes', async () => {
+    delete process.env[VAR]
+    const { setCartAttribute } = await import('@/app/actions/cart')
+    const existing = cartFixture({
+      attributes: [{ key: 'some_other_app_attribute', value: 'keep-me' }],
+    })
+    storefrontFetch
+      .mockResolvedValueOnce({ cart: existing })
+      .mockResolvedValueOnce({ cartAttributesUpdate: { cart: existing, userErrors: [] } })
+
+    await setCartAttribute('ga_session', 'cid=1&sid=2&sct=3')
+
+    const sent = storefrontFetch.mock.calls[1][1] as { attributes: { key: string; value: string }[] }
+    const keys = sent.attributes.map((a) => a.key).sort()
+    expect(keys).toEqual(['ga_session', 'some_other_app_attribute'])
+  })
+
+  it('ENABLED: stamps md_* campaign attributes onto the cart', async () => {
+    process.env[VAR] = 'true'
+    cookieStore.get.mockImplementation((name: string) => {
+      if (name === 'cart_id') return { value: 'gid://shopify/Cart/1' }
+      if (name === 'md_attr') return { value: JSON.stringify({ utm_source: 'jant', utm_content: 'email_1_main_cta' }) }
+      if (name === 'md_attr_last') return { value: JSON.stringify({ utm_source: 'jant', utm_content: 'email_2_follow_up' }) }
+      return undefined
+    })
+    const existing = cartFixture({ attributes: [{ key: 'ga_client_id', value: '555.666' }] })
+    storefrontFetch
+      .mockResolvedValueOnce({ cart: existing })
+      .mockResolvedValueOnce({ cartAttributesUpdate: { cart: existing, userErrors: [] } })
+
+    const { stampCartAttribution } = await import('@/app/actions/cart')
+    await stampCartAttribution()
+
+    const sent = storefrontFetch.mock.calls[1][1] as { attributes: { key: string; value: string }[] }
+    const map = Object.fromEntries(sent.attributes.map((a) => [a.key, a.value]))
+    expect(map.md_utm_source).toBe('jant')
+    expect(map.md_utm_content).toBe('email_2_follow_up')       // last touch
+    expect(map.md_first_utm_content).toBe('email_1_main_cta')  // first touch
+    // and the pre-existing attribute is never clobbered
+    expect(map.ga_client_id).toBe('555.666')
   })
 })
