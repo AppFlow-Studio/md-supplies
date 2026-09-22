@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { headers } from 'next/headers'
 import { GoogleTagManager } from '@next/third-parties/google'
 import { Header } from '@/components/layout/Header'
@@ -9,6 +8,7 @@ import { CartPopup } from '@/components/store/CartPopup'
 import { CartToast } from '@/components/store/CartToast'
 import { SkipLink } from '@/components/a11y/SkipLink'
 import { PageViewTracker } from '@/components/analytics/PageViewTracker'
+import { AnalyticsDebugPanel } from '@/components/analytics/AnalyticsDebugPanel'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_LOCALIZATION } from '@/lib/shopify/queries/markets'
 import { GET_MENU } from '@/lib/shopify/queries/menu'
@@ -83,11 +83,15 @@ export async function SiteChrome({
       {strict && !IS_STAGING && process.env.NEXT_PUBLIC_GTM_ID && (
         <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
       )}
-      {!IS_STAGING && (
-        <Suspense fallback={null}>
-          <PageViewTracker />
-        </Suspense>
-      )}
+      {/* No <Suspense> wrapper: the boundary existed only to satisfy
+          useSearchParams()'s requirement, and on a PPR-postponed route
+          (/product/[slug]) it never resolved — costing the PDP its page_view
+          entirely. PageViewTracker now reads window.location instead and needs
+          no boundary. See that component's doc comment. */}
+      {!IS_STAGING && <PageViewTracker />}
+      {/* Dev-only, and additionally gated on ?debug_analytics=1. Compiles to
+          nothing in a production build — see the component. */}
+      <AnalyticsDebugPanel />
       <SkipLink />
       <script
         type="application/ld+json"

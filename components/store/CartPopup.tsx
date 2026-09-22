@@ -6,9 +6,8 @@ import Link from 'next/link'
 import { type MouseEvent } from 'react'
 import { useCart } from './CartProvider'
 import { track } from '@/lib/analytics/track'
-import { buildBeginCheckoutEvent } from '@/lib/analytics/events'
-import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
-import { setCartAttribute } from '@/app/actions/cart'
+import { buildBeginCheckoutEvent, cartLineToGA4Item, cartCurrency } from '@/lib/analytics/events'
+import { bridgeAnalyticsToCheckout } from '@/lib/analytics/checkout-handoff'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
 import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
@@ -81,29 +80,23 @@ export function CartPopup() {
     checkoutInFlightRef.current = true
 
     try {
+      // Fired before the handoff, not after it resolves, because
+      // rxGate.proceedToCheckout() ends in a `window.location.href` assignment
+      // — a push after that point races the unload and is routinely dropped.
+      // The residual risk is a begin_checkout for a handoff the server-side RX
+      // re-check then refuses; that path is already unreachable from the UI
+      // (the CTA is replaced by RxGatePanel whenever the gate reports blocked),
+      // and begin_checkout is not a Google Ads conversion action here, so the
+      // trade is a rare, non-revenue over-count against systematically losing
+      // the event. Documented in docs/analytics/README.md.
       track(
-        {
-          ...buildBeginCheckoutEvent({
-            currency: cart.cost.subtotalAmount.currencyCode,
-            items: lines.map((line) => ({
-              item_id: line.merchandise.id,
-              item_name: line.merchandise.product.title,
-              price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-              quantity: line.quantity,
-            })),
-          }),
-        },
+        buildBeginCheckoutEvent({
+          currency: cartCurrency(cart),
+          items: lines.map((line) => cartLineToGA4Item(line)),
+        }),
       )
 
-      // Bridge the storefront GA client_id into Shopify checkout for the pixel.
-      // Best-effort: never block the handoff on analytics.
-      try {
-        const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
-        const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
-        if (clientId) await setCartAttribute('ga_client_id', clientId)
-      } catch (err) {
-        console.error('[CartPopup] failed to stamp ga_client_id:', err)
-      }
+      await bridgeAnalyticsToCheckout()
 
       // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
       await rxGate.proceedToCheckout()

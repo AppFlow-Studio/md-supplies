@@ -20,6 +20,7 @@ import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
+import { resolveInitialVariant } from '@/lib/product/resolve-variant'
 import { resolveVariantValue } from '@/lib/product/resolve-variant-value'
 import { resolveVariantAwareTitle } from '@/lib/product/resolve-variant-title'
 import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, shopifyRichTextToHtml, plainTextToHtml, type RichTextSpan } from '@/lib/policy/rich-text'
@@ -164,19 +165,35 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   const [activeTab, setActiveTab] = useState<Tab>('SPECIFICATIONS')
 
   useEffect(() => {
+    // `?variant=` is resolved here rather than read off `selectedVariant`.
+    // useSelectedVariant deliberately renders the DEFAULT variant first and
+    // only corrects to the URL's variant in a later effect (it has to — the
+    // server renders the default, and diverging on the first client render is
+    // a hydration mismatch). This effect runs before that correction lands, so
+    // reading the render-time value reported the default variant's id and
+    // price for every shared deep link. Resolving the URL directly — through
+    // the same validator, so an unknown id still falls back to the default —
+    // reports the variant the customer is actually looking at, without a
+    // second view_item when the correction arrives.
+    const urlVariantId = new URLSearchParams(window.location.search).get('variant')
+    const variant = urlVariantId
+      ? resolveInitialVariant(product.variants.nodes, urlVariantId)
+      : selectedVariant
     track(
-      {
-        ...buildViewItemEvent({
-          currency: selectedVariant.price.currencyCode,
-          item: {
-            item_id: selectedVariant.id,
-            item_name: product.title,
-            price: parseFloat(selectedVariant.price.amount),
-            // Public brand only; never the fulfilling vendor (lib/brand.ts).
-            ...(brandDisplay ? { item_brand: brandDisplay } : {}),
-          },
-        }),
-      },
+      buildViewItemEvent({
+        currency: variant.price.currencyCode,
+        item: {
+          item_id: variant.id,
+          item_name: product.title,
+          price: parseFloat(variant.price.amount),
+          ...(variant.title && variant.title !== 'Default Title'
+            ? { item_variant: variant.title }
+            : {}),
+          ...(variant.sku ? { item_sku: variant.sku } : {}),
+          // Public brand only; never the fulfilling vendor (lib/brand.ts).
+          ...(brandDisplay ? { item_brand: brandDisplay } : {}),
+        },
+      }),
     )
     // Fire once per product page visit, not on every variant switch — App Router
     // reuses this client component instance across product-to-product navigation,

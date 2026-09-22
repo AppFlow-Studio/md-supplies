@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 
 vi.mock('next/server', () => ({
   NextResponse: {
@@ -19,7 +19,12 @@ vi.mock('next/server', () => ({
       res.cookies = {
         set: (name, value, opts) => {
           const maxAge = opts?.maxAge ? `; Max-Age=${opts.maxAge}` : ''
-          res.headers.append('Set-Cookie', `${name}=${value}${maxAge}`)
+          // httpOnly/sameSite are serialized too: campaign cookies being
+          // unreadable from page JS is a property worth asserting, and a mock
+          // that silently dropped the flags would make that assertion vacuous.
+          const httpOnly = opts?.httpOnly ? '; HttpOnly' : ''
+          const sameSite = opts?.sameSite ? `; SameSite=${String(opts.sameSite)}` : ''
+          res.headers.append('Set-Cookie', `${name}=${value}${maxAge}${httpOnly}${sameSite}`)
         },
       }
       return res
@@ -894,23 +899,142 @@ describe('proxy — CSP (per-route: static for public, nonce for sensitive)', ()
   })
 })
 
-describe('proxy — first-touch gclid/utm attribution capture (DEV-LAUNCH-12)', () => {
+describe('proxy — campaign attribution capture (DEV-LAUNCH-12 / DEV-TRACK-01)', () => {
+  /** All Set-Cookie headers as a `name -> parsed JSON value` map. */
+  function cookies(res: Response): Record<string, Record<string, string>> {
+    const out: Record<string, Record<string, string>> = {}
+    for (const header of res.headers.getSetCookie?.() ?? [res.headers.get('Set-Cookie') ?? '']) {
+      const match = header.match(/^(md_attr(?:_last)?)=([^;]*)/)
+      if (match) out[match[1]] = JSON.parse(decodeURIComponent(match[2]))
+    }
+    return out
+  }
+
+  const ENV_VAR = 'ENABLE_PERSISTENT_VENDOR_ATTRIBUTION'
+  const envOriginal = process.env[ENV_VAR]
+  afterEach(() => {
+    if (envOriginal === undefined) delete process.env[ENV_VAR]
+    else process.env[ENV_VAR] = envOriginal
+  })
+
+  const JANT_A = '?utm_source=jant&utm_medium=email&utm_campaign=h_pylori_gi_clinics_q4_2026&utm_content=email_1_main_cta'
+  const JANT_B = '?utm_source=jant&utm_medium=email&utm_campaign=h_pylori_gi_clinics_q4_2026&utm_content=email_2_follow_up'
+
   it('captures gclid + utm_* into a durable cookie on a pass-through request', () => {
     const res = proxy(req('/category/gloves', '?gclid=abc123&utm_source=google&utm_medium=cpc'))
-    const setCookie = res.headers.get('Set-Cookie')
-    expect(setCookie).toContain('md_attr=')
-    const value = decodeURIComponent(setCookie!.split('md_attr=')[1].split(';')[0])
-    expect(JSON.parse(value)).toEqual({ gclid: 'abc123', utm_source: 'google', utm_medium: 'cpc' })
+    expect(cookies(res).md_attr).toEqual({
+      gclid: 'abc123', utm_source: 'google', utm_medium: 'cpc',
+    })
+  })
+
+  it('captures the full Jant UTM set from a real campaign landing URL', () => {
+    expect(cookies(proxy(req('/product/h-pylori-test', JANT_A))).md_attr).toEqual({
+      utm_source: 'jant',
+      utm_medium: 'email',
+      utm_campaign: 'h_pylori_gi_clinics_q4_2026',
+      utm_content: 'email_1_main_cta',
+    })
+  })
+
+  it('writes first-touch AND last-touch on a first campaign arrival (gate on)', () => {
+    const prev = process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION
+    process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION = 'true'
+    try {
+      const jar = cookies(proxy(req('/product/x', JANT_A)))
+      expect(jar.md_attr).toEqual(jar.md_attr_last)
+    } finally {
+      if (prev === undefined) delete process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION
+      else process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION = prev
+    }
   })
 
   it('does not write a cookie when the request carries no tracking params', () => {
-    const res = proxy(req('/category/gloves'))
-    expect(res.headers.get('Set-Cookie')).toBeNull()
+    // TEST B/C/D: internal navigation, a refresh, and a direct return must
+    // never clear an existing capture — they carry no params, so this is a
+    // no-op rather than a reset.
+    expect(proxy(req('/category/gloves')).headers.get('Set-Cookie')).toBeNull()
   })
 
-  it('does not overwrite an existing capture (first-touch, not last-touch)', () => {
-    const res = proxy(req('/category/gloves', '?gclid=second-click', ['md_attr']))
-    expect(res.headers.get('Set-Cookie')).toBeNull()
+  it('freezes first-touch but advances last-touch on a later campaign (TEST F, gate on)', () => {
+    process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION = 'true'
+    // Jant campaign A found the customer; campaign B brought them back. GA4
+    // credits B (last-non-direct-click); the order records both so the two
+    // systems can be reconciled instead of silently disagreeing.
+    const jar = cookies(proxy(req('/product/x', JANT_B, ['md_attr'])))
+    expect(jar.md_attr).toBeUndefined()
+    expect(jar.md_attr_last).toMatchObject({ utm_content: 'email_2_follow_up' })
+  })
+
+  it('advances last-touch when a Google Ads click follows an email click (TEST G, gate on)', () => {
+    process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION = 'true'
+    const jar = cookies(proxy(req('/product/x', '?gclid=second-click', ['md_attr'])))
+    expect(jar.md_attr_last).toEqual({ gclid: 'second-click' })
+  })
+
+  // ── Commercial scope gate ────────────────────────────────────────────────
+  //
+  // md_attr (first touch) predates the vendor work and is IN SCOPE: the
+  // contact/sourcing lead emails read it so a rep can see which campaign
+  // produced a lead. md_attr_last exists ONLY to be stamped onto the Shopify
+  // cart for vendor order-level attribution, which is out of scope until
+  // funded. So the gate must separate them precisely — disabling the vendor
+  // layer must not cost MDSupplies functionality it already paid for.
+  describe('ENABLE_PERSISTENT_VENDOR_ATTRIBUTION gate', () => {
+    const VAR = 'ENABLE_PERSISTENT_VENDOR_ATTRIBUTION'
+    const original = process.env[VAR]
+    afterEach(() => {
+      if (original === undefined) delete process.env[VAR]
+      else process.env[VAR] = original
+    })
+
+    it('DISABLED (unset): still writes the in-scope first-touch cookie', () => {
+      delete process.env[VAR]
+      const jar = cookies(proxy(req('/product/x', JANT_A)))
+      expect(jar.md_attr).toMatchObject({ utm_source: 'jant', utm_medium: 'email' })
+    })
+
+    it('DISABLED (unset): does NOT write the gated last-touch cookie', () => {
+      delete process.env[VAR]
+      const jar = cookies(proxy(req('/product/x', JANT_A)))
+      expect(jar.md_attr_last).toBeUndefined()
+    })
+
+    it.each(['false', '0', '', 'TRUE'])(
+      'DISABLED for %j: no last-touch cookie',
+      (value) => {
+        process.env[VAR] = value
+        expect(cookies(proxy(req('/product/x', JANT_A))).md_attr_last).toBeUndefined()
+      },
+    )
+
+    it('ENABLED: writes both cookies, and last-touch advances on a later campaign', () => {
+      process.env[VAR] = 'true'
+      const first = cookies(proxy(req('/product/x', JANT_A)))
+      expect(first.md_attr).toEqual(first.md_attr_last)
+
+      const later = cookies(proxy(req('/product/x', JANT_B, ['md_attr'])))
+      expect(later.md_attr).toBeUndefined() // first touch stays frozen
+      expect(later.md_attr_last).toMatchObject({ utm_content: 'email_2_follow_up' })
+    })
+
+    it('ENABLED: still captures Google Ads click ids into last touch', () => {
+      process.env[VAR] = 'true'
+      const jar = cookies(proxy(req('/product/x', '?gclid=abc123', ['md_attr'])))
+      expect(jar.md_attr_last).toEqual({ gclid: 'abc123' })
+    })
+  })
+
+  it('marks every attribution cookie httpOnly so campaign data never reaches page JS', () => {
+    const prev = process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION
+    process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION = 'true'
+    try {
+      const res = proxy(req('/product/x', JANT_A))
+      const headers = res.headers.getSetCookie?.() ?? []
+      expect(headers.filter((h) => h.includes('HttpOnly'))).toHaveLength(2)
+    } finally {
+      if (prev === undefined) delete process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION
+      else process.env.ENABLE_PERSISTENT_VENDOR_ATTRIBUTION = prev
+    }
   })
 })
 
