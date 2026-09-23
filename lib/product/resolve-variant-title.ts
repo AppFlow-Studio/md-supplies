@@ -20,6 +20,18 @@
  * prefix of exactly one distinct variant SKU, so the ambiguous case (the
  * prefix could belong to two different variants) still falls through
  * untouched rather than guessing.
+ *
+ * 2026-09-22 (Sardor's audit, 15015-24DELR case): a handful of titles bake the
+ * SKU in TWICE — once inline and once as the parenthetical, e.g. "Bariatric
+ * Reclining Wheelchair w/ ELR 15015-24DELR (15015-24DELR)". Replacing only the
+ * parenthetical left the inline copy stale, so selecting the 26" variant
+ * rendered a title that named one SKU and parenthesised another. A catalog-wide
+ * sweep of all 7,230 live products found exactly 10 of these, and every one has
+ * the same shape: the inline copy is the LAST thing in the base title and is
+ * character-identical to the parenthetical. So the repeat is stripped rather
+ * than rewritten — "… w/ ELR (15015-26DELR)" reads better than repeating the
+ * same code twice — and only ever when it trails, so a mid-title model
+ * designation ("9501 Series, …") can never be touched.
  */
 export function resolveVariantAwareTitle(
   title: string,
@@ -42,5 +54,37 @@ export function resolveVariantAwareTitle(
   )
   if (!isExactSku && prefixCandidates.size !== 1) return title
 
-  return selectedVariant.sku ? `${baseTitle} (${selectedVariant.sku})` : baseTitle
+  const cleanedBase = stripTrailingSkuRepeat(baseTitle, suffix)
+  return selectedVariant.sku ? `${cleanedBase} (${selectedVariant.sku})` : cleanedBase
+}
+
+/** True when `char` is not a letter or digit (or is absent). */
+function isBoundary(char: string | undefined): boolean {
+  return char === undefined || !/[A-Za-z0-9]/.test(char)
+}
+
+/**
+ * Removes a trailing repeat of the baked-in SKU from the base title, with the
+ * separator that introduced it (", 10379" → "", " 15015-24DELR" → "").
+ *
+ * Deliberately narrow, because this runs over the whole catalog:
+ *
+ * - Only a TRAILING occurrence is considered. "9501 Series, Physician Stool…"
+ *   must never lose its model-family name, and a mid-title code is far more
+ *   likely to be meaningful product text than a duplicated suffix.
+ * - The match must be the WHOLE token — "10379" inside "103790" is not a
+ *   repeat, so the preceding character must not be alphanumeric.
+ * - If stripping would leave nothing descriptive behind (a title that was only
+ *   ever the SKU), the original base is kept: a bare "(SKU)" is worse than a
+ *   redundant one.
+ */
+function stripTrailingSkuRepeat(baseTitle: string, sku: string): string {
+  if (!sku || !baseTitle.endsWith(sku)) return baseTitle
+  const start = baseTitle.length - sku.length
+  if (!isBoundary(baseTitle[start - 1])) return baseTitle
+
+  // Drop the code, then the separator that introduced it (a comma, dash or
+  // whitespace). Anything else — "w/", ")" — is real title text and stays.
+  const remainder = baseTitle.slice(0, start).replace(/[\s,–—-]+$/, '')
+  return remainder.length > 0 && /[A-Za-z]/.test(remainder) ? remainder : baseTitle
 }
