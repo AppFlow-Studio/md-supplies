@@ -81,100 +81,155 @@ describe('resolveVariantAwareTitle', () => {
     })
   })
 
-  // Sardor's audit, 2026-09-22 (15015-24DELR): some titles bake the SKU in
-  // twice — inline AND parenthesised. Rewriting only the parenthetical left
-  // the inline copy stale, producing a title that named one SKU and
-  // parenthesised another. A sweep of all 7,230 live products found exactly 10
-  // of these; every one has the repeat as the LAST token of the base title.
+  // Izzy's 983-product report, 2026-09-23 (15015-24DELR): some titles bake the
+  // same SKU in twice — inline AND parenthesised. Rewriting only the
+  // parenthetical left the inline copy stale, producing a title that named one
+  // SKU and parenthesised another.
+  //
+  // NOTE: an earlier pass asserted the inline repeat was STRIPPED. The agreed
+  // contract is now REPLACE — every whole-token occurrence of the identified
+  // baked-in SKU becomes the selected SKU. These expectations were updated to
+  // the new contract deliberately, not relaxed to fit the implementation.
   describe('when the baked-in SKU is repeated inline as well as parenthesised', () => {
     const wheelchair = [{ sku: '15015-24DELR' }, { sku: '15015-26DELR' }, { sku: '15015-28DELR' }]
+    const WHEELCHAIR_TITLE = 'Bariatric Reclining Wheelchair w/ ELR 15015-24DELR (15015-24DELR)'
 
-    it('strips the stale inline repeat instead of leaving two different SKUs in one title', () => {
-      expect(
-        resolveVariantAwareTitle(
-          'Bariatric Reclining Wheelchair w/ ELR 15015-24DELR (15015-24DELR)',
-          wheelchair,
-          { sku: '15015-26DELR' },
-        ),
-      ).toBe('Bariatric Reclining Wheelchair w/ ELR (15015-26DELR)')
+    it('replaces BOTH occurrences with the selected SKU', () => {
+      const out = resolveVariantAwareTitle(WHEELCHAIR_TITLE, wheelchair, { sku: '15015-26DELR' })
+      expect(out).toBe('Bariatric Reclining Wheelchair w/ ELR 15015-26DELR (15015-26DELR)')
+      expect(out).not.toContain('15015-24DELR')
     })
 
-    it('also removes the redundancy when the baked-in variant is the selected one', () => {
-      expect(
-        resolveVariantAwareTitle(
-          'Bariatric Reclining Wheelchair w/ ELR 15015-24DELR (15015-24DELR)',
-          wheelchair,
-          { sku: '15015-24DELR' },
-        ),
-      ).toBe('Bariatric Reclining Wheelchair w/ ELR (15015-24DELR)')
+    it('leaves the title exactly as authored when the baked-in variant is selected', () => {
+      expect(resolveVariantAwareTitle(WHEELCHAIR_TITLE, wheelchair, { sku: '15015-24DELR' }))
+        .toBe(WHEELCHAIR_TITLE)
     })
 
-    it('takes the comma separator with it', () => {
-      const chair = [{ sku: '10379' }, { sku: '10380' }]
-      expect(
-        resolveVariantAwareTitle('Bariatric HD Shower Chair, 10379 (10379)', chair, { sku: '10380' }),
-      ).toBe('Bariatric HD Shower Chair (10380)')
+    it('is idempotent — resolving an already-resolved title changes nothing', () => {
+      const once = resolveVariantAwareTitle(WHEELCHAIR_TITLE, wheelchair, { sku: '15015-26DELR' })
+      const twice = resolveVariantAwareTitle(once, wheelchair, { sku: '15015-26DELR' })
+      expect(twice).toBe(once)
     })
 
-    it('removes a SKU whose size code would otherwise go stale too', () => {
-      // "Blue 10743LG" — the LG is inside the SKU, so stripping the repeat
-      // also removes a size that would contradict the selected variant.
-      const slings = [{ sku: '10743LG' }, { sku: '10743XL' }]
-      expect(
-        resolveVariantAwareTitle('Divided Leg Sling, Blue 10743LG (10743LG)', slings, { sku: '10743XL' }),
-      ).toBe('Divided Leg Sling, Blue (10743XL)')
+    it('does not accumulate substitutions across A -> B -> C -> A', () => {
+      const a = resolveVariantAwareTitle(WHEELCHAIR_TITLE, wheelchair, { sku: '15015-24DELR' })
+      const b = resolveVariantAwareTitle(a, wheelchair, { sku: '15015-26DELR' })
+      const c = resolveVariantAwareTitle(b, wheelchair, { sku: '15015-28DELR' })
+      const backToA = resolveVariantAwareTitle(c, wheelchair, { sku: '15015-24DELR' })
+      expect(backToA).toBe(WHEELCHAIR_TITLE)
+      for (const out of [a, b, c, backToA]) {
+        const present = wheelchair.map((v) => v.sku).filter((sku) => out.includes(sku))
+        expect(present).toHaveLength(1)
+      }
     })
 
-    it('strips the repeat for a truncated baked-in SKU too', () => {
+    // The other nine duplicate-SKU products. Titles and SKUs are the
+    // authoritative values from Izzy's report, not invented.
+    it.each([
+      ['Divided Leg Sling, Blue 10743LG (10743LG)', ['10743LG', '10743SM', '10743MD', '10743XL'], '10743XL',
+        'Divided Leg Sling, Blue 10743XL (10743XL)'],
+      ['Anti Thrust Wedge Cushion Gel, 10690 (10690)', ['10690', '10691'], '10691',
+        'Anti Thrust Wedge Cushion Gel, 10691 (10691)'],
+      ['Bariatric Air Cushion, 10670 (10670)', ['10670', '10671'], '10671',
+        'Bariatric Air Cushion, 10671 (10671)'],
+      ['Bariatric HD Full Electric Homecare Bed, 10405 (10405)', ['10405', '10403'], '10403',
+        'Bariatric HD Full Electric Homecare Bed, 10403 (10403)'],
+      ['Bariatric HD Shower Chair, 10379 (10379)', ['10379', '10380'], '10380',
+        'Bariatric HD Shower Chair, 10380 (10380)'],
+      ['Bariatric Plus Airfloat Air Mattress w/ Pump, 10445 (10445)', ['10445', '10446'], '10446',
+        'Bariatric Plus Airfloat Air Mattress w/ Pump, 10446 (10446)'],
+      ['Bariatric Plus Foam Mattress, 10431 (10431)', ['10431', '10432'], '10432',
+        'Bariatric Plus Foam Mattress, 10432 (10432)'],
+      ['Bedside Bi-Fold Foam Floor Mat, 13020 (13020)', ['13020', '13021'], '13021',
+        'Bedside Bi-Fold Foam Floor Mat, 13021 (13021)'],
+      ['Deluxe Sit-to-Stand Sling, Blue 10746LG (10746LG)', ['10746LG', '10746XL'], '10746XL',
+        'Deluxe Sit-to-Stand Sling, Blue 10746XL (10746XL)'],
+    ])('replaces every occurrence in %s', (title, skus, selected, expected) => {
+      const vs = (skus as string[]).map((sku) => ({ sku }))
+      const out = resolveVariantAwareTitle(title as string, vs, { sku: selected as string })
+      expect(out).toBe(expected)
+      const baked = (title as string).slice(
+        (title as string).lastIndexOf('(') + 1,
+        (title as string).lastIndexOf(')'),
+      )
+      if (baked !== selected) expect(out).not.toContain(baked)
+    })
+
+    it('replaces the repeat for a truncated baked-in SKU too', () => {
       const trocars = [{ sku: 'B6705C' }, { sku: 'B7419C' }]
-      expect(
-        resolveVariantAwareTitle('Resin Trocar B6705 (B6705)', trocars, { sku: 'B7419C' }),
-      ).toBe('Resin Trocar (B7419C)')
+      expect(resolveVariantAwareTitle('Resin Trocar B6705 (B6705)', trocars, { sku: 'B7419C' }))
+        .toBe('Resin Trocar B7419C (B7419C)')
     })
 
-    it('still strips when the selected variant has no SKU of its own', () => {
-      expect(
-        resolveVariantAwareTitle(
-          'Bariatric Reclining Wheelchair w/ ELR 15015-24DELR (15015-24DELR)',
-          wheelchair,
-          { sku: null },
-        ),
-      ).toBe('Bariatric Reclining Wheelchair w/ ELR')
+    it('removes the baked-in code entirely when the selected variant has no SKU', () => {
+      expect(resolveVariantAwareTitle(WHEELCHAIR_TITLE, wheelchair, { sku: null }))
+        .toBe('Bariatric Reclining Wheelchair w/ ELR')
     })
 
-    // Guards — the strip must stay narrow, because it runs catalog-wide.
+    // ---- Guards. The replacement must stay token-exact. ----
     it('NEVER touches a mid-title model designation', () => {
-      // 9501 Series must survive; only a TRAILING repeat is a repeat.
       const stools = [{ sku: '9501-AL' }, { sku: '9501-AR' }]
-      expect(
-        resolveVariantAwareTitle('9501 Series, Physician Stool (9501-AL)', stools, { sku: '9501-AR' }),
-      ).toBe('9501 Series, Physician Stool (9501-AR)')
+      expect(resolveVariantAwareTitle('9501 Series, Physician Stool (9501-AL)', stools, { sku: '9501-AR' }))
+        .toBe('9501 Series, Physician Stool (9501-AR)')
     })
 
-    it('does not treat a longer code ending in the SKU as a repeat', () => {
-      // "103790" ends with… no: the boundary check is on the char BEFORE the
-      // match, so "X103790" must not be mistaken for a repeat of "103790".
-      const v = [{ sku: '103790' }, { sku: '103791' }]
-      expect(
-        resolveVariantAwareTitle('Shower Chair X103790 (103790)', v, { sku: '103791' }),
-      ).toBe('Shower Chair X103790 (103791)')
+    it('does not rewrite the SKU when it only appears inside a longer identifier', () => {
+      const v = [{ sku: '10690' }, { sku: '10691' }]
+      const out = resolveVariantAwareTitle('Cushion X10690A (10690)', v, { sku: '10691' })
+      expect(out).toBe('Cushion X10690A (10691)')
+      expect(out).toContain('X10690A')
     })
 
-    it('keeps the base title when the title was only ever the SKU', () => {
-      const v = [{ sku: '10379' }, { sku: '10380' }]
-      expect(resolveVariantAwareTitle('10379 (10379)', v, { sku: '10380' })).toBe('10379 (10380)')
+    it('treats dots and dashes in a SKU literally, not as regex wildcards', () => {
+      const v = [{ sku: 'AB.CD-01' }, { sku: 'AB.CD-02' }]
+      expect(resolveVariantAwareTitle('Kit AB.CD-01 (AB.CD-01)', v, { sku: 'AB.CD-02' }))
+        .toBe('Kit AB.CD-02 (AB.CD-02)')
+      // A regex-treated "." would also have matched "ABxCD-01"; prove it did not.
+      expect(resolveVariantAwareTitle('Kit ABxCD-01 (AB.CD-01)', v, { sku: 'AB.CD-02' }))
+        .toBe('Kit ABxCD-01 (AB.CD-02)')
     })
 
-    it('keeps the base title when stripping would leave only punctuation', () => {
-      const v = [{ sku: '10379' }, { sku: '10380' }]
-      expect(resolveVariantAwareTitle('- 10379 (10379)', v, { sku: '10380' })).toBe('- 10379 (10380)')
+    it('does not throw on SKUs containing regex metacharacters', () => {
+      const v = [{ sku: 'A+B*C' }, { sku: 'A+B*D' }]
+      expect(() => resolveVariantAwareTitle('Widget A+B*C (A+B*C)', v, { sku: 'A+B*D' })).not.toThrow()
+      expect(resolveVariantAwareTitle('Widget A+B*C (A+B*C)', v, { sku: 'A+B*D' }))
+        .toBe('Widget A+B*D (A+B*D)')
     })
 
-    it('leaves a clean title alone — no repeat, nothing stripped', () => {
+    it('is case-sensitive — a differently-cased token is a different token', () => {
+      const v = [{ sku: 'abc-1' }, { sku: 'abc-2' }]
+      expect(resolveVariantAwareTitle('Widget ABC-1 (abc-1)', v, { sku: 'abc-2' }))
+        .toBe('Widget ABC-1 (abc-2)')
+    })
+
+    it('leaves a clean title alone — no repeat, nothing extra changed', () => {
       const v = [{ sku: 'URN-55323' }, { sku: 'URN-55327' }]
       expect(
         resolveVariantAwareTitle('Irrigation Probes Side Port Luer Lock, Blue (URN-55323)', v, { sku: 'URN-55327' }),
       ).toBe('Irrigation Probes Side Port Luer Lock, Blue (URN-55327)')
+    })
+
+    it('preserves an unrelated parenthetical while replacing the SKU one', () => {
+      const gloves = [{ sku: 'HAL 44992' }, { sku: 'HAL 44995' }]
+      const out = resolveVariantAwareTitle(
+        'Purple Nitrile Max Powder-Free Exam Glove, 50/bx 8bx/cs (US Only) (HAL 44992)',
+        gloves,
+        { sku: 'HAL 44995' },
+      )
+      expect(out).toBe('Purple Nitrile Max Powder-Free Exam Glove, 50/bx 8bx/cs (US Only) (HAL 44995)')
+      expect(out).toContain('(US Only)')
+    })
+
+    it('bails out safely on a template placeholder rather than guessing', () => {
+      const stools = [{ sku: '9501-AL' }, { sku: '9501-AR' }, { sku: '9501-BL' }]
+      const title = '9501 Series, Physician Stool, with Single Lever Release, Black Composite Base (9501-xx)'
+      expect(resolveVariantAwareTitle(title, stools, { sku: '9501-AR' })).toBe(title)
+    })
+
+    it('leaves the title unchanged when no candidate matches at all', () => {
+      const v = [{ sku: '113735' }, { sku: '113736' }]
+      const title = 'Allergy Tray, TB Syringe, Case (8881500501)'
+      expect(resolveVariantAwareTitle(title, v, { sku: '113736' })).toBe(title)
     })
   })
 })

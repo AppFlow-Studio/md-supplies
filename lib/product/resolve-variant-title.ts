@@ -21,17 +21,18 @@
  * prefix could belong to two different variants) still falls through
  * untouched rather than guessing.
  *
- * 2026-09-22 (Sardor's audit, 15015-24DELR case): a handful of titles bake the
- * SKU in TWICE — once inline and once as the parenthetical, e.g. "Bariatric
- * Reclining Wheelchair w/ ELR 15015-24DELR (15015-24DELR)". Replacing only the
- * parenthetical left the inline copy stale, so selecting the 26" variant
- * rendered a title that named one SKU and parenthesised another. A catalog-wide
- * sweep of all 7,230 live products found exactly 10 of these, and every one has
- * the same shape: the inline copy is the LAST thing in the base title and is
- * character-identical to the parenthetical. So the repeat is stripped rather
- * than rewritten — "… w/ ELR (15015-26DELR)" reads better than repeating the
- * same code twice — and only ever when it trails, so a mid-title model
- * designation ("9501 Series, …") can never be touched.
+ * 2026-09-23 (Izzy's 983-product report, 15015-24DELR case): some titles bake
+ * the same SKU in more than once — typically inline AND parenthesised, e.g.
+ * "…w/ ELR 15015-24DELR (15015-24DELR)". Rewriting only the parenthetical left
+ * the inline copy stale, so a selected 26" variant rendered a title naming one
+ * SKU and parenthesising another. Once the candidate has been identified by
+ * the safe rules above, EVERY whole-token occurrence of it is rewritten, not
+ * just the trailing one.
+ *
+ * The identification rules are untouched — this only widens what happens after
+ * a candidate has already been accepted. Ambiguous candidates, template
+ * placeholders ("9501-xx") and non-SKU parentheticals ("(US Only)") still fall
+ * through exactly as before, because they never reach the replacement step.
  */
 export function resolveVariantAwareTitle(
   title: string,
@@ -54,37 +55,56 @@ export function resolveVariantAwareTitle(
   )
   if (!isExactSku && prefixCandidates.size !== 1) return title
 
-  const cleanedBase = stripTrailingSkuRepeat(baseTitle, suffix)
-  return selectedVariant.sku ? `${cleanedBase} (${selectedVariant.sku})` : cleanedBase
+  // No SKU to substitute: drop the baked-in code wherever it appears rather
+  // than leaving a stale one behind, then tidy the separator it left.
+  if (!selectedVariant.sku) {
+    return tidySeparators(replaceTokenOccurrences(baseTitle, suffix, '')) || baseTitle
+  }
+
+  return replaceTokenOccurrences(title, suffix, selectedVariant.sku)
 }
 
-/** True when `char` is not a letter or digit (or is absent). */
-function isBoundary(char: string | undefined): boolean {
+/** True when `char` is absent or is not a letter/digit. */
+function isTokenBoundary(char: string | undefined): boolean {
   return char === undefined || !/[A-Za-z0-9]/.test(char)
 }
 
 /**
- * Removes a trailing repeat of the baked-in SKU from the base title, with the
- * separator that introduced it (", 10379" → "", " 15015-24DELR" → "").
+ * Replaces every whole-token occurrence of `token`, comparing literally.
  *
- * Deliberately narrow, because this runs over the whole catalog:
+ * Deliberately not a RegExp: SKUs routinely contain characters with regex
+ * meaning (".", "-", "+", "/", "(") and building a pattern from catalog data
+ * is how an unescaped token turns into a wrong match or a thrown error. A
+ * literal scan cannot misinterpret any character.
  *
- * - Only a TRAILING occurrence is considered. "9501 Series, Physician Stool…"
- *   must never lose its model-family name, and a mid-title code is far more
- *   likely to be meaningful product text than a duplicated suffix.
- * - The match must be the WHOLE token — "10379" inside "103790" is not a
- *   repeat, so the preceding character must not be alphanumeric.
- * - If stripping would leave nothing descriptive behind (a title that was only
- *   ever the SKU), the original base is kept: a bare "(SKU)" is worse than a
- *   redundant one.
+ * A match only counts when neither neighbouring character is alphanumeric, so
+ * "10690" inside "X10690A" is left alone — that is a different identifier, not
+ * a repeat of the baked-in SKU.
  */
-function stripTrailingSkuRepeat(baseTitle: string, sku: string): string {
-  if (!sku || !baseTitle.endsWith(sku)) return baseTitle
-  const start = baseTitle.length - sku.length
-  if (!isBoundary(baseTitle[start - 1])) return baseTitle
+function replaceTokenOccurrences(text: string, token: string, replacement: string): string {
+  if (!token) return text
+  let out = ''
+  let i = 0
+  for (;;) {
+    const at = text.indexOf(token, i)
+    if (at === -1) return out + text.slice(i)
+    const before = at === 0 ? undefined : text[at - 1]
+    const after = text[at + token.length]
+    if (isTokenBoundary(before) && isTokenBoundary(after)) {
+      out += text.slice(i, at) + replacement
+      i = at + token.length
+    } else {
+      out += text.slice(i, at + token.length)
+      i = at + token.length
+    }
+  }
+}
 
-  // Drop the code, then the separator that introduced it (a comma, dash or
-  // whitespace). Anything else — "w/", ")" — is real title text and stays.
-  const remainder = baseTitle.slice(0, start).replace(/[\s,–—-]+$/, '')
-  return remainder.length > 0 && /[A-Za-z]/.test(remainder) ? remainder : baseTitle
+/** Collapses the whitespace/punctuation a removed token leaves behind. */
+function tidySeparators(text: string): string {
+  return text
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,;])/g, '$1')
+    .replace(/[\s,;–—-]+$/, '')
+    .trim()
 }
