@@ -5,8 +5,8 @@ import {AnimatedArrow} from "@/components/ui/AnimatedArrow";
 
 const CATEGORIES = [
   { title: 'Needles & Syringes', handle: 'needles-syringes',   icon: '/icons/category-logo-1.svg' },
-  { title: 'PPE',                handle: 'ppe',                 icon: '/icons/category-logo-2.svg' },
-  { title: 'Testing',            handle: 'testing',             icon: '/icons/category-logo-3.svg' },
+  { title: 'PPE',                handle: 'face-masks',          icon: '/icons/category-logo-2.svg' },
+  { title: 'Testing',            handle: 'testing-screening',   icon: '/icons/category-logo-3.svg' },
   { title: 'Surgical Sutures',   handle: 'surgical-sutures',   icon: '/icons/category-logo-4.svg' },
   { title: 'Wound Care',         handle: 'wound-care',          icon: '/icons/category-logo-5.svg' },
   { title: 'Respiratory',        handle: 'respiratory',         icon: '/icons/category-logo-6.svg' },

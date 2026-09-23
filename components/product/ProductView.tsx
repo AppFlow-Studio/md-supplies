@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   ShieldCheck, Truck, RotateCcw, Plus, Minus,
@@ -20,11 +20,34 @@ import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
 import { useSelectedVariant } from './useSelectedVariant'
-import { resolveVariantValue, resolveVariantSupplement } from '@/lib/product/resolve-variant-value'
-import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, type RichTextSpan } from '@/lib/policy/rich-text'
+import { resolveInitialVariant } from '@/lib/product/resolve-variant'
+import { resolveVariantValue } from '@/lib/product/resolve-variant-value'
+import { resolveVariantAwareTitle } from '@/lib/product/resolve-variant-title'
+import { shopifyRichTextToPlainParagraphs, shopifyRichTextToParagraphSpans, shopifyRichTextToHtml, plainTextToHtml, type RichTextSpan } from '@/lib/policy/rich-text'
+import { ProductReviewSummaryLink } from '@/components/reviews/ProductReviewSummaryLink'
+import { ProductReviews } from '@/components/reviews/ProductReviews'
+import type { ProductReviewSummary, ProductReview, ProductReviewMedia, ProductReviewFilter, ProductReviewSort } from '@/lib/trustshop/types'
+import { FavoriteButton } from '@/components/product/FavoriteButton'
+import { useFavoritesState } from '@/lib/favorites/FavoritesContext'
 
-type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS' | 'REVIEWS'
-const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS', 'REVIEWS']
+type Tab = 'SPECIFICATIONS' | 'ORDER PACKAGING' | 'VENDOR SHIPPING & RETURNS'
+const TABS: Tab[] = ['SPECIFICATIONS', 'ORDER PACKAGING', 'VENDOR SHIPPING & RETURNS']
+
+// #reviews is a standalone always-rendered section below the tabs (not a
+// fourth tab-panel) — a plain `<a href="#reviews">` compact summary link can
+// then scroll to it with zero client JS, and it never fights the tab
+// system's conditional mount/unmount of the other three panels.
+export interface ReviewsSectionProps {
+  basePath: string
+  productGid: string
+  summary: ProductReviewSummary | null
+  reviews: ProductReview[] | null
+  media: ProductReviewMedia[]
+  currentFilter: ProductReviewFilter
+  currentSort: ProductReviewSort
+  currentPage: number
+  hasNextPage: boolean
+}
 
 function RelatedProductCard({ product }: { product: CollectionProduct }) {
   const price = parseFloat(
@@ -81,6 +104,16 @@ interface BreadcrumbItem {
   href?: string
 }
 
+// `use()` suspends THIS component only until the promise resolves — the
+// Suspense boundary around it (in ProductView below) is what lets the rest
+// of the page render immediately instead of waiting on the review filter/
+// sort/page fetch.
+function ProductReviewsAsync({ reviewsSection }: { reviewsSection: Promise<ReviewsSectionProps | undefined> }) {
+  const resolved = use(reviewsSection)
+  if (!resolved) return null
+  return <ProductReviews {...resolved} />
+}
+
 interface Props {
   product: Product
   /** Server-resolved from `?variant=` (or the default) — see
@@ -92,9 +125,33 @@ interface Props {
   breadcrumbs?: BreadcrumbItem[]
   partnerSlug?: string | null
   variantShippingDisplays?: Record<string, ShippingDisplay>
+  reviewSummary?: ProductReviewSummary | null
+  /**
+   * A Promise rather than resolved data: reviewFilter/reviewSort/reviewPage
+   * are searchParams, and under Cache Components reading those at the top of
+   * the page would force the whole PDP dynamic (it would no longer
+   * prerender/ISR). The page calls its review-fetching function WITHOUT
+   * awaiting it and hands the Promise straight through; `use()` inside the
+   * Suspense-wrapped subcomponent below is what actually awaits it, so only
+   * the reviews list streams in at request time while the rest of the page
+   * (gallery, price, spec tabs) stays part of the static shell.
+   */
+  reviewsSection?: Promise<ReviewsSectionProps | undefined>
+  /** Favorites (DEV-FAV-01) — server-computed session state and the
+      customer's saved status for THIS product. */
+  isSignedIn?: boolean
+  isFavorited?: boolean
 }
 
-export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {} }: Props) {
+export function ProductView({ product, initialVariant, relatedProducts, complementaryProducts, breadcrumbs, partnerSlug, variantShippingDisplays = {}, reviewSummary = null, reviewsSection, isSignedIn, isFavorited }: Props) {
+  // Falls back to the client-hydrated context (lib/favorites/FavoritesContext)
+  // when the page doesn't pass explicit props — the case now that PDP routes
+  // are statically prerendered/ISR'd for a sample of handles and can no
+  // longer safely embed a server-computed per-viewer favorite state. See
+  // ShopifyProductCard's identical fallback for the category-grid version.
+  const favoritesState = useFavoritesState()
+  const resolvedIsSignedIn = isSignedIn ?? favoritesState.isSignedIn
+  const resolvedIsFavorited = isFavorited ?? favoritesState.favoritedProductIds.has(product.id)
   // Public brand only. Shopify `vendor` is the FULFILLING vendor (MedPlus,
   // Medchain, …) and must never be presented as a brand — when brand_name is
   // absent the brand line, spec row, and analytics item_brand are all omitted.
@@ -108,19 +165,35 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   const [activeTab, setActiveTab] = useState<Tab>('SPECIFICATIONS')
 
   useEffect(() => {
+    // `?variant=` is resolved here rather than read off `selectedVariant`.
+    // useSelectedVariant deliberately renders the DEFAULT variant first and
+    // only corrects to the URL's variant in a later effect (it has to — the
+    // server renders the default, and diverging on the first client render is
+    // a hydration mismatch). This effect runs before that correction lands, so
+    // reading the render-time value reported the default variant's id and
+    // price for every shared deep link. Resolving the URL directly — through
+    // the same validator, so an unknown id still falls back to the default —
+    // reports the variant the customer is actually looking at, without a
+    // second view_item when the correction arrives.
+    const urlVariantId = new URLSearchParams(window.location.search).get('variant')
+    const variant = urlVariantId
+      ? resolveInitialVariant(product.variants.nodes, urlVariantId)
+      : selectedVariant
     track(
-      {
-        ...buildViewItemEvent({
-          currency: selectedVariant.price.currencyCode,
-          item: {
-            item_id: selectedVariant.id,
-            item_name: product.title,
-            price: parseFloat(selectedVariant.price.amount),
-            // Public brand only; never the fulfilling vendor (lib/brand.ts).
-            ...(brandDisplay ? { item_brand: brandDisplay } : {}),
-          },
-        }),
-      },
+      buildViewItemEvent({
+        currency: variant.price.currencyCode,
+        item: {
+          item_id: variant.id,
+          item_name: product.title,
+          price: parseFloat(variant.price.amount),
+          ...(variant.title && variant.title !== 'Default Title'
+            ? { item_variant: variant.title }
+            : {}),
+          ...(variant.sku ? { item_sku: variant.sku } : {}),
+          // Public brand only; never the fulfilling vendor (lib/brand.ts).
+          ...(brandDisplay ? { item_brand: brandDisplay } : {}),
+        },
+      }),
     )
     // Fire once per product page visit, not on every variant switch — App Router
     // reuses this client component instance across product-to-product navigation,
@@ -143,9 +216,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   // can never disagree. availableForSale only gates purchasability — it is
   // never presented as a real-time "In Stock" inventory claim. Backorder is
   // gated on the custom.backorder boolean alone, independent of availability.
+  //
+  // DEV-CATALOG (2026-09-10): selectedVariant.backorder first, product.backorder
+  // only when the selected variant has no metafield value of its own — a
+  // product with mixed variants (one backordered, one not, e.g. B2080C's
+  // 3.5mm/4.5mm trocar kit) must show the badge only on the variant Izzy
+  // actually flagged, not on every variant just because the product-level
+  // field (still the only thing most products set) happens to be true.
   const labels = resolveProductLabels({
     tags: product.tags,
-    isBackordered: product.backorder,
+    isBackordered: selectedVariant.backorder ?? product.backorder,
     estimatedRestockDate: product.estimatedRestockDate,
     // Same UNION the checkout gate uses (tag OR custom.is_rx_only), so the
     // PDP badge can never disagree with whether the cart will actually be gated.
@@ -171,7 +251,12 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
   const selectedColor = isMultiColor
     ? selectedVariant.selectedOptions.find((o) => o.name.toLowerCase() === 'color')?.value
     : undefined
-  const displayTitle = selectedColor ? `${product.title} — ${selectedColor}` : product.title
+  // Bilal, 2026-09-14: keep the client's SKU-in-title convention but make it
+  // variant-aware — H1 only, never the SEO title/canonical (this stays a
+  // client-side computation off the same product/selectedVariant props, not
+  // a metadata rewrite).
+  const skuAwareTitle = resolveVariantAwareTitle(product.title, product.variants.nodes, selectedVariant)
+  const displayTitle = selectedColor ? `${skuAwareTitle} — ${selectedColor}` : skuAwareTitle
 
   const SPEC_ROWS: { label: string; value: string | null }[] = [
     { label: 'Material',         value: product.material },
@@ -218,26 +303,26 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
     resolvedOrderSize || resolvedUnitsPerOrder || innerPackQuantity || packsPerCase || totalOrderQuantity,
   )
 
-  // Variant Description supplements the product Description tab — never
-  // shown if blank, never shown if it would just repeat the product
-  // description verbatim (resolveVariantSupplement — Bilal's rule 3).
-  // custom.variant_description turned out to be a rich_text_field on Izzy's
-  // actual QA write (confirmed 2026-08-15 by querying the live AeroWalk
-  // data: .value is a JSON AST, same shape as custom.shipping_returns
-  // below), not the plain multi-line text the field contract proposed — flatten
-  // it the same way, or the JSON literally renders on the page. Falls back to
-  // the raw value when it isn't parseable rich-text JSON (shopifyRichTextToPlainParagraphs
-  // returns [] for non-JSON input, by design — see lib/policy/rich-text.ts),
-  // so a plain-text value keeps working if the definition type is ever changed.
-  const variantDescriptionParagraphs = shopifyRichTextToPlainParagraphs(selectedVariant.description)
-  const flattenedVariantDescription =
-    variantDescriptionParagraphs.length > 0
-      ? variantDescriptionParagraphs.join('\n\n')
-      : selectedVariant.description || null
-  const variantDescriptionSupplement = resolveVariantSupplement(
-    flattenedVariantDescription,
-    product.description,
-  )
+  // Variant Description REPLACES the product Description for the selected
+  // variant (client correction, 2026-09-17 — supersedes the older
+  // "Variant Details supplement underneath the parent description"
+  // behavior). The client's issue: showing the parent description AND a
+  // variant-details supplement still left the wrong SKU's description
+  // visible on the page after switching variants. Falls back to the parent
+  // product description only when the selected variant has none.
+  // custom.variant_description is a rich_text_field on Izzy's actual QA
+  // write (confirmed 2026-08-15 by querying the live AeroWalk data: .value
+  // is a JSON AST, same shape as custom.shipping_returns below) — rendered
+  // via shopifyRichTextToHtml to preserve headings/lists/bold/italic/links
+  // rather than degrading it to flattened plain text. Falls back to
+  // plainTextToHtml for a raw (non-JSON) value, so a plain-text value keeps
+  // working if the metafield definition type is ever changed; both return
+  // null for a blank/missing value, which is what triggers the parent
+  // description fallback below.
+  const variantDescriptionHtml =
+    shopifyRichTextToHtml(selectedVariant.description) ??
+    (selectedVariant.description ? plainTextToHtml(selectedVariant.description) : null)
+  const resolvedDescriptionHtml = variantDescriptionHtml || product.descriptionHtml || product.description || null
 
   // H-01 — Vendor Shipping & Returns: custom.shipping_returns (rich text),
   // confirmed by Izzy's 2026-08-14 field contract as the live theme's actual
@@ -325,10 +410,27 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
               </div>
             )}
 
-            {/* Title */}
-            <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
-              {displayTitle}
-            </h1>
+            {/* Title + Favorite */}
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-black text-[24px] sm:text-[30px] font-semibold leading-[1.25] tracking-[0.6px]">
+                {displayTitle}
+              </h1>
+              <FavoriteButton
+                productId={product.id}
+                productHandle={product.handle}
+                productTitle={displayTitle}
+                variantId={selectedVariant.id}
+                isSignedIn={resolvedIsSignedIn}
+                initialFavorited={resolvedIsFavorited}
+                list="pdp"
+                className="shrink-0 border border-gray-200"
+              />
+            </div>
+
+            {/* Compact rating summary — plain #reviews anchor, no client JS.
+                Renders nothing if reviewsSection isn't wired up (defensive:
+                keeps this component usable without the reviews props too). */}
+            {reviewsSection && <ProductReviewSummaryLink summary={reviewSummary} />}
 
             {/* SKU + Manufacturer Item Number — kept as two separately-
                 labeled values (never conflated): the plan's Figure 3
@@ -541,12 +643,15 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
           >
             {activeTab === 'SPECIFICATIONS' && (
               <div className="flex flex-col gap-8 max-w-[760px]">
-                {/* Manufacturer Item Number and Internal SKU — kept as two
+                {/* Manufacturer Item Number and MDSupplies SKU — kept as two
                     separate, separately-labeled rows. Previously this tab
                     showed one heading, "Item Number", over `variantSku` (the
                     INTERNAL sku) — silently conflating the two identifiers
                     the launch plan's non-negotiable rule requires kept
-                    apart (Figure 3). */}
+                    apart (Figure 3). Client, 2026-09-17: the "Internal SKU"
+                    heading is customer-facing label copy only — renamed to
+                    "MDSupplies SKU"; the underlying source (`variantSku`,
+                    native Shopify variant `sku`) is unchanged. */}
                 {selectedVariant.manufacturerNumber && (
                   <div>
                     <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Manufacturer Item Number</h2>
@@ -554,7 +659,7 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                   </div>
                 )}
                 <div>
-                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Internal SKU</h2>
+                  <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">MDSupplies SKU</h2>
                   <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px]">{variantSku}</p>
                 </div>
 
@@ -566,24 +671,16 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                   </div>
                 )}
 
-                {/* Description */}
-                {(product.descriptionHtml || product.description) && (
+                {/* Description — the selected variant's description when it
+                    has one, else the parent product description (never
+                    both: see resolvedDescriptionHtml above). */}
+                {resolvedDescriptionHtml && (
                   <div>
                     <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Description</h2>
                     <div
                       className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] prose max-w-none prose-p:mb-4 prose-ul:pl-5 prose-li:mb-1"
-                      dangerouslySetInnerHTML={{ __html: product.descriptionHtml || product.description }}
+                      dangerouslySetInnerHTML={{ __html: resolvedDescriptionHtml }}
                     />
-                  </div>
-                )}
-
-                {/* Variant Details — supplements the description above only
-                    when the archived source had genuinely variant-specific
-                    content; never a duplicate of it (resolveVariantSupplement). */}
-                {variantDescriptionSupplement && (
-                  <div>
-                    <h2 className="text-navy-900 text-[22px] font-semibold tracking-[0.44px] mb-2">Variant Details</h2>
-                    <p className="text-gray-500 text-[15px] leading-[28px] tracking-[0.3px] whitespace-pre-line">{variantDescriptionSupplement}</p>
                   </div>
                 )}
 
@@ -677,17 +774,22 @@ export function ProductView({ product, initialVariant, relatedProducts, compleme
                 ))}
               </div>
             )}
-
-            {activeTab === 'REVIEWS' && (
-              <div className="flex flex-col gap-6 max-w-[760px]">
-                <p className="text-gray-500 text-[15px] leading-[28px]">
-                  Reviews are not yet available for this product.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </section>
+
+      {/* Reviews — standalone always-rendered section (not a tab panel), so
+          the compact #reviews anchor above never fights the SPECIFICATIONS/
+          ORDER PACKAGING/VENDOR SHIPPING tab-switcher's conditional mount. */}
+      {reviewsSection && (
+        <section className="bg-white border-t border-gray-200">
+          <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-12 sm:py-16">
+            <Suspense fallback={null}>
+              <ProductReviewsAsync reviewsSection={reviewsSection} />
+            </Suspense>
+          </div>
+        </section>
+      )}
 
       {/* Frequently Bought With — complementary (manually curated in S&D) */}
       {complementaryProducts.length > 0 && (

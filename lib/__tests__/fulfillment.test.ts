@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   computeFulfillmentSummary,
   shipmentStatusLabel,
+  resolveOrderStatus,
   type OrderLineInput,
   type FulfillmentInput,
+  type OrderStatusFulfillmentInput,
 } from '../fulfillment'
 
 // DEV-ACCOUNT-01 edge cases from the execution plan §8.4.
@@ -224,5 +226,160 @@ describe('shipmentStatusLabel', () => {
     expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'IN_TRANSIT', isPickedUp: false })).toBe('In transit')
     expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: null, isPickedUp: false })).toBe('Shipped')
     expect(shipmentStatusLabel({ status: 'CANCELLED', latestShipmentStatus: null, isPickedUp: false })).toBe('Canceled')
+  })
+
+  // Bilal, 2026-09-20 QA pass on b3d36ac: label-only order #3436 says "Label
+  // Created" in the order header but "Confirmed" on the shipment card below —
+  // the card must use the same wording as resolveOrderStatus's LABEL_CREATED
+  // stage (lib/fulfillment.ts's ORDER_STAGE_DISPLAY).
+  it('CONFIRMED/LABEL_PRINTED/LABEL_PURCHASED all read "Label Created", matching the order header', () => {
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'CONFIRMED', isPickedUp: false })).toBe('Label Created')
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'LABEL_PRINTED', isPickedUp: false })).toBe('Label Created')
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'LABEL_PURCHASED', isPickedUp: false })).toBe('Label Created')
+  })
+
+  // Bilal: a cancelled shipment's card says "Confirmed" instead of "Canceled"
+  // — the fulfillment's own CANCELLED status must win over a stale
+  // latestShipmentStatus left over from before it was cancelled.
+  it('a cancelled fulfillment always reads Canceled, regardless of its last shipment status', () => {
+    expect(shipmentStatusLabel({ status: 'CANCELLED', latestShipmentStatus: 'CONFIRMED', isPickedUp: false })).toBe('Canceled')
+    expect(shipmentStatusLabel({ status: 'CANCELLED', latestShipmentStatus: 'IN_TRANSIT', isPickedUp: false })).toBe('Canceled')
+  })
+
+  // Bilal: a carrier DELAYED status shows as "Shipped", so the customer never
+  // sees the delay.
+  it('a carrier DELAYED status is surfaced, not silently shown as Shipped', () => {
+    expect(shipmentStatusLabel({ status: 'SUCCESS', latestShipmentStatus: 'DELAYED', isPickedUp: false })).toBe('Delayed')
+  })
+})
+
+// DEV-ACCOUNT-02 (client report, 2026-09-17): Orders #3435/#3436 showed
+// "Delivered" in the account while UPS still had them at "Label Created"
+// (tracking 1ZV56J320311548011) — the account dashboard, /account/orders,
+// and the order-detail header each mapped Shopify's order-level
+// fulfillmentStatus === FULFILLED straight to "Delivered". FULFILLED only
+// means every line item has been fulfilled, never that a carrier delivered
+// the package.
+describe('resolveOrderStatus', () => {
+  function ful(overrides: Partial<OrderStatusFulfillmentInput> = {}): OrderStatusFulfillmentInput {
+    return { status: 'SUCCESS', latestShipmentStatus: null, isPickedUp: false, ...overrides }
+  }
+
+  it('FULFILLED + LABEL_PRINTED/LABEL_PURCHASED does not equal Delivered (the #3435/#3436 root cause)', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'LABEL_PRINTED' })] }),
+    ).toEqual({ label: 'Label Created', style: 'bg-blue-100 text-blue-700' })
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'LABEL_PURCHASED' })] }),
+    ).toEqual({ label: 'Label Created', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  it('FULFILLED + IN_TRANSIT → In Transit', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'IN_TRANSIT' })] }),
+    ).toEqual({ label: 'In Transit', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  it('actual DELIVERED shipment status → Delivered', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'DELIVERED' })] }),
+    ).toEqual({ label: 'Delivered', style: 'bg-green-100 text-green-700' })
+  })
+
+  it('out for delivery and attempted/failure map to their own distinct labels', () => {
+    expect(resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'OUT_FOR_DELIVERY' })] }).label)
+      .toBe('Out for Delivery')
+    expect(resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'ATTEMPTED_DELIVERY' })] }).label)
+      .toBe('Delivery Attempted')
+    expect(resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'FAILURE' })] }).label)
+      .toBe('Delivery Issue')
+  })
+
+  it('mixed/multiple shipments never prematurely show Delivered — the least-advanced shipment wins', () => {
+    expect(
+      resolveOrderStatus({
+        fulfillmentStatus: 'FULFILLED',
+        fulfillments: [ful({ latestShipmentStatus: 'DELIVERED' }), ful({ latestShipmentStatus: 'IN_TRANSIT' })],
+      }),
+    ).toEqual({ label: 'In Transit', style: 'bg-blue-100 text-blue-700' })
+
+    expect(
+      resolveOrderStatus({
+        fulfillmentStatus: 'FULFILLED',
+        fulfillments: [ful({ latestShipmentStatus: 'DELIVERED' }), ful({ latestShipmentStatus: 'LABEL_PRINTED' })],
+      }),
+    ).toEqual({ label: 'Label Created', style: 'bg-blue-100 text-blue-700' })
+
+    // Only "Delivered" when every active fulfillment actually is.
+    expect(
+      resolveOrderStatus({
+        fulfillmentStatus: 'FULFILLED',
+        fulfillments: [ful({ latestShipmentStatus: 'DELIVERED' }), ful({ latestShipmentStatus: 'DELIVERED' })],
+      }),
+    ).toEqual({ label: 'Delivered', style: 'bg-green-100 text-green-700' })
+  })
+
+  it('no shipment event available falls back to Shipped, never Delivered', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: null })] }),
+    ).toEqual({ label: 'Shipped', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  it('FULFILLED with zero fulfillments also falls back to Shipped, never Delivered', () => {
+    expect(resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [] }))
+      .toEqual({ label: 'Shipped', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  it('unfulfilled (no fulfillments at all) → Processing', () => {
+    expect(resolveOrderStatus({ fulfillmentStatus: 'UNFULFILLED', fulfillments: [] }))
+      .toEqual({ label: 'Processing', style: 'bg-yellow-100 text-yellow-700' })
+  })
+
+  it('partial orders never read as Delivered while a portion remains unfulfilled, even if the shipped portion already delivered', () => {
+    expect(
+      resolveOrderStatus({
+        fulfillmentStatus: 'PARTIALLY_FULFILLED',
+        fulfillments: [ful({ latestShipmentStatus: 'DELIVERED' })],
+      }),
+    ).toEqual({ label: 'Partial', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  it('a canceled fulfillment record does not gate the badge on the fulfillments that did ship', () => {
+    expect(
+      resolveOrderStatus({
+        fulfillmentStatus: 'FULFILLED',
+        fulfillments: [ful({ status: 'CANCELLED', latestShipmentStatus: 'FAILURE' }), ful({ latestShipmentStatus: 'DELIVERED' })],
+      }),
+    ).toEqual({ label: 'Delivered', style: 'bg-green-100 text-green-700' })
+  })
+
+  it('a picked-up fulfillment counts as delivered even with no latestShipmentStatus', () => {
+    expect(resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ isPickedUp: true })] }).label)
+      .toBe('Delivered')
+  })
+
+  // Izzy, 2026-09-18: live Shopify values for the two orders the client
+  // reported. #3435 fulfillment.displayStatus is IN_TRANSIT (tracking
+  // 1ZV56J320311548011); #3436 is CONFIRMED (tracking 1ZV56J320311547905) —
+  // two different orders, two different tracking numbers, neither mixed up.
+  // Confirms the fix reads both correctly instead of "Delivered".
+  it('live #3435 data (IN_TRANSIT) resolves to In Transit', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'IN_TRANSIT' })] }),
+    ).toEqual({ label: 'In Transit', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  it('live #3436 data (CONFIRMED) resolves to Label Created', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'CONFIRMED' })] }),
+    ).toEqual({ label: 'Label Created', style: 'bg-blue-100 text-blue-700' })
+  })
+
+  // Bilal, 2026-09-20: a carrier DELAYED status showed as "Shipped" at the
+  // order level too, so the customer never saw the delay.
+  it('DELAYED resolves to its own Delayed label, never Shipped', () => {
+    expect(
+      resolveOrderStatus({ fulfillmentStatus: 'FULFILLED', fulfillments: [ful({ latestShipmentStatus: 'DELAYED' })] }),
+    ).toEqual({ label: 'Delayed', style: 'bg-orange-100 text-orange-700' })
   })
 })

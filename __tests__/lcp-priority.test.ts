@@ -16,7 +16,7 @@ describe('LCP-candidate images use priority loading', () => {
   })
 
   it('category hero banner image component is rendered above the fold without lazy', () => {
-    const src = read('app/category/[slug]/page.tsx')
+    const src = read('app/(site)/category/[slug]/page.tsx')
     expect(src).not.toMatch(/loading=["']lazy["'][\s\S]{0,80}CategoryImage/)
   })
 })

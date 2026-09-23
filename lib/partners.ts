@@ -18,7 +18,7 @@ export const PARTNERS: Partner[] = [
     productCategories: ['surgical', 'wound-closure', 'sutures', 'procedure-kits'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'surgical', title: 'Surgical Supplies' },
+      { handle: 'surgical-sutures', title: 'Surgical Supplies' },
       { handle: 'wound-care', title: 'Wound Care' },
     ],
     seoTitle: 'AD Surgical Products | MDSupplies',
@@ -41,8 +41,7 @@ export const PARTNERS: Partner[] = [
     productCategories: ['diagnostics', 'rapid-tests', 'point-of-care'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'diagnostics', title: 'Diagnostics' },
-      { handle: 'rapid-tests', title: 'Rapid Tests' },
+      { handle: 'testing-screening', title: 'Diagnostics & Rapid Tests' },
     ],
     seoTitle: 'CorDx Rapid Diagnostic Products | MDSupplies',
     seoDescription: 'Shop CorDx rapid diagnostic testing solutions through MDSupplies.',
@@ -65,7 +64,7 @@ export const PARTNERS: Partner[] = [
     featuredProducts: [],
     relatedCategories: [
       { handle: 'wound-care', title: 'Wound Care' },
-      { handle: 'surgical', title: 'Surgical Supplies' },
+      { handle: 'surgery-procedure', title: 'Surgical Supplies' },
       { handle: 'exam-room', title: 'Exam Room' },
     ],
     seoTitle: 'Dukal Medical Products | MDSupplies',
@@ -85,11 +84,11 @@ export const PARTNERS: Partner[] = [
       height: 90,
     },
     intro: 'Dynarex is one of the largest manufacturers of general medical products in the United States, offering thousands of SKUs across gloves, wound care, personal protective equipment, and exam room essentials.',
-    productCategories: ['disposables', 'wound-care', 'ppe', 'exam-room'],
+    productCategories: ['gloves', 'wound-care', 'face-masks', 'exam-room'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'disposables', title: 'Disposables' },
-      { handle: 'ppe', title: 'PPE' },
+      { handle: 'gloves', title: 'Disposables' },
+      { handle: 'face-masks', title: 'PPE' },
       { handle: 'wound-care', title: 'Wound Care' },
     ],
     seoTitle: 'Dynarex Medical Products | MDSupplies',
@@ -112,8 +111,7 @@ export const PARTNERS: Partner[] = [
     productCategories: ['dme', 'mobility-aids', 'home-health'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'dme', title: 'Durable Medical Equipment' },
-      { handle: 'mobility-aids', title: 'Mobility Aids' },
+      { handle: 'mobility', title: 'Mobility & Durable Equipment' },
     ],
     seoTitle: 'Drive Medical Products | MDSupplies',
     seoDescription: 'Shop Drive Medical durable medical equipment and mobility aids.',
@@ -134,9 +132,7 @@ export const PARTNERS: Partner[] = [
     intro: 'Kadara designs innovative medical supplies built for clinical performance and reliability. Their product line emphasizes quality manufacturing standards and consistent delivery for healthcare providers.',
     productCategories: ['medical-supplies', 'clinical-products'],
     featuredProducts: [],
-    relatedCategories: [
-      { handle: 'medical-supplies', title: 'Medical Supplies' },
-    ],
+    relatedCategories: [],
     seoTitle: 'Kadara Medical Supply Products | MDSupplies',
     seoDescription: 'Shop Kadara innovative medical supply solutions through MDSupplies.',
   },
@@ -157,8 +153,7 @@ export const PARTNERS: Partner[] = [
     productCategories: ['emergency', 'first-aid', 'stretchers', 'aed'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'emergency', title: 'Emergency Supplies' },
-      { handle: 'first-aid', title: 'First Aid' },
+      { handle: 'emergency-supplies', title: 'Emergency & First Aid' },
     ],
     seoTitle: 'Kemp USA Emergency & Medical Equipment | MDSupplies',
     seoDescription: 'Shop Kemp USA medical equipment and emergency response supplies through MDSupplies.',
@@ -180,8 +175,8 @@ export const PARTNERS: Partner[] = [
     productCategories: ['dme', 'rehabilitation', 'patient-care', 'mobility-aids'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'dme', title: 'Durable Medical Equipment' },
-      { handle: 'rehabilitation', title: 'Rehabilitation' },
+      { handle: 'mobility', title: 'Durable Medical Equipment' },
+      { handle: 'patient-therapy-rehab', title: 'Rehabilitation' },
     ],
     seoTitle: 'Graham Field Medical Products | MDSupplies',
     seoDescription: 'Shop Graham Field durable medical equipment and rehabilitation solutions through MDSupplies.',
@@ -200,11 +195,11 @@ export const PARTNERS: Partner[] = [
       height: 44,
     },
     intro: 'TrueCare develops patient-centered wound care and disposable medical supplies that prioritize comfort and clinical effectiveness. Their products are designed for consistent performance in wound management and daily patient care.',
-    productCategories: ['wound-care', 'disposables', 'patient-care'],
+    productCategories: ['wound-care', 'exam-room', 'patient-care'],
     featuredProducts: [],
     relatedCategories: [
       { handle: 'wound-care', title: 'Wound Care' },
-      { handle: 'disposables', title: 'Disposables' },
+      { handle: 'exam-room', title: 'Disposables' },
     ],
     seoTitle: 'TrueCare Wound Care & Disposable Supplies | MDSupplies',
     seoDescription: 'Shop TrueCare wound care and disposable medical supply solutions through MDSupplies.',
@@ -226,8 +221,7 @@ export const PARTNERS: Partner[] = [
     productCategories: ['personal-care', 'hygiene', 'bath-supplies'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'personal-care', title: 'Personal Care' },
-      { handle: 'hygiene', title: 'Hygiene Supplies' },
+      { handle: 'hygiene', title: 'Personal Care & Hygiene' },
     ],
     seoTitle: 'Dawn Mist Products | MDSupplies',
     seoDescription: 'Browse Dawn Mist personal care and hygiene products available through MDSupplies.',
@@ -239,8 +233,15 @@ export const PARTNERS: Partner[] = [
     type: 'brand',
     isActive: true,
     description: 'Durable medical equipment and mobility aids for patient care.',
+    // P0 regression (2026-09-04): the uploaded lumex.svg resolves 200 with a
+    // valid image content-type, but every fill is #FFFFFF — invisible on this
+    // page's white cards (it was only ever legible on the navy partner-detail
+    // hero, which forces white via `brightness-0 invert`). Cleared to the empty
+    // string, which BrandLogoImage/buildOg both already treat as "no logo" and
+    // fall back from cleanly — not a hack, the same contract lib/brands.ts uses.
+    // See docs/audits/2026-09-04-partners-brand-logo-audit.md.
     logo: {
-      url: '/api/bunny/brands/lumex.svg',
+      url: '',
       altText: 'Lumex logo',
       width: 109,
       height: 85,
@@ -249,8 +250,7 @@ export const PARTNERS: Partner[] = [
     productCategories: ['dme', 'mobility-aids', 'patient-lifts'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'dme', title: 'Durable Medical Equipment' },
-      { handle: 'mobility-aids', title: 'Mobility Aids' },
+      { handle: 'mobility', title: 'Mobility & Durable Equipment' },
     ],
   },
 ]

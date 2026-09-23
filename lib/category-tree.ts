@@ -94,6 +94,15 @@ export type L1CategoryDef = {
    * handle in their roadmap family.
    */
   artworkFallbackHandles?: readonly string[]
+  /**
+   * Curated preview-list cap override for the priority categories called out
+   * in the 2026-09-04 nav-defect ticket — raises Home Care/Mobility/Testing's
+   * visible L2 count above the shared MAX_DROPDOWN_CHILDREN/MAX_MEGA_MENU_CHILDREN
+   * defaults (Header.tsx) so the catalog's breadth reads through the nav. A
+   * data field, not a component constant, so later SEO/priority tuning is a
+   * registry edit, not a component rewrite.
+   */
+  priorityChildLimit?: number
 }
 
 // The 25 approved category: tag values, confirmed against the live catalog
@@ -104,10 +113,10 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'wound-care', displayName: 'Wound Care', collectionHandle: 'wound-care', navGroup: 'primary', shortDescription: 'Dressings, gauze, bandages, tapes, irrigation supplies, and other essentials for routine wound care.' },
   { tag: 'needles-syringes', displayName: 'Needles & Syringes', collectionHandle: 'needles-syringes', navGroup: 'primary', shortDescription: 'Needles, syringes, and injection accessories in a range of gauges, sizes, and safety configurations.' },
   { tag: 'surgical-sutures', displayName: 'Surgical Sutures', collectionHandle: 'surgical-sutures', navGroup: 'primary', shortDescription: 'Absorbable and non-absorbable sutures, needles, and wound-closure supplies for clinical procedures.' },
-  { tag: 'testing', displayName: 'Testing', collectionHandle: 'testing-screening', navGroup: 'primary', shortDescription: 'Diagnostic, screening, specimen-collection, and point-of-care testing supplies for healthcare settings.' },
+  { tag: 'testing', displayName: 'Testing', collectionHandle: 'testing-screening', navGroup: 'primary', shortDescription: 'Diagnostic, screening, specimen-collection, and point-of-care testing supplies for healthcare settings.', priorityChildLimit: 10 },
   { tag: 'exam-room', displayName: 'Exam Room', collectionHandle: 'exam-room', navGroup: 'primary', shortDescription: 'Everyday exam-room equipment and supplies, including tables, stools, lighting, and patient-care essentials.' },
   { tag: 'respiratory', displayName: 'Respiratory', collectionHandle: 'respiratory', navGroup: 'primary', shortDescription: 'Respiratory-care supplies for oxygen delivery, nebulization, airway support, and routine patient treatment.' },
-  { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility', navGroup: 'primary', shortDescription: 'Wheelchairs, walkers, canes, rollators, and mobility accessories for patient support and daily movement.' },
+  { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility', navGroup: 'primary', shortDescription: 'Wheelchairs, walkers, canes, rollators, and mobility accessories for patient support and daily movement.', priorityChildLimit: 10 },
   { tag: 'patient-therapy-rehab', displayName: 'Patient Therapy & Rehab', collectionHandle: 'patient-therapy-rehab', navGroup: 'primary', shortDescription: 'Therapy, rehabilitation, exercise, and positioning products that support recovery and patient mobility.' },
   // 2026-08-20 (P0.5): this entry used to carry collectionHandle
   // 'trocars-trocar-kits', which made ONE registry row do the work of two
@@ -127,7 +136,7 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'apparel', displayName: 'Apparel', collectionHandle: 'capes-gowns', productSet: 'tag', navGroup: 'primary', shortDescription: 'Medical apparel, gowns, caps, footwear, scrubs, and protective clothing for healthcare teams and patients.', artworkFallbackHandles: ['caps-headwear', 'coats-jackets', 'footwear', 'medical-scrubs', 'pants-shirts', 'undergarments-wraps'] },
   { tag: 'hygiene', displayName: 'Hygiene', collectionHandle: 'hygiene', navGroup: 'primary', shortDescription: 'Personal-hygiene and patient-care products for bathing, oral care, grooming, and everyday cleanliness.' },
   { tag: 'disinfectants', displayName: 'Disinfectants', collectionHandle: 'disinfectants', navGroup: 'primary', shortDescription: 'Cleaning and disinfection products for surfaces, equipment, hands, and infection-control routines.' },
-  { tag: 'home-care', displayName: 'Home Care', collectionHandle: 'home-care', navGroup: 'more', shortDescription: 'Practical medical and personal-care supplies designed for patients, caregivers, and home-health use.' },
+  { tag: 'home-care', displayName: 'Home Care', collectionHandle: 'home-care', navGroup: 'more', shortDescription: 'Practical medical and personal-care supplies designed for patients, caregivers, and home-health use.', priorityChildLimit: 10 },
   { tag: 'emergency-supplies', displayName: 'Emergency Supplies', collectionHandle: 'emergency-supplies', navGroup: 'more', shortDescription: 'First-aid, trauma, rescue, and emergency-response supplies for clinics, facilities, and mobile teams.' },
   { tag: 'incontinence', displayName: 'Incontinence', collectionHandle: 'incontinence', navGroup: 'more', shortDescription: 'Briefs, underpads, liners, wipes, and related products for dependable incontinence and skin care.' },
   { tag: 'iv-therapy', displayName: 'IV Therapy', collectionHandle: 'iv-therapy', navGroup: 'more', shortDescription: 'IV administration, infusion, access, and securement supplies for clinical fluid and medication delivery.' },

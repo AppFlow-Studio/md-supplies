@@ -24,6 +24,11 @@ vi.mock('@/lib/shopify/storefront', () => ({
 // headers(), which throws outside a real request scope.
 vi.mock('@/lib/csp-nonce', () => ({ getNonce: async () => undefined }))
 
+// DEV-FAV-01: CategoryResults now checks getSession() (favorites heart
+// hydration) — same next/headers-outside-a-request-scope issue as
+// getNonce() above. Not under test in this suite; a plain "signed out" stub.
+vi.mock('@/lib/shopify/session', () => ({ getSession: async () => null }))
+
 // Isolate this suite from ShopifyProductCard/ShopifyQuickAddButton/cart
 // context — CategoryResults' own slicing/fetch logic is what's under test.
 vi.mock('@/components/category/ProductGrid', () => ({

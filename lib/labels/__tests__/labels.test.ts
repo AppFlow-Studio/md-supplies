@@ -75,10 +75,10 @@ describe('resolveBackorderLabel', () => {
   const STALE_ETA = '2026-06-01'
   const MALFORMED_ETA = 'late August'
 
-  it('true + valid future ETA = "Backorder" with the ship date appended', () => {
+  it('true + valid future ETA = "Backorder" with the ETA date appended', () => {
     const label = resolveBackorderLabel({ isBackordered: true, estimatedRestockDate: FUTURE_ETA, now: NOW })
-    expect(label?.text).toBe('Backorder, ships 2026-09-15')
-    expect(label?.accessibleText).toBe('Backorder, ships 2026-09-15')
+    expect(label?.text).toBe('Backorder, ETA 2026-09-15')
+    expect(label?.accessibleText).toBe('Backorder, ETA 2026-09-15')
   })
 
   it('true + stale/expired ETA = exactly "Backorder"', () => {
@@ -130,6 +130,14 @@ describe('resolveBackorderLabel', () => {
       expect(label?.accessibleText).toBe('Backorder')
       expect(label?.accessibleText).not.toMatch(/ships|estimated|available|\d{4}-\d{2}-\d{2}/i)
     }
+  })
+
+  // Client, 2026-09-17: "ships <date>" reads as a promise the supplier can't
+  // keep — the wording must be ETA-framed, never a ship-date claim.
+  it('never uses "ships <date>" wording even when a valid ETA is present', () => {
+    const label = resolveBackorderLabel({ isBackordered: true, estimatedRestockDate: FUTURE_ETA, now: NOW })
+    expect(label?.text).not.toMatch(/ships \d{4}-\d{2}-\d{2}/i)
+    expect(label?.text).toMatch(/ETA/)
   })
 })
 

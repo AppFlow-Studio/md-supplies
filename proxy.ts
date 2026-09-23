@@ -2,7 +2,13 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import productRedirects from './docs/redirects-ready.json'
 import { buildCsp, buildStaticCsp, generateNonce } from '@/lib/csp'
-import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE_SECONDS, serializeAttribution } from '@/lib/analytics/attribution'
+import {
+  ATTRIBUTION_COOKIE,
+  ATTRIBUTION_MAX_AGE_SECONDS,
+  LAST_TOUCH_COOKIE,
+  serializeAttribution,
+} from '@/lib/analytics/attribution'
+import { isPersistentVendorAttributionEnabled } from '@/lib/analytics/vendor-attribution-flag'
 import { CATEGORY_TREE_L1, FEATURED_SUBCATEGORIES, getCategorySlug } from '@/lib/category-tree'
 
 type Redirect301 = { from: string; to: string; status: 301 }
@@ -11,11 +17,27 @@ type RedirectEntry = Redirect301 | Gone410
 
 // ─── Product catalog 301s (bulk) ──────────────────────────────────────────────
 //
-// 1,285 legacy product URLs from the old store, loaded from docs/redirects-ready.json
-// into a Map keyed by `from` for O(1) lookup (a linear scan over 1,285 rows on every
-// request is wasteful). The data file is validated clean: 1,285 unique `from` keys,
-// no self-redirects, and ZERO chains (no `to` is itself a `from`), so a single hop
+// Legacy/consolidated product URLs, loaded from docs/redirects-ready.json into a
+// Map keyed by `from` for O(1) lookup (a linear scan on every request is
+// wasteful). The data file is validated clean: unique `from` keys, no
+// self-redirects, and ZERO chains (no `to` is itself a `from`), so a single hop
 // always lands on a live page.
+//
+// docs/redirects-ready.json is a generated snapshot of Shopify's own URL
+// Redirect list, NOT hand-compiled — regenerate it with
+// `npx tsx scripts/sync-redirects.ts --write` (see that script's header) any
+// time products are merged/retired in Shopify. This replaced a hand-compiled
+// file after the 2026-09-15 incident where it was frozen since June and every
+// consolidation after that point 404'd on this site while still 301ing
+// correctly on checkout.mdsupplies.com (which reads Shopify's redirect list
+// directly) — see docs/launch/2026-08-18-redirect-audit-report.md and the
+// fd96a2c commit that first caught up the backlog. Shopify itself stays the
+// source of truth; this Map is deliberately NOT populated by a live fetch
+// per-request — Proxy is documented as unsuitable for slow data fetching
+// (node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md) and this
+// file's matcher covers nearly every route, so a live Admin API call per
+// request is both against that guidance and a needless dependency for every
+// page load on one more external service staying up.
 //
 // The old store served every product at `/products/<handle>` (plural); this site
 // serves them at `/product/<handle>` (singular). Both `from` and `to` in the JSON
@@ -197,8 +219,67 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
   // Thorne Research supplements: not MDSupplies inventory; links are spam-adjacent.
   { from: '/medical-supplies-Thorne Research-VeganPro Complex Vanilla-WQEMF6Q8IH.html',               status: 410 },
   { from: '/medical-supplies-Thorne Research-VeganPro Complex Chocolate-TIH9JNRQT6.html',             status: 410 },
+  // 2026-09-01 Ahrefs export, new row (same Thorne Research vendor confirmed absent
+  // from the live catalog via Storefront search — see docs/audits/2026-09-04-p0-seo-
+  // migration-integrity/unified-targets.json).
+  { from: '/medical-supplies-Thorne Research-MediClear-SGS Chocolate-UAQUGHR6DP.html',                status: 410 },
+
+  // P0 SEO migration integrity (2026-09-04): direct historic image backlinks from
+  // the 2026-09-01 Ahrefs export (/sup/images/... — old-store product photography,
+  // never migrated). Each of these was checked against the live Storefront API
+  // (title/vendor search — see scripts/seo-migration/match-images.mts and
+  // docs/audits/2026-09-04-p0-seo-migration-integrity/image-search-results.json)
+  // with NO confident current-catalog match, so there is no live image asset to
+  // serve or redirect to. A blanket redirect to an HTML page is explicitly wrong
+  // here (a third-party <img src> would render broken regardless), so these get a
+  // definitive 410 instead of silently 404ing. See EXCEPTIONS.md in that same
+  // audit folder for the image targets that got a plausible-but-unverified
+  // candidate match instead of a 410 — those are left for Izzy's review rather
+  // than guessed at here.
+  { from: '/sup/images/free-shipping-yellow.png',                    status: 410 }, // UI badge now rendered as a component, not a static image
+  { from: '/sup/images/productImages/7CXML2268H.gif',                status: 410 }, // Dynarex tattoo needle 1203RL — not in catalog
+  { from: '/sup/images/productImages/7HQXDFWJ49.gif',                status: 410 }, // Dynarex tattoo needle 1201RL — not in catalog
+  { from: '/sup/images/productImages/FKJEB33I41.gif',                status: 410 }, // Dynarex tattoo needle 1207RL — not in catalog
+  { from: '/sup/images/productImages/K8J9ZVU2GY.gif',                status: 410 }, // Dynarex tattoo needle 1201RL round liner — not in catalog
+  { from: '/sup/images/productImages/VLPUK8KBSY.gif',                status: 410 }, // Dynarex tattoo needle 1209RL round liner — not in catalog
+  { from: '/sup/images/productImages/WEVSAQ14IE.gif',                status: 410 }, // Vision Labs requisition form — a service document, not a stocked product
+  { from: '/sup/images/productImages/WRW2B797FM.gif',                status: 410 }, // Hospira Lactated Ringers IV bag — injectable pharmaceutical, same DEA/compliance retirement as Pharmaceuticals above
+  { from: '/sup/images/productImages/ZTLE7VFV3C.gif',                status: 410 }, // Rx Destroyer drug disposal system — not in catalog
+
+  // Production re-check (2026-09-07) of the 8 "Needs Izzy SEO review" targets in
+  // EXCEPTIONS.md — that list was matched against the QA store only. Re-run against
+  // production (Shopify Admin API, daebb2-76.myshopify.com) confirmed these 5 as
+  // correctly dead: see docs/audits/2026-09-04-p0-seo-migration-integrity/EXCEPTIONS.md
+  // and the production-recheck report for the per-target reasoning.
+  { from: '/sup/images/productImages/FF2KL9HABG.gif',                status: 410 }, // MedPride Hydrogel Wound Dressing Sheet 4x4 — exact product live (sterile-hydrogel-burn-dressing-4-x-4) but has zero images; its other sizes do
+  { from: '/sup/images/productImages/MXCUT572QP.gif',                status: 410 }, // Synthetic vinyl gloves — matching MedPlus products are live but have zero images; the only imaged vinyl glove is a different product
+  { from: '/sup/images/productImages/53DADEVYIN.gif',                status: 410 }, // PVC commode chair — the only PVC product is a commode pail, not a chair; no identity match
+  { from: '/sup/images/productImages/979PEK3F66.gif',                status: 410 }, // Trotter pediatric mobility chair — Trotter line live as accessories only, base chair not in catalog
+  { from: '/sup/images/productImages/RQZYQP73KJ.gif',                status: 410 }, // Pharmaceutical spatula — no matching live product; only hits are a counting-tray/spatula combo and an unrelated suture needle shape
 
   // ── 301 Recoverable redirects ─────────────────────────────────────────────
+
+  // Direct legacy image backlink, Case 2 (same product category exists, image
+  // changed): the generic-anchor legacy filename carries no SKU to pick an
+  // exact vendor variant, but "Alcohol Prep Pad" is an unambiguous, low-risk
+  // commodity match confirmed live via Storefront search (Dukal, handle
+  // alcohol-prep-pad — see scripts/seo-migration/get-product-image.mts
+  // output in docs/audits/2026-09-04-p0-seo-migration-integrity/). Redirects
+  // straight to the CDN image asset (not the HTML product page) so a
+  // third-party <img src> still renders instead of breaking.
+  { from: '/sup/images/productImages/3Y3PKD2E6Q.gif',                                                to: 'https://cdn.shopify.com/s/files/1/0821/0989/0793/files/857-4000.jpg?v=1786100370', status: 301 },
+
+  // Production re-check (2026-09-07) of EXCEPTIONS.md's "Needs Izzy SEO review" list:
+  // QA-store matching was wrong on 5 of 8 exceptions. These 3 are confirmed identity
+  // matches (or, for the life jacket, the *correct* product where the original QA
+  // candidate was the wrong SKU family) against production. Redirects target a live
+  // CDN image, not a /product/ page, matching the pattern above and Google's guidance
+  // that redirecting to an unrelated destination reads as a soft 404
+  // (https://support.google.com/webmasters/answer/2445990). Storefront-side resolution
+  // of these three targets has not been separately re-verified post-deploy.
+  { from: '/sup/images/productImages/15ULWMDK6A.gif',                                               to: 'https://cdn.shopify.com/s/files/1/0711/6737/7624/files/wz119stlivhwmjvacvzx.jpg?v=1727223773', status: 301 }, // Safety goggles with side shields → Dynarex Protective Eye Goggles (2297) — product-type match, no live product says "side shields"
+  { from: '/sup/images/productImages/PREGWANPVK.gif',                                               to: 'https://cdn.shopify.com/s/files/1/0711/6737/7624/files/MPR-47111.jpg?v=1732507962',           status: 301 }, // Sterile disposable scalpels → MedPride Disposable Scalpels #11 (MPR-47111) — exact brand/product match; QA's top hit was a synthetic fixture
+  { from: '/sup/images/productImages/XYZPG89DSJ.gif',                                               to: 'https://cdn.shopify.com/s/files/1/0711/6737/7624/files/20-001_bbb502b4-5fcc-4487-a05f-8e93fe2b216a.png?v=1740930483', status: 301 }, // USCG type 2 life jacket → Kemp USA Type II Adult Life Jacket (20-001-ADULT) — QA's candidate was SKU family 20-002, not Type II; this is the correct family
 
   // Note: /category/face-coverings → /category/face-masks is handled as a subtree
   // redirect in the proxy() function below (covers both root and nested paths).
@@ -291,15 +372,84 @@ export const REDIRECT_ENTRIES: RedirectEntry[] = [
 // redirect/410 paths, so scoping it there covers the real case without
 // touching every response branch. Never overwrites an existing capture.
 function captureAttribution(request: NextRequest, response: NextResponse): void {
-  if (request.cookies.has(ATTRIBUTION_COOKIE)) return
   const value = serializeAttribution(request.nextUrl.searchParams)
+  // No campaign params on this request. Crucially this is a no-op, NOT a
+  // clear: an internal click or a direct return must never erase the campaign
+  // that brought the customer here.
   if (!value) return
-  response.cookies.set(ATTRIBUTION_COOKIE, value, {
+
+  const options = {
     maxAge: ATTRIBUTION_MAX_AGE_SECONDS,
     path: '/',
-    sameSite: 'lax',
+    sameSite: 'lax' as const,
     httpOnly: true,
-  })
+  }
+
+  // First touch is written once and then frozen for the cookie's lifetime.
+  //
+  // NOT gated by the vendor-attribution flag. This cookie predates that work
+  // (DEV-LAUNCH-12) and is in scope: app/api/contact and app/api/sourcing read
+  // it so a sales rep can see which campaign produced a lead. Gating it would
+  // break shipped, agreed functionality.
+  if (!request.cookies.has(ATTRIBUTION_COOKIE)) {
+    response.cookies.set(ATTRIBUTION_COOKIE, value, options)
+  }
+
+  // Last touch exists ONLY for the persistent vendor-attribution layer: it is
+  // the value stamped onto the Shopify cart so an order can be tied back to
+  // the most recent vendor campaign. Nothing in the standard analytics stack
+  // reads it — GA4 does its own last-non-direct-click attribution from the URL
+  // without our help. So it is gated behind the commercial scope flag and
+  // simply is not written until that scope is approved.
+  if (isPersistentVendorAttributionEnabled()) {
+    response.cookies.set(LAST_TOUCH_COOKIE, value, options)
+  }
+}
+
+// ─── Legacy-path encoding normalization (P0 SEO migration integrity) ────────
+//
+// Old Magento/WooCommerce-style URLs encode a literal space as EITHER a raw
+// "+" or "%20" — and, per the 2026-09-01 Ahrefs export, sometimes BOTH in the
+// same URL (e.g. "…-Graham%20Medical-Drape+Sheet+White…"). The previous
+// implementation only swapped "+" for a space and never percent-decoded at
+// all, so any "%20" segment silently fell through to a 404 instead of
+// matching the REDIRECT_ENTRIES `from` strings below (which are written with
+// literal spaces). See docs/audits/2026-09-04-p0-seo-migration-integrity/.
+//
+// Order matters: "+" is swapped for a space FIRST, before any percent-
+// decoding, so a genuinely-encoded plus sign ("%2B") survives untouched by
+// that swap and is decoded to a real "+" character afterward — not
+// corrupted into a space. safeDecodeURIComponent never throws on malformed
+// input (a bare "%", a truncated "%2", or an invalid "%zz" sequence): it
+// decodes every well-formed %XX token it finds and leaves the rest exactly
+// as received, rather than 500ing the request.
+//
+// Deliberately NOT lower-cased: the 1,285-entry bulk table
+// (docs/redirects-ready.json) and the hand-written entries below preserve
+// the legacy CMS's exact mixed-case path segments, and normalizing case here
+// risks silently merging two originally-distinct paths that differed only by
+// case.
+function safeDecodeURIComponent(input: string): string {
+  try {
+    return decodeURIComponent(input)
+  } catch {
+    return input.replace(/%[0-9A-Fa-f]{2}/g, (seq) => {
+      try {
+        return decodeURIComponent(seq)
+      } catch {
+        return seq
+      }
+    })
+  }
+}
+
+function normalizeLegacyPathname(raw: string): string {
+  const spaceNormalized = raw.replace(/\+/g, ' ')
+  const decoded = safeDecodeURIComponent(spaceNormalized)
+  // Strip a single trailing slash (but not the root "/") so a legacy link hit
+  // with an extra trailing slash still matches the exact `from` strings below
+  // instead of falling through to a 404 (DEV-LAUNCH-12).
+  return decoded.replace(/^(.+)\/$/, '$1')
 }
 
 function withCsp(response: Response, csp: string): Response {
@@ -315,26 +465,35 @@ function withCsp(response: Response, csp: string): Response {
 // statically generated / CDN-cached. Keep this list to routes GUARANTEED to be
 // dynamic — a route served from static cache under the nonce policy would carry
 // no nonce and Next's inline scripts would be blocked.
+//
+// Enumerated exactly (not a blanket `/account/` prefix match): an unmatched
+// path under /account/* falls through to app/global-not-found.tsx, which —
+// per Next's docs — is always static and can never receive a per-request
+// nonce. Under the old prefix match, that unmatched path still got the
+// strict 'strict-dynamic' policy, so the not-found page's nonce-less scripts
+// were blocked outright (the same CSP breakage this split was meant to fix,
+// just relocated to any unmatched /account/* URL). Add a route here only
+// when it is a real page under app/(protected) — see that directory for the
+// current set.
+const STRICT_CSP_ACCOUNT_PATHS = new Set([
+  '/account',
+  '/account/favorites',
+  '/account/login',
+  '/account/orders',
+])
+
 function isStrictCspPath(pathname: string): boolean {
-  return pathname === '/account'
-    || pathname.startsWith('/account/')
-    || pathname === '/search'
-    || pathname.startsWith('/search/')
+  if (pathname === '/search') return true
+  if (STRICT_CSP_ACCOUNT_PATHS.has(pathname)) return true
+  // /account/orders/[number] — the one /account subroute with a dynamic segment.
+  return /^\/account\/orders\/[^/]+$/.test(pathname)
 }
 
 export function proxy(request: NextRequest): Response {
   const isDev = process.env.NODE_ENV === 'development'
 
   const raw = request.nextUrl.pathname
-  // Normalize encoded paths (+, %20) to match old Magento/WooCommerce-style URLs,
-  // and strip a single trailing slash (but not the root "/") so a legacy link
-  // hit with an extra trailing slash still matches the exact `from` strings
-  // below instead of falling through to a 404 (DEV-LAUNCH-12). Deliberately NOT
-  // lower-cased: the 1,285-entry bulk table (docs/redirects-ready.json) and the
-  // hand-written entries below preserve the legacy CMS's exact mixed-case path
-  // segments, and normalizing case here risks silently merging two originally-
-  // distinct paths that differed only by case.
-  const pathname = raw.replace(/\+/g, ' ').replace(/^(.+)\/$/, '$1')
+  const pathname = normalizeLegacyPathname(raw)
 
   // Per-route CSP (spike/csp-static): strict per-request nonce for the few
   // always-dynamic sensitive routes, static policy for everything else so it
@@ -375,7 +534,13 @@ export function proxy(request: NextRequest): Response {
     if (pathname !== entry.from) continue
     if (entry.status === 410) return withCsp(new Response(null, { status: 410 }), csp)
     const url = new URL(entry.to, request.url)
-    url.search = request.nextUrl.search
+    // Only overwrite the destination's query string when the INCOMING request
+    // actually carries one (preserves e.g. ?formularyId=... onto a category
+    // page). Some `to` values are absolute external asset URLs with their own
+    // required query (a Shopify CDN image's `?v=` cache-busting param) — an
+    // unconditional overwrite would silently strip that off a query-less
+    // legacy image request.
+    if (request.nextUrl.search) url.search = request.nextUrl.search
     return withCsp(NextResponse.redirect(url, 301), csp)
   }
 

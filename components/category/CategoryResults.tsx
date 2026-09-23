@@ -112,6 +112,7 @@ export async function CategoryResults({
       filters={resolution.filters}
       categoryFacet={resolution.categoryFacet}
       filterLabelMap={resolution.filterLabelMap}
+      reviewSummaries={resolution.reviewSummaries}
       total={resolution.total}
       hasNext={resolution.hasNext}
       renderedCount={resolution.renderedCount}

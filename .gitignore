@@ -101,3 +101,4 @@ docs/audits/2026-08-02-catalog-cro/evidence/
 /audit/live/e2e-final.json
 /audit/live/e2e*.log
 /audit/live/img/
+audit-output/

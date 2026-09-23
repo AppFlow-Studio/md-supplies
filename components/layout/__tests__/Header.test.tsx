@@ -212,11 +212,11 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
     // The categories panel is always in the DOM (CSS-toggled, see NF7 above),
     // so its links are queryable via hidden: true without simulating a click.
     //
-    // The parent's link is "All Surgery & Procedure" inside its own panel, not
-    // the rail row: the rail selects and the panel navigates, so that the
-    // department name and the control that opens its subcategories can never be
-    // mistaken for each other (see CategoryMegaMenu).
-    const [surgery] = screen.getAllByRole('link', { name: 'All Surgery & Procedure', hidden: true })
+    // The parent's link is "Browse All Surgery & Procedure" inside its own
+    // panel — a second route to the same page as the rail row's own name
+    // link, so the department name and the control that opens its
+    // subcategories can never be mistaken for each other (see CategoryMegaMenu).
+    const [surgery] = screen.getAllByRole('link', { name: 'Browse All Surgery & Procedure', hidden: true })
     const [trocars] = screen.getAllByRole('link', { name: 'Trocars & Trocar Kits', hidden: true })
 
     expect(surgery).toHaveAttribute('href', '/category/surgery-procedure')
@@ -231,25 +231,34 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
     )
     // Under two-stage disclosure the child no longer sits inside the parent's
     // own <li> — the parent is a rail item and the child lives in the detail
-    // panel that rail item controls. The relationship has to be explicit for a
-    // screen reader, so the panel names its department and the department's
-    // chevron points at the panel.
-    const railItem = container.querySelector<HTMLElement>('[data-rail-item][data-tag="surgery-procedure"]')
-    expect(railItem).not.toBeNull()
+    // panel that rail item's chevron controls. The relationship has to be
+    // explicit for a screen reader, so the panel names its department (via
+    // the rail row's NAME link, which carries the id) and the row's chevron
+    // points at the panel it opens.
+    //
+    // Split control (2026-09-04 P0 nav-defect fix): the name link and the
+    // disclosure chevron are two separate elements now, not one — see
+    // CategoryMegaMenu.tsx's file-header comment. Scoped to the desktop
+    // panel specifically: the mobile drawer renders the same split control
+    // for the same category (always in the DOM, CSS-hidden), so an
+    // unscoped query would match both.
+    const desktopPanel = container.querySelector<HTMLElement>('#nav-panel-categories')!
+    const nameLink = within(desktopPanel).getByRole('link', { name: 'Surgery & Procedure', hidden: true })
+    const chevron = desktopPanel.querySelector<HTMLElement>('[data-rail-item][data-tag="surgery-procedure"]')
+    expect(chevron).not.toBeNull()
+    expect(chevron!.tagName).toBe('BUTTON')
+    // Not the same element — that's the point of the split.
+    expect(chevron).not.toBe(nameLink)
 
     const panel = container.querySelector<HTMLElement>(
-      `[aria-labelledby="${railItem!.id}"]`,
+      `[aria-labelledby="${nameLink.id}"]`,
     )
     expect(panel).not.toBeNull()
     expect(
       within(panel!).getByRole('link', { name: 'Trocars & Trocar Kits', hidden: true }),
     ).toHaveAttribute('href', '/category/trocars-trocar-kits')
 
-    // The rail row IS the disclosure control now — one target per row, so the
-    // element that opens the panel and the element that names the department
-    // are the same thing.
-    expect(railItem!.tagName).toBe('BUTTON')
-    expect(railItem).toHaveAttribute('aria-controls', panel!.id)
+    expect(chevron).toHaveAttribute('aria-controls', panel!.id)
   })
 
   it('no longer renders the detached "Trocar Supplies" badge anywhere', () => {
@@ -265,7 +274,7 @@ describe('Header — Trocars nested under Surgery & Procedure (P0.2)', () => {
     const panel = container.querySelector<HTMLElement>('#mobile-cat-surgery-procedure')
     expect(panel).not.toBeNull()
     expect(
-      within(panel!).getByRole('link', { name: 'All Surgery & Procedure', hidden: true }),
+      within(panel!).getByRole('link', { name: 'Browse All Surgery & Procedure', hidden: true }),
     ).toHaveAttribute('href', '/category/surgery-procedure')
     expect(
       within(panel!).getByRole('link', { name: 'Trocars & Trocar Kits', hidden: true }),
@@ -409,6 +418,70 @@ describe('Header — mega-dropdown subcategory children', () => {
     render(<Header menuItems={MENU_WITH_CATALOG_ONLY} collections={NAV_COLLECTIONS} l2Nodes={[]} />)
     expect(screen.queryByRole('link', { name: /rollators/i, hidden: true })).not.toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /^Mobility$/i, hidden: true }).length).toBeGreaterThan(0)
+  })
+})
+
+describe('Header — priorityChildLimit (2026-09-04 P0 nav-defect ticket)', () => {
+  // Home Care, Mobility and Testing are the three categories the client
+  // called out as reading narrower than the catalog actually is. Their
+  // registry rows carry `priorityChildLimit: 10` (lib/category-tree.ts),
+  // which both cap sites below must read instead of the flat
+  // MAX_DROPDOWN_CHILDREN/MAX_MEGA_MENU_CHILDREN constants — a category with
+  // no override still gets the old, smaller default.
+  const NAV_COLLECTIONS: SlimCollection[] = [
+    makeCollection('mobility', 'Mobility'),
+    makeCollection('gloves', 'Gloves'),
+  ]
+  // 8 children: more than MAX_MEGA_MENU_CHILDREN (6) and MAX_DROPDOWN_CHILDREN
+  // (3) alike, so both cap sites are exercised by the same fixture.
+  const EIGHT_CHILDREN = (parentTag: string) =>
+    Array.from({ length: 8 }, (_, i) => ({ tag: `sub-${i}`, parentTag, productCount: 8 - i }))
+
+  it('shows more than the default mega-menu cap for a priority category', () => {
+    const MENU_WITH_CATALOG_ONLY: MenuItem[] = [
+      makeMenuItem({ id: 'gid://shopify/MenuItem/catalog', title: 'Categories', type: 'CATALOG' }),
+    ]
+    render(
+      <Header
+        menuItems={MENU_WITH_CATALOG_ONLY}
+        collections={NAV_COLLECTIONS}
+        l2Nodes={EIGHT_CHILDREN('mobility')}
+      />,
+    )
+    for (let i = 0; i < 8; i++) {
+      expect(screen.getAllByRole('link', { name: `Sub ${i}`, hidden: true }).length).toBeGreaterThan(0)
+    }
+  })
+
+  // Desktop and mobile each render their own copy of the "other nav items"
+  // shortcut dropdown from the same navChildren() data, so a raw element
+  // count doubles what's actually distinct. Counting distinct accessible
+  // names is what actually answers "how many children are shown."
+  const distinctNames = (links: HTMLElement[]) => new Set(links.map((l) => l.textContent)).size
+
+  it('shows more than the default shortcut-dropdown cap for a priority category', () => {
+    const mobilityItem = makeMenuItem({
+      id: 'gid://shopify/MenuItem/mobility',
+      title: 'Mobility',
+      type: 'COLLECTION',
+      items: [],
+    })
+    render(<Header menuItems={[mobilityItem]} collections={NAV_COLLECTIONS} l2Nodes={EIGHT_CHILDREN('mobility')} />)
+    const dropdownChildren = screen.getAllByRole('link', { name: /^Sub \d$/, hidden: true })
+    expect(distinctNames(dropdownChildren)).toBeGreaterThan(3)
+  })
+
+  it('still applies the smaller default cap to a category with no priorityChildLimit override', () => {
+    const glovesItem = makeMenuItem({
+      id: 'gid://shopify/MenuItem/gloves',
+      title: 'Gloves',
+      type: 'COLLECTION',
+      items: [],
+    })
+    render(<Header menuItems={[glovesItem]} collections={NAV_COLLECTIONS} l2Nodes={EIGHT_CHILDREN('gloves')} />)
+    const dropdownChildren = screen.getAllByRole('link', { name: /^Sub \d$/, hidden: true })
+    // MAX_DROPDOWN_CHILDREN (3), unaffected by mobility/home-care/testing's override.
+    expect(distinctNames(dropdownChildren)).toBe(3)
   })
 })
 

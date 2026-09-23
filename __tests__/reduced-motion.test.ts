@@ -12,7 +12,7 @@ describe('prefers-reduced-motion is respected sitewide', () => {
   })
 
   it('root layout wraps the app in MotionConfig reducedMotion="user"', () => {
-    const src = read('app/layout.tsx')
+    const src = read('components/layout/SiteChrome.tsx')
     expect(src).toMatch(/MotionConfig/)
     expect(src).toMatch(/reducedMotion=["']user["']/)
   })

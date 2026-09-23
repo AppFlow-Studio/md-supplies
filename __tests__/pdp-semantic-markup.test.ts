@@ -12,9 +12,10 @@ describe('PDP section titles are real headings (Audit M13)', () => {
   // AeroWalk fix (2026-08-14): "Item Number" was renamed to "Internal SKU"
   // and split from a separate "Manufacturer Item Number" heading — the two
   // identifiers must never be conflated under one label (launch plan
-  // Figure 3).
-  it('renders "Internal SKU" as a heading', () => {
-    expect(src).toMatch(/<h[1-6][^>]*>Internal SKU<\/h[1-6]>/)
+  // Figure 3). Client, 2026-09-17: "Internal SKU" relabeled to
+  // "MDSupplies SKU" — label copy only, same underlying variant SKU source.
+  it('renders "MDSupplies SKU" as a heading', () => {
+    expect(src).toMatch(/<h[1-6][^>]*>MDSupplies SKU<\/h[1-6]>/)
   })
 
   it('renders "Manufacturer Item Number" as a heading', () => {

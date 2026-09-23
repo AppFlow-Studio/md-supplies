@@ -87,7 +87,7 @@ describe('sitemap and navigation agree with the gate', () => {
 
   it('the industries grid and homepage strip consume SUPPORTED_INDUSTRIES', async () => {
     const fs = await import('node:fs')
-    for (const f of ['app/industries/page.tsx', 'components/home/ShopByIndustry.tsx']) {
+    for (const f of ['app/(site)/industries/page.tsx', 'components/home/ShopByIndustry.tsx']) {
       const src = fs.readFileSync(f, 'utf8')
       expect(src, `${f} must filter`).toContain('SUPPORTED_INDUSTRIES')
     }

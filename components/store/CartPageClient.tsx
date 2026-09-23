@@ -6,9 +6,13 @@ import { X, Plus, Minus, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { useCart } from './CartProvider'
 import { track } from '@/lib/analytics/track'
-import { buildViewCartEvent, buildBeginCheckoutEvent } from '@/lib/analytics/events'
-import { clientIdFromGaCookie } from '@/lib/analytics/clientId'
-import { setCartAttribute } from '@/app/actions/cart'
+import {
+  buildViewCartEvent,
+  buildBeginCheckoutEvent,
+  cartLineToGA4Item,
+  cartCurrency,
+} from '@/lib/analytics/events'
+import { bridgeAnalyticsToCheckout } from '@/lib/analytics/checkout-handoff'
 import { cleanShopifyAlt } from '@/lib/alt-text'
 import { useRxGate, RxGatePanel } from './RxCheckoutGate'
 import { blockedCartLines, blockedCheckoutMessage } from '@/lib/purchasability'
@@ -47,22 +51,26 @@ export function CartPageClient() {
     ? SHIPPING_CLASS_COPY['standard-free'] ?? SHIPPING_FALLBACK_MESSAGE
     : SHIPPING_FALLBACK_MESSAGE
 
+  // view_cart previously used an empty dependency array, which meant it
+  // evaluated exactly once — on the mount where `cart` is still null, because
+  // CartProvider hydrates the cart in its own effect (the cart_id cookie can't
+  // be read during the server render without opting the route out of ISR). The
+  // guard was therefore false every time and /cart emitted NO view_cart at all.
+  // Keying the ref on the cart id restores the event while keeping the
+  // once-per-cart contract: re-renders from quantity edits don't refire it, but
+  // a genuinely different cart does.
+  const viewCartFiredForRef = useRef<string | null>(null)
   useEffect(() => {
-    if (cart && cart.lines.nodes.length > 0) {
-      track(
-        buildViewCartEvent({
-          currency: cart.cost.subtotalAmount.currencyCode,
-          items: cart.lines.nodes.map((line) => ({
-            item_id: line.merchandise.id,
-            item_name: line.merchandise.product.title,
-            price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-            quantity: line.quantity,
-          })),
-        }),
-      )
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (!cart || cart.lines.nodes.length === 0) return
+    if (viewCartFiredForRef.current === cart.id) return
+    viewCartFiredForRef.current = cart.id
+    track(
+      buildViewCartEvent({
+        currency: cartCurrency(cart),
+        items: cart.lines.nodes.map((line) => cartLineToGA4Item(line)),
+      }),
+    )
+  }, [cart])
 
   async function handleCheckoutClick(e: MouseEvent<HTMLAnchorElement>) {
     if (!cart) return
@@ -71,24 +79,15 @@ export function CartPageClient() {
     checkoutInFlightRef.current = true
 
     try {
+      // See CartPopup's identical handler for why this fires before the
+      // handoff rather than after it resolves.
       track(
         buildBeginCheckoutEvent({
-          currency: cart.cost.subtotalAmount.currencyCode,
-          items: lines.map((line) => ({
-            item_id: line.merchandise.id,
-            item_name: line.merchandise.product.title,
-            price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-            quantity: line.quantity,
-          })),
+          currency: cartCurrency(cart),
+          items: lines.map((line) => cartLineToGA4Item(line)),
         }),
       )
-      try {
-        const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/)
-        const clientId = match ? clientIdFromGaCookie(decodeURIComponent(match[1])) : null
-        if (clientId) await setCartAttribute('ga_client_id', clientId)
-      } catch (err) {
-        console.error('[CartPageClient] failed to stamp ga_client_id:', err)
-      }
+      await bridgeAnalyticsToCheckout()
       // RX gate re-check + cartBuyerIdentityUpdate before every handoff.
       await rxGate.proceedToCheckout()
     } finally {

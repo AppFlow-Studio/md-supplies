@@ -72,8 +72,12 @@ describe('DEV-NAV-01 — Needles/Syringes routes to its canonical L1 page', () =
 })
 
 describe('the layout must not reconcile nav against a truncated collection page', () => {
-  it('layout.tsx fetches the complete paginated handle set', () => {
-    const src = readFileSync('app/layout.tsx', 'utf8')
+  it('the shared root-layout chrome fetches the complete paginated handle set', () => {
+    // Header/Footer nav-data fetching lives in components/layout/SiteChrome.tsx
+    // (shared by both app/(site)/layout.tsx and app/(protected)/layout.tsx —
+    // see app/(protected)/layout.tsx's doc comment for why there are two root
+    // layouts), not inline in either layout.tsx file.
+    const src = readFileSync('components/layout/SiteChrome.tsx', 'utf8')
     expect(src).toContain('fetchAllCollectionHandles')
     // The truncated single-page fetch must not come back.
     expect(src).not.toMatch(/GET_COLLECTIONS_SLIM[\s\S]{0,120}first:\s*\d+/)

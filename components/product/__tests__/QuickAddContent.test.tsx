@@ -158,7 +158,7 @@ describe('QuickAddContent — Backorder state', () => {
         titleId="t"
       />,
     )
-    expect(screen.getByText('Backorder, ships 2099-01-01')).toBeInTheDocument()
+    expect(screen.getByText('Backorder, ETA 2099-01-01')).toBeInTheDocument()
   })
 })
 
@@ -223,5 +223,79 @@ describe('QuickAddContent — variant image switch (Quick Add fix, 2026-08-14)',
     render(<QuickAddContent product={product} titleId="t" />)
     fireEvent.click(screen.getByRole('button', { name: /Grey/ }))
     expect(screen.queryByAltText('Blue')).not.toBeInTheDocument()
+  })
+})
+
+// Bilal, 2026-09-14: Quick Add's own variant picker had the same B2080C-class
+// leak as the PDP — title/SKU/backorder all read from the product, never the
+// selected variant, so switching units in the modal showed stale data.
+describe('QuickAddContent — variant-aware title/SKU/backorder (DEV-CATALOG, B2080C)', () => {
+  const trocarProduct: ProductCardData = {
+    ...baseProduct,
+    title: 'Disposable Blunt Tip, Trocar Combo Kit (B2080C)',
+    sku: 'B2080C',
+    isBackordered: true,
+    variants: [
+      { id: 'v1', title: '3.5mm', sku: 'B2080C', price: 45920, available: true, backorder: { value: 'true' } },
+      { id: 'v2', title: '4.5mm', sku: 'B2083C', price: 45920, available: true, backorder: { value: 'false' } },
+    ],
+  }
+
+  it('shows the initial variant SKU in both the title suffix and the SKU line', () => {
+    render(<QuickAddContent product={trocarProduct} titleId="t" />)
+    expect(screen.getByText('Disposable Blunt Tip, Trocar Combo Kit (B2080C)')).toBeInTheDocument()
+    expect(screen.getByText('SKU: B2080C')).toBeInTheDocument()
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('swaps title suffix, SKU, and clears Backorder when switching to the non-backordered sibling', () => {
+    render(<QuickAddContent product={trocarProduct} titleId="t" />)
+    fireEvent.click(screen.getByRole('button', { name: /4\.5mm/ }))
+    expect(screen.getByText('Disposable Blunt Tip, Trocar Combo Kit (B2083C)')).toBeInTheDocument()
+    expect(screen.getByText('SKU: B2083C')).toBeInTheDocument()
+    expect(screen.queryByText('Backorder')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the product-level backorder flag when the selected variant has no metafield of its own', () => {
+    const product: ProductCardData = {
+      ...trocarProduct,
+      variants: [
+        { id: 'v1', title: '3.5mm', sku: 'B2080C', price: 45920, available: true, backorder: { value: 'true' } },
+        { id: 'v2', title: '4.5mm', sku: 'B2083C', price: 45920, available: true },
+      ],
+    }
+    render(<QuickAddContent product={product} titleId="t" />)
+    fireEvent.click(screen.getByRole('button', { name: /4\.5mm/ }))
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it("shows each variant's own Free Shipping claim, not the card-level aggregate", () => {
+    const product: ProductCardData = {
+      ...trocarProduct,
+      isBackordered: false,
+      shippingDisplay: { class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null },
+      variants: [
+        {
+          id: 'v1',
+          title: '3.5mm',
+          sku: 'B2080C',
+          price: 45920,
+          available: true,
+          shippingDisplay: { class: 'unknown', message: 'Shipping calculated at checkout.', displayCopy: null },
+        },
+        {
+          id: 'v2',
+          title: '4.5mm',
+          sku: 'B2083C',
+          price: 45920,
+          available: true,
+          shippingDisplay: { class: 'standard-free', message: 'Free shipping', displayCopy: null },
+        },
+      ],
+    }
+    render(<QuickAddContent product={product} titleId="t" />)
+    expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /4\.5mm/ }))
+    expect(screen.getByText('Free Shipping')).toBeInTheDocument()
   })
 })

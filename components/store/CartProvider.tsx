@@ -11,7 +11,13 @@ import {
 import { addToCart, getCart, removeFromCart, updateCartLine } from '@/app/actions/cart'
 import type { Cart } from '@/lib/shopify/types'
 import { track } from '@/lib/analytics/track'
-import { buildAddToCartEvent, buildViewCartEvent } from '@/lib/analytics/events'
+import {
+  buildAddToCartEvent,
+  buildRemoveFromCartEvent,
+  buildViewCartEvent,
+  cartLineToGA4Item,
+  cartCurrency,
+} from '@/lib/analytics/events'
 
 interface CartContextValue {
   cart: Cart | null
@@ -61,19 +67,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // Report the real outcome so callers never show "Added!" for a line
       // Shopify silently dropped (Phase 11).
       if (!line) return false
-      {
-        track({
-          ...buildAddToCartEvent({
-            currency: line.cost.totalAmount.currencyCode,
-            item: {
-              item_id: line.merchandise.id,
-              item_name: line.merchandise.product.title,
-              price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-              quantity: qty,
-            },
-          }),
-        })
-      }
+      // `qty` (what was just added), not `line.quantity` (the line's new
+      // running total) — adding 2 to a line that already held 3 is an
+      // add_to_cart of 2, not of 5.
+      track(
+        buildAddToCartEvent({
+          currency: line.cost.totalAmount.currencyCode,
+          item: cartLineToGA4Item(line, qty),
+        }),
+      )
       return !warning
     } catch (err) {
       console.error('[CartProvider] addItem failed:', err)
@@ -85,39 +87,58 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = useCallback(async (lineId: string) => {
     try {
       setLastError(null)
+      // Captured BEFORE the mutation: once Shopify has removed the line there
+      // is nothing left to describe. Tracked only after the call succeeds, so
+      // a failed removal never reports one.
+      const removed = cart?.lines.nodes.find((l) => l.id === lineId) ?? null
+      const currency = cart ? cartCurrency(cart) : null
       const updated = await removeFromCart(lineId)
       setCart(updated)
+      if (removed && currency) {
+        track(
+          buildRemoveFromCartEvent({ currency, items: [cartLineToGA4Item(removed)] }),
+        )
+      }
     } catch (err) {
       console.error('[CartProvider] removeItem failed:', err)
       setLastError('Failed to remove item. Please try again.')
     }
-  }, [])
+  }, [cart])
 
   const updateItem = useCallback(async (lineId: string, qty: number) => {
     try {
       setLastError(null)
+      const before = cart?.lines.nodes.find((l) => l.id === lineId) ?? null
+      const currency = cart ? cartCurrency(cart) : null
       const updated = await updateCartLine(lineId, qty)
       setCart(updated)
+      // A quantity change is an add or a removal of the DIFFERENCE. GA4 has no
+      // "quantity changed" event, and reporting the whole line would double
+      // count against the original add_to_cart.
+      if (!before || !currency) return
+      const delta = qty - before.quantity
+      if (delta === 0) return
+      const item = cartLineToGA4Item(before, Math.abs(delta))
+      track(
+        delta > 0
+          ? buildAddToCartEvent({ currency, item })
+          : buildRemoveFromCartEvent({ currency, items: [item] }),
+      )
     } catch (err) {
       console.error('[CartProvider] updateItem failed:', err)
       setLastError('Failed to update quantity. Please try again.')
     }
-  }, [])
+  }, [cart])
 
   const openCart = useCallback(() => {
     setIsOpen(true)
     if (cart && cart.lines.nodes.length > 0) {
-      track({
-        ...buildViewCartEvent({
-          currency: cart.cost.subtotalAmount.currencyCode,
-          items: cart.lines.nodes.map((line) => ({
-            item_id: line.merchandise.id,
-            item_name: line.merchandise.product.title,
-            price: parseFloat(line.cost.totalAmount.amount) / line.quantity,
-            quantity: line.quantity,
-          })),
+      track(
+        buildViewCartEvent({
+          currency: cartCurrency(cart),
+          items: cart.lines.nodes.map((line) => cartLineToGA4Item(line)),
         }),
-      })
+      )
     }
   }, [cart])
 

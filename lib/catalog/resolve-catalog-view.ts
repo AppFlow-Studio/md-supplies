@@ -8,6 +8,8 @@ import { applyExactFacetCounts } from '@/lib/catalog/exact-facet-counts'
 import { expandFilterInputs } from '@/lib/catalog/facet-canonicalization'
 import { attachCardShippingDisplay } from '@/lib/shipping-resolver/attach'
 import { type PageSize } from '@/lib/catalog/page-size'
+import { getReviewSummariesByGid } from '@/lib/trustshop/collection-summaries'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 
 // The catalog data head, extracted so the SERVER default render
 // (components/category/CategoryResults) and the CLIENT filter API route
@@ -40,6 +42,11 @@ export type CatalogViewResolution =
       filters: CollectionFilter[]
       categoryFacet: CollectionFilter | undefined
       filterLabelMap: Map<string, string>
+      /** Keyed by Shopify GID — not user-specific, so safe in both the static
+          default-grid prerender and the shared /api/catalog cache (unlike
+          favorites, which are per-viewer and handled client-side instead —
+          see lib/favorites/FavoritesContext.tsx). */
+      reviewSummaries: Map<string, ProductReviewSummary | null>
       total: number
       hasNext: boolean
       renderedCount: number
@@ -143,12 +150,18 @@ export async function resolveCatalogView(
     allowedFacets.flatMap((g) => g.values.map((v) => [v.input, v.label] as const)),
   )
 
+  // Summary-only, batched with bounded concurrency (N+1 guard) — never a
+  // sequential per-card TrustShop request, and a slow/down provider degrades
+  // to no rating rows rather than blocking the collection render.
+  const reviewSummaries = await getReviewSummariesByGid(products)
+
   return {
     status: 'ok',
     products,
     filters,
     categoryFacet,
     filterLabelMap,
+    reviewSummaries,
     total: matchingTotal,
     hasNext,
     renderedCount: products.length,

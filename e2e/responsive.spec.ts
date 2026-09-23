@@ -213,15 +213,20 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     // what makes the menu scannable instead of a 100-link wall.
     await expect(panel.locator('[id^="mega-panel-"]:visible')).toHaveCount(1)
 
-    // Hover must NOT switch: the rail is two columns and the panel sits right
-    // of both, so a hover trigger hands the panel to whatever row the pointer
-    // crosses on its way there.
-    await panel.locator('[data-rail-item][data-tag="mobility"]').hover()
+    // Hover must NOT switch, for EITHER half of the split row (2026-09-04 P0
+    // nav-defect fix): the rail is two columns and the panel sits right of
+    // both, so a hover trigger hands the panel to whatever row the pointer
+    // crosses on its way there. `[data-rail-item]` now lives on the row's
+    // disclosure chevron specifically (the name is a separate sibling link).
+    const mobilityChevron = panel.locator('[data-rail-item][data-tag="mobility"]')
+    const mobilityNameLink = panel.getByRole('link', { name: 'Mobility', exact: true })
+    await mobilityChevron.hover()
+    await expect(panel.locator('#mega-panel-mobility')).toBeHidden()
+    await mobilityNameLink.hover()
     await expect(panel.locator('#mega-panel-mobility')).toBeHidden()
 
-    // The rail row IS the disclosure — one target per row, no link/control
-    // split to guess between.
-    await panel.locator('[data-rail-item][data-tag="mobility"]').click()
+    // Only the chevron opens the panel now — the name is a real link instead.
+    await mobilityChevron.click()
     const mobilityPanel = panel.locator('#mega-panel-mobility')
     await expect(mobilityPanel).toBeVisible()
     await expect(panel.locator('[id^="mega-panel-"]:visible')).toHaveCount(1)
@@ -241,6 +246,68 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     await expect(page.getByRole('heading', { name: 'Page Not Found' })).toHaveCount(0)
   })
 
+  test('the rail row’s name link navigates straight to the parent category (the client’s Wound Care demo, guarded here on Mobility)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+    const trigger = page.locator('button[aria-controls="nav-panel-categories"]')
+    await trigger.hover()
+    const panel = page.locator('#nav-panel-categories')
+    await expect(panel).toBeVisible()
+
+    // The defect: a click that only opened the side panel read as "does
+    // nothing" because there was no direct route from the name itself. Now
+    // there is — clicking the name (not the chevron) goes straight there,
+    // with no intermediate panel-open step.
+    await panel.getByRole('link', { name: 'Mobility', exact: true }).click()
+    await expect(page).toHaveURL(/\/category\/mobility$/)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Mobility')
+  })
+
+  test('the panel’s Browse All CTA also reaches the parent category', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+    const trigger = page.locator('button[aria-controls="nav-panel-categories"]')
+    await trigger.hover()
+    const panel = page.locator('#nav-panel-categories')
+    await panel.locator('[data-rail-item][data-tag="mobility"]').click()
+    const mobilityPanel = panel.locator('#mega-panel-mobility')
+    await expect(mobilityPanel).toBeVisible()
+
+    await mobilityPanel.getByRole('link', { name: /^Browse All Mobility/ }).click()
+    await expect(page).toHaveURL(/\/category\/mobility$/)
+  })
+
+  test('keyboard: focusing either half of the row previews its panel, Enter on the chevron confirms it, Escape closes the menu', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+    // Focusing the trigger already opens the menu (Header's own top-level
+    // split control opens on focus, same as the rail below) — pressing Enter
+    // afterwards would TOGGLE it shut again, so focus alone is the way in here.
+    const trigger = page.locator('button[aria-controls="nav-panel-categories"]')
+    await trigger.focus()
+    const panel = page.locator('#nav-panel-categories')
+    await expect(panel).toBeVisible()
+
+    // Focus previews, exactly like the pointer does — Tabbing onto EITHER the
+    // name link or the chevron activates that row's panel (React's focus
+    // event bubbles from either child up to the row's shared handler).
+    const chevron = panel.locator('[data-rail-item][data-tag="mobility"]')
+    await chevron.focus()
+    await expect(chevron).toHaveAttribute('aria-expanded', 'true')
+    await expect(panel.locator('#mega-panel-mobility')).toBeVisible()
+
+    // Enter on the chevron is a normal button activation — same row stays open.
+    await chevron.press('Enter')
+    await expect(chevron).toHaveAttribute('aria-expanded', 'true')
+    await expect(panel.locator('#mega-panel-mobility')).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(panel).toBeHidden()
+  })
+
   test('mobile drawer drills down into one department and reveals its nested subcategory links', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
@@ -252,8 +319,10 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     const mobilePanel = page.locator('#mobile-panel-categories')
     await expect(mobilePanel).toBeVisible()
 
-    // Level one lists departments; tapping a row opens exactly one of them.
-    await mobilePanel.getByRole('button', { name: 'Mobility', exact: true }).click()
+    // Level one lists departments; tapping the disclosure chevron (a separate
+    // control from the row's own name link — 2026-09-04 P0 nav-defect fix)
+    // opens exactly one of them.
+    await mobilePanel.getByRole('button', { name: 'Mobility subcategories', exact: true }).click()
     const department = mobilePanel.locator('#mobile-cat-mobility')
     await expect(department).toBeVisible()
     await expect(mobilePanel.locator('[id^="mobile-cat-"]:visible')).toHaveCount(1)
@@ -265,7 +334,23 @@ test.describe('category nav regression (headless category nav remediation, 2026-
     // And the way back out is a control, not the browser's Back button.
     await department.getByRole('button', { name: /Categories/ }).click()
     await expect(department).toBeHidden()
-    await expect(mobilePanel.getByRole('button', { name: 'Mobility', exact: true })).toBeVisible()
+    await expect(mobilePanel.getByRole('button', { name: 'Mobility subcategories', exact: true })).toBeVisible()
+  })
+
+  test('mobile: tapping the row name navigates straight to the parent category, without opening the drill-down', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+    await page.getByRole('button', { name: 'Toggle menu' }).click()
+    await page.locator('button[aria-controls="mobile-panel-categories"]').click()
+    const mobilePanel = page.locator('#mobile-panel-categories')
+    await expect(mobilePanel).toBeVisible()
+
+    await mobilePanel.getByRole('link', { name: 'Mobility', exact: true }).click()
+    await expect(page).toHaveURL(/\/category\/mobility$/)
+    // The drawer closes on a terminal navigation (onNavigate), same as any
+    // other real link in it.
+    await expect(page.locator('#mobile-menu')).toBeHidden()
   })
 
   test('repeated navigation between two categories, then back/forward, never leaves a blank page (Task 1 regression guard)', async ({ page }) => {

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { CollectionProduct } from '@/lib/shopify/types'
 import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
 import { ViewItemListTracker } from './ViewItemListTracker'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 
 interface Props {
     products: CollectionProduct[]
@@ -10,6 +11,19 @@ interface Props {
     categorySlug?: string
     itemListId: string
     itemListName: string
+    /** Keyed by Shopify GID (product.id) — batch-fetched with a bounded
+        concurrency cap (getManyProductReviewSummaries) so a full collection
+        page never issues a sequential per-card TrustShop waterfall. */
+    reviewSummaries?: Map<string, ProductReviewSummary | null>
+    /** Favorites (DEV-FAV-01). Omitted (default) leaves the heart unrendered
+        on a grid that hasn't been wired up — see ShopifyProductCard's own
+        prop comment. When passed, `isSignedIn` must be the real
+        server-computed session state for this request, and
+        `favoritedProductIds` ONE batched read of the customer's saved IDs
+        (never a per-card fetch — see CategoryResults/SearchResultsSection). */
+    isSignedIn?: boolean
+    favoritedProductIds?: ReadonlySet<string>
+    onFavoriteRemoved?: (productId: string) => void
 }
 
 export function ProductGrid({
@@ -19,6 +33,10 @@ export function ProductGrid({
     categorySlug,
     itemListId,
     itemListName,
+    reviewSummaries,
+    isSignedIn,
+    favoritedProductIds,
+    onFavoriteRemoved,
 }: Props) {
 
   if (products.length === 0) {
@@ -59,6 +77,10 @@ export function ProductGrid({
           // First xl row (3 tiles) is above the fold — eager + fetchpriority
           // high so the category LCP image isn't lazy-loaded.
           imagePriority={index < 3}
+          reviewSummary={reviewSummaries?.get(product.id) ?? null}
+          isSignedIn={isSignedIn}
+          isFavorited={favoritedProductIds?.has(product.id)}
+          onFavoriteRemoved={onFavoriteRemoved}
         />
       ))}
     </div>

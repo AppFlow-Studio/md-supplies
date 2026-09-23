@@ -26,6 +26,10 @@ export const GET_CUSTOMER = `#graphql
 
 // Summary list for the dashboard / orders table. No line items — none of the list
 // views render them (the detail page fetches its own full data below).
+// `fulfillments` here is deliberately minimal (status/latestShipmentStatus/
+// isPickedUp only, no tracking or line items) — just enough for
+// resolveOrderStatus (lib/fulfillment.ts) to avoid conflating Shopify's
+// order-level FULFILLED with actual carrier delivery on these list surfaces.
 export const GET_CUSTOMER_ORDERS = `#graphql
   query GetCustomerOrders($first: Int!, $after: String) {
     customer {
@@ -37,6 +41,13 @@ export const GET_CUSTOMER_ORDERS = `#graphql
           financialStatus
           fulfillmentStatus
           totalPrice { amount currencyCode }
+          fulfillments(first: 10) {
+            nodes {
+              status
+              latestShipmentStatus
+              isPickedUp
+            }
+          }
         }
         pageInfo { hasNextPage endCursor }
       }

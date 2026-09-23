@@ -7,6 +7,11 @@ export const SESSION_COOKIES = {
   ID_TOKEN:      'shopify_id_token',
   CODE_VERIFIER: 'shopify_code_verifier',
   OAUTH_STATE:   'shopify_oauth_state',
+  // Guest favorite-intent handoff (DEV-FAV-01): a guest's heart click before
+  // login. Short-lived, httpOnly, server-set/server-read only — never a
+  // query string round trip through the OAuth provider, and never anything
+  // but a public product/variant id + an internal return path.
+  PENDING_FAVORITE: 'pending_favorite',
 } as const
 
 export interface Session {

@@ -7,7 +7,11 @@ import type { CollectionProduct } from '@/lib/shopify/types'
 const VALID_FIXTURE = VALID.path
 const VALID_CHECKSUM = VALID.checksum
 
-function stubProduct(id: string, freeShipping?: { value: string } | null): CollectionProduct {
+function stubProduct(
+  id: string,
+  freeShipping?: { value: string } | null,
+  variants: CollectionProduct['variants']['nodes'] = [],
+): CollectionProduct {
   return {
     id,
     title: 'Test',
@@ -17,7 +21,19 @@ function stubProduct(id: string, freeShipping?: { value: string } | null): Colle
     tags: [],
     priceRange: { minVariantPrice: { amount: '1.00', currencyCode: 'USD' }, maxVariantPrice: { amount: '10.00', currencyCode: 'USD' } },
     images: { nodes: [] },
-    variants: { nodes: [] },
+    variants: { nodes: variants },
+    freeShipping,
+  }
+}
+
+function stubVariant(id: string, freeShipping?: { value: string } | null): CollectionProduct['variants']['nodes'][number] {
+  return {
+    id,
+    title: id,
+    price: { amount: '10.00', currencyCode: 'USD' },
+    compareAtPrice: null,
+    availableForSale: true,
+    quantityAvailable: 10,
     freeShipping,
   }
 }
@@ -82,6 +98,57 @@ describe('attachCardShippingDisplay', () => {
       setup()
       expect(attachCardShippingDisplay([stubProduct(THRESHOLD_PRODUCT_ID, { value: 'true' })])[0].shippingDisplay?.class).toBe('threshold')
       expect(attachCardShippingDisplay([stubProduct(THRESHOLD_PRODUCT_ID, { value: 'false' })])[0].shippingDisplay?.class).toBe('threshold')
+    })
+  })
+
+  // Bilal, 2026-09-14: Quick Add has a real variant picker — the card-level
+  // aggregate above collapses to FALLBACK whenever a product's variants
+  // disagree on class, which is exactly the B2080C-class case (one variant
+  // legitimately ships free, a sibling doesn't). This fixture product is a
+  // genuine "multi_mixed" case: one variant resolves `unknown`, the other
+  // resolves `standard-free`.
+  describe('per-variant shippingDisplay (Quick Add)', () => {
+    const MIXED_PRODUCT_ID = 'gid://shopify/Product/8651920310488'
+    const UNKNOWN_VARIANT_ID = 'gid://shopify/ProductVariant/46997944238296' // resolves `unknown`
+    const FREE_VARIANT_ID = 'gid://shopify/ProductVariant/51930534117592' // resolves `standard-free`
+
+    function setup() {
+      vi.stubEnv('SHIPPING_RESOLVER_ENABLED', 'true')
+      vi.stubEnv('SHIPPING_FACTS_PATH', VALID_FIXTURE)
+      vi.stubEnv('SHIPPING_FACTS_CHECKSUM_SHA256', VALID_CHECKSUM)
+      vi.stubEnv('SHOPIFY_ALLOWED_SHOP_DOMAIN', VALID.store)
+    }
+
+    it("gives each variant its own resolved class, even though the card aggregate falls back to unknown", () => {
+      setup()
+      const product = stubProduct(MIXED_PRODUCT_ID, { value: 'true' }, [
+        stubVariant(UNKNOWN_VARIANT_ID, { value: 'true' }),
+        stubVariant(FREE_VARIANT_ID, { value: 'true' }),
+      ])
+      const result = attachCardShippingDisplay([product])[0]
+
+      expect(result.shippingDisplay?.class).toBe('unknown') // card aggregate: variants disagree
+      const nodes = Object.fromEntries(result.variants.nodes.map((v) => [v.id, v]))
+      expect(nodes[UNKNOWN_VARIANT_ID].shippingDisplay?.class).toBe('unknown')
+      expect(nodes[FREE_VARIANT_ID].shippingDisplay?.class).toBe('standard-free')
+    })
+
+    it("gates a variant's own standard-free claim with that SAME variant's own custom.free_shipping", () => {
+      setup()
+      const product = stubProduct(MIXED_PRODUCT_ID, { value: 'true' }, [
+        stubVariant(FREE_VARIANT_ID, { value: 'false' }),
+      ])
+      const result = attachCardShippingDisplay([product])[0]
+      expect(result.variants.nodes[0].shippingDisplay?.class).toBe('unknown')
+    })
+
+    it("falls back to the product-level custom.free_shipping when the variant has none of its own", () => {
+      setup()
+      const product = stubProduct(MIXED_PRODUCT_ID, { value: 'true' }, [
+        stubVariant(FREE_VARIANT_ID), // no freeShipping of its own
+      ])
+      const result = attachCardShippingDisplay([product])[0]
+      expect(result.variants.nodes[0].shippingDisplay?.class).toBe('standard-free')
     })
   })
 })

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronDown } from 'lucide-react'
 
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import type { MegaMenuCategory } from '@/components/layout/CategoryMegaMenu'
@@ -10,16 +10,16 @@ import type { MegaMenuCategory } from '@/components/layout/CategoryMegaMenu'
 // The mobile half of the same two-stage idea, expressed the way a touch screen
 // wants it: a drill-down, not a hover.
 //
-// It follows the desktop panel's rule exactly — the department list SELECTS,
-// the department's own panel NAVIGATES — because a shopper who learns the menu
-// on a laptop and then opens it on a phone must not find that tapping a
-// category name means something different. Tapping a department anywhere on its
-// row drills into it; the way to the category page is the first thing inside,
-// a full-width "All <Department> →".
-//
-// That also removes the split target the row used to carry (name = go,
-// chevron = drill in). Two meanings in one row is hard enough to hit with a
-// mouse; with a thumb it is a coin flip.
+// It follows the desktop rail's split-control rule exactly (see
+// CategoryMegaMenu.tsx's 2026-09-04 file-header comment for the full history):
+// the department NAME is a real link to its category page, and a SEPARATE
+// chevron button drills into its subcategory panel. Same two intentional
+// actions on mobile as on desktop, so a shopper who learns the menu on a
+// laptop and opens it on a phone finds tapping a category name means the same
+// thing it did there. There is no hover state to guard against on touch, but
+// the same "no accidental navigation while trying to expand children" contract
+// applies — hence two separate, adequately sized hit targets rather than one
+// row that has to guess which the shopper meant.
 //
 // Exactly one department panel is open at a time, by construction: the state is
 // a single tag, not a set. Every panel stays mounted and CSS-hidden so the
@@ -71,16 +71,30 @@ export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }:
                 <AnimatedArrow size={16} className="text-gray-400" />
               </Link>
             ) : (
-              <button
-                type="button"
-                aria-expanded={open?.tag === cat.tag}
-                aria-controls={`mobile-cat-${cat.tag}`}
-                onClick={() => setOpenTag(cat.tag)}
-                className={`${ROW_CLASS} text-gray-500 hover:text-navy-900`}
-              >
-                <span className="flex-1 min-w-0">{cat.displayName}</span>
-                <AnimatedArrow size={16} className="text-gray-400" />
-              </button>
+              // Split control, same rule as the desktop rail: the name is a
+              // real link to the category page, the chevron is the ONLY
+              // control that drills into the subcategory panel. Two separate
+              // hit targets, each large enough to tap on its own — not one
+              // row guessing which the shopper meant.
+              <div className="flex items-center gap-1">
+                <Link
+                  href={cat.href}
+                  onClick={onNavigate}
+                  className="flex-1 min-w-0 text-left text-sm py-3 text-gray-500 hover:text-navy-900 transition-colors"
+                >
+                  {cat.displayName}
+                </Link>
+                <button
+                  type="button"
+                  aria-expanded={open?.tag === cat.tag}
+                  aria-controls={`mobile-cat-${cat.tag}`}
+                  aria-label={`${cat.displayName} subcategories`}
+                  onClick={() => setOpenTag(cat.tag)}
+                  className="shrink-0 p-3 text-gray-400 hover:text-navy-900 transition-colors"
+                >
+                  <ChevronDown size={16} />
+                </button>
+              </div>
             )}
           </li>
         ))}
@@ -114,14 +128,15 @@ export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }:
             </button>
             <p className="text-navy-900 text-sm font-semibold py-1 m-0">{cat.displayName}</p>
             <ul className="list-none m-0 p-0 flex flex-col">
-              {/* Primary action, exactly as on desktop. */}
+              {/* Primary action, exactly as on desktop — same "Browse All"
+                  wording so the CTA reads the same on both surfaces. */}
               <li className="border-b border-gray-100">
                 <Link
                   href={cat.href}
                   onClick={onNavigate}
                   className="group flex items-center gap-2 text-navy-900 text-sm py-3 font-semibold hover:text-teal-500 transition-colors"
                 >
-                  <span className="flex-1 min-w-0">All {cat.displayName}</span>
+                  <span className="flex-1 min-w-0">Browse All {cat.displayName}</span>
                   <AnimatedArrow size={16} />
                 </Link>
               </li>

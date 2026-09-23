@@ -33,9 +33,9 @@ function signBody(body: string): string {
 // CDN-served static shell — instead of ISR-via-`revalidate`. Freshness comes from
 // the fetch-level data-cache tags + the Shopify webhook (app/api/revalidate).
 const FORMER_ISR_ROUTE_FILES = [
-  'app/page.tsx',
-  'app/blog/[handle]/page.tsx',
-  'app/product/[slug]/page.tsx',
+  'app/(site)/page.tsx',
+  'app/(site)/blog/[handle]/page.tsx',
+  'app/(site)/product/[slug]/page.tsx',
 ]
 
 // These were the always-dynamic, searchParams-reading routes. Under Cache
@@ -44,9 +44,9 @@ const FORMER_ISR_ROUTE_FILES = [
 // they too prerender a static shell. None ever carried (or should carry) a
 // `revalidate` export.
 const FORMER_DYNAMIC_ROUTE_FILES = [
-  'app/category/[slug]/page.tsx',
-  'app/solutions/occ/page.tsx',
-  'app/industries/[industry-slug]/page.tsx',
+  'app/(site)/category/[slug]/page.tsx',
+  'app/(site)/solutions/occ/page.tsx',
+  'app/(site)/industries/[industry-slug]/page.tsx',
 ]
 
 function read(file: string): string {
@@ -65,11 +65,11 @@ describe('Cache Components: route-segment revalidate is gone', () => {
   }
 
   it('/product/[slug], /category/[slug] and /category/[slug]/[product] prerender via generateStaticParams', () => {
-    expect(read('app/product/[slug]/page.tsx')).toMatch(/generateStaticParams/)
-    expect(read('app/category/[slug]/[product]/page.tsx')).toMatch(/generateStaticParams/)
+    expect(read('app/(site)/product/[slug]/page.tsx')).toMatch(/generateStaticParams/)
+    expect(read('app/(site)/category/[slug]/[product]/page.tsx')).toMatch(/generateStaticParams/)
     // /category/[slug] re-exports it from CategoryPageView.
     expect(
-      read('app/category/[slug]/page.tsx') + read('components/category/CategoryPageView.tsx'),
+      read('app/(site)/category/[slug]/page.tsx') + read('components/category/CategoryPageView.tsx'),
     ).toMatch(/generateStaticParams/)
   })
 })

@@ -10,6 +10,17 @@
 // verified — never a guessed/placeholder asset. Brands without a verified logo render
 // as a clean text label (no broken image).
 //
+// "Visually verified" means checked against the actual card background, not just a
+// successful HTTP fetch: the P0 Partners/Brands audit (2026-09-04, see
+// docs/audits/2026-09-04-partners-brand-logo-audit.md and
+// scripts/audit-brand-logos.ts) found 19 brands — including the reported Lumex
+// regression — whose uploaded logo file resolves 200 with a valid image
+// content-type but is filled pure/near-pure white, rendering invisible on these
+// white cards (and on the homepage marquee) even though nothing is technically
+// broken. `logoFile` was removed for exactly those 19 rather than patched with a
+// per-brand exception, so they fall back to the existing text-label rendering
+// until a correct (non-reversed) color variant is re-uploaded to BunnyCDN.
+//
 // `partnerSlug` is set ONLY when a real /partners/<slug> destination exists. Brands
 // without a valid destination render with no link (§6.2).
 
@@ -54,15 +65,15 @@ export const BRANDS: Brand[] = [
   { name: 'Airgo', slug: 'airgo', logoFile: 'airgo.webp', logoWidth: 500, logoHeight: 213 },
   { name: 'AirLife', slug: 'airlife', logoFile: 'airlife.svg', logoWidth: 538, logoHeight: 209, homepage: true },
   { name: 'AmeriDerm', slug: 'ameriderm', logoFile: 'ameriderm.avif', logoWidth: 128, logoHeight: 64 },
-  { name: 'Ammex', slug: 'ammex', logoFile: 'ammex.png', logoWidth: 300, logoHeight: 124 },
+  { name: 'Ammex', slug: 'ammex' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'Amsino', slug: 'amsino', logoFile: 'amsino.png', logoWidth: 241, logoHeight: 92, homepage: true },
   { name: 'Ansell', slug: 'ansell', logoFile: 'ansell.svg', logoWidth: 446, logoHeight: 138, homepage: true },
   { name: 'Arkray', slug: 'arkray', logoFile: 'arkray.webp', logoWidth: 206, logoHeight: 77 },
-  { name: 'Aspen Surgical', slug: 'aspen-surgical', logoFile: 'aspen-surgical.svg', logoWidth: 333, logoHeight: 43 },
+  { name: 'Aspen Surgical', slug: 'aspen-surgical' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'Bari+Max', slug: 'bari-max', logoFile: 'bari-max.png', logoWidth: 225, logoHeight: 225 },
   { name: 'BD', slug: 'bd', logoFile: 'bd.svg', logoWidth: 38, logoHeight: 15, homepage: true },
   { name: 'Bellavita', slug: 'bellavita', logoFile: 'bellavita.png', logoWidth: 1265, logoHeight: 517 },
-  { name: 'Bionix', slug: 'bionix', logoFile: 'bionix.svg', logoWidth: 387, logoHeight: 92 },
+  { name: 'Bionix', slug: 'bionix' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'Bird & Cronin', slug: 'bird-cronin', logoFile: 'bird-cronin.png', logoWidth: 281, logoHeight: 120 },
   { name: 'Busse Hospital Disposables', slug: 'busse-hospital-disposables', logoFile: 'busse-hospital-disposables.png', logoWidth: 300, logoHeight: 113 },
   { name: 'Cardinal Health', slug: 'cardinal-health', logoFile: 'cardinal-health.svg', logoWidth: 152, logoHeight: 56, homepage: true },
@@ -99,7 +110,7 @@ export const BRANDS: Brand[] = [
   { name: 'Kinsman Enterprises', slug: 'kinsman-enterprises', logoFile: 'kinsman-enterprises.png', logoWidth: 2800, logoHeight: 1500 },
   { name: 'Laerdal', slug: 'laerdal', logoFile: 'laerdal.svg', logoWidth: 88, logoHeight: 48, homepage: true },
   { name: 'LifeSign', slug: 'lifesign', logoFile: 'lifesign.png', logoWidth: 267, logoHeight: 110 },
-  { name: 'Lumex', slug: 'lumex', logoFile: 'lumex.svg', logoWidth: 109, logoHeight: 85, partnerSlug: 'lumex', homepage: true },
+  { name: 'Lumex', slug: 'lumex', partnerSlug: 'lumex', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit); this is the reported P0 regression
   { name: 'Medical Action Industries', slug: 'medical-action-industries', logoFile: 'medical-action-industries.jpg', logoWidth: 485, logoHeight: 110 },
   { name: 'Medegen Medical Products', slug: 'medegen-medical-products', logoFile: 'medegen-medical-products.jpg', logoWidth: 297, logoHeight: 103 },
   { name: 'Medgluv', slug: 'medgluv', logoFile: 'medgluv.png', logoWidth: 200, logoHeight: 51 },
@@ -112,7 +123,7 @@ export const BRANDS: Brand[] = [
   { name: 'Metrex', slug: 'metrex', logoFile: 'metrex.svg', logoWidth: 148, logoHeight: 45 },
   { name: 'Molnlycke', slug: 'molnlycke', logoFile: 'molnlycke.png', logoWidth: 2222, logoHeight: 1250, homepage: true },
   { name: 'Myco Medical', slug: 'myco-medical', logoFile: 'myco-medical.svg', logoWidth: 521, logoHeight: 272 },
-  { name: 'New World Imports', slug: 'new-world-imports', logoFile: 'new-world-imports.jpg', logoWidth: 1102, logoHeight: 235 },
+  { name: 'New World Imports', slug: 'new-world-imports' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'Omni International', slug: 'omni-international', logoFile: 'omni-international.png', logoWidth: 440, logoHeight: 52 },
   { name: 'Omron Healthcare', slug: 'omron-healthcare', logoFile: 'omron-healthcare.svg', logoWidth: 323, logoHeight: 63, homepage: true },
   { name: 'OraSure', slug: 'orasure', logoFile: 'orasure.png', logoWidth: 250, logoHeight: 75 },
@@ -123,27 +134,27 @@ export const BRANDS: Brand[] = [
   { name: 'Quidel', slug: 'quidel', logoFile: 'quidel.svg', logoWidth: 69, logoHeight: 9 },
   { name: 'Resp-O2', slug: 'resp-o2', logoFile: 'resp-o2.jpeg', logoWidth: 308, logoHeight: 164 },
   { name: 'Rx Systems', slug: 'rx-systems', logoFile: 'rx-systems.png', logoWidth: 223, logoHeight: 56 },
-  { name: 'Safetec', slug: 'safetec', logoFile: 'safetec.webp', logoWidth: 500, logoHeight: 134 },
-  { name: 'Sempermed USA', slug: 'sempermed-usa', logoFile: 'sempermed-usa.png', logoWidth: 417, logoHeight: 121, homepage: true },
-  { name: 'Siemens', slug: 'siemens', logoFile: 'siemens.svg', logoWidth: 576, logoHeight: 144, homepage: true },
+  { name: 'Safetec', slug: 'safetec' }, // logoFile removed — white-on-white (2026-09-04 audit)
+  { name: 'Sempermed USA', slug: 'sempermed-usa', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit); HOMEPAGE_BRANDS_WITH_LOGO drops it from the marquee until re-uploaded
+  { name: 'Siemens', slug: 'siemens', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'SS Medical Products', slug: 'ss-medical-products', logoFile: 'ss-medical-products.png', logoWidth: 225, logoHeight: 225 },
-  { name: 'Stat Medical Devices', slug: 'stat-medical-devices', logoFile: 'stat-medical-devices.jpeg', logoWidth: 224, logoHeight: 224 },
-  { name: 'TIDI Products', slug: 'tidi-products', logoFile: 'tidi-products.svg', logoWidth: 251, logoHeight: 133 },
+  { name: 'Stat Medical Devices', slug: 'stat-medical-devices' }, // logoFile removed — white-on-white (2026-09-04 audit)
+  { name: 'TIDI Products', slug: 'tidi-products' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'Tech-Med', slug: 'tech-med', logoFile: 'tech-med.jpeg', logoWidth: 225, logoHeight: 225 },
-  { name: 'Terumo', slug: 'terumo', logoFile: 'terumo.svg', logoWidth: 213, logoHeight: 37, homepage: true },
+  { name: 'Terumo', slug: 'terumo', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit)
   // Glenshaw is a Dynarex sub-brand; reuses the Dynarex logo by request (no standalone mark exists).
   { name: 'The Glenshaw Collection', slug: 'the-glenshaw-collection', logoFile: 'dynarex.png', logoWidth: 270, logoHeight: 90 },
-  { name: 'Tillotson', slug: 'tillotson', logoFile: 'tillotson.png', logoWidth: 323, logoHeight: 156 },
+  { name: 'Tillotson', slug: 'tillotson' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'TLC DME', slug: 'tlc-dme', logoFile: 'tlc-dme.png', logoWidth: 81, logoHeight: 90 },
   { name: 'Trocar Supplies', slug: 'trocar-supplies', logoFile: 'trocar-supplies.avif', logoWidth: 410, logoHeight: 195, homepage: true },
   { name: 'TrueCare Biomedix', slug: 'truecare-biomedix', logoFile: 'truecare.svg', logoWidth: 204, logoHeight: 44, partnerSlug: 'truecare' },
-  { name: 'UltiMed', slug: 'ultimed', logoFile: 'ultimed.png', logoWidth: 600, logoHeight: 224 },
-  { name: 'UNIFY', slug: 'unify', logoFile: 'unify.svg', logoWidth: 378, logoHeight: 180 },
-  { name: 'Unipack', slug: 'unipack', logoFile: 'unipack.jpeg', logoWidth: 316, logoHeight: 159 },
-  { name: 'Ventyv', slug: 'ventyv', logoFile: 'ventyv.webp', logoWidth: 300, logoHeight: 133 },
-  { name: 'WeCare', slug: 'wecare', logoFile: 'wecare.png', logoWidth: 245, logoHeight: 148 },
-  { name: 'Welch Allyn', slug: 'welch-allyn', logoFile: 'welch-allyn.svg', logoWidth: 188, logoHeight: 39, homepage: true },
-  { name: 'Zoll', slug: 'zoll', logoFile: 'zoll.png', logoWidth: 1034, logoHeight: 300, homepage: true },
+  { name: 'UltiMed', slug: 'ultimed' }, // logoFile removed — white-on-white (2026-09-04 audit)
+  { name: 'UNIFY', slug: 'unify' }, // logoFile removed — near-white/effectively invisible on white (2026-09-04 audit)
+  { name: 'Unipack', slug: 'unipack' }, // logoFile removed — white-on-white (2026-09-04 audit)
+  { name: 'Ventyv', slug: 'ventyv' }, // logoFile removed — white-on-white (2026-09-04 audit)
+  { name: 'WeCare', slug: 'wecare' }, // logoFile removed — white-on-white (2026-09-04 audit)
+  { name: 'Welch Allyn', slug: 'welch-allyn', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit)
+  { name: 'Zoll', slug: 'zoll', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit)
 ]
 
 // Approved homepage set (§6.1), in the spec's order. Derived from BRANDS so names

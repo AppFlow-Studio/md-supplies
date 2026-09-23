@@ -332,4 +332,39 @@ describe('ShopifyProductCard', () => {
     )
     expect(screen.queryByText('Free Shipping')).not.toBeInTheDocument()
   })
+
+  describe('reviewSummary (TrustShop)', () => {
+    it('renders a compact rating row when a review summary is provided', () => {
+      const product = makeProduct()
+      render(
+        <ShopifyProductCard
+          product={product}
+          categorySlug="gloves"
+          reviewSummary={{ averageRating: 4.8, totalReviews: 47, ratingsDistribution: { 1: 0, 2: 0, 3: 1, 4: 8, 5: 38 } }}
+        />,
+      )
+      expect(screen.getByText('(47)')).toBeInTheDocument()
+      expect(screen.getByRole('img', { name: /Rated 4.8 out of 5/ })).toBeInTheDocument()
+    })
+
+    it('renders no rating row when reviewSummary is null', () => {
+      const product = makeProduct()
+      const { container } = render(
+        <ShopifyProductCard product={product} categorySlug="gloves" reviewSummary={null} />,
+      )
+      expect(container.textContent).not.toMatch(/\(\d+\)/)
+    })
+
+    it('renders no rating row for a zero-review summary', () => {
+      const product = makeProduct()
+      render(
+        <ShopifyProductCard
+          product={product}
+          categorySlug="gloves"
+          reviewSummary={{ averageRating: 0, totalReviews: 0, ratingsDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } }}
+        />,
+      )
+      expect(screen.queryByRole('img', { name: /Rated/ })).not.toBeInTheDocument()
+    })
+  })
 })

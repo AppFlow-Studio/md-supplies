@@ -85,11 +85,12 @@ describe('ProductView — manufacturer number vs internal SKU (AeroWalk)', () =>
     expect(screen.getByText('Mfr #: 10277BL')).toBeInTheDocument()
   })
 
-  it('Specifications tab shows Manufacturer Item Number and Internal SKU as separate rows, not one conflated "Item Number"', () => {
+  it('Specifications tab shows Manufacturer Item Number and MDSupplies SKU as separate rows, not one conflated "Item Number"', () => {
     renderPDP(blueVariant)
     expect(screen.getByText('Manufacturer Item Number')).toBeInTheDocument()
-    expect(screen.getByText('Internal SKU')).toBeInTheDocument()
+    expect(screen.getByText('MDSupplies SKU')).toBeInTheDocument()
     expect(screen.queryByText('Item Number')).not.toBeInTheDocument()
+    expect(screen.queryByText('Internal SKU')).not.toBeInTheDocument()
   })
 
   it('switching from Blue to White updates the manufacturer number', () => {
@@ -318,23 +319,38 @@ describe('ProductView — variant-sourced order unit, above Add to Cart', () => 
   })
 })
 
-describe('ProductView — Variant Description supplement (no duplicate display)', () => {
-  it('renders the variant description when it differs from the product description', () => {
+// Client correction, 2026-09-17: a variant description now REPLACES the
+// Description shown for that selection instead of appending below the
+// parent description as a "Variant Details" supplement — the client's
+// reported issue was that showing both left the wrong SKU's description
+// still visible on the page after switching variants.
+describe('ProductView — Variant Description replaces the parent Description', () => {
+  it('shows only the variant description when the variant has one, not the parent description too', () => {
     renderPDP(whiteVariant)
     expect(screen.getByText(/extra-wide seat pad/)).toBeInTheDocument()
+    expect(screen.queryByText('A lightweight rollator.')).not.toBeInTheDocument()
   })
 
-  it('renders nothing extra when the variant has no description', () => {
+  it('falls back to the parent product description when the variant has none', () => {
     renderPDP(blueVariant)
+    expect(screen.getByText('A lightweight rollator.')).toBeInTheDocument()
     expect(screen.queryByText('Variant Details')).not.toBeInTheDocument()
+  })
+
+  it('switching from a variant with a description to one without swaps back to the parent description (no stale SKU description left on screen)', () => {
+    renderPDP(whiteVariant)
+    expect(screen.getByText(/extra-wide seat pad/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Color: Blue' }))
+    expect(screen.queryByText(/extra-wide seat pad/)).not.toBeInTheDocument()
+    expect(screen.getByText('A lightweight rollator.')).toBeInTheDocument()
   })
 
   // Izzy's real 2026-08-15 AeroWalk QA write created custom.variant_description
   // as a rich_text_field, not the plain multi-line text the field contract
   // proposed — confirmed by querying live QA data (scripts/verify-aerowalk-pilot.ts),
-  // which returned Shopify's JSON AST verbatim in .value. Without flattening,
-  // this JSON would render as-is on the page.
-  it('flattens Shopify rich-text JSON instead of rendering it raw', () => {
+  // which returned Shopify's JSON AST verbatim in .value. Without converting
+  // it, this JSON would render as-is on the page.
+  it('renders Shopify rich-text JSON as HTML instead of rendering it raw', () => {
     const richTextVariant: ProductVariant = {
       ...whiteVariant,
       description: JSON.stringify({
@@ -345,6 +361,45 @@ describe('ProductView — Variant Description supplement (no duplicate display)'
     renderPDP(richTextVariant)
     expect(screen.getByText('Blue frame with matching fork covers.')).toBeInTheDocument()
     expect(screen.queryByText(/"type":"root"/)).not.toBeInTheDocument()
+  })
+
+  // Client, 2026-09-17: "preserve the rich-text content as cleanly as
+  // possible rather than unnecessarily degrading the recovered archived
+  // descriptions" — bold/italic and list structure must survive, not just
+  // the plain text.
+  it('preserves bold/italic emphasis and list structure from the archived rich text instead of flattening it to plain text', () => {
+    const richTextVariant: ProductVariant = {
+      ...whiteVariant,
+      description: JSON.stringify({
+        type: 'root',
+        children: [
+          {
+            type: 'paragraph',
+            children: [
+              { type: 'text', value: 'Includes ' },
+              { type: 'text', value: 'extra-wide', bold: true },
+              { type: 'text', value: ' seat pad, ' },
+              { type: 'text', value: 'padded', italic: true },
+              { type: 'text', value: ' armrests.' },
+            ],
+          },
+          {
+            type: 'list',
+            listType: 'unordered',
+            children: [
+              { type: 'list-item', children: [{ type: 'paragraph', children: [{ type: 'text', value: 'Foldable frame' }] }] },
+              { type: 'list-item', children: [{ type: 'paragraph', children: [{ type: 'text', value: '300 lb capacity' }] }] },
+            ],
+          },
+        ],
+      }),
+    }
+    renderPDP(richTextVariant)
+    const description = screen.getByRole('heading', { name: 'Description' }).parentElement as HTMLElement
+    expect(description.querySelector('strong')?.textContent).toBe('extra-wide')
+    expect(description.querySelector('em')?.textContent).toBe('padded')
+    const listItems = description.querySelectorAll('li')
+    expect(Array.from(listItems).map((li) => li.textContent)).toEqual(['Foldable frame', '300 lb capacity'])
   })
 })
 

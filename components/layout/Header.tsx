@@ -266,7 +266,8 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
       .filter((sub) => validHandles.size === 0 || validHandles.has(sub.collectionHandle))
       .map((sub) => ({ displayName: sub.displayName, href: ROUTES.category(sub.slug) }))
 
-    const remainingSlots = MAX_DROPDOWN_CHILDREN - featuredChildren.length
+    const dropdownLimit = l1.priorityChildLimit ?? MAX_DROPDOWN_CHILDREN
+    const remainingSlots = dropdownLimit - featuredChildren.length
     const tagChildren = remainingSlots > 0
       ? getTopSubcategoriesForParent(l1.tag, l2Nodes, remainingSlots).map((n) => ({
           displayName: humanizeTag(n.tag),
@@ -297,7 +298,8 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
         .filter((sub) => sub.parentTag === l1.tag)
         .filter((sub) => validHandles.size === 0 || validHandles.has(sub.collectionHandle))
         .map((sub) => ({ displayName: sub.displayName, href: ROUTES.category(sub.slug), featured: true }))
-      const remainingSlots = MAX_MEGA_MENU_CHILDREN - featuredChildren.length
+      const megaLimit = l1.priorityChildLimit ?? MAX_MEGA_MENU_CHILDREN
+      const remainingSlots = megaLimit - featuredChildren.length
       const tagChildren = remainingSlots > 0
         ? getTopSubcategoriesForParent(l1.tag, l2Nodes, remainingSlots).map((n) => ({
             displayName: humanizeTag(n.tag),

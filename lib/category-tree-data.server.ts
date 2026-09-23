@@ -2,6 +2,7 @@ import 'server-only'
 
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_ALL_PRODUCT_TAGS } from '@/lib/shopify/queries/products'
+import { GET_COLLECTION_META } from '@/lib/shopify/queries/collections'
 import { parseProductTags, type ProductTagSummary } from '@/lib/category-tree'
 
 type ProductTagsResponse = {
@@ -64,4 +65,31 @@ export async function fetchProductTagSummaries(): Promise<ProductTagSummary[]> {
   }
 
   return summaries
+}
+
+type CollectionMetaResponse = { collection: { id: string } | null }
+
+/**
+ * FIX-duplicate-category-urls (2026-09-05 Izzy brief): a subcategory tag can
+ * ALSO be a standalone, real Shopify collection at /category/<tag> — the
+ * "flat" form. Izzy's brief found 8 sampled flat/nested pairs all self-
+ * canonicalising with no preferred version, and recommended flat as the
+ * chosen canonical (it holds the real content; the nested route only ever
+ * gets an auto-generated stub — see app/category/[slug]/[product]/page.tsx's
+ * neutral-copy fallback). Checked live per request, rather than off a
+ * hardcoded pair list, so the fix covers the full category tree rather than
+ * just the 8 sampled pairs. Cached the same way as every other per-handle
+ * collection fetch in this codebase.
+ */
+export async function hasFlatCategoryCollection(tag: string): Promise<boolean> {
+  try {
+    const data = await storefrontFetch<CollectionMetaResponse>(
+      GET_COLLECTION_META,
+      { handle: tag },
+      { next: { revalidate: 300, tags: ['shopify', 'collections', `collection:${tag}`] } },
+    )
+    return Boolean(data.collection)
+  } catch {
+    return false
+  }
 }

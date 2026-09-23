@@ -1,0 +1,176 @@
+[
+  {
+    "pathAndQuery": "/articles/types-of-needles.html",
+    "type": "article",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/needles-syringes"
+  },
+  {
+    "pathAndQuery": "/articles/types-of-sutures.html",
+    "type": "article",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/surgical-sutures"
+  },
+  {
+    "pathAndQuery": "/all-categories.html",
+    "type": "category",
+    "status": 301,
+    "location": "https://mdsupplies.com/categories"
+  },
+  {
+    "pathAndQuery": "/face-masks-n95-kn95.html",
+    "type": "page",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/face-masks"
+  },
+  {
+    "pathAndQuery": "/medical-supplies-Dynarex-Specimen-Containers-4oz-22I48F9UI7.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/partners/dynarex"
+  },
+  {
+    "pathAndQuery": "/medical-supplies-Exel-Insulin-Syringe-05cc-29g-x-12-8DKB9DMTEX.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/needles-syringes"
+  },
+  {
+    "pathAndQuery": "/medical-supplies-Feather-Sterile+Surgical+Blades+11-2ULXL3BIJK.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/wound-care"
+  },
+  {
+    "pathAndQuery": "/Medical-Supplies-for-Doctors.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/industries/clinics-doctors-offices"
+  },
+  {
+    "pathAndQuery": "/medical-supplies-Graham%20Medical-Drape+Sheet+White+40+x+60+2-Ply-XVUAKHW2KF.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/exam-room"
+  },
+  {
+    "pathAndQuery": "/medical-supplies-ndd%20Medical%20Technologies%20Inc.-EASYONE+SPIRETTES-I78AVCLDSL.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/respiratory"
+  },
+  {
+    "pathAndQuery": "/medical-supplies-Thorne%20Research-MediClear-SGS+Chocolate-UAQUGHR6DP.html",
+    "type": "product",
+    "status": 410,
+    "location": null
+  },
+  {
+    "pathAndQuery": "/medical-supplies-Thorne%20Research-VeganPro+Complex+Chocolate-TIH9JNRQT6.html",
+    "type": "product",
+    "status": 410,
+    "location": null
+  },
+  {
+    "pathAndQuery": "/medical-supplies-Thorne%20Research-VeganPro+Complex+Vanilla-WQEMF6Q8IH.html",
+    "type": "product",
+    "status": 410,
+    "location": null
+  },
+  {
+    "pathAndQuery": "/Medical-Supply-Store.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/categories"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Emergency+Supplies/Immobilizers/Leg+Immobilizers-IQ9MV1MBEB.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/emergency-supplies"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Face-Masks-CYR82C7EBL.html?&formularyId=S4MBN1JH2L",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/face-masks?&formularyId=S4MBN1JH2L"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Gloves-G78R26U43E.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/gloves"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Hygiene-WQ2ENW7KU6.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/hygiene"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Needles++Syringes/Syringes/10cc+Syringes+w+Needle-DMGAATSB9S.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/needles-syringes"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Pharmaceuticals/Injectables-U1GD8BVMR5.html",
+    "type": "product",
+    "status": 410,
+    "location": null
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Pharmaceuticals/Medication+Aids/Narcotics+Storage-GRF8SCRI15.html",
+    "type": "product",
+    "status": 410,
+    "location": null
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Testing-and-Screening/Diagnostic-Tests/Lipid-Glucose-Testing-Z2IP7J6EF7.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/testing-screening"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Wound++Skin+Care/Elastic+Bandages/Triangular+Bandages-ATPW8HKJSB.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/wound-care"
+  },
+  {
+    "pathAndQuery": "/medical-supply-store/Wound++Skin+Care/Wound+Care+Dressings/Emergency++Trauma+Dressings-1MRS82K82J.html",
+    "type": "product",
+    "status": 301,
+    "location": "https://mdsupplies.com/category/wound-care"
+  },
+  {
+    "pathAndQuery": "/",
+    "type": "root",
+    "location": null,
+    "error": "Cannot read properties of undefined (reading 'entries')"
+  },
+  {
+    "pathAndQuery": "/",
+    "type": "root",
+    "location": null,
+    "error": "Cannot read properties of undefined (reading 'entries')"
+  },
+  {
+    "pathAndQuery": "/Durable-Equipment-Medical.html",
+    "type": "vendor",
+    "status": 301,
+    "location": "https://mdsupplies.com/partners/drive-medical"
+  },
+  {
+    "pathAndQuery": "/supplies-by-vendor/Drive-Medical-VQTWVE3SWE.html",
+    "type": "vendor",
+    "status": 301,
+    "location": "https://mdsupplies.com/partners/drive-medical"
+  },
+  {
+    "pathAndQuery": "/supplies-by-vendor/Dynarex-MM7QQM8CLP.html",
+    "type": "vendor",
+    "status": 301,
+    "location": "https://mdsupplies.com/partners/dynarex"
+  }
+]

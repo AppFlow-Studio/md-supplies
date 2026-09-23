@@ -11,6 +11,10 @@ import { ProductLabelBadges } from '@/components/product/ProductLabelBadges'
 import { resolveProductLabels } from '@/lib/labels/labels'
 import { publicBrand } from '@/lib/brand'
 import { hasUsablePrice } from '@/lib/purchasability'
+import { ProductRating } from '@/components/reviews/ProductRating'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
+import { FavoriteButton } from '@/components/product/FavoriteButton'
+import { useFavoritesState } from '@/lib/favorites/FavoritesContext'
 
 interface Props {
   product: CollectionProduct
@@ -20,9 +24,34 @@ interface Props {
   index?: number
   /** Above-the-fold tile: load its image eagerly with fetchpriority="high". */
   imagePriority?: boolean
+  /** Summary-only — never full reviews/media on a card (N+1 guard, see
+      lib/trustshop/product.ts's getManyProductReviewSummaries). Omitted
+      (no rating row, no reserved space) when null/zero-review. */
+  reviewSummary?: ProductReviewSummary | null
+  /** Favorites (DEV-FAV-01). Both omitted (the default) on a call site that
+      hasn't been wired up yet — the heart is simply not rendered there, so
+      an unmigrated surface is unaffected. When present, `isSignedIn` must be
+      the real server-computed session state: a guest heart must never look
+      like a signed-in one, since it drives whether the click authorizes a
+      write or hands off to login. */
+  isSignedIn?: boolean
+  isFavorited?: boolean
+  /** Account Favorites grid only — lets that page drop the tile on remove. */
+  onFavoriteRemoved?: (productId: string) => void
 }
 
-export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false }: Props) {
+export function ShopifyProductCard({ product, categorySlug, itemListId, itemListName, index = 0, imagePriority = false, reviewSummary = null, isSignedIn, isFavorited, onFavoriteRemoved }: Props) {
+  // Falls back to the client-hydrated context (lib/favorites/FavoritesContext)
+  // whenever the caller doesn't explicitly wire favorites itself — the case
+  // for every grid fed by a statically-prerendered or shared-cached response
+  // (category default grid, /api/catalog), where a server-computed per-viewer
+  // value can never be embedded in the HTML/JSON without leaking across
+  // viewers. A caller with a genuinely per-request render (search, the
+  // account favorites grid) still passes explicit props, which win here.
+  const favoritesState = useFavoritesState()
+  const resolvedIsSignedIn = isSignedIn ?? (favoritesState.ready ? favoritesState.isSignedIn : undefined)
+  const resolvedIsFavorited = isFavorited ?? favoritesState.favoritedProductIds.has(product.id)
+
   const variant = product.variants.nodes[0]
   const price = parseFloat(variant?.price.amount ?? product.priceRange.minVariantPrice.amount)
   const compareAt = variant?.compareAtPrice
@@ -78,6 +107,26 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
             <div className="absolute inset-0 bg-white/60" />
           )}
         </Link>
+
+        {/* Sibling of the image Link, not nested inside it — a <button>
+            inside an <a> is invalid interactive-in-interactive markup (same
+            rule RelatedProductCard follows). Only rendered once the caller
+            has wired favorites up for this surface (isSignedIn !== undefined,
+            see the Props comment above). */}
+        {resolvedIsSignedIn !== undefined && (
+          <FavoriteButton
+            productId={product.id}
+            productHandle={product.handle}
+            productTitle={product.title}
+            variantId={product.variants.nodes[0]?.id ?? null}
+            isSignedIn={resolvedIsSignedIn}
+            initialFavorited={resolvedIsFavorited}
+            list="card"
+            size="sm"
+            className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white"
+            onRemoved={onFavoriteRemoved}
+          />
+        )}
       </div>
 
       {/* Info */}
@@ -92,9 +141,14 @@ export function ShopifyProductCard({ product, categorySlug, itemListId, itemList
         ) : (
           <span className="leading-[20px] sm:leading-[25px]" aria-hidden />
         )}
-        <p className="text-black text-[13px] sm:text-[14px] font-semibold tracking-[0.28px] leading-[1.35] sm:leading-5 line-clamp-2 mb-3 sm:mb-[30px]">
+        <p className="text-black text-[13px] sm:text-[14px] font-semibold tracking-[0.28px] leading-[1.35] sm:leading-5 line-clamp-2 mb-1 sm:mb-1.5">
           {product.title}
         </p>
+        {reviewSummary && reviewSummary.totalReviews > 0 && (
+          <div className="mb-2 sm:mb-2.5">
+            <ProductRating summary={reviewSummary} size="sm" variant="card" />
+          </div>
+        )}
         {/* DEV-LABEL-01: a shipping claim comes ONLY from the resolver-backed
             ShippingBadge — the raw `free-shipping` tag fallback is gone (an
             uncurated tag must never create a shipping promise). RX/backorder

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { CollectionProduct, CollectionFilter } from '@/lib/shopify/types'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 import { parseSortKey, parseFilterParam, parseSearchParam } from '@/lib/catalog/category-params'
 import { parsePageSize } from '@/lib/catalog/page-size'
 import { CategoryResultsView } from '@/components/category/CategoryResultsView'
@@ -31,6 +32,7 @@ interface CatalogApiResponse {
   filters: CollectionFilter[]
   categoryFacet: CollectionFilter | null
   filterLabelMap: [string, string][]
+  reviewSummaries: [string, ProductReviewSummary | null][]
   total: number
   renderedCount: number
   hasNext: boolean
@@ -189,6 +191,7 @@ export function CategoryFilterableGrid({
       filters={view.filters}
       categoryFacet={view.categoryFacet ?? undefined}
       filterLabelMap={new Map(view.filterLabelMap)}
+      reviewSummaries={new Map(view.reviewSummaries)}
       total={view.total}
       hasNext={view.hasNext}
       renderedCount={view.renderedCount}

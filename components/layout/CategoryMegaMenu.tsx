@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
+import { ChevronDown } from 'lucide-react'
 
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 
@@ -18,41 +19,51 @@ import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 // department rail (two columns, no scrolling at laptop height). Stage two is a
 // detail panel showing ONE department's subcategories at a time.
 //
-// ── ONE MEANING PER SURFACE ────────────────────────────────────────────────
+// ── ONE MEANING PER CONTROL, NOT PER ROW (2026-09-04 P0 nav-defect fix) ────
 //
-// The rail SELECTS. The panel NAVIGATES. Nothing in the rail is a link, and
-// everything in the panel is.
+// The rail SELECTS/OPENS. The panel NAVIGATES. That much never changed. What
+// changed is where "goes to the category page" lives.
 //
-// It was not always so, and the reason for the change is worth keeping. The
-// rail used to put a link (the department name) and a disclosure control (an
-// arrow) side by side in one dense 26px row: two targets, two meanings, no
-// separation — and, worst of it, the disclosure wore an ArrowRight, the glyph
-// this site uses for "go somewhere" everywhere else, from the hero's OCC link
-// to "Browse all categories". A shopper could not tell which half of the row
-// did what, and the symbol argued for the wrong one.
+// An earlier version of this file put a link (the department name) and a
+// disclosure arrow side by side in one dense 26px row, found that shoppers
+// could not tell which half did what, and removed the link entirely — a
+// department row became a single button, and the ONLY route to the category
+// page was "All <Department> →" at the top of the panel it opened. That
+// shipped, and in the 2026-09-01 client meeting a shopper clicking "Wound
+// Care" read the click as doing nothing, because from their side only the
+// (easy to miss) side panel changed — they expected the name itself to go
+// somewhere, and it didn't.
 //
-// Splitting a 26px row into two hit areas is the kind of thing that reads fine
-// in a mock-up and fails in the hand. So the split is gone: clicking a
-// department anywhere on its row opens that department, and the route to the
-// category page is the first thing inside the panel — a full-width
-// "All <Department> →". That is where large catalogue menus converge, and it
-// costs one obvious click rather than a coin flip.
-//
-// The arrow reads correctly now, too: it points at the panel it fills.
+// So the split control is back, but not the thing that made the first attempt
+// fail. Two real, separate controls per row, each with its own hit area and
+// its own accessible name — not two guesses crammed into one 26px strip:
+//   · the department NAME is a real `<Link>` to its category page.
+//   · a dedicated chevron `<button>` (ChevronDown, the disclosure glyph used
+//     everywhere else in this header — see Header.tsx's own top-level
+//     "Categories"/"<X> submenu" triggers, which this row now matches
+//     exactly) opens/selects the side panel.
+// `AnimatedArrow`'s ArrowRight glyph stays OUT of the disclosure control on
+// purpose — it is this site's "go somewhere" glyph, and doubling it as a
+// disclosure icon is exactly the ambiguity the first attempt's postmortem
+// flagged. It still marks every real navigation link inside the panel.
 //
 // Every category still has a real crawlable <a href="/category/…"> in the
-// server HTML — it moved from the rail into the panel's "All …" link. Panels
-// are CSS-hidden, never unmounted, because the sitewide nav is how category
-// pages receive internal link equity (see the NF7 note and test in Header).
+// server HTML — now from BOTH the rail row's name and the panel's "Browse All
+// …" link. Panels are CSS-hidden, never unmounted, because the sitewide nav is
+// how category pages receive internal link equity (see the NF7 note and test
+// in Header).
 //
-// Opening is a click, never a hover. The rail is two columns and the panel
-// sits to the RIGHT of both, so reaching a column-one department's panel means
-// dragging the pointer across column two. Bare mouseenter handed the panel to
-// whatever row was crossed; a fixed delay could not separate a slow sweep from
-// a deliberate rest; a direction guard fixed straight lines and still mis-fired
-// on real, wandering paths. All three were heuristics guessing at intent. A
-// click is not a guess. Keyboard focus and the arrow keys still move the
-// selection, because that is the keyboard's equivalent of pointing.
+// Opening the panel is still a click (or focus), never a hover. The rail is
+// two columns and the panel sits to the RIGHT of both, so reaching a
+// column-one department's panel means dragging the pointer across column two.
+// Bare mouseenter handed the panel to whatever row was crossed; a fixed delay
+// could not separate a slow sweep from a deliberate rest; a direction guard
+// fixed straight lines and still mis-fired on real, wandering paths. All three
+// were heuristics guessing at intent. A click is not a guess — and now that
+// the row is two controls, hovering EITHER of them must still leave the
+// active panel alone; only clicking (or focusing) the chevron opens one.
+// Keyboard focus and the arrow keys still move the selection, because that is
+// the keyboard's equivalent of pointing.
 
 export type MegaMenuChild = {
   displayName: string
@@ -183,26 +194,59 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
                 )
               }
 
+              // Split control (2026-09-04 P0 nav-defect fix): the name is a
+              // real link to the category page; the chevron is the ONLY
+              // control that opens/selects the side panel. `onFocus` sits on
+              // the wrapper (not either child individually) so tabbing onto
+              // EITHER control previews the panel — React's synthetic focus
+              // event bubbles, so this is one handler, not two. Hovering
+              // either control must never call `activate` — there is no
+              // `onMouseEnter` anywhere in this row on purpose.
               return (
                 <li key={cat.tag} className="min-w-0">
-                  <button
-                    type="button"
-                    id={railItemId(cat.tag)}
-                    data-rail-item
-                    data-tag={cat.tag}
-                    aria-expanded={isActive}
-                    aria-controls={panelId(cat.tag)}
-                    onClick={() => activate(cat.tag)}
+                  <div
+                    className={`group w-full flex items-center gap-1 rounded transition-colors ${stateClass}`}
                     onFocus={() => activate(cat.tag)}
-                    className={`${ROW_CLASS} ${stateClass}`}
                   >
-                    <span className="flex-1 min-w-0">{cat.displayName}</span>
-                    {/* Same motion as the homepage hero's OCC link. The open
-                        department keeps its arrow nudged across, so the rail
-                        shows which panel is on screen even when the pointer is
-                        somewhere else entirely. */}
-                    <AnimatedArrow size={14} className={arrowClass} />
-                  </button>
+                    <Link
+                      id={railItemId(cat.tag)}
+                      href={cat.href}
+                      className="flex-1 min-w-0 text-left text-[13px] leading-snug px-2 py-1.5 rounded truncate"
+                    >
+                      {cat.displayName}
+                    </Link>
+                    {/* No padding on the chevron, matching Header.tsx's own
+                        top-level submenu chevron convention — this
+                        two-column rail is ~182px per item at laptop width,
+                        and the longest labels ("Patient Therapy & Rehab",
+                        "Housekeeping & Janitorial") clip if the chevron
+                        carries its own hit padding on top of the name
+                        link's (verified live, 2026-09-04). Desktop-only,
+                        mouse-driven control, so a tight icon-sized target is
+                        acceptable — the mobile equivalent
+                        (MobileCategoryNav) keeps generous touch padding
+                        instead. */}
+                    <button
+                      type="button"
+                      data-rail-item
+                      data-tag={cat.tag}
+                      aria-expanded={isActive}
+                      aria-controls={panelId(cat.tag)}
+                      aria-label={`${cat.displayName} subcategories`}
+                      onClick={() => activate(cat.tag)}
+                      className="shrink-0 flex items-center"
+                    >
+                      {/* ChevronDown, not AnimatedArrow's ArrowRight — this
+                          site's "go somewhere" glyph must not double as the
+                          disclosure icon (see the file-header comment). Same
+                          rotate-on-open convention as Header.tsx's own
+                          top-level submenu triggers. */}
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-150 ${isActive ? 'rotate-180 text-navy-900' : 'text-gray-400 group-hover:text-navy-900'}`}
+                      />
+                    </button>
+                  </div>
                 </li>
               )
             })}
@@ -232,17 +276,18 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
                   {cat.displayName}
                 </p>
                 <ul className="list-none m-0 p-0 flex flex-col">
-                  {/* The route to the category page, and the panel's primary
-                      action — full width, named, separated from the
-                      subcategories beneath it. This is what the rail's
-                      department name used to be, moved somewhere it cannot be
-                      mistaken for the control that opened the panel. */}
+                  {/* The panel's primary action — full width, named, separated
+                      from the subcategories beneath it. A second, unmissable
+                      route to the category page alongside the rail's own name
+                      link, worded to read as an obvious CTA rather than a
+                      quiet "All X" label — the wording the 2026-09-04 nav
+                      ticket's client demo specifically asked for. */}
                   <li className="mb-1 pb-1 border-b border-gray-100">
                     <Link
                       href={cat.href}
                       className="group flex items-center gap-2 text-[13px] leading-snug font-semibold text-navy-900 hover:text-teal-500 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors"
                     >
-                      <span className="flex-1 min-w-0">All {cat.displayName}</span>
+                      <span className="flex-1 min-w-0">Browse All {cat.displayName}</span>
                       <AnimatedArrow size={14} />
                     </Link>
                   </li>

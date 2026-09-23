@@ -33,6 +33,7 @@ const OK_RESOLUTION = {
   filters: [],
   categoryFacet: undefined,
   filterLabelMap: new Map([['{"a":1}', 'A']]),
+  reviewSummaries: new Map(),
   total: 1,
   hasNext: false,
   renderedCount: 1,

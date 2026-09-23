@@ -196,13 +196,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'out_of_range' }, { status: 400 })
   }
 
-  // filterLabelMap is a Map — serialize as entries; the client reconstructs it
-  // via `new Map(resp.filterLabelMap)`.
+  // filterLabelMap/reviewSummaries are Maps — serialize as entries; the
+  // client reconstructs them via `new Map(resp.filterLabelMap)` etc.
   const body = {
     products: resolution.products,
     filters: resolution.filters,
     categoryFacet: resolution.categoryFacet ?? null,
     filterLabelMap: [...resolution.filterLabelMap.entries()],
+    reviewSummaries: [...resolution.reviewSummaries.entries()],
     total: resolution.total,
     renderedCount: resolution.renderedCount,
     hasNext: resolution.hasNext,

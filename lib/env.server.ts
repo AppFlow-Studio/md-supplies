@@ -49,4 +49,9 @@ export const serverEnv = {
   get bunnyCdnAccessKey()      { return required('BUNNYCDN_STORAGE_ACCESS_KEY') },
   get bunnyCdnHostname()       { return optional('BUNNYCDN_STORAGE_HOSTNAME', 'ny.storage.bunnycdn.com') },
   get bunnyCdnZone()           { return optional('BUNNYCDN_STORAGE_ZONE', 'md-supplies') },
+  // TrustShop reviews (server-only — see lib/trustshop/client.ts). The
+  // integration key must never be prefixed NEXT_PUBLIC_ and must never be
+  // logged, serialized into props, or sent to the browser.
+  get trustShopApiBaseUrl()      { return required('TRUSTSHOP_API_BASE_URL') },
+  get trustShopIntegrationKey()  { return required('TRUSTSHOP_INTEGRATION_KEY') },
 }

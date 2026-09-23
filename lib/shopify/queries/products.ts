@@ -108,6 +108,21 @@ export const GET_PRODUCT = `#graphql
           innerPackQuantity: metafield(namespace: "custom", key: "inner_pack_quantity") { value }
           packsPerCase: metafield(namespace: "custom", key: "packs_per_case") { value }
           totalOrderQuantity: metafield(namespace: "custom", key: "total_order_quantity") { value }
+
+          # DEV-CATALOG (2026-09-10): same custom.backorder key as the
+          # product-level field above, scoped to the Variant resource. Null
+          # on every variant until the definition is enabled for Variants in
+          # Shopify Admin (Izzy) and a value is set on the specific variant —
+          # ProductView falls back to the product-level value until then.
+          backorder: metafield(namespace: "custom", key: "backorder") { value }
+
+          # DEV-SHIP-02 variant scoping (2026-09-14): same custom.free_shipping
+          # key as the product-level field above, scoped to the Variant
+          # resource — a mixed-variant product (e.g. a heavier/oversized size)
+          # can be free-shipping-eligible on one variant and not another, the
+          # same "variant first, product only when blank" rule as backorder.
+          # See lib/shipping-resolver/free-shipping-gate.ts.
+          freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
         }
       }
       options {
@@ -322,10 +337,17 @@ export const SEARCH_PRODUCTS_BY_TAG = `#graphql
             nodes {
               id
               title
+              sku
               price { amount currencyCode }
               compareAtPrice { amount currencyCode }
               availableForSale
               image { id url altText width height }
+              # DEV-CATALOG (2026-09-14): same variant-scoped custom.backorder
+              # as GET_COLLECTION — Quick Add reads it off this same shape.
+              backorder: metafield(namespace: "custom", key: "backorder") { value }
+              # Same variant scoping for custom.free_shipping — see
+              # lib/shipping-resolver/free-shipping-gate.ts.
+              freeShipping: metafield(namespace: "custom", key: "free_shipping") { value }
             }
           }
         }
@@ -388,6 +410,25 @@ export function buildSearchFacetCountsQuery(count: number): string {
 `;
 }
 
+// Account Favorites view (DEV-FAV-01): resolves the customer's saved product
+// IDs to live card data through the SAME fragment every other card grid uses
+// — never a second pricing/availability computation. `nodes` returns one
+// entry per input id, `null` for anything Shopify can no longer resolve
+// (deleted, or not visible to the Storefront API — unpublished/archived).
+// Callers treat a null as an orphan to drop, both from the rendered list and
+// from the persisted favorite record (lib/shopify/favorites-admin.ts
+// pruneCustomerFavorites).
+export const GET_PRODUCTS_BY_IDS = `#graphql
+  ${PRODUCT_CARD_FRAGMENT}
+  query GetProductsByIds($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on Product {
+        ...ProductCard
+      }
+    }
+  }
+`;
+
 export const GET_PRODUCT_CARD_BY_HANDLE = `#graphql
   query GetProductCardByHandle($handle: String!) {
     product(handle: $handle) {
@@ -424,6 +465,17 @@ export const GET_PRODUCT_RECS = `#graphql
   }
 `;
 
+// Cheap existence check for the review write route: confirms a
+// client-supplied Shopify GID still resolves to a real product before
+// forwarding a review to TrustShop, without pulling a full product payload.
+export const GET_PRODUCT_EXISTS_BY_ID = `#graphql
+  query GetProductExistsById($id: ID!) {
+    product(id: $id) {
+      id
+    }
+  }
+`;
+
 export const GET_ALL_PRODUCT_HANDLES = `#graphql
   query GetAllProductHandles($first: Int!, $after: String) {
     products(first: $first, after: $after) {
@@ -444,6 +496,30 @@ export const GET_ALL_PRODUCT_TAGS = `#graphql
     products(first: $first, after: $after) {
       nodes {
         handle
+        tags
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+// scripts/audit-variant-candidates.ts: one full-catalog pass (title, vendor,
+// tags) is enough to run BOTH of that audit's checks — the size-word variant
+// grouping and the mattress-cover mis-tag scan — without a second live
+// query. Deliberately NOT scoped with a `query:` tag filter server-side: the
+// mattress-cover check has to see every product regardless of category (the
+// whole point is catching one tagged somewhere unexpected), so filtering
+// happens client-side in lib/catalog/variant-candidates.ts instead.
+export const GET_ALL_PRODUCTS_BASIC = `#graphql
+  query GetAllProductsBasic($first: Int!, $after: String) {
+    products(first: $first, after: $after) {
+      nodes {
+        handle
+        title
+        vendor
         tags
       }
       pageInfo {

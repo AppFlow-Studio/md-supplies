@@ -53,9 +53,10 @@ export type VariantMetafields = {
   /** `custom.units_per_order` (variant-owned). Falls back to
       `Product.unitsPerOrder` / `Product.quantityOfUnits` when blank. */
   unitsPerOrder?: string | null;
-  /** `custom.variant_description` (variant-owned, proposed). Only ever
-      rendered as a supplement to `Product.description`, and only when it
-      differs from it — see resolveVariantSupplement. */
+  /** `custom.variant_description` (variant-owned, proposed). Client,
+      2026-09-17: replaces `Product.description` for the selected variant's
+      Description section when present; falls back to the parent product
+      description when blank — see ProductView's resolvedDescriptionHtml. */
   description?: string | null;
   /** `custom.inner_pack_quantity` (LG-04, variant-owned, Number integer).
       No product-level fallback. Blank means no data, not zero — Izzy only
@@ -69,6 +70,24 @@ export type VariantMetafields = {
       from innerPackQuantity * packsPerCase, since Each/Bag families don't
       decompose into two multiplicands. */
   totalOrderQuantity?: string | null;
+  /** Raw `custom.backorder`, read from the Variant resource (DEV-CATALOG,
+      2026-09-10). Same metafield key as `Product.backorder` — Shopify lets a
+      definition apply to both Product and Variant, so this is the SAME field
+      scoped narrower, never a second/duplicate backorder field. Kept raw
+      (not flattened to a plain boolean) to match Product.backorder, since
+      both feed isBackorderedMetafield/resolveBackorderLabel directly.
+      Absent/null means this variant has no metafield value of its own — the
+      PDP falls back to Product.backorder in that case (lib/product/resolve-variant-value.ts's
+      "variant value first, product value only when blank" rule), it does NOT
+      mean "not backordered". */
+  backorder?: { value: string } | null;
+  /** Raw `custom.free_shipping`, read from the Variant resource (DEV-SHIP-02
+      scoping, 2026-09-14). Same metafield key as `Product.freeShipping` — the
+      SAME field scoped narrower, never a duplicate. Absent/null means this
+      variant has no metafield value of its own — gateFreeShippingClaims
+      falls back to Product.freeShipping in that case (same "variant value
+      first, product value only when blank" rule as backorder above). */
+  freeShipping?: { value: string } | null;
 };
 
 export type ProductVariant = {
@@ -200,7 +219,22 @@ export type CollectionProduct = {
   // variant selection instead of always showing the product's first image
   // regardless of which color is picked — the same defect LG-03 fixed on the
   // PDP, present here too because this type never carried variant media.
-  variants: { nodes: Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable' | 'image'>[] };
+  variants: {
+    nodes: (Pick<ProductVariant, 'id' | 'title' | 'price' | 'compareAtPrice' | 'availableForSale' | 'quantityAvailable' | 'image' | 'backorder' | 'freeShipping'> & {
+      /** Optional (not a strict Pick) so existing fixtures/queries that
+          predate DEV-CATALOG's variant-aware title/backorder work still
+          type-check without adding it. Real GET_COLLECTION/SEARCH_PRODUCTS_BY_TAG
+          responses always include it now. */
+      sku?: ProductVariant['sku'];
+      /** Attached by attachCardShippingDisplay (2026-09-14), same rule as the
+          PDP's variantShippingDisplays — resolveVariantShippingDisplay's own
+          per-variant class, gated by this variant's own custom.free_shipping
+          (falling back to the product-level one when blank). Quick Add reads
+          this instead of the card-aggregate `shippingDisplay` above, which
+          collapses to FALLBACK whenever a product's variants disagree. */
+      shippingDisplay?: ShippingDisplay | null;
+    })[];
+  };
   shippingDisplay?: ShippingDisplay | null;
 };
 

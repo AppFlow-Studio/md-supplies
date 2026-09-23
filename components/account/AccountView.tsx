@@ -4,6 +4,7 @@ import {
   Package, ChevronRight, LogOut, User,
   Zap, Activity, Home, Heart, Building2, Shield,
 } from "lucide-react";
+import { resolveOrderStatus, type OrderStatusFulfillmentInput } from "@/lib/fulfillment";
 
 // ─── Exported types (consumed by the account page and orders page) ─────────────
 
@@ -27,6 +28,10 @@ export interface CustomerOrder {
   financialStatus:   string
   fulfillmentStatus: string
   totalPrice:        { amount: string; currencyCode: string }
+  /** Minimal carrier-level fields (status/latestShipmentStatus/isPickedUp
+      only) — just enough for resolveOrderStatus to avoid conflating
+      Shopify's order-level FULFILLED with actual carrier delivery. */
+  fulfillments:      { nodes: OrderStatusFulfillmentInput[] }
 }
 
 export interface Customer {
@@ -79,15 +84,6 @@ function formatPrice(amount: string, currencyCode: string): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency", currency: currencyCode,
   }).format(parseFloat(amount));
-}
-
-function getFulfillmentDisplay(status: string): { label: string; style: string } {
-  switch (status) {
-    case "FULFILLED":            return { label: "Delivered",  style: "bg-green-100 text-green-700"  };
-    case "IN_PROGRESS":          return { label: "Shipped",    style: "bg-blue-100 text-blue-700"    };
-    case "PARTIALLY_FULFILLED":  return { label: "Partial",    style: "bg-blue-100 text-blue-700"    };
-    default:                     return { label: "Processing", style: "bg-yellow-100 text-yellow-700" };
-  }
 }
 
 function addressLabel(address: CustomerAddress, defaultId: string | undefined, index: number): string {
@@ -229,11 +225,15 @@ function LoggedInDashboard({
   customer,
   orders,
   addresses,
+  favoritesCount,
+  ordersHasMore,
   rxCard,
 }: {
   customer:  Customer;
   orders:    CustomerOrder[];
   addresses: CustomerAddress[];
+  favoritesCount: number;
+  ordersHasMore: boolean;
   rxCard?:   React.ReactNode;
 }) {
   const displayName  = [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "there";
@@ -275,21 +275,31 @@ function LoggedInDashboard({
 
       {/* Dashboard stats */}
       <section className="w-full bg-neutral-100">
-        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 grid grid-cols-2 gap-5">
+        <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-10 grid grid-cols-2 sm:grid-cols-3 gap-5">
           {[
-            { icon: <Package size={20} className="text-teal-500" />, value: String(orders.length),    label: "Total Orders"    },
-            { icon: <MapPin  size={20} className="text-teal-500" />, value: String(addresses.length), label: "Saved Addresses" },
-          ].map(({ icon, value, label }) => (
-            <div key={label} className="bg-white p-6 flex items-center gap-4">
-              <div className="w-[44px] h-[44px] rounded-[10px] bg-[rgba(0,193,255,0.12)] flex items-center justify-center shrink-0">
-                {icon}
+            { icon: <Package size={20} className="text-teal-500" />, value: ordersHasMore ? `${orders.length}+` : String(orders.length), label: "Total Orders", href: "/account/orders" },
+            { icon: <MapPin  size={20} className="text-teal-500" />, value: String(addresses.length), label: "Saved Addresses", href: undefined            },
+            { icon: <Heart   size={20} className="text-teal-500" />, value: String(favoritesCount),   label: "Favorites",       href: "/account/favorites" },
+          ].map(({ icon, value, label, href }) => {
+            const tile = (
+              <div className="bg-white p-6 flex items-center gap-4 h-full">
+                <div className="w-[44px] h-[44px] rounded-[10px] bg-[rgba(0,193,255,0.12)] flex items-center justify-center shrink-0">
+                  {icon}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-navy-900 text-[26px] font-semibold leading-none">{value}</span>
+                  <span className="text-gray-500 text-[13px] uppercase tracking-[0.3px]">{label}</span>
+                </div>
               </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-navy-900 text-[26px] font-semibold leading-none">{value}</span>
-                <span className="text-gray-500 text-[13px] uppercase tracking-[0.3px]">{label}</span>
-              </div>
-            </div>
-          ))}
+            );
+            return href ? (
+              <Link key={label} href={href} className="hover:opacity-90 transition-opacity">
+                {tile}
+              </Link>
+            ) : (
+              <div key={label}>{tile}</div>
+            );
+          })}
         </div>
       </section>
 
@@ -333,7 +343,10 @@ function LoggedInDashboard({
                   </thead>
                   <tbody>
                     {orders.map((order, i) => {
-                      const { label: statusLabel, style: statusStyle } = getFulfillmentDisplay(order.fulfillmentStatus);
+                      const { label: statusLabel, style: statusStyle } = resolveOrderStatus({
+                        fulfillmentStatus: order.fulfillmentStatus,
+                        fulfillments: order.fulfillments.nodes,
+                      });
                       return (
                         <tr key={order.id} className={i < orders.length - 1 ? "border-b border-gray-200" : ""}>
                           <td className="px-8 py-5 text-navy-900 text-[15px] font-semibold">#{order.number}</td>
@@ -430,15 +443,21 @@ interface AccountViewProps {
   customer:  Customer | null
   orders:    CustomerOrder[]
   addresses: CustomerAddress[]
+  favoritesCount?: number
+  /** True when the customer has more orders than the fetched page (Bilal,
+      2026-09-20: "Total Orders" showed orders.length capped at the page size,
+      e.g. 10 for a customer with 16). Drives the "N+" tile instead of a false
+      exact count — the same pattern /partners/[slug]/products uses. */
+  ordersHasMore?: boolean
   /** RX prescription-document card (server-fetched state), logged-in only. */
   rxCard?:   React.ReactNode
 }
 
-export function AccountView({ customer, orders, addresses, rxCard }: AccountViewProps) {
+export function AccountView({ customer, orders, addresses, favoritesCount = 0, ordersHasMore = false, rxCard }: AccountViewProps) {
   return (
     <main id="main-content">
       {customer ? (
-        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} rxCard={rxCard} />
+        <LoggedInDashboard customer={customer} orders={orders} addresses={addresses} favoritesCount={favoritesCount} ordersHasMore={ordersHasMore} rxCard={rxCard} />
       ) : (
         <LoggedOutView />
       )}

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
-import { render, screen, cleanup, within, fireEvent } from '@testing-library/react'
+import { render, screen, cleanup, within, fireEvent, act } from '@testing-library/react'
 import { ProductView } from '../ProductView'
 import type { Product, CollectionProduct } from '@/lib/shopify/types'
 
@@ -98,13 +98,14 @@ const product: Product = {
 }
 
 describe('ProductView PDP semantic markup (Audit M13)', () => {
-  it('exposes Internal SKU, Brand Name, Description, and Specifications as headings', () => {
+  it('exposes MDSupplies SKU, Brand Name, Description, and Specifications as headings', () => {
     render(<ProductView product={product} initialVariant={product.variants.nodes[0]} relatedProducts={[]} complementaryProducts={[]} />)
 
     // AeroWalk fix (2026-08-14): "Item Number" was renamed to "Internal SKU"
     // and split from a separate "Manufacturer Item Number" heading (rendered
     // only when the variant carries one — this fixture's variant doesn't).
-    expect(screen.getByRole('heading', { name: 'Internal SKU' })).toBeInTheDocument()
+    // Client, 2026-09-17: "Internal SKU" relabeled to "MDSupplies SKU".
+    expect(screen.getByRole('heading', { name: 'MDSupplies SKU' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Brand Name' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Description' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Specifications' })).toBeInTheDocument()
@@ -167,14 +168,16 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
       />,
     )
     expect(screen.getByText('Backorder')).toBeInTheDocument()
-    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder, ETA/)).not.toBeInTheDocument()
   })
 
   // Bilal, 2026-08-18: a valid, non-expired ETA IS appended to the text
   // (supersedes DEV-SHIP-04's "always exactly Backorder" rule). The ETA is
   // still never a trigger on its own — see the "absent" and "stale" cases
   // above/below, which still show no label / plain "Backorder".
-  it('appends the ship date when the boolean is true and the ETA is a valid, non-expired date', () => {
+  // Client, 2026-09-17: wording changed from "ships <date>" to "ETA <date>"
+  // — a backorder date is never presented as a ship-date promise.
+  it('appends the ETA date when the boolean is true and the ETA is a valid, non-expired date', () => {
     render(
       <ProductView
         product={{
@@ -187,7 +190,8 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
         complementaryProducts={[]}
       />,
     )
-    expect(screen.getByText('Backorder, ships 2099-01-01')).toBeInTheDocument()
+    expect(screen.getByText('Backorder, ETA 2099-01-01')).toBeInTheDocument()
+    expect(screen.queryByText(/ships \d{4}-\d{2}-\d{2}/)).not.toBeInTheDocument()
   })
 
   // Backorder is the merchant's own declaration, independent of real-time
@@ -240,6 +244,146 @@ describe('ProductView — Backorder label (DEV-RX-02)', () => {
     )
     expect(within(screen.getByTestId('availability-status')).getByText('Out of Stock')).toBeInTheDocument()
     expect(screen.queryByText('Backorder')).not.toBeInTheDocument()
+  })
+})
+
+// DEV-CATALOG (2026-09-10): Bilal's B2080C report — client marked only the
+// 3.5mm variant of "Disposable Blunt Tip, Trocar Combo Kit" as backordered
+// in Shopify, but no Backorder state ever appeared on the PDP for either
+// size. Root cause: custom.backorder was read at the product level only —
+// there was no code path to a variant-scoped value at all. selectedVariant.backorder
+// now takes precedence, falling back to product.backorder only when the
+// selected variant has no metafield value of its own (same "variant first,
+// product only when blank" rule as orderSize/unitsPerOrder).
+describe('ProductView — variant-scoped Backorder (DEV-CATALOG, B2080C)', () => {
+  const smallVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51022196736216',
+    sku: 'B2080C',
+    selectedOptions: [{ name: 'Size', value: '3.5mm' }],
+    backorder: { value: 'true' },
+  }
+  const largeVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51930534281432',
+    sku: 'B2083C',
+    selectedOptions: [{ name: 'Size', value: '4.5mm' }],
+    backorder: { value: 'false' },
+  }
+  const trocarProduct: Product = {
+    ...product,
+    options: [{ id: 'opt1', name: 'Size', values: ['3.5mm', '4.5mm'] }],
+    variants: { nodes: [smallVariant, largeVariant] },
+  }
+
+  it('shows the Backorder badge on the variant Izzy flagged, even though the product-level field is unset', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+
+  it('hides the Backorder badge on the sibling variant instead of leaking the flagged variant\'s state', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Size: 4.5mm' }))
+    expect(screen.queryByText('Backorder')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the product-level value when the selected variant has no backorder metafield of its own', () => {
+    const variantWithNoOwnValue = { ...largeVariant, backorder: undefined }
+    render(
+      <ProductView
+        product={{ ...trocarProduct, backorder: { value: 'true' }, variants: { nodes: [smallVariant, variantWithNoOwnValue] } }}
+        initialVariant={variantWithNoOwnValue}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByText('Backorder')).toBeInTheDocument()
+  })
+})
+
+// Bilal, 2026-09-14: same B2080C/B2083C product — the shared Shopify title
+// bakes in the 3.5mm SKU ("... (B2080C)"), which reads wrong once the
+// customer picks 4.5mm/B2083C. The H1 must track the selected variant's own
+// SKU, without hardcoding either SKU or stripping unrelated parentheses.
+describe('ProductView — variant-aware title (DEV-CATALOG, B2080C)', () => {
+  const smallVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51022196736216',
+    sku: 'B2080C',
+    selectedOptions: [{ name: 'Size', value: '3.5mm' }],
+  }
+  const largeVariant = {
+    ...product.variants.nodes[0],
+    id: 'gid://shopify/ProductVariant/51930534281432',
+    sku: 'B2083C',
+    selectedOptions: [{ name: 'Size', value: '4.5mm' }],
+  }
+  const trocarProduct: Product = {
+    ...product,
+    title: 'Disposable Blunt Tip, Trocar Combo Kit (B2080C)',
+    options: [{ id: 'opt1', name: 'Size', values: ['3.5mm', '4.5mm'] }],
+    variants: { nodes: [smallVariant, largeVariant] },
+  }
+
+  it('shows the baked-in SKU for the initially selected variant', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Disposable Blunt Tip, Trocar Combo Kit (B2080C)',
+    )
+  })
+
+  it('swaps the SKU suffix when the customer switches variants, without a refresh', () => {
+    render(
+      <ProductView
+        product={trocarProduct}
+        initialVariant={smallVariant}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Size: 4.5mm' }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Disposable Blunt Tip, Trocar Combo Kit (B2083C)',
+    )
+    expect(screen.queryByText(/B2080C/)).not.toBeInTheDocument()
+  })
+
+  it('leaves a single-variant product title untouched, even with a trailing parenthetical', () => {
+    const singleVariantProduct: Product = {
+      ...product,
+      title: 'Nitrile Exam Gloves (Sterile)',
+      variants: { nodes: [{ ...product.variants.nodes[0], sku: 'GLV-100' }] },
+    }
+    render(
+      <ProductView
+        product={singleVariantProduct}
+        initialVariant={singleVariantProduct.variants.nodes[0]}
+        relatedProducts={[]}
+        complementaryProducts={[]}
+      />,
+    )
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Nitrile Exam Gloves (Sterile)')
   })
 })
 
@@ -343,7 +487,7 @@ describe('ProductView — recommendation cards Backorder label (DEV-SHIP-04)', (
       />,
     )
     expect(screen.getByText('Backorder')).toBeInTheDocument()
-    expect(screen.queryByText(/Backorder, ships/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backorder, ETA/)).not.toBeInTheDocument()
   })
 
   it('shows exactly "Backorder" on a complementary product with custom.backorder=true', () => {
@@ -499,5 +643,70 @@ describe('ProductView — You May Also Need region is keyboard-operable (Task 4)
     // itself contain a <button> (standing constraint — see ProductView.tsx
     // comment near RelatedProductCard's usage in this scroll row).
     expect(within(link).queryByRole('button')).not.toBeInTheDocument()
+  })
+})
+
+// TrustShop reviews (DEV-REVIEWS-01): the compact summary link near the H1
+// scrolls to a real, always-rendered #reviews section — never a fourth
+// tab-panel gated behind the SPECIFICATIONS/ORDER PACKAGING/VENDOR SHIPPING
+// switcher (see ProductView.tsx's comment on the reviewsSection prop).
+describe('ProductView — reviews wiring', () => {
+  const reviewsSection = {
+    basePath: '/product/nitrile-exam-gloves',
+    productGid: product.id,
+    summary: { averageRating: 4.5, totalReviews: 55, ratingsDistribution: { 1: 2, 2: 0, 3: 3, 4: 8, 5: 42 } },
+    reviews: [],
+    media: [],
+    currentFilter: 'all' as const,
+    currentSort: 'most_helpful' as const,
+    currentPage: 1,
+    hasNextPage: false,
+  }
+
+  // reviewsSection is now a Promise (Cache Components: ProductReviewsAsync
+  // `use()`s it inside a <Suspense> boundary rather than the page awaiting it
+  // up front). React needs the INITIAL render itself awaited inside act() so
+  // the suspend-then-resolve retry actually flushes in a test renderer —
+  // render()'s own internal act() call is synchronous and un-awaited, which
+  // leaves a component that suspends during it stuck forever (React warns
+  // "A component suspended inside an act scope, but the act call was not
+  // awaited"). Wrapping the render call itself in `await act(async () => …)`
+  // is what lets the promise's resolution actually flush.
+  async function renderWithReviews(reviewsSection: unknown, reviewSummary: unknown) {
+    let container!: HTMLElement
+    await act(async () => {
+      ;({ container } = render(
+        <ProductView
+          product={product}
+          initialVariant={product.variants.nodes[0]}
+          relatedProducts={[]}
+          complementaryProducts={[]}
+          reviewSummary={reviewSummary as never}
+          reviewsSection={reviewsSection as never}
+        />,
+      ))
+    })
+    return container
+  }
+
+  it('renders the compact summary as a plain #reviews anchor near the title', async () => {
+    const container = await renderWithReviews(Promise.resolve(reviewsSection), reviewsSection.summary)
+    expect(container.querySelector('a[href="#reviews"]')).toBeInTheDocument()
+    expect(container.querySelector('#reviews')).toBeInTheDocument()
+  })
+
+  it('renders a real, scrollable #reviews section id, not a hidden tab panel', async () => {
+    const container = await renderWithReviews(Promise.resolve(reviewsSection), reviewsSection.summary)
+    expect(container.querySelector('#reviews')).toBeInTheDocument()
+  })
+
+  it('shows a "Write a review" CTA (not a fake rating) for a zero-review product', async () => {
+    await renderWithReviews(Promise.resolve({ ...reviewsSection, summary: null }), null)
+    expect(screen.getByRole('link', { name: /No reviews yet · Write a review/ })).toBeInTheDocument()
+  })
+
+  it('no longer renders a REVIEWS tab pill — reviews live in a standalone section', async () => {
+    await renderWithReviews(Promise.resolve(reviewsSection), reviewsSection.summary)
+    expect(screen.queryByRole('tab', { name: 'REVIEWS' })).not.toBeInTheDocument()
   })
 })

@@ -61,9 +61,9 @@ describe('MobileCategoryNav — drill-down', () => {
     expect(isHidden(panel(container, 'mobility'))).toBe(true)
   })
 
-  it('opens a department when its row is tapped, and hides the list behind it', () => {
+  it('opens a department when its disclosure chevron is tapped, and hides the list behind it', () => {
     const { container } = renderNav()
-    fireEvent.click(screen.getByRole('button', { name: 'Home Care' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Home Care subcategories' }))
 
     expect(isHidden(panel(container, 'home-care'))).toBe(false)
     expect(container.querySelector('ul')?.className).toContain('hidden')
@@ -74,11 +74,11 @@ describe('MobileCategoryNav — drill-down', () => {
 
   it('keeps exactly one department open — opening another closes the first', () => {
     const { container } = renderNav()
-    fireEvent.click(screen.getByRole('button', { name: 'Home Care' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Home Care subcategories' }))
     // Back out first — the list carrying the other department's row is hidden
     // while a panel is open, which is the point of a drill-down.
     fireEvent.click(within(panel(container, 'home-care')!).getByRole('button', { name: /Categories/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Mobility' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mobility subcategories' }))
 
     expect(isHidden(panel(container, 'home-care'))).toBe(true)
     expect(isHidden(panel(container, 'mobility'))).toBe(false)
@@ -86,25 +86,25 @@ describe('MobileCategoryNav — drill-down', () => {
 
   it('goes back to the department list', () => {
     const { container } = renderNav()
-    fireEvent.click(screen.getByRole('button', { name: 'Home Care' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Home Care subcategories' }))
     fireEvent.click(within(panel(container, 'home-care')!).getByRole('button', { name: /Categories/ }))
 
     expect(isHidden(panel(container, 'home-care'))).toBe(true)
     expect(container.querySelector('ul')?.className).not.toContain('hidden')
   })
 
-  it('reports expanded state on the department row', () => {
+  it('reports expanded state on the disclosure chevron', () => {
     renderNav()
-    const row = screen.getByRole('button', { name: 'Home Care' })
-    expect(row).toHaveAttribute('aria-expanded', 'false')
-    expect(row).toHaveAttribute('aria-controls', 'mobile-cat-home-care')
-    fireEvent.click(row)
-    expect(row).toHaveAttribute('aria-expanded', 'true')
+    const chevron = screen.getByRole('button', { name: 'Home Care subcategories' })
+    expect(chevron).toHaveAttribute('aria-expanded', 'false')
+    expect(chevron).toHaveAttribute('aria-controls', 'mobile-cat-home-care')
+    fireEvent.click(chevron)
+    expect(chevron).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('reopens at level one after a route change instead of inside the last department', () => {
     const { container, rerender } = renderNav()
-    fireEvent.click(screen.getByRole('button', { name: 'Home Care' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Home Care subcategories' }))
     expect(isHidden(panel(container, 'home-care'))).toBe(false)
 
     rerender(
@@ -120,31 +120,39 @@ describe('MobileCategoryNav — drill-down', () => {
   })
 })
 
-describe('MobileCategoryNav — one meaning per surface', () => {
-  // Matches the desktop panel exactly: the department list SELECTS, the
-  // department's own panel NAVIGATES. A shopper who learns the menu on a laptop
-  // must not find that tapping a category name means something else on a phone
-  // — and a row split between "go" and "drill in" is a coin flip with a thumb.
+describe('MobileCategoryNav — one meaning per control, not per row (2026-09-04)', () => {
+  // Matches the desktop rail exactly: the department NAME is a real link, a
+  // SEPARATE chevron drills into the subcategory panel. A shopper who learns
+  // the menu on a laptop must not find that tapping a category name means
+  // something else on a phone — and a row split between "go" and "drill in"
+  // with no separate hit areas is a coin flip with a thumb.
 
-  it('puts no navigation in the department list — a row opens, it does not go anywhere', () => {
+  it('gives every department row a real link to its own category page', () => {
     const { container } = renderNav()
     const list = container.querySelector<HTMLUListElement>('ul')!
-    const hrefs = Array.from(list.querySelectorAll('a')).map((a) => a.getAttribute('href'))
-    // Only the childless department (no panel to open) and the "All categories"
-    // escape hatch are links.
-    expect(hrefs).toEqual(['/category/face-masks', '/categories'])
+    for (const cat of CATEGORIES) {
+      expect(within(list).getByRole('link', { name: cat.displayName })).toHaveAttribute('href', cat.href)
+    }
+  })
+
+  it('the disclosure chevron never carries an href — it only opens, never navigates', () => {
+    renderNav()
+    for (const cat of CATEGORIES.filter((c) => c.children.length > 0)) {
+      const chevron = screen.getByRole('button', { name: `${cat.displayName} subcategories` })
+      expect(chevron).not.toHaveAttribute('href')
+    }
   })
 
   it('puts the route to the category page first inside the department panel', () => {
     const { container } = renderNav()
     const first = panel(container, 'home-care')!.querySelector('a')!
     expect(first).toHaveAttribute('href', '/category/home-care')
-    expect(first.textContent).toBe('All Home Care')
+    expect(first.textContent).toBe('Browse All Home Care')
   })
 
   it('sends a department with no subcategories straight to its category page', () => {
     renderNav()
-    expect(screen.queryByRole('button', { name: 'Face Masks' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Face Masks subcategories' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Face Masks' })).toHaveAttribute('href', '/category/face-masks')
   })
 
@@ -152,11 +160,11 @@ describe('MobileCategoryNav — one meaning per surface', () => {
     const onNavigate = vi.fn()
     const { container } = renderNav(onNavigate)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Home Care' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Home Care subcategories' }))
     expect(onNavigate).not.toHaveBeenCalled()
 
     fireEvent.click(
-      within(panel(container, 'home-care')!).getByRole('link', { name: 'All Home Care', hidden: true }),
+      within(panel(container, 'home-care')!).getByRole('link', { name: 'Browse All Home Care', hidden: true }),
     )
     expect(onNavigate).toHaveBeenCalledTimes(1)
 
@@ -164,5 +172,14 @@ describe('MobileCategoryNav — one meaning per surface', () => {
       within(panel(container, 'home-care')!).getByRole('link', { name: 'Bedside Commodes', hidden: true }),
     )
     expect(onNavigate).toHaveBeenCalledTimes(2)
+  })
+
+  it('closes the drawer when the row’s own name is tapped, same as any other terminal navigation', () => {
+    const onNavigate = vi.fn()
+    const { container } = renderNav(onNavigate)
+    const list = container.querySelector<HTMLUListElement>('ul')!
+
+    fireEvent.click(within(list).getByRole('link', { name: 'Home Care' }))
+    expect(onNavigate).toHaveBeenCalledTimes(1)
   })
 })

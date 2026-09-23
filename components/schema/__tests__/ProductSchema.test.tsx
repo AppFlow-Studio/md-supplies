@@ -66,3 +66,33 @@ describe('ProductSchema — price/structured-data agreement (DEV-LAUNCH-07)', ()
     expect(schema.brand).toEqual({ '@type': 'Brand', name: 'Dynarex' })
   })
 })
+
+describe('ProductSchema — aggregateRating (TrustShop reviews)', () => {
+  it('includes aggregateRating, matching the same normalized summary the UI uses', async () => {
+    const schema = await renderSchema({
+      ...baseProps,
+      aggregateRating: { ratingValue: 4.5, reviewCount: 55, bestRating: 5, worstRating: 1 },
+    })
+    expect(schema.aggregateRating).toEqual({
+      '@type': 'AggregateRating',
+      ratingValue: 4.5,
+      reviewCount: 55,
+      bestRating: 5,
+      worstRating: 1,
+    })
+  })
+
+  it('omits aggregateRating entirely when not provided (zero-review product)', async () => {
+    const schema = await renderSchema(baseProps)
+    expect(schema.aggregateRating).toBeUndefined()
+  })
+
+  it('still respects the hasUsablePrice gate even when aggregateRating is provided', async () => {
+    const el = await renderSchemaRaw({
+      ...baseProps,
+      price: 0,
+      aggregateRating: { ratingValue: 4.5, reviewCount: 55, bestRating: 5, worstRating: 1 },
+    })
+    expect(el).toBeNull()
+  })
+})

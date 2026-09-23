@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveVariantValue, resolveVariantSupplement } from '../resolve-variant-value'
+import { resolveVariantValue } from '../resolve-variant-value'
 
 // Bilal, 2026-08-14: "selected variant value first; shared product value
 // only when the variant value is blank and a shared fallback is valid; no
@@ -39,20 +39,5 @@ describe('resolveVariantValue — cross-variant packaging conflicts', () => {
 
   it('falls back to the product value when no sibling values are given at all', () => {
     expect(resolveVariantValue(null, '100/Box')).toBe('100/Box')
-  })
-})
-
-describe('resolveVariantSupplement', () => {
-  it('returns the variant value when it differs from the primary value', () => {
-    expect(resolveVariantSupplement('Ships in a padded mailer', 'A rollator.')).toBe('Ships in a padded mailer')
-  })
-
-  it('returns null when the variant value is blank — nothing to supplement', () => {
-    expect(resolveVariantSupplement(null, 'A rollator.')).toBeNull()
-    expect(resolveVariantSupplement(undefined, 'A rollator.')).toBeNull()
-  })
-
-  it('returns null when the variant value is identical to the primary value — no duplicate display', () => {
-    expect(resolveVariantSupplement('A rollator.', 'A rollator.')).toBeNull()
   })
 })

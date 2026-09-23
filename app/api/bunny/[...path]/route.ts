@@ -48,6 +48,14 @@ export async function GET(
       )
     } else if (upstream.status >= 500) {
       console.error(`[bunny] upstream ${upstream.status} (Bunny-side error) path=${objectPath}`)
+    } else if (upstream.status === 404 && path[0] === 'brands') {
+      // Every brands/<file> reference in lib/brands.ts / lib/partners.ts is set
+      // ONLY once the logo is verified & uploaded (see lib/brands.ts comment) —
+      // unlike category/product placeholders, a miss here is never an expected
+      // "not curated yet" state. Surfacing it distinctly is what makes a
+      // missing/mismatched brand logo (e.g. case sensitivity on Linux/Vercel)
+      // diagnosable from server logs instead of only from a QA screenshot.
+      console.warn(`[bunny] brand logo missing on storage (404) path=${objectPath} — check filename/case against the upload`)
     } else if (upstream.status !== 404) {
       console.warn(`[bunny] unexpected upstream ${upstream.status} path=${objectPath}`)
     }

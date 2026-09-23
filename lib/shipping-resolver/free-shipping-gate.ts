@@ -47,14 +47,29 @@ export function gateFreeShippingClaim(
   return isFreeShippingMetafieldTrue(freeShippingRaw) ? display : FALLBACK
 }
 
-/** Same gate, applied to a resolveVariantsForProduct()-shaped map. */
+/**
+ * Same gate, applied to a resolveVariantsForProduct()-shaped map.
+ *
+ * `productFreeShippingRaw` is the product-level fallback (used for every
+ * variant when `variantFreeShippingRaw` is omitted — the original behavior).
+ * `variantFreeShippingRaw`, keyed by variant GID (Bilal, 2026-09-14: same
+ * "variant value first, product value only when blank" rule as
+ * lib/product/resolve-variant-value.ts / the PDP's backorder logic — a
+ * mixed-variant product can be free-shipping-eligible on one variant and not
+ * another), lets a variant's own metafield override the product-level one;
+ * a variant absent from the map, or present with a null/undefined value,
+ * falls back to the product-level value.
+ */
 export function gateFreeShippingClaims(
   displays: Record<string, ShippingDisplay>,
-  freeShippingRaw?: { value: string } | string | boolean | null,
+  productFreeShippingRaw?: { value: string } | string | boolean | null,
+  variantFreeShippingRaw?: Record<string, { value: string } | string | boolean | null | undefined>,
 ): Record<string, ShippingDisplay> {
   const out: Record<string, ShippingDisplay> = {}
   for (const [variantGid, display] of Object.entries(displays)) {
-    out[variantGid] = gateFreeShippingClaim(display, freeShippingRaw)
+    const variantRaw = variantFreeShippingRaw?.[variantGid]
+    const effectiveRaw = variantRaw ?? productFreeShippingRaw
+    out[variantGid] = gateFreeShippingClaim(display, effectiveRaw)
   }
   return out
 }

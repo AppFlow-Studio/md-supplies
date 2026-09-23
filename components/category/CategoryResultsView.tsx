@@ -25,6 +25,7 @@ import { ScrollToResults } from '@/components/category/ScrollToResults'
 import { CatalogTransitionProvider } from '@/components/category/CatalogTransition'
 import { CatalogResultsState } from '@/components/category/CatalogResultsState'
 import { ROUTES } from '@/lib/routes'
+import type { ProductReviewSummary } from '@/lib/trustshop/types'
 
 // Presentational catalog grid — NO fetch, NO server-only imports.
 //
@@ -50,6 +51,9 @@ export interface CategoryResultsViewProps {
   categoryFacet: CollectionFilter | undefined
   /** input -> human label, for active-chip text. */
   filterLabelMap: Map<string, string>
+  /** Keyed by Shopify GID — not user-specific, safe in both the static
+      default-grid prerender and the shared /api/catalog cache. */
+  reviewSummaries: Map<string, ProductReviewSummary | null>
   /** Authoritative count of products matching the current query. */
   total: number
   hasNext: boolean
@@ -94,6 +98,7 @@ export function CategoryResultsView({
   filters,
   categoryFacet,
   filterLabelMap,
+  reviewSummaries,
   total: matchingTotal,
   hasNext,
   renderedCount,
@@ -322,6 +327,7 @@ export function CategoryResultsView({
               categorySlug={handle}
               itemListId={handle}
               itemListName={title}
+              reviewSummaries={reviewSummaries}
             />
           </CatalogResultsState>
 

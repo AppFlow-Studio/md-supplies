@@ -71,11 +71,16 @@ for (const routeFor of ROUTE_PREFIXES) {
       })
     }
 
-    test('Variant Details renders the flattened per-color description, not raw rich-text JSON', async ({ page }) => {
+    // Client correction, 2026-09-17: the variant description now REPLACES
+    // the Description section for the selected variant instead of appending
+    // below the parent description as a "Variant Details" supplement — the
+    // reported issue was that showing both left the previous SKU's
+    // description visible after switching variants.
+    test('Description shows the selected variant\'s own rich-text description, not raw JSON or the parent description', async ({ page }) => {
       await page.goto(routeFor(AEROWALK_HANDLE))
       await page.getByRole('button', { name: 'Color: White' }).click()
 
-      await expect(page.getByText('Variant Details')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Description' })).toBeVisible()
       await expect(page.getByText(/white frame/i)).toBeVisible()
       await expect(page.getByText(/"type":\s*"root"/)).toHaveCount(0)
     })
