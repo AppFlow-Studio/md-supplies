@@ -465,11 +465,28 @@ function withCsp(response: Response, csp: string): Response {
 // statically generated / CDN-cached. Keep this list to routes GUARANTEED to be
 // dynamic — a route served from static cache under the nonce policy would carry
 // no nonce and Next's inline scripts would be blocked.
+//
+// Enumerated exactly (not a blanket `/account/` prefix match): an unmatched
+// path under /account/* falls through to app/global-not-found.tsx, which —
+// per Next's docs — is always static and can never receive a per-request
+// nonce. Under the old prefix match, that unmatched path still got the
+// strict 'strict-dynamic' policy, so the not-found page's nonce-less scripts
+// were blocked outright (the same CSP breakage this split was meant to fix,
+// just relocated to any unmatched /account/* URL). Add a route here only
+// when it is a real page under app/(protected) — see that directory for the
+// current set.
+const STRICT_CSP_ACCOUNT_PATHS = new Set([
+  '/account',
+  '/account/favorites',
+  '/account/login',
+  '/account/orders',
+])
+
 function isStrictCspPath(pathname: string): boolean {
-  return pathname === '/account'
-    || pathname.startsWith('/account/')
-    || pathname === '/search'
-    || pathname.startsWith('/search/')
+  if (pathname === '/search') return true
+  if (STRICT_CSP_ACCOUNT_PATHS.has(pathname)) return true
+  // /account/orders/[number] — the one /account subroute with a dynamic segment.
+  return /^\/account\/orders\/[^/]+$/.test(pathname)
 }
 
 export function proxy(request: NextRequest): Response {

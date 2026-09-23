@@ -15,6 +15,19 @@ const nextConfig: NextConfig = {
   // node_modules/next/dist/docs/01-app/.../config/.../cacheComponents.md.
   cacheComponents: true,
 
+  // Two root layouts (app/(site)/layout.tsx and app/(protected)/layout.tsx,
+  // see the latter's doc comment) mean there's no single layout to compose a
+  // catch-all app/not-found.tsx from — Next's own docs name this exact case
+  // as global-not-found's reason to exist (node_modules/next/dist/docs/01-app/
+  // 03-api-reference/03-file-conventions/not-found.md). Without this,
+  // genuinely unmatched URLs (not a notFound() thrown inside a route, an
+  // actual no-route-file match) fall through to Next's bare built-in 404 —
+  // no header/footer, and under /account/* it also throws CSP errors since
+  // that default page isn't nonce-aware. See app/global-not-found.tsx.
+  experimental: {
+    globalNotFound: true,
+  },
+
   // Build output dir. Defaults to `.next` (what Vercel and `next dev` use). Set
   // CC_BUILD_DIR to build into an alternate dir — e.g. running a verification
   // `next build` while a `next dev` server is live, so the production build does
