@@ -20,6 +20,19 @@
  * prefix of exactly one distinct variant SKU, so the ambiguous case (the
  * prefix could belong to two different variants) still falls through
  * untouched rather than guessing.
+ *
+ * 2026-09-23 (Izzy's 983-product report, 15015-24DELR case): some titles bake
+ * the same SKU in more than once — typically inline AND parenthesised, e.g.
+ * "…w/ ELR 15015-24DELR (15015-24DELR)". Rewriting only the parenthetical left
+ * the inline copy stale, so a selected 26" variant rendered a title naming one
+ * SKU and parenthesising another. Once the candidate has been identified by
+ * the safe rules above, EVERY whole-token occurrence of it is rewritten, not
+ * just the trailing one.
+ *
+ * The identification rules are untouched — this only widens what happens after
+ * a candidate has already been accepted. Ambiguous candidates, template
+ * placeholders ("9501-xx") and non-SKU parentheticals ("(US Only)") still fall
+ * through exactly as before, because they never reach the replacement step.
  */
 export function resolveVariantAwareTitle(
   title: string,
@@ -42,5 +55,56 @@ export function resolveVariantAwareTitle(
   )
   if (!isExactSku && prefixCandidates.size !== 1) return title
 
-  return selectedVariant.sku ? `${baseTitle} (${selectedVariant.sku})` : baseTitle
+  // No SKU to substitute: drop the baked-in code wherever it appears rather
+  // than leaving a stale one behind, then tidy the separator it left.
+  if (!selectedVariant.sku) {
+    return tidySeparators(replaceTokenOccurrences(baseTitle, suffix, '')) || baseTitle
+  }
+
+  return replaceTokenOccurrences(title, suffix, selectedVariant.sku)
+}
+
+/** True when `char` is absent or is not a letter/digit. */
+function isTokenBoundary(char: string | undefined): boolean {
+  return char === undefined || !/[A-Za-z0-9]/.test(char)
+}
+
+/**
+ * Replaces every whole-token occurrence of `token`, comparing literally.
+ *
+ * Deliberately not a RegExp: SKUs routinely contain characters with regex
+ * meaning (".", "-", "+", "/", "(") and building a pattern from catalog data
+ * is how an unescaped token turns into a wrong match or a thrown error. A
+ * literal scan cannot misinterpret any character.
+ *
+ * A match only counts when neither neighbouring character is alphanumeric, so
+ * "10690" inside "X10690A" is left alone — that is a different identifier, not
+ * a repeat of the baked-in SKU.
+ */
+function replaceTokenOccurrences(text: string, token: string, replacement: string): string {
+  if (!token) return text
+  let out = ''
+  let i = 0
+  for (;;) {
+    const at = text.indexOf(token, i)
+    if (at === -1) return out + text.slice(i)
+    const before = at === 0 ? undefined : text[at - 1]
+    const after = text[at + token.length]
+    if (isTokenBoundary(before) && isTokenBoundary(after)) {
+      out += text.slice(i, at) + replacement
+      i = at + token.length
+    } else {
+      out += text.slice(i, at + token.length)
+      i = at + token.length
+    }
+  }
+}
+
+/** Collapses the whitespace/punctuation a removed token leaves behind. */
+function tidySeparators(text: string): string {
+  return text
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,;])/g, '$1')
+    .replace(/[\s,;–—-]+$/, '')
+    .trim()
 }
