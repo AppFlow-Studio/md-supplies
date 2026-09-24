@@ -121,24 +121,62 @@ async function createCart(variantId: string, quantity: number): Promise<AddToCar
   }
 }
 
+/**
+ * Confirms via a direct `cart(id:)` lookup whether a cart id still resolves
+ * at all. Used only to interpret a THROWN cartLinesAdd failure (see below) —
+ * an outcome distinct from the graceful `{ cart: null }` signal, which is
+ * handled separately and needs no confirmation.
+ *
+ * Unable to confirm either way (the lookup itself fails) resolves to `true`
+ * — "assume it might still be valid" — so an unrelated outage can never be
+ * misread as proof the cart is gone; the caller's existing cart is the safe
+ * default to preserve.
+ */
+async function cartStillExists(cartId: string): Promise<boolean> {
+  try {
+    const data = await storefrontFetch<{ cart: Cart | null }>(GET_CART, { cartId }, NO_STORE)
+    return data.cart != null
+  } catch {
+    return true
+  }
+}
+
 export async function addToCart(variantId: string, quantity: number): Promise<AddToCartResult> {
   const jar = await cookies()
   const cartId = jar.get(CART_COOKIE)?.value
 
   if (!cartId) return createCart(variantId, quantity)
 
-  // Deliberately not wrapped in a catch-all: a thrown error here (network
-  // failure, non-2xx response, a GraphQL-level error) is not proof the cart
-  // is gone, only that this one request failed. Treating every exception as
-  // "must be expired" and silently recreating the cart would discard every
-  // existing line the customer already had, for what could be a transient
-  // blip. Let it propagate so the caller's existing cart stays displayed
-  // (CartProvider.addItem catches this without touching cart state).
-  const data = await storefrontFetch<{ cartLinesAdd: { cart: Cart | null; userErrors: UserError[] } }>(
-    ADD_CART_LINES,
-    { cartId, lines: [{ merchandiseId: variantId, quantity }] },
-    NO_STORE,
-  )
+  let data: { cartLinesAdd: { cart: Cart | null; userErrors: UserError[] } }
+  try {
+    data = await storefrontFetch(
+      ADD_CART_LINES,
+      { cartId, lines: [{ merchandiseId: variantId, quantity }] },
+      NO_STORE,
+    )
+  } catch (err) {
+    // A thrown error here (network failure, non-2xx response, a GraphQL-level
+    // error) is not automatically proof the cart is gone — most of the time
+    // it's a transient blip, and treating every exception as "must be
+    // expired" would discard every existing line the customer already had.
+    // But cartLinesAdd does not ALWAYS signal an unresolvable cart id the
+    // graceful way (`{ cart: null }`, handled below): a cart_id cookie left
+    // over from the pre-cutover legacy Shopify storefront, a different
+    // Shopify store, or a hand-edited cookie can make Shopify reject the id
+    // itself with a top-level GraphQL error instead (documented Storefront
+    // API behavior — a stale/foreign cart id doesn't always fail the same
+    // way twice). A direct `cart(id:)` lookup is the authoritative way to
+    // tell these apart without guessing at error text: that query is known
+    // to null gracefully for any id it can't resolve (the same guarantee
+    // getCart() above already relies on), so it can confirm rather than
+    // assume. Only a CONFIRMED-gone cart recovers; anything else — including
+    // a recheck that itself fails — propagates and leaves the existing cart
+    // exactly as before (CartProvider.addItem catches this without touching
+    // cart state).
+    if (await cartStillExists(cartId)) throw err
+    jar.delete(CART_COOKIE)
+    return createCart(variantId, quantity)
+  }
   assertNoUserErrors(data.cartLinesAdd.userErrors, 'cartLinesAdd')
   const cart = data.cartLinesAdd.cart
 

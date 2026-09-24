@@ -39,16 +39,30 @@ vi.mock('@/lib/shopify/admin', () => ({
   setCustomerRxDocument: (...args: unknown[]) => setCustomerRxDocument(...args),
 }))
 
+const buildRxDocumentPath = vi.fn()
+const customerFolderId = vi.fn((gid: string) => gid.split('/').pop())
+const deleteRxDocument = vi.fn()
+const putRxDocument = vi.fn()
+const sniffRxContentType = vi.fn()
 vi.mock('@/lib/rx-storage', () => ({
-  buildRxDocumentPath: vi.fn(),
-  customerFolderId: vi.fn(),
-  deleteRxDocument: vi.fn(),
-  putRxDocument: vi.fn(),
-  sniffRxContentType: vi.fn(),
-  RX_ALLOWED_TYPES: {},
+  buildRxDocumentPath: (...args: unknown[]) => buildRxDocumentPath(...args),
+  customerFolderId: (...args: unknown[]) => customerFolderId(...args),
+  deleteRxDocument: (...args: unknown[]) => deleteRxDocument(...args),
+  putRxDocument: (...args: unknown[]) => putRxDocument(...args),
+  sniffRxContentType: (...args: unknown[]) => sniffRxContentType(...args),
+  RX_ALLOWED_TYPES: { 'application/pdf': 'pdf' },
   RX_MAX_FILE_BYTES: 10_000_000,
 }))
-vi.mock('@/lib/rx-scan', () => ({ isScanRequired: vi.fn(() => false), scanRxDocument: vi.fn() }))
+
+const scanRxDocument = vi.fn()
+vi.mock('@/lib/rx-scan', () => ({
+  isScanRequired: vi.fn(() => false),
+  scanRxDocument: (...args: unknown[]) => scanRxDocument(...args),
+}))
+
+const sendFormEmail = vi.fn()
+vi.mock('@/lib/forms/email', () => ({ sendFormEmail: (...args: unknown[]) => sendFormEmail(...args) }))
+vi.mock('@/lib/resend', () => ({ TO_EMAIL: 'support@mdsupplies.com' }))
 
 function cartFixture(overrides: Partial<Cart> = {}): Cart {
   return {
@@ -233,5 +247,73 @@ describe('prepareCheckout — server-side RX recheck', () => {
 
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.checkoutUrl).toBe(plainCart.checkoutUrl)
+  })
+})
+
+/**
+ * uploadRxDocument — staff notification email.
+ *
+ * The Bunny storage write + Shopify customer metafield write (mocked below,
+ * already covered by lib/__tests__/rx-storage.test.ts and
+ * lib/shopify/__tests__/admin-rx.test.ts) stay the system of record; these
+ * tests cover the new courtesy copy to the review inbox: that it fires with
+ * the actual file attached plus the customer's name/email/Shopify id/
+ * timestamp, and that its failure never fails an upload that already
+ * succeeded.
+ */
+describe('uploadRxDocument — RX upload notification email', () => {
+  function pdfFormData(): FormData {
+    const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34])
+    const file = new File([bytes], 'script.pdf', { type: 'application/pdf' })
+    const fd = new FormData()
+    fd.set('rx-document', file)
+    return fd
+  }
+
+  beforeEach(() => {
+    getSession.mockResolvedValue({ accessToken: 'tok', refreshToken: 'rtok' })
+    customerFetch.mockResolvedValue({
+      customer: {
+        id: 'gid://shopify/Customer/42',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        emailAddress: { emailAddress: 'jane@clinic.com' },
+      },
+    })
+    getCustomerRxState.mockResolvedValue({ documentPath: null, verified: false, verifiedFlagSet: false })
+    setCustomerRxDocument.mockResolvedValue(undefined)
+    buildRxDocumentPath.mockReturnValue('rx-documents/42/uuid.pdf')
+    putRxDocument.mockResolvedValue(undefined)
+    sniffRxContentType.mockReturnValue('application/pdf')
+    deleteRxDocument.mockResolvedValue(true)
+    scanRxDocument.mockResolvedValue({ status: 'clean' })
+    sendFormEmail.mockResolvedValue({ ok: true, id: 'email_1' })
+  })
+
+  it('emails the review inbox with the file attached and the customer/timestamp details', async () => {
+    const { uploadRxDocument } = await import('../rx')
+    const result = await uploadRxDocument(pdfFormData())
+
+    expect(result.ok).toBe(true)
+    expect(sendFormEmail).toHaveBeenCalledOnce()
+    const call = sendFormEmail.mock.calls[0][0]
+    expect(call.to).toBe('support@mdsupplies.com')
+    expect(call.replyTo).toBe('jane@clinic.com')
+    expect(call.text).toContain('Jane Doe')
+    expect(call.text).toContain('jane@clinic.com')
+    expect(call.text).toContain('gid://shopify/Customer/42')
+    expect(call.attachments).toHaveLength(1)
+    expect(call.attachments[0].filename).toBe('rx-document-42.pdf')
+    expect(Buffer.isBuffer(call.attachments[0].content)).toBe(true)
+    expect(call.attachments[0].contentType).toBe('application/pdf')
+  })
+
+  it('still reports a successful upload when the notification email fails to send', async () => {
+    sendFormEmail.mockResolvedValue({ ok: false })
+    const { uploadRxDocument } = await import('../rx')
+
+    const result = await uploadRxDocument(pdfFormData())
+
+    expect(result.ok).toBe(true)
   })
 })
