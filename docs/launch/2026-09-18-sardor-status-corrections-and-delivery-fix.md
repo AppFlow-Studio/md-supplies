@@ -53,7 +53,8 @@ check against the rendered DOM).
 
 Confirmed still correct, no code touched.
 
-## 3. Backorder wording — already correct, one open question for Izzy
+## 3. Backorder wording — a
+
 
 `lib/labels/labels.ts` already reads `"Backorder, ETA {date}"` (not "ships
 {date}") — this was fixed in the same session as the prior report, before

@@ -177,6 +177,19 @@ export async function addToCart(variantId: string, quantity: number): Promise<Ad
     jar.delete(CART_COOKIE)
     return createCart(variantId, quantity)
   }
+
+  // Shopify's other signal for a stale cart id: the call itself succeeds
+  // (HTTP 200, no top-level GraphQL error) but reports it through userErrors
+  // instead — e.g. `{ code: INVALID, field: ['cartId'], message: 'The
+  // specified cart does not exist.' }`. This is not the thrown failure the
+  // try/catch above guards, so it must be checked here too, before
+  // assertNoUserErrors turns every userErrors entry into a generic thrown
+  // error. Same cart(id:) recheck as above decides real error (e.g. out of
+  // stock, on a live cart) vs. confirmed-gone cart id.
+  if (data.cartLinesAdd.userErrors?.length && !(await cartStillExists(cartId))) {
+    jar.delete(CART_COOKIE)
+    return createCart(variantId, quantity)
+  }
   assertNoUserErrors(data.cartLinesAdd.userErrors, 'cartLinesAdd')
   const cart = data.cartLinesAdd.cart
 

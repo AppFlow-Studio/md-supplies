@@ -189,17 +189,42 @@ describe('addToCart', () => {
   })
 
   /**
-   * Stale cart_id cookie — the ticket's second repro case. Shopify's
-   * cartLinesAdd does not always fail the graceful `{ cart: null }` way for
-   * an unresolvable cart id (already covered above); it can also throw a
-   * top-level GraphQL error, e.g. for a cart_id cookie left over from the
-   * pre-cutover legacy Shopify storefront or a different store. Previously
-   * this propagated exactly like a genuine transient failure and never
-   * recovered — the customer's cart_id cookie (30-day maxAge) stayed stuck
-   * forever, so every retry failed identically. A direct cart(id:) recheck
-   * now distinguishes "confirmed gone" from "ambiguous" before deciding.
+   * Stale cart_id cookie — the ticket's second repro case, and the one the
+   * real Storefront API (2026-04) actually sends: HTTP 200, no top-level
+   * GraphQL error, `cartLinesAdd` resolves normally with `cart: null` and a
+   * `userErrors: [{ code: INVALID, field: ['cartId'], ... }]` entry. This does
+   * NOT throw, so it is invisible to the try/catch above — it must be caught
+   * by rechecking `cart(id:)` when userErrors are present, before
+   * assertNoUserErrors turns them into a generic thrown error. Previously
+   * this propagated as "cartLinesAdd: The specified cart does not exist." on
+   * every retry, and the customer's cart_id cookie (30-day maxAge) never
+   * recovered.
    */
   it('recovers from a stale cart_id cookie confirmed gone by a direct cart(id:) lookup', async () => {
+    const freshCart = cartFixture({ id: 'gid://shopify/Cart/2', totalQuantity: 1 })
+    storefrontFetch.mockImplementation((query: string) => {
+      if (query === ADD_CART_LINES) {
+        return Promise.resolve({
+          cartLinesAdd: {
+            cart: null,
+            userErrors: [{ code: 'INVALID', field: ['cartId'], message: 'The specified cart does not exist.' }],
+          },
+        })
+      }
+      if (query === GET_CART) return Promise.resolve({ cart: null })
+      if (query === CREATE_CART) return Promise.resolve({ cartCreate: { cart: freshCart, userErrors: [] } })
+      throw new Error(`unexpected storefrontFetch call: ${query.slice(0, 40)}`)
+    })
+
+    const { addToCart } = await import('../cart')
+    const result = await addToCart('variant-added', 1)
+
+    expect(cookieStore.delete).toHaveBeenCalledWith('cart_id')
+    expect(storefrontFetch).toHaveBeenCalledWith(CREATE_CART, expect.anything(), expect.anything())
+    expect(result.cart.id).toBe('gid://shopify/Cart/2')
+  })
+
+  it('recovers from a top-level GraphQL error (malformed/foreign cart id) confirmed gone by cart(id:)', async () => {
     const freshCart = cartFixture({ id: 'gid://shopify/Cart/2', totalQuantity: 1 })
     storefrontFetch.mockImplementation((query: string) => {
       if (query === ADD_CART_LINES) return Promise.reject(new Error('Invalid global id'))
@@ -231,11 +256,16 @@ describe('addToCart', () => {
     expect(storefrontFetch).not.toHaveBeenCalledWith(CREATE_CART, expect.anything(), expect.anything())
   })
 
-  it('surfaces a userErrors failure without touching the cart cookie', async () => {
+  it('surfaces a userErrors failure without touching the cart cookie when the cart is still live', async () => {
+    // A real error on a cart that still resolves (e.g. out of stock) must
+    // still throw — only a userErrors response paired with a confirmed-gone
+    // cart(id:) lookup should trigger recovery.
+    const existingCart = cartFixture()
     storefrontFetch.mockImplementation((query: string) => {
       if (query === ADD_CART_LINES) {
         return Promise.resolve({ cartLinesAdd: { cart: null, userErrors: [{ message: 'Variant not found' }] } })
       }
+      if (query === GET_CART) return Promise.resolve({ cart: existingCart })
       throw new Error(`unexpected storefrontFetch call: ${query.slice(0, 40)}`)
     })
 
@@ -243,6 +273,7 @@ describe('addToCart', () => {
 
     await expect(addToCart('variant-added', 1)).rejects.toThrow('Variant not found')
     expect(cookieStore.delete).not.toHaveBeenCalled()
+    expect(storefrontFetch).not.toHaveBeenCalledWith(CREATE_CART, expect.anything(), expect.anything())
   })
 })
 
