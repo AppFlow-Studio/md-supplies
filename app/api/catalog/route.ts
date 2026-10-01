@@ -69,7 +69,28 @@ function resolveL1Source(slug: string): ResolvedSource | null {
   const shopifyHandle = getShopifyHandle(slug)
   const l1 = getL1ByCollectionHandle(shopifyHandle)
   const featured = l1 ? undefined : getFeaturedSubcategoryBySlug(shopifyHandle)
-  if (!l1 && !featured) return null
+
+  // Neither a registered L1 nor a featured subcategory: this is the FLAT
+  // canonical a duplicate L2 subcategory tag's redirect() lands on (Defect 1,
+  // FIX-duplicate-category-urls — see category-tree-data.server.ts's
+  // hasFlatCategoryCollection doc comment). CategoryPageView already renders
+  // these generically off the raw Shopify handle (it has no L1/featured gate
+  // on its own collection fetch); this function returning null here is what
+  // made every page>1 / filter / sort click on that page 404 — the bare URL
+  // showed page 1 fine, but the client island's every interaction failed.
+  // Fall through to a generic collection source rather than 404 — if
+  // `shopifyHandle` isn't a real collection either, the downstream
+  // fetchProductConnection naturally returns null and this 404s anyway, same
+  // as CategoryPageView's own `if (!data.collection) notFound()`.
+  if (!l1 && !featured) {
+    return {
+      source: { kind: 'collection', handle: shopifyHandle },
+      cacheTags: ['shopify', 'products', 'collections', `collection:${shopifyHandle}`],
+      facetKey: slug,
+      facetKind: 'category',
+      searchScopeTitle: slug,
+    }
+  }
 
   const displayName = l1?.displayName ?? featured!.displayName
 

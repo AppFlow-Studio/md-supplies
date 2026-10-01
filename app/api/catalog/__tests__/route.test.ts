@@ -29,7 +29,22 @@ function req(qs: string): NextRequest {
 
 const OK_RESOLUTION = {
   status: 'ok' as const,
-  products: [{ id: 'gid://shopify/Product/1', handle: 'p1' }],
+  products: [
+    {
+      id: 'gid://shopify/Product/1',
+      title: 'Product 1',
+      handle: 'p1',
+      vendor: 'Acme',
+      availableForSale: true,
+      tags: [],
+      priceRange: {
+        minVariantPrice: { amount: '10.00', currencyCode: 'USD' },
+        maxVariantPrice: { amount: '10.00', currencyCode: 'USD' },
+      },
+      images: { nodes: [] },
+      variants: { nodes: [] },
+    },
+  ],
   filters: [],
   categoryFacet: undefined,
   filterLabelMap: new Map([['{"a":1}', 'A']]),
@@ -61,10 +76,21 @@ describe('GET /api/catalog', () => {
     expect(await res.json()).toEqual({ error: 'missing_slug' })
   })
 
-  it('404s when the slug resolves to neither an L1 nor a featured subcategory', async () => {
+  it('falls through to a generic collection source when the slug is neither a registered L1 nor a featured subcategory — the FLAT canonical a duplicate L2 subcategory redirects to (Defect 1)', async () => {
+    mockResolve.mockResolvedValue(OK_RESOLUTION)
+    const res = await GET(req('?slug=syringe-with-needle&page=2'))
+
+    expect(res.status).toBe(200)
+    expect(mockResolve).toHaveBeenCalledTimes(1)
+    const arg = mockResolve.mock.calls[0][0]
+    expect(arg.source).toEqual({ kind: 'collection', handle: 'syringe-with-needle' })
+  })
+
+  it('404s when that generic collection source genuinely does not exist in Shopify', async () => {
+    mockResolve.mockResolvedValue({ status: 'not_found' })
     const res = await GET(req('?slug=not-a-real-category-xyz'))
     expect(res.status).toBe(404)
-    expect(mockResolve).not.toHaveBeenCalled()
+    expect(mockResolve).toHaveBeenCalledTimes(1)
   })
 
   it('resolves a real L1 slug with the SAME cacheTags the page uses, and returns the view + Cache-Control', async () => {
