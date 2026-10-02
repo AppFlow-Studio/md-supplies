@@ -226,32 +226,177 @@ export const PARTNERS: Partner[] = [
     seoTitle: 'Dawn Mist Products | MDSupplies',
     seoDescription: 'Browse Dawn Mist personal care and hygiene products available through MDSupplies.',
   },
+  // 'lumex' was REMOVED (2026-10-02), not just disabled: it is not a Shopify
+  // vendor at all. Every "LUMEX"-named product (57 of them, live-checked) has
+  // `vendor: "Graham Field"` — Lumex is one of Graham Field's own sub-brands
+  // (Graham Field's own intro text already said so). A standalone Partner row
+  // with vendorName 'Lumex' matched zero products by construction, since
+  // partnerForVendor matches the exact Shopify vendor string — this page was
+  // permanently empty. The client's own example for this exact defect: "if a
+  // brand such as Lumex belongs under Graham Field, it should still be
+  // represented under the Graham Field partner structure instead of being
+  // treated as its own partner." No vendor-alias mechanism is needed to fix
+  // it — Graham Field's existing vendorName already covers these products.
   {
-    slug: 'lumex',
-    name: 'Lumex',
-    vendorName: 'Lumex',
+    slug: 'jant-pharmacal',
+    name: 'Jant Pharmacal',
+    vendorName: 'Jant Pharmacal',
     type: 'brand',
     isActive: true,
-    description: 'Durable medical equipment and mobility aids for patient care.',
-    // P0 regression (2026-09-04): the uploaded lumex.svg resolves 200 with a
-    // valid image content-type, but every fill is #FFFFFF — invisible on this
-    // page's white cards (it was only ever legible on the navy partner-detail
-    // hero, which forces white via `brightness-0 invert`). Cleared to the empty
-    // string, which BrandLogoImage/buildOg both already treat as "no logo" and
-    // fall back from cleanly — not a hack, the same contract lib/brands.ts uses.
-    // See docs/audits/2026-09-04-partners-brand-logo-audit.md.
+    description: 'Laboratory and point-of-care diagnostic tests for clinical and CLIA-waived settings.',
+    // Logo: official Jant Pharmacal Corporation wordmark (client-supplied
+    // source asset), background removed and re-encoded to WebP (640x145,
+    // ~43KB) so it survives the hero's `brightness-0 invert` treatment the
+    // same way every other partner logo on this page does — a logo with a
+    // baked-in opaque background would render as a solid white rectangle
+    // there. Uploaded to the same BunnyCDN brands/ zone every other partner
+    // logo resolves from.
     logo: {
-      url: '',
-      altText: 'Lumex logo',
-      width: 109,
-      height: 85,
+      url: '/api/bunny/brands/jant-pharmacal.webp',
+      altText: 'Jant Pharmacal Corporation logo',
+      width: 640,
+      height: 145,
     },
-    intro: 'Lumex specializes in durable medical equipment including walkers, wheelchairs, and patient lifts used in home care and clinical settings.',
-    productCategories: ['dme', 'mobility-aids', 'patient-lifts'],
+    intro: 'Jant Pharmacal Corporation (Accutest / Accustrip) manufactures rapid diagnostic tests and point-of-care supplies, including multi-panel drug tests, urinalysis strips and readers, and rapid tests for conditions such as mononucleosis and H. pylori, for clinical and CLIA-waived laboratory settings.',
+    productCategories: ['diagnostics', 'rapid-tests', 'point-of-care', 'drug-testing'],
     featuredProducts: [],
     relatedCategories: [
-      { handle: 'mobility', title: 'Mobility & Durable Equipment' },
+      { handle: 'testing-screening', title: 'Testing & Screening' },
     ],
+    seoTitle: 'Jant Pharmacal Diagnostic Products | MDSupplies',
+    seoDescription: 'Shop Jant Pharmacal (Accutest / Accustrip) rapid diagnostic tests and point-of-care supplies through MDSupplies.',
+  },
+  // ── The 5 entries below use logo files ALREADY verified & uploaded to
+  // BunnyCDN for the "Brands We Carry" grid (lib/brands.ts) — confirmed via
+  // scripts/audit-brand-logos.ts's visibility check, so no re-upload or
+  // white-on-white risk here. Added 2026-10-02 toward the client's approved
+  // 19-partner list; each vendorName is the EXACT live Shopify `vendor` field
+  // value (verified via Storefront API product search against the QA store),
+  // which is what the partner page's `vendor:"..."` product query requires —
+  // not necessarily the approved display `name`, see TLC DME below.
+  {
+    slug: 'trocar-supplies',
+    name: 'Trocar Supplies',
+    vendorName: 'Trocar Supplies',
+    type: 'brand',
+    isActive: true,
+    description: 'Trocars and trocar kits for laparoscopic and minimally invasive procedures.',
+    logo: {
+      url: '/api/bunny/brands/trocar-supplies.avif',
+      altText: 'Trocar Supplies logo',
+      width: 410,
+      height: 195,
+    },
+    intro: 'Trocar Supplies manufactures disposable and reusable trocars, trocar kits, and related laparoscopic access instruments in a range of sizes for clinical and procedural use.',
+    productCategories: ['surgical', 'trocars', 'laparoscopic'],
+    featuredProducts: [],
+    relatedCategories: [
+      { handle: 'trocars-trocar-kits', title: 'Trocars & Trocar Kits' },
+      { handle: 'surgery-procedure', title: 'Surgery & Procedure' },
+    ],
+    seoTitle: 'Trocar Supplies Products | MDSupplies',
+    seoDescription: 'Shop Trocar Supplies trocars and trocar kits through MDSupplies.',
+  },
+  {
+    slug: 'rx-systems',
+    name: 'Rx Systems',
+    vendorName: 'Rx Systems',
+    type: 'vendor',
+    isActive: true,
+    description: 'Pharmacy labels, vials, and compounding supplies for retail and institutional pharmacies.',
+    logo: {
+      url: '/api/bunny/brands/rx-systems.png',
+      altText: 'Rx Systems logo',
+      width: 223,
+      height: 56,
+    },
+    intro: 'Rx Systems supplies pharmacy labels, prescription vials, compounding materials, and related dispensing supplies for retail and institutional pharmacies.',
+    productCategories: ['pharmacy', 'labels', 'vials', 'compounding'],
+    featuredProducts: [],
+    relatedCategories: [
+      { handle: 'pharmacy-products', title: 'Pharmacy Products' },
+    ],
+    seoTitle: 'Rx Systems Pharmacy Products | MDSupplies',
+    seoDescription: 'Shop Rx Systems pharmacy labels, vials, and compounding supplies through MDSupplies.',
+  },
+  {
+    // Approved display name is "TLC DME" (client's partner list); the live
+    // Shopify vendor field on every one of this vendor's products reads "TLC
+    // Medical" (verified via Storefront API, 15 active products — ankle/knee
+    // braces). vendorName must stay the LITERAL Shopify string or the
+    // `vendor:"..."` product query below returns zero results. Flagged to
+    // Izzy to confirm whether the Shopify vendor field itself should be
+    // renamed, rather than silently guessed here.
+    slug: 'tlc-dme',
+    name: 'TLC DME',
+    vendorName: 'TLC Medical',
+    type: 'brand',
+    isActive: true,
+    description: 'Orthopedic braces and durable medical equipment for patient support and recovery.',
+    logo: {
+      url: '/api/bunny/brands/tlc-dme.png',
+      altText: 'TLC DME logo',
+      width: 81,
+      height: 90,
+    },
+    intro: 'TLC DME supplies orthopedic braces and supports — including hinged ankle and knee braces — along with other durable medical equipment for patient recovery and daily support.',
+    productCategories: ['dme', 'orthopedic-braces', 'rehabilitation'],
+    featuredProducts: [],
+    relatedCategories: [
+      { handle: 'patient-therapy-rehab', title: 'Patient Therapy & Rehab' },
+    ],
+    seoTitle: 'TLC DME Orthopedic Products | MDSupplies',
+    seoDescription: 'Shop TLC DME orthopedic braces and durable medical equipment through MDSupplies.',
+  },
+  {
+    slug: 'first-glove',
+    name: 'First Glove',
+    vendorName: 'First Glove',
+    type: 'brand',
+    isActive: true,
+    description: 'Nitrile exam and industrial gloves for clinical and general-purpose use.',
+    logo: {
+      url: '/api/bunny/brands/first-glove.webp',
+      altText: 'First Glove logo',
+      width: 260,
+      height: 20,
+    },
+    intro: 'First Glove manufactures nitrile exam and industrial gloves in a range of thicknesses and sizes for clinical, laboratory, and general-purpose use.',
+    productCategories: ['gloves', 'nitrile', 'exam'],
+    featuredProducts: [],
+    relatedCategories: [
+      { handle: 'gloves', title: 'Gloves' },
+    ],
+    seoTitle: 'First Glove Products | MDSupplies',
+    seoDescription: 'Shop First Glove nitrile exam and industrial gloves through MDSupplies.',
+  },
+  {
+    // Only 1 active product for this vendor in the QA catalog (a CLIA-waived
+    // multi-drug rapid test cup) — thin, but it IS the exact live vendor
+    // string (verified), on the client's approved 19-partner list, and has a
+    // verified non-broken logo already uploaded. Flag to Izzy: confirm
+    // whether more CLIAwaived products exist in production than this QA
+    // store carries (same gap pattern found for CorDx/Respiratory Testing).
+    slug: 'cliawaived',
+    name: 'CLIAwaived, Inc',
+    vendorName: 'CLIAwaived, Inc',
+    type: 'vendor',
+    isActive: true,
+    description: 'CLIA-waived rapid diagnostic and drug testing products for point-of-care use.',
+    logo: {
+      url: '/api/bunny/brands/cliawaived.png',
+      altText: 'CLIAwaived, Inc logo',
+      width: 225,
+      height: 225,
+    },
+    intro: 'CLIAwaived, Inc. supplies CLIA-waived rapid diagnostic and drug testing products designed for point-of-care use in clinical and office-based settings.',
+    productCategories: ['diagnostics', 'rapid-tests', 'drug-testing'],
+    featuredProducts: [],
+    relatedCategories: [
+      { handle: 'testing-screening', title: 'Testing & Screening' },
+    ],
+    seoTitle: 'CLIAwaived Diagnostic Products | MDSupplies',
+    seoDescription: 'Shop CLIAwaived, Inc. CLIA-waived rapid diagnostic and drug testing products through MDSupplies.',
   },
 ]
 
