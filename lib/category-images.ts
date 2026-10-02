@@ -81,6 +81,10 @@ export const CATEGORY_IMAGE_CONFIG: Record<string, CategoryImageEntry> = {
   // inheriting the Surgery & Procedure entry — same artwork file, but truthful
   // alt text for the page it actually labels.
   'trocars-trocar-kits':     { file: SURGERY_PROCEDURE_IMAGE_FILE,               alt: 'Trocars and trocar kits' },
+  // Featured subcategory under Testing — same reasoning as Trocars above: no
+  // dedicated Respiratory Testing photography exists yet, so it reuses the
+  // Testing placeholder with its own truthful alt text.
+  'respiratory-testing':     { file: 'testing-placeholder.jpeg',                 alt: 'Respiratory testing kits and supplies' },
   'apparel':                 { file: 'apparel-placeholder.jpeg',                 alt: 'Medical apparel and scrubs' },
   'hygiene':                 { file: 'hygiene-placeholder.jpeg',                 alt: 'Hygiene products' },
   'disinfectants':           { file: 'disinfectants-placeholder.jpeg',           alt: 'Disinfectants and cleaning solutions' },

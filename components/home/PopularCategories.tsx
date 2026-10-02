@@ -9,7 +9,10 @@ const CATEGORIES = [
   { title: 'Testing',            handle: 'testing-screening',   icon: '/icons/category-logo-3.svg' },
   { title: 'Surgical Sutures',   handle: 'surgical-sutures',   icon: '/icons/category-logo-4.svg' },
   { title: 'Wound Care',         handle: 'wound-care',          icon: '/icons/category-logo-5.svg' },
-  { title: 'Respiratory',        handle: 'respiratory',         icon: '/icons/category-logo-6.svg' },
+  // Points at the Respiratory Testing featured subcategory (COVID-19/Flu/RSV/
+  // Strep), not the Respiratory Care L1 — client request (2026-10-02): the
+  // tile was showing respiratory-care equipment where testing was meant.
+  { title: 'Respiratory Testing', handle: 'respiratory-testing', icon: '/icons/category-logo-3.svg' },
   { title: 'Exam Room',          handle: 'exam-room',           icon: '/icons/category-logo-7.svg' },
   { title: 'Mobility',           handle: 'mobility',            icon: '/icons/category-logo-8.svg' },
 ]

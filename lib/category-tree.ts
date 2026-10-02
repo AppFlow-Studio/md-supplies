@@ -201,6 +201,24 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
       'Disposable and reusable trocars in 3.2mm, 3.5mm, and 4.5mm, plus trocar kits and kit-without-trocar options for clinical and procedural use.',
     imageAlt: 'Trocars and trocar kits',
   },
+  {
+    slug: 'respiratory-testing',
+    collectionHandle: 'respiratory-testing',
+    displayName: 'Respiratory Testing',
+    parentTag: 'testing',
+    // The live Shopify collection (confirmed by Izzy 2026-10-02, 27 products)
+    // is built from the OLD COVID-19/Flu/RSV/Strep tags, not this registry's
+    // category:/subcategory: scheme — same pattern as Trocars: a real curated
+    // collection that cannot be derived from live tags, so it is registered
+    // here by handle rather than reconstructed as a tag query. No filter-
+    // registry row is added for it (lib/filter-registry.ts falls back to the
+    // safe default facet set for an unregistered slug) until Izzy verifies
+    // this collection's actual live facets, the same verification Trocars got
+    // before its row was added — never hardcode facet values without that.
+    shortDescription:
+      'Rapid and point-of-care respiratory diagnostic tests, including COVID-19, flu, RSV, and strep options for clinical and point-of-care use.',
+    imageAlt: 'Respiratory testing kits and supplies',
+  },
 ] as const
 
 export function getFeaturedSubcategoryBySlug(slug: string): FeaturedSubcategoryDef | undefined {
