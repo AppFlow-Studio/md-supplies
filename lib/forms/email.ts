@@ -18,6 +18,8 @@ export async function sendFormEmail(opts: {
   subject: string
   text: string
   formName: string
+  /** Optional file attachments (e.g. an uploaded RX document). Never logged. */
+  attachments?: { filename: string; content: Buffer; contentType?: string }[]
 }): Promise<{ ok: boolean; id?: string }> {
   const requestId = crypto.randomUUID()
 
@@ -28,6 +30,7 @@ export async function sendFormEmail(opts: {
       replyTo: opts.replyTo,
       subject: opts.subject,
       text: opts.text,
+      attachments: opts.attachments,
     })
 
     if (error) {

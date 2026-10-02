@@ -78,7 +78,7 @@ export const BRANDS: Brand[] = [
   { name: 'Busse Hospital Disposables', slug: 'busse-hospital-disposables', logoFile: 'busse-hospital-disposables.png', logoWidth: 300, logoHeight: 113 },
   { name: 'Cardinal Health', slug: 'cardinal-health', logoFile: 'cardinal-health.svg', logoWidth: 152, logoHeight: 56, homepage: true },
   { name: 'Chembio Diagnostics', slug: 'chembio-diagnostics', logoFile: 'chembio-diagnostics.png', logoWidth: 667, logoHeight: 160 },
-  { name: 'CLIAwaived', slug: 'cliawaived', logoFile: 'cliawaived.png', logoWidth: 225, logoHeight: 225 },
+  { name: 'CLIAwaived', slug: 'cliawaived', logoFile: 'cliawaived.png', logoWidth: 225, logoHeight: 225, partnerSlug: 'cliawaived' },
   { name: 'Clorox', slug: 'clorox', logoFile: 'clorox.svg', logoWidth: 240, logoHeight: 28 },
   { name: 'CorDx', slug: 'cordx', logoFile: 'cordx.png', logoWidth: 2295, logoHeight: 654, partnerSlug: 'cordx' },
   { name: 'Dawn Mist', slug: 'dawn-mist', logoFile: 'dawn-mist.avif', logoWidth: 128, logoHeight: 64, partnerSlug: 'dawn-mist' },
@@ -92,7 +92,7 @@ export const BRANDS: Brand[] = [
   { name: 'Exel', slug: 'exel', logoFile: 'exel.webp', logoWidth: 300, logoHeight: 100, homepage: true },
   { name: 'Fearless Tattoo', slug: 'fearless-tattoo', logoFile: 'fearless-tattoo.avif', logoWidth: 124, logoHeight: 80 },
   { name: 'Feather', slug: 'feather', logoFile: 'feather.webp', logoWidth: 1500, logoHeight: 495 },
-  { name: 'First Glove', slug: 'first-glove', logoFile: 'first-glove.webp', logoWidth: 260, logoHeight: 20 },
+  { name: 'First Glove', slug: 'first-glove', logoFile: 'first-glove.webp', logoWidth: 260, logoHeight: 20, partnerSlug: 'first-glove' },
   { name: 'FlowFlex', slug: 'flowflex', logoFile: 'flowflex.png', logoWidth: 255, logoHeight: 55 },
   { name: 'Gendron', slug: 'gendron', logoFile: 'gendron.webp', logoWidth: 340, logoHeight: 90 },
   { name: 'GenBody', slug: 'genbody', logoFile: 'genbody.png', logoWidth: 308, logoHeight: 60 },
@@ -110,7 +110,12 @@ export const BRANDS: Brand[] = [
   { name: 'Kinsman Enterprises', slug: 'kinsman-enterprises', logoFile: 'kinsman-enterprises.png', logoWidth: 2800, logoHeight: 1500 },
   { name: 'Laerdal', slug: 'laerdal', logoFile: 'laerdal.svg', logoWidth: 88, logoHeight: 48, homepage: true },
   { name: 'LifeSign', slug: 'lifesign', logoFile: 'lifesign.png', logoWidth: 267, logoHeight: 110 },
-  { name: 'Lumex', slug: 'lumex', partnerSlug: 'lumex', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit); this is the reported P0 regression
+  // 'lumex' is a Graham Field sub-brand, not its own Shopify vendor (every
+  // LUMEX-named product carries vendor "Graham Field" — verified live
+  // 2026-10-02); partnerSlug now points there instead of the removed
+  // standalone /partners/lumex page, which matched zero products by
+  // construction. logoFile removed — white-on-white (2026-09-04 audit).
+  { name: 'Lumex', slug: 'lumex', partnerSlug: 'graham-field', homepage: true },
   { name: 'Medical Action Industries', slug: 'medical-action-industries', logoFile: 'medical-action-industries.jpg', logoWidth: 485, logoHeight: 110 },
   { name: 'Medegen Medical Products', slug: 'medegen-medical-products', logoFile: 'medegen-medical-products.jpg', logoWidth: 297, logoHeight: 103 },
   { name: 'Medgluv', slug: 'medgluv', logoFile: 'medgluv.png', logoWidth: 200, logoHeight: 51 },
@@ -133,7 +138,7 @@ export const BRANDS: Brand[] = [
   { name: 'Philips', slug: 'philips', logoFile: 'philips.svg', logoWidth: 786, logoHeight: 1001, homepage: true },
   { name: 'Quidel', slug: 'quidel', logoFile: 'quidel.svg', logoWidth: 69, logoHeight: 9 },
   { name: 'Resp-O2', slug: 'resp-o2', logoFile: 'resp-o2.jpeg', logoWidth: 308, logoHeight: 164 },
-  { name: 'Rx Systems', slug: 'rx-systems', logoFile: 'rx-systems.png', logoWidth: 223, logoHeight: 56 },
+  { name: 'Rx Systems', slug: 'rx-systems', logoFile: 'rx-systems.png', logoWidth: 223, logoHeight: 56, partnerSlug: 'rx-systems' },
   { name: 'Safetec', slug: 'safetec' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'Sempermed USA', slug: 'sempermed-usa', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit); HOMEPAGE_BRANDS_WITH_LOGO drops it from the marquee until re-uploaded
   { name: 'Siemens', slug: 'siemens', homepage: true }, // logoFile removed — white-on-white (2026-09-04 audit)
@@ -145,8 +150,8 @@ export const BRANDS: Brand[] = [
   // Glenshaw is a Dynarex sub-brand; reuses the Dynarex logo by request (no standalone mark exists).
   { name: 'The Glenshaw Collection', slug: 'the-glenshaw-collection', logoFile: 'dynarex.png', logoWidth: 270, logoHeight: 90 },
   { name: 'Tillotson', slug: 'tillotson' }, // logoFile removed — white-on-white (2026-09-04 audit)
-  { name: 'TLC DME', slug: 'tlc-dme', logoFile: 'tlc-dme.png', logoWidth: 81, logoHeight: 90 },
-  { name: 'Trocar Supplies', slug: 'trocar-supplies', logoFile: 'trocar-supplies.avif', logoWidth: 410, logoHeight: 195, homepage: true },
+  { name: 'TLC DME', slug: 'tlc-dme', logoFile: 'tlc-dme.png', logoWidth: 81, logoHeight: 90, partnerSlug: 'tlc-dme' },
+  { name: 'Trocar Supplies', slug: 'trocar-supplies', logoFile: 'trocar-supplies.avif', logoWidth: 410, logoHeight: 195, homepage: true, partnerSlug: 'trocar-supplies' },
   { name: 'TrueCare Biomedix', slug: 'truecare-biomedix', logoFile: 'truecare.svg', logoWidth: 204, logoHeight: 44, partnerSlug: 'truecare' },
   { name: 'UltiMed', slug: 'ultimed' }, // logoFile removed — white-on-white (2026-09-04 audit)
   { name: 'UNIFY', slug: 'unify' }, // logoFile removed — near-white/effectively invisible on white (2026-09-04 audit)

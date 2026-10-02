@@ -4,6 +4,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { CART_BUYER_IDENTITY_UPDATE, GET_CART } from '@/lib/shopify/queries/cart'
+import { GET_CUSTOMER } from '@/lib/shopify/queries/customer'
 import { getSession } from '@/lib/shopify/session'
 import { customerFetch } from '@/lib/shopify/customer'
 import { getCustomerRxState, setCustomerRxDocument } from '@/lib/shopify/admin'
@@ -18,6 +19,8 @@ import {
 } from '@/lib/rx-storage'
 import { isScanRequired, scanRxDocument } from '@/lib/rx-scan'
 import { cartRequiresRxGate, resolveGateStatus, type RxGateStatus } from '@/lib/rx-gate'
+import { sendFormEmail } from '@/lib/forms/email'
+import { TO_EMAIL } from '@/lib/resend'
 import type { Cart } from '@/lib/shopify/types'
 
 const CART_COOKIE = 'cart_id'
@@ -36,6 +39,37 @@ async function getCustomerId(): Promise<string | null> {
       session.accessToken,
     )
     return data.customer?.id ?? null
+  } catch {
+    return null
+  }
+}
+
+type RxUploadCustomerProfile = { id: string; name: string; email: string | null }
+
+/**
+ * Name/email for the staff notification email only — every other caller in
+ * this file needs just the id, so this stays separate from getCustomerId()
+ * rather than widening its query for one caller.
+ */
+async function getCustomerProfileForRxUpload(): Promise<RxUploadCustomerProfile | null> {
+  const session = await getSession()
+  if (!session) return null
+  try {
+    const data = await customerFetch<{
+      customer: {
+        id: string
+        firstName: string | null
+        lastName: string | null
+        emailAddress: { emailAddress: string } | null
+      } | null
+    }>(GET_CUSTOMER, session.accessToken)
+    if (!data.customer) return null
+    const name = [data.customer.firstName, data.customer.lastName].filter(Boolean).join(' ')
+    return {
+      id: data.customer.id,
+      name: name || 'MDSupplies customer',
+      email: data.customer.emailAddress?.emailAddress ?? null,
+    }
   } catch {
     return null
   }
@@ -142,8 +176,9 @@ export type UploadRxDocumentResult =
 
 /** Account-level RX document upload (form action). Auth required. */
 export async function uploadRxDocument(formData: FormData): Promise<UploadRxDocumentResult> {
-  const customerId = await getCustomerId()
-  if (!customerId) return { ok: false, error: 'Please sign in to upload a prescription document.' }
+  const profile = await getCustomerProfileForRxUpload()
+  if (!profile) return { ok: false, error: 'Please sign in to upload a prescription document.' }
+  const customerId = profile.id
 
   const file = formData.get('rx-document')
   if (!(file instanceof File) || file.size === 0) {
@@ -197,6 +232,37 @@ export async function uploadRxDocument(formData: FormData): Promise<UploadRxDocu
     console.info(
       `[rx-audit] document_uploaded customer=${customerFolderId(customerId)} replaced=${previousPath != null}`,
     )
+
+    // Staff review notification — attaches the actual uploaded file so a
+    // reviewer never has to sign in to Admin/Bunny just to look at it. The
+    // Bunny blob + Shopify customer metafields above remain the system of
+    // record; this email is a courtesy copy for the review inbox and its
+    // failure must never fail an upload that already succeeded (same
+    // best-effort posture as the stale-blob delete below).
+    const uploadedAt = new Date()
+    const sent = await sendFormEmail({
+      to: TO_EMAIL,
+      replyTo: profile.email ?? TO_EMAIL,
+      subject: `[RX Upload] ${profile.name}`,
+      text: [
+        `Customer:      ${profile.name}`,
+        `Email:         ${profile.email ?? '—'}`,
+        `Shopify ID:    ${customerId}`,
+        `Uploaded at:   ${uploadedAt.toISOString()}`,
+        `Replacement:   ${previousPath != null ? 'yes (prior verification reset)' : 'no'}`,
+      ].join('\n'),
+      formName: 'rx-upload',
+      attachments: [
+        {
+          filename: `rx-document-${customerFolderId(customerId)}.${RX_ALLOWED_TYPES[sniffedType]}`,
+          content: Buffer.from(body),
+          contentType: sniffedType,
+        },
+      ],
+    })
+    if (!sent.ok) {
+      console.error(`[rx-audit] notification_email_failed customer=${customerFolderId(customerId)}`)
+    }
 
     // Retention: exactly one live document per customer. Best-effort delete
     // of the superseded blob; a failure is logged for manual cleanup, never
