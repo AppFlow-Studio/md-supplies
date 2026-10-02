@@ -18,7 +18,11 @@ import {
  * how many are kept.
  */
 
-const POPULAR_LIMIT = 12
+// Mirrors app/(site)/categories/page.tsx's popularCategories slice — kept in
+// sync with it there, not re-derived here, since Surgery & Procedure/Trocars'
+// position shifts whenever a featured subcategory is added anywhere ahead of
+// them in registry order (see that file's comment for the current count).
+const POPULAR_LIMIT = 20
 const MOBILE_COLUMNS = 2
 const DESKTOP_COLUMNS = 4
 

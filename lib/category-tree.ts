@@ -219,6 +219,60 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
       'Rapid and point-of-care respiratory diagnostic tests, including COVID-19, flu, RSV, and strep options for clinical and point-of-care use.',
     imageAlt: 'Respiratory testing kits and supplies',
   },
+  // The 5 group collections below are the old nav's Respiratory Testing
+  // fly-out (Testing > Respiratory Testing > COVID-19 / COVID+Flu / Flu / RSV
+  // / Strep), confirmed live by Izzy 2026-10-02 (STRUCTURE-FOR-SARDOR.md) —
+  // all 5 are real Shopify smart collections, not reconstructed tag queries.
+  // Flattened to siblings of Respiratory Testing under Testing rather than a
+  // 3rd nav level: this registry's L1 -> featured-subcategory shape is two
+  // levels only, and Diagnostic Tests/Drug Tests/STD Testing/Testing Monitors
+  // already sit at this same level beside Respiratory Testing in the old nav,
+  // so this is a flattening, not a demotion.
+  //
+  // Analyzers (the old nav's 6th child) is deliberately OMITTED: Izzy's flag A
+  // found 5 of its 8 products are alcohol breath testers, not respiratory —
+  // putting it here as-is would misfile them. Add it once that Shopify data is
+  // corrected (Izzy's call, needs Bilal's go-ahead).
+  {
+    slug: 'covid-19',
+    collectionHandle: 'covid-19',
+    displayName: 'COVID-19',
+    parentTag: 'testing',
+    shortDescription: 'COVID-19 rapid and combo tests for clinical and point-of-care use.',
+    imageAlt: 'COVID-19 test kits',
+  },
+  {
+    slug: 'covid-19-flu-a-b-combo-tests',
+    collectionHandle: 'covid-19-flu-a-b-combo-tests',
+    displayName: 'COVID-19 & Flu A&B Combo Tests',
+    parentTag: 'testing',
+    shortDescription: 'Combination rapid tests detecting COVID-19 and Flu A&B in a single sample.',
+    imageAlt: 'COVID-19 and Flu A&B combination test kits',
+  },
+  {
+    slug: 'flu-a-b-influenza',
+    collectionHandle: 'flu-a-b-influenza',
+    displayName: 'Flu A & B (Influenza)',
+    parentTag: 'testing',
+    shortDescription: 'Rapid influenza A and B tests for clinical and point-of-care use.',
+    imageAlt: 'Flu A and B influenza test kits',
+  },
+  {
+    slug: 'rsv',
+    collectionHandle: 'rsv',
+    displayName: 'RSV',
+    parentTag: 'testing',
+    shortDescription: 'Rapid RSV (respiratory syncytial virus) tests for clinical and point-of-care use.',
+    imageAlt: 'RSV test kits',
+  },
+  {
+    slug: 'strep-tests',
+    collectionHandle: 'strep-tests',
+    displayName: 'Strep Tests',
+    parentTag: 'testing',
+    shortDescription: 'Rapid group A strep tests for clinical and point-of-care use.',
+    imageAlt: 'Strep test kits',
+  },
 ] as const
 
 export function getFeaturedSubcategoryBySlug(slug: string): FeaturedSubcategoryDef | undefined {
