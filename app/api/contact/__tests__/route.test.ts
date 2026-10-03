@@ -85,6 +85,18 @@ describe('POST /api/contact', () => {
     expect(send.mock.calls[0][0].text).not.toContain('Attribution:')
   })
 
+  it('includes a valid phone number in the email body', async () => {
+    await POST(post({ ...valid, phone: '(212) 555-0100' }))
+    expect(send.mock.calls[0][0].text).toContain('Phone:   (212) 555-0100')
+  })
+
+  it('rejects a phone number that is not a real US/Canadian number', async () => {
+    const res = await POST(post({ ...valid, phone: '555-555-5555' }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).fields.phone).toBeDefined()
+    expect(send).not.toHaveBeenCalled()
+  })
+
   it('returns 502 when Resend responds with an error object (no swallowing)', async () => {
     send.mockResolvedValue({
       data: null,
@@ -92,6 +104,8 @@ describe('POST /api/contact', () => {
     })
     const res = await POST(post(valid))
     expect(res.status).toBe(502)
+    // Shown verbatim by the form, so it must tell the customer how to reach us.
+    expect((await res.json()).error).toContain('support@mdsupplies.com')
   })
 
   it('returns 403 on a cross-origin request', async () => {
