@@ -35,6 +35,19 @@ const NO_STORE = { cache: 'no-store' } as const
 
 type UserError = { message: string }
 
+// Every Storefront cart id is a Cart gid. Anything else — a legacy storefront
+// cart token (`c1-…`), a hand-edited cookie, a gid of another resource type —
+// can never resolve, and Shopify doesn't say so gracefully: both cartLinesAdd
+// and the cart(id:) lookup THROW on it ("Variable $cartId of type ID! was
+// provided invalid value" / "invalid id", verified against the QA store
+// 2026-10-03) rather than returning null. That throw is indistinguishable
+// from a transient failure, so cartStillExists() could never confirm such a
+// cart gone and every add would fail until the cookie was cleared. Checking
+// the shape locally settles it without guessing at error text.
+function isCartGid(cartId: string): boolean {
+  return /^gid:\/\/shopify\/Cart\/.+/.test(cartId)
+}
+
 function assertNoUserErrors(errors: UserError[] | undefined, context: string) {
   if (errors?.length) {
     throw new Error(`${context}: ${errors.map((e) => e.message).join(', ')}`)
@@ -43,7 +56,7 @@ function assertNoUserErrors(errors: UserError[] | undefined, context: string) {
 
 export async function getCart(): Promise<Cart | null> {
   const cartId = (await cookies()).get(CART_COOKIE)?.value
-  if (!cartId) return null
+  if (!cartId || !isCartGid(cartId)) return null
   try {
     const data = await storefrontFetch<{ cart: Cart | null }>(GET_CART, { cartId }, NO_STORE)
     return data.cart ? attachCartShippingDisplay(data.cart) : null
@@ -146,6 +159,10 @@ export async function addToCart(variantId: string, quantity: number): Promise<Ad
   const cartId = jar.get(CART_COOKIE)?.value
 
   if (!cartId) return createCart(variantId, quantity)
+  if (!isCartGid(cartId)) {
+    jar.delete(CART_COOKIE)
+    return createCart(variantId, quantity)
+  }
 
   let data: { cartLinesAdd: { cart: Cart | null; userErrors: UserError[] } }
   try {

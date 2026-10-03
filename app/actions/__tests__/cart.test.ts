@@ -224,6 +224,32 @@ describe('addToCart', () => {
     expect(result.cart.id).toBe('gid://shopify/Cart/2')
   })
 
+  // Shopify's real behavior (verified against the QA store 2026-10-03): for an
+  // id that isn't a Cart gid at all, BOTH cartLinesAdd and the cart(id:)
+  // recheck throw ("Variable $cartId of type ID! was provided invalid value" /
+  // "invalid id") instead of nulling, so the recheck can never confirm the
+  // cart is gone. Such an id has to be recognised before calling Shopify.
+  it.each([
+    ['legacy storefront cart token', 'c1-7a2f9e8d4b1c3e5f6a7b8c9d0e1f2a3b'],
+    ['hand-edited garbage', 'not-a-real-cart-id'],
+    ['gid of another resource type', 'gid://shopify/Product/123'],
+    ['empty Cart gid', 'gid://shopify/Cart/'],
+  ])('starts a fresh cart without calling cartLinesAdd for a non-Cart id (%s)', async (_label, badId) => {
+    cookieStore.get.mockImplementation((name: string) => (name === 'cart_id' ? { value: badId } : undefined))
+    const freshCart = cartFixture({ id: 'gid://shopify/Cart/2', totalQuantity: 1 })
+    storefrontFetch.mockImplementation((query: string) => {
+      if (query === CREATE_CART) return Promise.resolve({ cartCreate: { cart: freshCart, userErrors: [] } })
+      return Promise.reject(new Error('Variable $cartId of type ID! was provided invalid value'))
+    })
+
+    const { addToCart } = await import('../cart')
+    const result = await addToCart('variant-added', 1)
+
+    expect(storefrontFetch).not.toHaveBeenCalledWith(ADD_CART_LINES, expect.anything(), expect.anything())
+    expect(cookieStore.delete).toHaveBeenCalledWith('cart_id')
+    expect(result.cart.id).toBe('gid://shopify/Cart/2')
+  })
+
   it('recovers from a top-level GraphQL error (malformed/foreign cart id) confirmed gone by cart(id:)', async () => {
     const freshCart = cartFixture({ id: 'gid://shopify/Cart/2', totalQuantity: 1 })
     storefrontFetch.mockImplementation((query: string) => {
