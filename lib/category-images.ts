@@ -91,6 +91,11 @@ export const CATEGORY_IMAGE_CONFIG: Record<string, CategoryImageEntry> = {
   'flu-a-b-influenza':       { file: 'testing-placeholder.jpeg',                 alt: 'Flu A and B influenza test kits' },
   'rsv':                     { file: 'testing-placeholder.jpeg',                 alt: 'RSV test kits' },
   'strep-tests':             { file: 'testing-placeholder.jpeg',                 alt: 'Strep test kits' },
+  // The other old-nav Testing groups — same reasoning.
+  'diagnostic-tests':        { file: 'testing-placeholder.jpeg',                 alt: 'Diagnostic test kits' },
+  'drug-test-cups':          { file: 'testing-placeholder.jpeg',                 alt: 'Drug test cups and kits' },
+  'std-testing':             { file: 'testing-placeholder.jpeg',                 alt: 'STD test kits' },
+  'testing-monitors':        { file: 'testing-placeholder.jpeg',                 alt: 'Pulse oximeters and vital sign monitors' },
   'apparel':                 { file: 'apparel-placeholder.jpeg',                 alt: 'Medical apparel and scrubs' },
   'hygiene':                 { file: 'hygiene-placeholder.jpeg',                 alt: 'Hygiene products' },
   'disinfectants':           { file: 'disinfectants-placeholder.jpeg',           alt: 'Disinfectants and cleaning solutions' },

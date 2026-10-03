@@ -158,6 +158,32 @@ describe('Surgery & Procedure vs Trocars route split (P0.5/P0.6)', () => {
     expect(children.map((c) => c.slug)).toEqual(['trocars-trocar-kits'])
   })
 
+  it("mirrors the old nav's Testing column in order, without Analyzers", () => {
+    // Izzy's STRUCTURE-FOR-SARDOR.md (2026-10-02). Respiratory Testing's group
+    // collections are flattened in after it; Analyzers is held back (flag A:
+    // mostly alcohol breath testers) and Women's Health Testing has no
+    // collection (flag B).
+    expect(getFeaturedSubcategoriesForParent('testing').map((c) => c.slug)).toEqual([
+      'diagnostic-tests',
+      'drug-test-cups',
+      'respiratory-testing',
+      'covid-19',
+      'covid-19-flu-a-b-combo-tests',
+      'flu-a-b-influenza',
+      'rsv',
+      'strep-tests',
+      'std-testing',
+      'testing-monitors',
+    ])
+  })
+
+  it('leaves Testing at least one slot for its top tag-derived subcategory', () => {
+    // Specimen Collection (17 active) has no old-nav group; a limit equal to
+    // the featured count would silently drop it from the dropdown.
+    const testing = CATEGORY_TREE_L1.find((c) => c.tag === 'testing')!
+    expect(testing.priorityChildLimit!).toBeGreaterThan(getFeaturedSubcategoriesForParent('testing').length)
+  })
+
   it('every featured subcategory names a parent that exists in the L1 registry', () => {
     const tags = new Set(CATEGORY_TREE_L1.map((c) => c.tag))
     for (const sub of FEATURED_SUBCATEGORIES) {

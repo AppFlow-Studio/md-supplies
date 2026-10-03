@@ -113,7 +113,7 @@ export const CATEGORY_TREE_L1: readonly L1CategoryDef[] = [
   { tag: 'wound-care', displayName: 'Wound Care', collectionHandle: 'wound-care', navGroup: 'primary', shortDescription: 'Dressings, gauze, bandages, tapes, irrigation supplies, and other essentials for routine wound care.' },
   { tag: 'needles-syringes', displayName: 'Needles & Syringes', collectionHandle: 'needles-syringes', navGroup: 'primary', shortDescription: 'Needles, syringes, and injection accessories in a range of gauges, sizes, and safety configurations.' },
   { tag: 'surgical-sutures', displayName: 'Surgical Sutures', collectionHandle: 'surgical-sutures', navGroup: 'primary', shortDescription: 'Absorbable and non-absorbable sutures, needles, and wound-closure supplies for clinical procedures.' },
-  { tag: 'testing', displayName: 'Testing', collectionHandle: 'testing-screening', navGroup: 'primary', shortDescription: 'Diagnostic, screening, specimen-collection, and point-of-care testing supplies for healthcare settings.', priorityChildLimit: 10 },
+  { tag: 'testing', displayName: 'Testing', collectionHandle: 'testing-screening', navGroup: 'primary', shortDescription: 'Diagnostic, screening, specimen-collection, and point-of-care testing supplies for healthcare settings.', priorityChildLimit: 11 },
   { tag: 'exam-room', displayName: 'Exam Room', collectionHandle: 'exam-room', navGroup: 'primary', shortDescription: 'Everyday exam-room equipment and supplies, including tables, stools, lighting, and patient-care essentials.' },
   { tag: 'respiratory', displayName: 'Respiratory', collectionHandle: 'respiratory', navGroup: 'primary', shortDescription: 'Respiratory-care supplies for oxygen delivery, nebulization, airway support, and routine patient treatment.' },
   { tag: 'mobility', displayName: 'Mobility', collectionHandle: 'mobility', navGroup: 'primary', shortDescription: 'Wheelchairs, walkers, canes, rollators, and mobility accessories for patient support and daily movement.', priorityChildLimit: 10 },
@@ -201,6 +201,29 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
       'Disposable and reusable trocars in 3.2mm, 3.5mm, and 4.5mm, plus trocar kits and kit-without-trocar options for clinical and procedural use.',
     imageAlt: 'Trocars and trocar kits',
   },
+  // Diagnostic Tests and Drug Tests sit beside Respiratory Testing in the old
+  // nav (Testing > Diagnostic Tests / Drug Tests / Respiratory Testing / STD
+  // Testing / Testing Monitors), confirmed live by Izzy 2026-10-02
+  // (STRUCTURE-FOR-SARDOR.md, 39 and 33 active). Registered by live handle in
+  // old-nav order, same as the Respiratory Testing rows below. Drug Tests'
+  // slug stays drug-test-cups (its live handle) because featured routes
+  // resolve the Shopify collection by slug — a label-style slug would 404.
+  {
+    slug: 'diagnostic-tests',
+    collectionHandle: 'diagnostic-tests',
+    displayName: 'Diagnostic Tests',
+    parentTag: 'testing',
+    shortDescription: 'Point-of-care diagnostic tests, including urinalysis, pregnancy, gastrointestinal, H. pylori, and related controls and readers.',
+    imageAlt: 'Diagnostic test kits',
+  },
+  {
+    slug: 'drug-test-cups',
+    collectionHandle: 'drug-test-cups',
+    displayName: 'Drug Tests',
+    parentTag: 'testing',
+    shortDescription: 'Multi-panel and single-panel drug test cups, drug screen controls, and adulteration tests.',
+    imageAlt: 'Drug test cups and kits',
+  },
   {
     slug: 'respiratory-testing',
     collectionHandle: 'respiratory-testing',
@@ -272,6 +295,25 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
     parentTag: 'testing',
     shortDescription: 'Rapid group A strep tests for clinical and point-of-care use.',
     imageAlt: 'Strep test kits',
+  },
+  // STD Testing and Testing Monitors close out the old nav's Testing column
+  // (Izzy 2026-10-02: 8 and 10 active). Women's Health Testing, the last old
+  // group, has no Shopify collection (Izzy's flag B), so it is not registered.
+  {
+    slug: 'std-testing',
+    collectionHandle: 'std-testing',
+    displayName: 'STD Testing',
+    parentTag: 'testing',
+    shortDescription: 'Rapid HIV and other sexually transmitted disease tests for clinical and point-of-care use.',
+    imageAlt: 'STD test kits',
+  },
+  {
+    slug: 'testing-monitors',
+    collectionHandle: 'testing-monitors',
+    displayName: 'Testing Monitors',
+    parentTag: 'testing',
+    shortDescription: 'Pulse oximeters and vital sign monitors for routine patient screening.',
+    imageAlt: 'Pulse oximeters and vital sign monitors',
   },
 ] as const
 

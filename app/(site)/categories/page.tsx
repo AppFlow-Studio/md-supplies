@@ -101,14 +101,14 @@ export default async function CategoriesPage() {
       })),
   ])
 
-  // 20, not 12. The grid is 2-up on phones and 4-up from sm, so the count has
+  // 24, not 20. The grid is 2-up on phones and 4-up from sm, so the count has
   // to stay a common multiple or the last row is a short, orphaned fragment —
-  // the exact failure mode adding one extra card would produce. 20 fills five
-  // complete rows at 4-up and ten at 2-up, and is the smallest such count that
-  // still reaches Surgery & Procedure and Trocars, which moved to positions 16
-  // and 17 in the primary registry order once Respiratory Testing and its 5
-  // group collections (2026-10-02) were inserted ahead of them under Testing.
-  const popularCategories = popularAll.slice(0, 20)
+  // the exact failure mode adding one extra card would produce. 24 fills six
+  // complete rows at 4-up and twelve at 2-up, and is the smallest such count
+  // that still reaches Surgery & Procedure and Trocars, which moved to
+  // positions 20 and 21 in the primary registry order once Testing's ten
+  // old-nav group collections (2026-10-02/03) were inserted ahead of them.
+  const popularCategories = popularAll.slice(0, 24)
 
   return (
     <main id="main-content" className="bg-[#f9fafc] min-h-screen">
