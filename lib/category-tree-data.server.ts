@@ -3,7 +3,8 @@ import 'server-only'
 import { storefrontFetch } from '@/lib/shopify/storefront'
 import { GET_ALL_PRODUCT_TAGS } from '@/lib/shopify/queries/products'
 import { GET_COLLECTION_META } from '@/lib/shopify/queries/collections'
-import { parseProductTags, type ProductTagSummary } from '@/lib/category-tree'
+import { buildL2Tree, parseProductTags, type L2Node, type ProductTagSummary } from '@/lib/category-tree'
+import { facetKeyNeedsTagTree, resolveCategoryFacetKey } from '@/lib/catalog/facet-key'
 
 type ProductTagsResponse = {
   products: {
@@ -92,4 +93,20 @@ export async function hasFlatCategoryCollection(tag: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/**
+ * Server-side resolveCategoryFacetKey: loads the L2 tag tree only when the slug
+ * needs it (a flat duplicate-subcategory collection). A failed scan keeps the
+ * safe default rules rather than failing the page.
+ */
+export async function resolveCategoryFacetKeyLive(slug: string): Promise<string> {
+  if (!facetKeyNeedsTagTree(slug)) return resolveCategoryFacetKey(slug, null)
+  let nodes: L2Node[] | null = null
+  try {
+    nodes = buildL2Tree(await fetchProductTagSummaries())
+  } catch {
+    nodes = null
+  }
+  return resolveCategoryFacetKey(slug, nodes)
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { resolveCategoryFacetKey } from '@/lib/catalog/facet-key'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -222,6 +223,11 @@ export async function CategoryPageView({ slug }: { slug: string }) {
   const { collection } = data
 
   const l2Nodes = buildL2Tree(summaries)
+  // Flat duplicate-subcategory collections and row-less featured subcategories
+  // gate their facets on the parent L1's allowlist (lib/catalog/facet-key.ts).
+  // Must match /api/catalog's resolveL1Source, which serves every page/filter/
+  // sort click after this render.
+  const facetKey = resolveCategoryFacetKey(slug, summaries.length > 0 ? l2Nodes : null)
   const subcategories = l1
     ? getSubcategoriesForParent(l1.tag, l2Nodes).map((n) => ({ label: humanizeTag(n.tag), slug: n.tag }))
     : []
@@ -312,7 +318,7 @@ export async function CategoryPageView({ slug }: { slug: string }) {
     <CategoryResults
       source={productSource}
       baseUrl={ROUTES.category(slug)}
-      facetKey={slug}
+      facetKey={facetKey}
       facetKind="category"
       pageSize={DEFAULT_PAGE_SIZE}
       cacheTags={cacheTags}
@@ -371,7 +377,7 @@ export async function CategoryPageView({ slug }: { slug: string }) {
             tabsAllLabel={`All ${displayName}`}
             tabsLeadingLinks={featuredChildren}
             sourceKindIsTag={productSource.kind === 'tag'}
-            facetKey={slug}
+            facetKey={facetKey}
             defaultGrid={defaultGrid}
           />
         </Suspense>

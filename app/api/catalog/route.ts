@@ -18,7 +18,8 @@ import {
   buildL2Tree,
   humanizeTag,
 } from '@/lib/category-tree'
-import { fetchProductTagSummaries } from '@/lib/category-tree-data.server'
+import { fetchProductTagSummaries, resolveCategoryFacetKeyLive } from '@/lib/category-tree-data.server'
+import { resolveCategoryFacetKey } from '@/lib/catalog/facet-key'
 
 // Cached catalog data for the CLIENT filter island (CategoryFilterableGrid).
 //
@@ -65,7 +66,7 @@ type ResolvedSource = {
  * mirroring components/category/CategoryPageView.tsx exactly. Returns null when
  * the slug resolves to neither an L1 nor a featured subcategory.
  */
-function resolveL1Source(slug: string): ResolvedSource | null {
+async function resolveL1Source(slug: string): Promise<ResolvedSource | null> {
   const shopifyHandle = getShopifyHandle(slug)
   const l1 = getL1ByCollectionHandle(shopifyHandle)
   const featured = l1 ? undefined : getFeaturedSubcategoryBySlug(shopifyHandle)
@@ -86,7 +87,7 @@ function resolveL1Source(slug: string): ResolvedSource | null {
     return {
       source: { kind: 'collection', handle: shopifyHandle },
       cacheTags: ['shopify', 'products', 'collections', `collection:${shopifyHandle}`],
-      facetKey: slug,
+      facetKey: await resolveCategoryFacetKeyLive(slug),
       facetKind: 'category',
       searchScopeTitle: slug,
     }
@@ -111,7 +112,7 @@ function resolveL1Source(slug: string): ResolvedSource | null {
       ? ['shopify', 'products', 'category-tree', `category:${l1!.tag}`]
       : ['shopify', 'products', 'collections', `collection:${shopifyHandle}`]
 
-  return { source, cacheTags, facetKey: slug, facetKind: 'category', searchScopeTitle: displayName }
+  return { source, cacheTags, facetKey: resolveCategoryFacetKey(slug, null), facetKind: 'category', searchScopeTitle: displayName }
 }
 
 /**
@@ -166,7 +167,7 @@ export async function GET(req: NextRequest) {
   // Re-derive source SERVER-SIDE — the client sends only slug/sub, never
   // kind/facetKey/tag-query (default-deny: an attacker-supplied source could
   // otherwise scope the query to arbitrary tags).
-  const resolved = sub ? await resolveSubcategorySource(slug, sub) : resolveL1Source(slug)
+  const resolved = sub ? await resolveSubcategorySource(slug, sub) : await resolveL1Source(slug)
   if (!resolved) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 })
   }
