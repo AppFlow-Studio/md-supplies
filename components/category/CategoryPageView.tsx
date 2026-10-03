@@ -246,15 +246,22 @@ export async function CategoryPageView({ slug }: { slug: string }) {
   const displayName = l1?.displayName ?? featured?.displayName ?? collection.title
 
   // Breadcrumb: a featured subcategory sits under its L1 parent
-  // (Home › Surgery & Procedure › Trocars & Trocar Kits); everything else is a
-  // single level below Home, which the Breadcrumb component supplies.
-  const breadcrumb: { label: string; href?: string }[] =
-    featured && featuredParent
-      ? [
-          { label: featuredParent.displayName, href: ROUTES.category(getCategorySlug(featuredParent)) },
-          { label: displayName },
-        ]
-      : [{ label: displayName }]
+  // (Home › Surgery & Procedure › Trocars & Trocar Kits), and so does the flat
+  // canonical of a duplicate subcategory (Home › Sterilization › Sterilization
+  // Pouches) — the nested URL redirects here, so without this the parent level
+  // was lost entirely. An L1 is a single level below Home, which the
+  // Breadcrumb component supplies.
+  const flatParentTag = !l1 && !featured
+    ? l2Nodes.find((n) => n.tag === shopifyHandle)?.parentTag
+    : undefined
+  const breadcrumbParent =
+    featuredParent ?? (flatParentTag ? CATEGORY_TREE_L1.find((c) => c.tag === flatParentTag) : undefined)
+  const breadcrumb: { label: string; href?: string }[] = breadcrumbParent
+    ? [
+        { label: breadcrumbParent.displayName, href: ROUTES.category(getCategorySlug(breadcrumbParent)) },
+        { label: displayName },
+      ]
+    : [{ label: displayName }]
 
   // Route-level subcategory links pinned ahead of the Category facet pills.
   // These NAVIGATE (they are their own collection pages) rather than filter, so
