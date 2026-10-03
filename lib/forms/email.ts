@@ -38,6 +38,10 @@ export async function sendFormEmail(opts: {
         requestId,
         provider: error.name,
         statusCode: error.statusCode,
+        // Provider-authored text (e.g. "The mdsupplies.com domain is not
+        // verified", "API key is invalid") — never echoes the submission, and
+        // is the only thing that tells a misconfigured env from an outage.
+        detail: error.message,
       })
       return { ok: false }
     }

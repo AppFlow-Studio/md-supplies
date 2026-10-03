@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 
 import {
-  ShieldCheck, Truck, Package, ChevronDown,
+  ShieldCheck, Truck, Package, ChevronDown, ChevronRight,
   Search, User, ShoppingCart, Menu, X, Building2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -22,10 +23,12 @@ import {
   getTopSubcategoriesForParent,
   humanizeTag,
   FEATURED_SUBCATEGORIES,
+  getFeaturedSubcategoryNavTree,
   type L2Node,
 } from '@/lib/category-tree'
-import { CategoryMegaMenu, type MegaMenuCategory } from '@/components/layout/CategoryMegaMenu'
+import { CategoryMegaMenu, type MegaMenuCategory, type MegaMenuChild } from '@/components/layout/CategoryMegaMenu'
 import { MobileCategoryNav } from '@/components/layout/MobileCategoryNav'
+import { NavChildList } from '@/components/layout/NavChildList'
 import { LOGO_PATH } from '@/lib/bunnycdn'
 import { approvedClaims, type ClaimKey } from '@/lib/claims'
 import { announcementBarClass } from '@/lib/announcement-visibility'
@@ -96,6 +99,17 @@ function titleToSlug(title: string): string {
 // Focusable elements inside the mobile drawer, for the focus trap (NF9).
 const FOCUSABLE = 'a[href], button:not([disabled])'
 
+// The drawer keeps every level mounted and CSS-hidden (NF7), so its DOM holds
+// focusable controls that are not on screen. Trap and initial focus must only
+// consider the ones that are — focusing a display:none element is a silent
+// no-op, which left Tab wrapping to nowhere once the drawer gained levels.
+// checkVisibility is absent in jsdom; there everything counts as visible.
+function visibleFocusables(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) =>
+    typeof el.checkVisibility === 'function' ? el.checkVisibility() : true,
+  )
+}
+
 export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
   // Drives the drawer/overlay reset below. usePathname() is populated during
   // SSR too, so nothing here depends on a client-only first paint.
@@ -109,6 +123,7 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hamburgerRef = useRef<HTMLButtonElement>(null)
   const drawerRef = useRef<HTMLDivElement>(null)
+  const mobileCategoriesRef = useRef<HTMLButtonElement>(null)
   const [msgIdx, setMsgIdx] = useState(0)
   const [annPaused, setAnnPaused] = useState(false)
   const [annVisible, setAnnVisible] = useState(true)
@@ -171,7 +186,11 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
 
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    drawer.querySelector<HTMLElement>(FOCUSABLE)?.focus()
+    // Full height below the header rather than a fixed 80vh box: the page
+    // behind is scroll-locked, so the header's bottom edge cannot move while
+    // the drawer is open and one measurement holds.
+    drawer.style.height = `calc(100dvh - ${drawer.getBoundingClientRect().top}px)`
+    visibleFocusables(drawer)[0]?.focus()
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -180,7 +199,7 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
         return
       }
       if (e.key !== 'Tab') return
-      const focusables = Array.from(drawer.querySelectorAll<HTMLElement>(FOCUSABLE))
+      const focusables = visibleFocusables(drawer)
       if (focusables.length === 0) return
       const first = focusables[0]
       const last = focusables[focusables.length - 1]
@@ -196,13 +215,45 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.body.style.overflow = prevOverflow
+      drawer.style.height = ''
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [mobileOpen])
 
+  // The drawer's Categories entry drills in (replaces the main menu with the
+  // department list) rather than expanding in place; focus follows the same
+  // way MobileCategoryNav's own levels do.
+  const openMobileCategories = () => {
+    flushSync(() => setMobileExpanded('categories'))
+    document.getElementById('mobile-cat-heading')?.focus()
+  }
+  const closeMobileCategories = () => {
+    flushSync(() => setMobileExpanded(null))
+    mobileCategoriesRef.current?.focus()
+  }
+
+  // A pointer reaching a trigger's chevron fires mouseenter (opens the
+  // dropdown) and THEN click, so a plain toggle closed the menu the shopper had
+  // just watched open. A POINTER click (event.detail > 0) therefore only closes
+  // a dropdown that an earlier pointer click opened; keyboard Enter/Space
+  // (detail 0) toggles exactly as before. Decided from the click event rather
+  // than by tracking hover-vs-focus, because a fast click delivers mouseenter
+  // and the mousedown focus in the same frame, before state re-renders.
+  const clickOpened = useRef<string | null>(null)
   const openDropdown = (key: string) => {
     if (closeTimer.current) clearTimeout(closeTimer.current)
+    if (openNav !== key) clickOpened.current = null
     setOpenNav(key)
+  }
+  const toggleDropdown = (key: string, e: React.MouseEvent) => {
+    const pointer = e.detail > 0
+    if (openNav === key && (!pointer || clickOpened.current === key)) {
+      clickOpened.current = null
+      setOpenNav(null)
+      return
+    }
+    openDropdown(key)
+    if (pointer) clickOpened.current = key
   }
 
   const scheduleClose = () => {
@@ -256,18 +307,35 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
   // then remaining slots are backfilled with the top tag-derived L2
   // subcategories (nav remediation) so every category — not just the one
   // with a featured child — gets real nested links.
-  const childrenByParentHref = new Map<string, { displayName: string; href: string }[]>()
-  for (const l1 of CATEGORY_TREE_L1) {
-    const parentHref = ROUTES.category(getCategorySlug(l1))
-    const featuredChildren = FEATURED_SUBCATEGORIES
-      .filter((sub) => sub.parentTag === l1.tag)
+  //
+  // Featured children come grouped (2026-10-03): a row with `navGroupUnder`
+  // is nested beneath its group head, restoring the old nav's third level
+  // (Testing > Respiratory Testing > COVID-19 …) in menus only. Every nested
+  // link still counts against the cap, so the visible set is unchanged.
+  const featuredNavChildren = (l1Tag: string): MegaMenuChild[] =>
+    getFeaturedSubcategoryNavTree(
+      l1Tag,
       // Same fail-closed rule the rest of the nav uses: skip when the live
       // handle list is available and does not contain this collection.
-      .filter((sub) => validHandles.size === 0 || validHandles.has(sub.collectionHandle))
-      .map((sub) => ({ displayName: sub.displayName, href: ROUTES.category(sub.slug) }))
+      (sub) => validHandles.size === 0 || validHandles.has(sub.collectionHandle),
+    ).map(({ def, children }) => ({
+      displayName: def.displayName,
+      href: ROUTES.category(def.slug),
+      featured: true,
+      ...(children.length > 0 && {
+        children: children.map((c) => ({ displayName: c.displayName, href: ROUTES.category(c.slug), featured: true })),
+      }),
+    }))
+  const linkCount = (items: MegaMenuChild[]) =>
+    items.reduce((n, c) => n + 1 + (c.children?.length ?? 0), 0)
+
+  const childrenByParentHref = new Map<string, MegaMenuChild[]>()
+  for (const l1 of CATEGORY_TREE_L1) {
+    const parentHref = ROUTES.category(getCategorySlug(l1))
+    const featuredChildren = featuredNavChildren(l1.tag)
 
     const dropdownLimit = l1.priorityChildLimit ?? MAX_DROPDOWN_CHILDREN
-    const remainingSlots = dropdownLimit - featuredChildren.length
+    const remainingSlots = dropdownLimit - linkCount(featuredChildren)
     const tagChildren = remainingSlots > 0
       ? getTopSubcategoriesForParent(l1.tag, l2Nodes, remainingSlots).map((n) => ({
           displayName: humanizeTag(n.tag),
@@ -294,12 +362,9 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
     // previous buildCategoryTreeNav-driven panel did exactly that.
     .filter((l1) => validHandles.size === 0 || validHandles.has(l1.collectionHandle))
     .map((l1) => {
-      const featuredChildren = FEATURED_SUBCATEGORIES
-        .filter((sub) => sub.parentTag === l1.tag)
-        .filter((sub) => validHandles.size === 0 || validHandles.has(sub.collectionHandle))
-        .map((sub) => ({ displayName: sub.displayName, href: ROUTES.category(sub.slug), featured: true }))
+      const featuredChildren = featuredNavChildren(l1.tag)
       const megaLimit = l1.priorityChildLimit ?? MAX_MEGA_MENU_CHILDREN
-      const remainingSlots = megaLimit - featuredChildren.length
+      const remainingSlots = megaLimit - linkCount(featuredChildren)
       const tagChildren = remainingSlots > 0
         ? getTopSubcategoriesForParent(l1.tag, l2Nodes, remainingSlots).map((n) => ({
             displayName: humanizeTag(n.tag),
@@ -313,6 +378,11 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
         children: [...featuredChildren, ...tagChildren],
       }
     })
+    // Alphabetical, as the old Shopify nav listed them (Bilal, 2026-10-03):
+    // 25 names are found by scanning for a letter, not by remembering the
+    // registry's primary/more order. Menu-only — the registry, /categories
+    // hub and homepage keep their own order.
+    .sort((a, b) => a.displayName.localeCompare(b.displayName))
 
   // Trocars & Trocar Kits is commercially important and is a SUBCATEGORY of
   // Surgery & Procedure, so under progressive disclosure it would otherwise
@@ -419,7 +489,7 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
                     aria-expanded={openNav === 'categories'}
                     aria-controls="nav-panel-categories"
                     aria-label={`${categoriesItem.title} submenu`}
-                    onClick={() => (openNav === 'categories' ? setOpenNav(null) : openDropdown('categories'))}
+                    onClick={(e) => toggleDropdown('categories', e)}
                     className="text-gray-500 hover:text-navy-900 transition-colors"
                   >
                     <ChevronDown
@@ -431,10 +501,11 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
 
                 <div
                   id="nav-panel-categories"
-                  // Two-stage layout (2026-08-26): a 400px department rail plus
-                  // a fixed 260px detail column, ~700px wide against the old
-                  // 800px, and — the point of the change — roughly 440px tall
-                  // against a measured ~1270px. The old sheet rendered all 25
+                  // Two-stage layout (2026-08-26): a department rail plus a
+                  // fixed detail column (440px + 280px since the 2026-10-03
+                  // compact pass, ~740px wide overall), and — the point of
+                  // the change — roughly 440px tall against a measured
+                  // ~1270px. The old sheet rendered all 25
                   // departments AND every department's children simultaneously
                   // and needed `max-h-[80vh] overflow-y-auto` to stay on
                   // screen at all; this one fits a laptop viewport outright, so
@@ -450,7 +521,7 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
                   // resizing (and the rail sliding under the cursor) as
                   // departments with different numbers of children take turns
                   // being shown.
-                  className={`${openNav === 'categories' ? 'block' : 'hidden'} absolute top-full left-0 mt-0 max-h-[80vh] overflow-y-auto bg-white border border-gray-200 shadow-lg z-50 p-6`}
+                  className={`${openNav === 'categories' ? 'block motion-safe:animate-[nav-fade-in_150ms_ease-out]' : 'hidden'} absolute top-full left-0 mt-0 max-h-[80vh] overflow-y-auto bg-white border border-gray-200 rounded-b-lg shadow-lg z-50 px-5 py-4`}
                   onMouseEnter={() => openDropdown('categories')}
                   onMouseLeave={scheduleClose}
                 >
@@ -515,7 +586,7 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                       aria-label={`${item.title} submenu`}
-                      onClick={() => (isOpen ? setOpenNav(null) : openDropdown(item.id))}
+                      onClick={(e) => toggleDropdown(item.id, e)}
                       className="text-gray-500 hover:text-navy-900 transition-colors"
                     >
                       <ChevronDown
@@ -527,26 +598,20 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
 
                   <div
                     id={panelId}
-                    className={`${isOpen ? 'block' : 'hidden'} absolute top-full left-0 mt-0 w-[220px] bg-white border border-gray-200 shadow-lg z-50 py-2`}
+                    className={`${isOpen ? 'block motion-safe:animate-[nav-fade-in_150ms_ease-out]' : 'hidden'} absolute top-full left-0 mt-0 w-[240px] bg-white border border-gray-200 rounded-b-lg shadow-lg z-50 p-2`}
                     onMouseEnter={() => openDropdown(item.id)}
                     onMouseLeave={scheduleClose}
                   >
                     <Link
                       href={href}
-                      className="block px-4 py-2 text-[13px] font-semibold text-navy-900 hover:bg-neutral-50 transition-colors"
+                      className="block px-2 py-[3px] rounded text-[13px] leading-5 font-semibold text-navy-900 hover:text-teal-500 hover:bg-neutral-50 transition-colors"
                     >
                       All {item.title}
                     </Link>
                     <div className="border-t border-gray-100 my-1" />
-                    {children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className="block px-4 py-2 text-[13px] text-gray-500 hover:text-navy-900 hover:bg-neutral-50 transition-colors"
-                      >
-                        {child.displayName}
-                      </Link>
-                    ))}
+                    <ul className="list-none m-0 p-0">
+                      <NavChildList items={children} variant="compact" />
+                    </ul>
                   </div>
                 </div>
               )
@@ -616,7 +681,7 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
         <div
           ref={drawerRef}
           id="mobile-menu"
-          className={`${mobileOpen ? 'block' : 'hidden'} xl:hidden absolute top-full left-0 right-0 bg-white border-b border-blue-50 shadow-lg z-50 max-h-[80vh] overflow-y-auto`}
+          className={`${mobileOpen ? 'block' : 'hidden'} xl:hidden absolute top-full left-0 right-0 bg-white border-b border-blue-50 shadow-lg z-50 overflow-y-auto overscroll-contain`}
         >
           {STATS.length > 0 && (
             <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-neutral-50 border-b border-blue-50">
@@ -629,107 +694,108 @@ export function Header({ menuItems, collections, l2Nodes }: HeaderProps) {
             </div>
           )}
 
-          <nav className="px-4 py-3 flex flex-col gap-1">
-            {/* Categories mobile */}
+          <nav className="px-4 pb-3 flex flex-col">
+            {/* Categories, drilled into: the department list replaces the main
+                menu (M1, 2026-10-03) instead of opening as an accordion inside
+                an 80vh box, so a level never fights a sibling for space. */}
             {categoriesItem && (
-              <div>
-                <button
-                  onClick={() => setMobileExpanded((v) => v === 'categories' ? null : 'categories')}
-                  aria-expanded={mobileExpanded === 'categories'}
-                  aria-controls="mobile-panel-categories"
-                  className="w-full text-gray-500 text-sm py-2.5 border-b border-gray-200 flex items-center justify-between hover:text-navy-900 transition-colors"
-                >
-                  {categoriesItem.title}
-                  <ChevronDown
-                    size={14}
-                    className={`opacity-50 transition-transform duration-150 ${mobileExpanded === 'categories' ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                <div
-                  id="mobile-panel-categories"
-                  className={`${mobileExpanded === 'categories' ? 'block' : 'hidden'} py-2 pl-4`}
-                >
-                  {/* Drill-down, not a wall: the old panel listed all 25
-                      departments with every department's children indented
-                      underneath, in one scroll. */}
-                  <MobileCategoryNav
-                    categories={megaMenuCategories}
-                    allHref={ROUTES.categories}
-                    onNavigate={() => setMobileOpen(false)}
-                    resetKey={pathname}
-                  />
-                </div>
+              <div
+                id="mobile-panel-categories"
+                className={mobileExpanded === 'categories' ? 'block motion-safe:animate-[nav-slide-in_200ms_ease-out]' : 'hidden'}
+              >
+                <MobileCategoryNav
+                  categories={megaMenuCategories}
+                  allHref={ROUTES.categories}
+                  onNavigate={() => setMobileOpen(false)}
+                  onBack={closeMobileCategories}
+                  resetKey={pathname}
+                />
               </div>
             )}
 
-            {/* Other nav items mobile — same tag-derived source as desktop
-                (see the desktop "Other nav items" comment above). */}
-            {otherItems.map((item) => {
-              const href = menuItemHref(item)
-              const children = navChildren(href)
-              const hasSubs = children.length > 0
-              const panelId = `mobile-panel-${titleToSlug(item.title)}`
+            <div
+              data-drawer-level="main"
+              className={mobileExpanded === 'categories' ? 'hidden' : 'flex flex-col pt-1'}
+            >
+              {categoriesItem && (
+                <button
+                  ref={mobileCategoriesRef}
+                  type="button"
+                  onClick={openMobileCategories}
+                  aria-expanded={mobileExpanded === 'categories'}
+                  aria-controls="mobile-panel-categories"
+                  className="w-full text-navy-900 font-medium text-sm py-3 border-b border-gray-200 flex items-center justify-between hover:text-teal-500 transition-colors"
+                >
+                  {categoriesItem.title}
+                  <ChevronRight size={16} aria-hidden="true" className="text-gray-400" />
+                </button>
+              )}
 
-              if (!hasSubs) {
-                return (
-                  <Link
-                    key={item.id}
-                    href={href}
-                    onClick={() => setMobileOpen(false)}
-                    className="text-gray-500 text-sm py-2.5 border-b border-gray-200 hover:text-navy-900 transition-colors"
-                  >
-                    {item.title}
-                  </Link>
-                )
-              }
+              {/* Other nav items mobile — same tag-derived source as desktop
+                  (see the desktop "Other nav items" comment above). */}
+              {otherItems.map((item) => {
+                const href = menuItemHref(item)
+                const children = navChildren(href)
+                const hasSubs = children.length > 0
+                const panelId = `mobile-panel-${titleToSlug(item.title)}`
 
-              return (
-                <div key={item.id}>
-                  <button
-                    onClick={() => setMobileExpanded((v) => v === item.id ? null : item.id)}
-                    aria-expanded={mobileExpanded === item.id}
-                    aria-controls={panelId}
-                    className="w-full text-gray-500 text-sm py-2.5 border-b border-gray-200 flex items-center justify-between hover:text-navy-900 transition-colors"
-                  >
-                    {item.title}
-                    <ChevronDown
-                      size={14}
-                      className={`opacity-50 transition-transform duration-150 ${mobileExpanded === item.id ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                  <div
-                    id={panelId}
-                    className={`${mobileExpanded === item.id ? 'flex' : 'hidden'} py-2 pl-4 flex-col gap-0.5`}
-                  >
+                if (!hasSubs) {
+                  return (
                     <Link
+                      key={item.id}
                       href={href}
                       onClick={() => setMobileOpen(false)}
-                      className="text-navy-900 text-sm py-1.5 font-semibold hover:text-teal-500 transition-colors"
+                      className="text-gray-500 text-sm py-3 border-b border-gray-200 hover:text-navy-900 transition-colors"
                     >
-                      All {item.title}
+                      {item.title}
                     </Link>
-                    {children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="text-gray-500 text-sm py-1.5 hover:text-navy-900 transition-colors"
-                      >
-                        {child.displayName}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
+                  )
+                }
 
-            <Link
-              href={ROUTES.contact}
-              onClick={() => setMobileOpen(false)}
-              className="mt-3 bg-teal-500 text-white text-sm font-semibold px-5 py-3 rounded-full text-center hover:bg-[#00566f] transition-colors"
-            >
-              Contact Us
-            </Link>
+                return (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => setMobileExpanded((v) => v === item.id ? null : item.id)}
+                      aria-expanded={mobileExpanded === item.id}
+                      aria-controls={panelId}
+                      className="w-full text-gray-500 text-sm py-3 border-b border-gray-200 flex items-center justify-between hover:text-navy-900 transition-colors"
+                    >
+                      {item.title}
+                      <ChevronDown
+                        size={16}
+                        aria-hidden="true"
+                        className={`text-gray-400 transition-transform duration-150 ${mobileExpanded === item.id ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    <div
+                      id={panelId}
+                      className={`${mobileExpanded === item.id ? 'block' : 'hidden'} pl-4 border-b border-gray-200`}
+                    >
+                      <ul className="list-none m-0 p-0 flex flex-col">
+                        <li className="border-b border-gray-100">
+                          <Link
+                            href={href}
+                            onClick={() => setMobileOpen(false)}
+                            className="block text-navy-900 text-sm py-3 font-semibold hover:text-teal-500 transition-colors"
+                          >
+                            All {item.title}
+                          </Link>
+                        </li>
+                        <NavChildList items={children} variant="touch" onNavigate={() => setMobileOpen(false)} />
+                      </ul>
+                    </div>
+                  </div>
+                )
+              })}
+
+              <Link
+                href={ROUTES.contact}
+                onClick={() => setMobileOpen(false)}
+                className="mt-3 bg-teal-500 text-white text-sm font-semibold px-5 py-3 rounded-full text-center hover:bg-[#00566f] transition-colors"
+              >
+                Contact Us
+              </Link>
+            </div>
           </nav>
         </div>
       </nav>

@@ -123,6 +123,32 @@ describe('Header — desktop disclosure keyboard/ARIA (NF8)', () => {
     expect(document.getElementById(panelId)!.classList.contains('hidden')).toBe(true)
   })
 
+  it('keeps a hover-opened dropdown open when its chevron is then clicked', () => {
+    // A pointer reaching the chevron fires mouseenter (opens) and then click.
+    // A plain toggle closed the menu the shopper had just seen open; only a
+    // click-opened menu should close on a second click.
+    const { container } = render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
+    const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
+    const wrapper = container.querySelector<HTMLElement>(`#${trigger.getAttribute('aria-controls')}`)!.parentElement!
+
+    // detail: 1 marks a real pointer click (keyboard activation has detail 0).
+    fireEvent.mouseEnter(wrapper)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(trigger, { detail: 1 })
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(trigger, { detail: 1 })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('still toggles closed on keyboard activation of a hover- or focus-opened dropdown', () => {
+    const { container } = render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
+    const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
+    const wrapper = container.querySelector<HTMLElement>(`#${trigger.getAttribute('aria-controls')}`)!.parentElement!
+    fireEvent.mouseEnter(wrapper)
+    fireEvent.click(trigger, { detail: 0 })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('opens on focus within the item and closes on Escape with focus returned to the trigger', () => {
     render(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={MENU_L2_NODES} />)
     const trigger = screen.getByRole('button', { name: 'Gloves submenu' })
@@ -551,5 +577,66 @@ describe('Header — overlays reset on route change', () => {
 
     rerender(<Header menuItems={MENU} collections={COLLECTIONS} l2Nodes={[]} />)
     expect(document.getElementById('mobile-menu')!.classList.contains('hidden')).toBe(false)
+  })
+})
+
+describe('Header — compact navbar redesign (2026-10-03)', () => {
+  const CATALOG = makeMenuItem({ id: 'gid://shopify/MenuItem/catalog', title: 'Categories', type: 'CATALOG' })
+  // Title slugifies to the registry handle (testing-screening), so the
+  // shortcut resolves to the Testing L1 and gets its tag-derived dropdown.
+  const TESTING_ITEM = makeMenuItem({ id: 'gid://shopify/MenuItem/testing', title: 'Testing Screening', type: 'COLLECTION' })
+  const LIVE: SlimCollection[] = [
+    makeCollection('gloves', 'Gloves'),
+    makeCollection('wound-care', 'Wound Care'),
+    makeCollection('apparel', 'Apparel'),
+    makeCollection('capes-gowns', 'Capes & Gowns'),
+    makeCollection('testing-screening', 'Testing'),
+    makeCollection('respiratory-testing', 'Respiratory Testing'),
+    makeCollection('covid-19', 'COVID-19'),
+    makeCollection('rsv', 'RSV'),
+    makeCollection('std-testing', 'STD Testing'),
+  ]
+
+  it('orders the department rail alphabetically (old-nav convention), not by registry order', () => {
+    const { container } = render(<Header menuItems={[CATALOG]} collections={LIVE} l2Nodes={[]} />)
+    const rail = container.querySelector<HTMLElement>('#nav-panel-categories ul')!
+    const names = Array.from(rail.querySelectorAll('[data-rail-item]')).map((el) => el.getAttribute('data-tag'))
+    expect(names).toEqual(['apparel', 'gloves', 'testing', 'wound-care'])
+  })
+
+  it('nests the respiratory tests under Respiratory Testing in the Testing panel', () => {
+    const { container } = render(<Header menuItems={[CATALOG]} collections={LIVE} l2Nodes={[]} />)
+    const panel = container.querySelector<HTMLElement>('#mega-panel-testing')!
+    const head = within(panel).getByRole('link', { name: 'Respiratory Testing', hidden: true })
+    const group = panel.querySelector<HTMLElement>(`[aria-labelledby="${head.id}"]`)!
+    const hrefs = within(group).getAllByRole('link', { hidden: true }).map((a) => a.getAttribute('href'))
+    expect(hrefs).toEqual(['/category/covid-19', '/category/rsv'])
+    // STD Testing is a sibling of the group, not inside it.
+    expect(within(group).queryByRole('link', { name: 'STD Testing', hidden: true })).toBeNull()
+  })
+
+  it('applies the same grouping to the Testing shortcut dropdown', () => {
+    const { container } = render(<Header menuItems={[TESTING_ITEM]} collections={LIVE} l2Nodes={[]} />)
+    const dropdown = container.querySelector<HTMLElement>('#nav-panel-testing-screening')!
+    const head = within(dropdown).getByRole('link', { name: 'Respiratory Testing', hidden: true })
+    const group = dropdown.querySelector<HTMLElement>(`[aria-labelledby="${head.id}"]`)!
+    expect(within(group).getByRole('link', { name: 'COVID-19', hidden: true })).toHaveAttribute('href', '/category/covid-19')
+  })
+
+  it('drills into Categories in the drawer, hides the rest of the menu, and returns focus on Menu', () => {
+    render(<Header menuItems={[CATALOG, TESTING_ITEM]} collections={LIVE} l2Nodes={[]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle menu' }))
+    const drawer = document.getElementById('mobile-menu')!
+    const categoriesRow = within(drawer).getByRole('button', { name: 'Categories' })
+    fireEvent.click(categoriesRow)
+
+    expect(categoriesRow).toHaveAttribute('aria-expanded', 'true')
+    // The main menu level (Testing shortcut, Contact) is hidden while drilled in.
+    const mainLevel = drawer.querySelector<HTMLElement>('[data-drawer-level="main"]')!
+    expect(mainLevel.className).toContain('hidden')
+
+    fireEvent.click(within(drawer).getByRole('button', { name: /Menu/ }))
+    expect(mainLevel.className).not.toContain('hidden')
+    expect(document.activeElement).toBe(categoriesRow)
   })
 })

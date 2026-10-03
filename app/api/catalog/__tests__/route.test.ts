@@ -14,6 +14,10 @@ vi.mock('@/lib/rate-limit', () => ({
 // Subcategory resolution walks the live L2 tree; unused by the L1 tests below.
 vi.mock('@/lib/category-tree-data.server', () => ({
   fetchProductTagSummaries: vi.fn(async () => []),
+  // The flat syringe-with-needle collection inherits its parent L1's facets.
+  resolveCategoryFacetKeyLive: vi.fn(async (slug: string) =>
+    slug === 'syringe-with-needle' ? 'needles-syringes' : slug,
+  ),
 }))
 
 import { resolveCatalogView } from '@/lib/catalog/resolve-catalog-view'
@@ -84,6 +88,8 @@ describe('GET /api/catalog', () => {
     expect(mockResolve).toHaveBeenCalledTimes(1)
     const arg = mockResolve.mock.calls[0][0]
     expect(arg.source).toEqual({ kind: 'collection', handle: 'syringe-with-needle' })
+    // Gated on the parent's allowlist, not the default Price+Availability pair.
+    expect(arg.facetKey).toBe('needles-syringes')
   })
 
   it('404s when that generic collection source genuinely does not exist in Shopify', async () => {

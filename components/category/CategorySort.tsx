@@ -25,24 +25,34 @@ interface Props {
   // hide those two options so the dropdown never offers a sort that can't
   // actually take effect.
   limitedSortOptions?: boolean
+  /** Route params that must survive a sort change (e.g. a partner page's `category`). */
+  preserveParams?: Record<string, string>
+  /** The sort this route applies when no `sort` param is set (labels the default correctly). */
+  defaultSort?: string
 }
 
-export function CategorySort({ currentSort, activeFilters, q, limitedSortOptions }: Props) {
+export function CategorySort({ currentSort, activeFilters, q, limitedSortOptions, preserveParams, defaultSort = 'COLLECTION_DEFAULT' }: Props) {
   const { navigate } = useCatalogTransition()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
 
-  const options = limitedSortOptions
+  const options = (limitedSortOptions
     ? SORT_OPTIONS.filter((o) => o.value !== 'BEST_SELLING' && o.value !== 'CREATED')
     : SORT_OPTIONS
+  )
+    // "Featured" is a collection's merchandised order; a route with another
+    // default (partner pages: Best Selling) has no such order to offer.
+    .filter((o) => o.value !== 'COLLECTION_DEFAULT' || defaultSort === 'COLLECTION_DEFAULT')
 
-  const selected = options.find((o) => o.value === currentSort) ?? options[0]
+  const selected =
+    options.find((o) => o.value === (currentSort ?? defaultSort)) ?? options[0]
 
   const handleSelect = (value: string) => {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
-    if (value !== 'COLLECTION_DEFAULT') params.set('sort', value)
+    for (const [k, v] of Object.entries(preserveParams ?? {})) params.set(k, v)
+    if (value !== defaultSort) params.set('sort', value)
     activeFilters.forEach((f) => params.append('filter', f))
     withTrackingParams(params, searchParams)
     const qs = params.toString()

@@ -529,3 +529,20 @@ export const GET_ALL_PRODUCTS_BASIC = `#graphql
     }
   }
 `;
+
+// Lightweight handle+tags scan scoped by a product search query (e.g.
+// `vendor:"Dukal"`). Feeds the partner page's category pills, which count
+// only categories that partner actually has products in.
+export const GET_PRODUCT_TAGS_BY_QUERY = `#graphql
+  query GetProductTagsByQuery($query: String!, $first: Int!, $after: String) {
+    products(first: $first, after: $after, query: $query) {
+      nodes {
+        tags
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;

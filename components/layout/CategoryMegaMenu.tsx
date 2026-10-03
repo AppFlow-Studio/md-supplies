@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
 
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
+import { NavChildList } from '@/components/layout/NavChildList'
 
 // The desktop "Categories" panel.
 //
@@ -64,12 +65,28 @@ import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 // active panel alone; only clicking (or focusing) the chevron opens one.
 // Keyboard focus and the arrow keys still move the selection, because that is
 // the keyboard's equivalent of pointing.
+//
+// ── COMPACT PASS (2026-10-03, Bilal's navbar redesign) ─────────────────────
+//
+// Visual only — every rule above still holds. Rows are 26px instead of 30px,
+// the open department carries a teal accent bar as well as its rotated
+// chevron, the rail's row count follows the department count instead of a
+// hard-coded 13, and the panel fades in on switch (motion-safe only). The
+// "Popular" pill is gone: it went on every featured child, so Testing showed
+// ten in a row and the word stopped meaning anything — featured children are
+// still pinned first, and Trocars keeps its footer link. A child may carry its
+// own children (the old nav's third level — Testing > Respiratory Testing >
+// COVID-19 …), which NavChildList renders as an indented group under a link
+// to the group's own page. The rail is sorted by the caller (Header sorts it
+// alphabetically, the old Shopify nav's convention).
 
 export type MegaMenuChild = {
   displayName: string
   href: string
-  /** Curated, route-owning child (e.g. Trocars) — pinned first and badged. */
+  /** Curated, route-owning child (e.g. Trocars) — pinned first. */
   featured?: boolean
+  /** Nav-only third level, listed beneath this child (see NavChildList). */
+  children?: MegaMenuChild[]
 }
 
 export type MegaMenuCategory = {
@@ -102,7 +119,11 @@ function railItemId(tag: string) {
 }
 
 const ROW_CLASS =
-  'group w-full flex items-center gap-2 text-left text-[13px] leading-snug px-2 py-1.5 rounded transition-colors'
+  'group relative w-full flex items-center gap-2 text-left text-[13px] leading-5 px-2 py-[3px] rounded transition-colors'
+
+// The open department's marker: a short teal bar on the row's leading edge.
+const ACTIVE_BAR =
+  'before:absolute before:left-0 before:inset-y-1 before:w-0.5 before:rounded-full before:bg-teal-500'
 
 export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
   // The department whose panel is showing. Seeded with the first department so
@@ -148,25 +169,27 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
 
   return (
     <div className="flex flex-col">
-      <div className="grid grid-cols-[400px_260px]">
+      <div className="grid grid-cols-[440px_280px]">
         {/* ── Stage one: the department rail (selects, never navigates) ──── */}
         <div className="pr-5 border-r border-gray-100">
           <p className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-2">
             Categories
           </p>
-          {/* Two columns filled top-to-bottom (grid-flow-col over a fixed row
-              count), so DOM order and reading order match and ArrowDown moves
-              to the item visually below. 13 rows keeps all 25 departments on
-              screen at laptop height without an internal scrollbar. */}
+          {/* Two columns filled top-to-bottom (grid-flow-col over half the
+              department count, rounded up), so DOM order and reading order
+              match and ArrowDown moves to the item visually below. With 25
+              departments that is 13 rows — on screen at laptop height without
+              an internal scrollbar. */}
           <ul
             ref={railRef}
             onKeyDown={onRailKeyDown}
-            className="grid [grid-template-rows:repeat(13,auto)] grid-flow-col gap-x-2 list-none m-0 p-0"
+            style={{ gridTemplateRows: `repeat(${Math.max(1, Math.ceil(categories.length / 2))}, auto)` }}
+            className="grid grid-flow-col gap-x-2 list-none m-0 p-0"
           >
             {categories.map((cat) => {
               const isActive = cat.tag === active?.tag
               const stateClass = isActive
-                ? 'bg-neutral-50 text-navy-900 font-medium'
+                ? `bg-neutral-50 text-navy-900 font-medium ${ACTIVE_BAR}`
                 : 'text-gray-500 hover:bg-neutral-50/60 hover:text-navy-900'
               const arrowClass = isActive
                 ? 'translate-x-1 text-navy-900'
@@ -205,27 +228,26 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
               return (
                 <li key={cat.tag} className="min-w-0">
                   <div
-                    className={`group w-full flex items-center gap-1 rounded transition-colors ${stateClass}`}
+                    className={`group relative w-full flex items-center gap-1 rounded transition-colors ${stateClass}`}
                     onFocus={() => activate(cat.tag)}
                   >
                     <Link
                       id={railItemId(cat.tag)}
                       href={cat.href}
-                      className="flex-1 min-w-0 text-left text-[13px] leading-snug px-2 py-1.5 rounded truncate"
+                      className="flex-1 min-w-0 text-left text-[13px] leading-5 px-2 py-[3px] rounded truncate"
                     >
                       {cat.displayName}
                     </Link>
-                    {/* No padding on the chevron, matching Header.tsx's own
-                        top-level submenu chevron convention — this
-                        two-column rail is ~182px per item at laptop width,
-                        and the longest labels ("Patient Therapy & Rehab",
-                        "Housekeeping & Janitorial") clip if the chevron
-                        carries its own hit padding on top of the name
-                        link's (verified live, 2026-09-04). Desktop-only,
-                        mouse-driven control, so a tight icon-sized target is
-                        acceptable — the mobile equivalent
-                        (MobileCategoryNav) keeps generous touch padding
-                        instead. */}
+                    {/* Only a 4px trailing pad on the chevron, matching
+                        Header.tsx's own tight top-level submenu chevrons. The
+                        rail is 440px (~206px per item) since the 2026-10-03
+                        alphabetical sort moved "Housekeeping & Janitorial"
+                        into column one, where 400px truncated it; the longest
+                        labels clip if the chevron carries more hit padding
+                        than this. Desktop-only, mouse-driven control, so a
+                        tight icon-sized target is acceptable — the mobile
+                        equivalent (MobileCategoryNav) keeps generous touch
+                        padding instead. */}
                     <button
                       type="button"
                       data-rail-item
@@ -234,7 +256,7 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
                       aria-controls={panelId(cat.tag)}
                       aria-label={`${cat.displayName} subcategories`}
                       onClick={() => activate(cat.tag)}
-                      className="shrink-0 flex items-center"
+                      className="shrink-0 flex items-center pr-1"
                     >
                       {/* ChevronDown, not AnimatedArrow's ArrowRight — this
                           site's "go somewhere" glyph must not double as the
@@ -260,17 +282,13 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
         <div className="pl-5">
           {categories.map((cat) => {
             const isActive = cat.tag === active?.tag
-            const sortedChildren = [
-              ...cat.children.filter((c) => c.featured),
-              ...cat.children.filter((c) => !c.featured),
-            ]
             return (
               <div
                 key={cat.tag}
                 id={panelId(cat.tag)}
                 role="group"
                 aria-labelledby={railItemId(cat.tag)}
-                className={isActive ? 'block' : 'hidden'}
+                className={isActive ? 'block motion-safe:animate-[nav-fade-in_150ms_ease-out]' : 'hidden'}
               >
                 <p className="text-[11px] font-bold text-navy-900 tracking-widest uppercase mb-2">
                   {cat.displayName}
@@ -285,34 +303,13 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
                   <li className="mb-1 pb-1 border-b border-gray-100">
                     <Link
                       href={cat.href}
-                      className="group flex items-center gap-2 text-[13px] leading-snug font-semibold text-navy-900 hover:text-teal-500 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors"
+                      className="group flex items-center gap-2 text-[13px] leading-5 font-semibold text-navy-900 hover:text-teal-500 hover:bg-neutral-50 px-2 py-[3px] rounded transition-colors"
                     >
                       <span className="flex-1 min-w-0">Browse All {cat.displayName}</span>
                       <AnimatedArrow size={14} />
                     </Link>
                   </li>
-                  {sortedChildren.map((child) => (
-                    // The badge is a SIBLING of the link, not a child of it:
-                    // inside the anchor it became part of the accessible name
-                    // ("Trocars & Trocar Kits Popular"), so the same
-                    // destination announced differently depending on whether it
-                    // happened to be badged. Outside it, the link is named by
-                    // its destination and the word is still read as adjacent
-                    // text.
-                    <li key={child.href} className="flex items-center gap-1">
-                      <Link
-                        href={child.href}
-                        className="flex-1 min-w-0 text-[13px] leading-snug text-ink-link hover:text-navy-900 hover:bg-neutral-50 px-2 py-1.5 rounded transition-colors"
-                      >
-                        {child.displayName}
-                      </Link>
-                      {child.featured && (
-                        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-teal-500 border border-teal-500/40 rounded-full px-1.5 py-px">
-                          Popular
-                        </span>
-                      )}
-                    </li>
-                  ))}
+                  <NavChildList items={cat.children} variant="compact" />
                 </ul>
               </div>
             )
@@ -320,7 +317,7 @@ export function CategoryMegaMenu({ categories, allHref, featuredLink }: Props) {
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-4">
+      <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-4">
         <Link
           href={allHref}
           className="group inline-flex items-center gap-1 text-[13px] text-teal-500 font-semibold hover:text-ink-link transition-colors"

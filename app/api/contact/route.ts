@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { TO_EMAIL } from '@/lib/resend'
+import { SITE_CONTACT } from '@/lib/site-contact'
 import { contactSchema } from '@/lib/forms/schema'
 import { sendFormEmail } from '@/lib/forms/email'
 import { readStoredAttribution, formatAttributionLine } from '@/lib/analytics/attribution'
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     )
   }
 
-  const { name, email, subject, message } = parsed.data
+  const { name, email, phone, subject, message } = parsed.data
   const attributionLine = formatAttributionLine(await readStoredAttribution())
 
   const sent = await sendFormEmail({
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
     text: [
       `Name:    ${name}`,
       `Email:   ${email}`,
+      `Phone:   ${phone || '—'}`,
       `Subject: ${subject || '—'}`,
       ...(attributionLine ? [attributionLine] : []),
       '',
@@ -69,7 +71,13 @@ export async function POST(req: Request) {
   })
 
   if (!sent.ok) {
-    return NextResponse.json({ error: 'Email delivery failed' }, { status: 502 })
+    // Shown verbatim by ContactForm, so give the customer a way to still reach us.
+    return NextResponse.json(
+      {
+        error: `We couldn't send your message right now. Please try again, or email us directly at ${SITE_CONTACT.email}.`,
+      },
+      { status: 502 },
+    )
   }
 
   return NextResponse.json({ ok: true })

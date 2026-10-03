@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 type Status = 'idle' | 'submitting' | 'success' | 'error'
 
 export function ContactForm() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '', website: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '', website: '' })
   const [status, setStatus] = useState<Status>('idle')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
@@ -99,6 +99,30 @@ export function ContactForm() {
           className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-300"
         />
         {fieldErrors.email && <p id="email-error" className="text-red-600 text-[13px]">{fieldErrors.email}</p>}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="phone" className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.06em]">
+          Phone Number
+        </label>
+        {/* Optional. Server-side check (lib/forms/phone.ts) is authoritative;
+            this pattern mirrors the sourcing form's for instant feedback. */}
+        <input
+          id="phone"
+          type="tel"
+          name="phone"
+          autoComplete="tel"
+          value={form.phone}
+          onChange={handleChange}
+          maxLength={40}
+          pattern="^(\+?1[\s.-]?)?(\([2-9]\d{2}\)|[2-9]\d{2})[\s.-]?[2-9]\d{2}[\s.-]?\d{4}$"
+          title="Please enter a valid US or Canadian phone number."
+          aria-invalid={!!fieldErrors.phone}
+          aria-describedby={fieldErrors.phone ? 'phone-error' : undefined}
+          placeholder="(212) 555-0100"
+          className="border-0 border-b border-navy-900 bg-transparent py-2 text-[15px] text-navy-900 outline-none focus:border-teal-500 transition-colors placeholder:text-gray-300"
+        />
+        {fieldErrors.phone && <p id="phone-error" className="text-red-600 text-[13px]">{fieldErrors.phone}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">

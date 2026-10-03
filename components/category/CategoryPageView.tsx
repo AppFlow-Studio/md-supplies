@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { resolveCategoryFacetKey } from '@/lib/catalog/facet-key'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -222,6 +223,11 @@ export async function CategoryPageView({ slug }: { slug: string }) {
   const { collection } = data
 
   const l2Nodes = buildL2Tree(summaries)
+  // Flat duplicate-subcategory collections and row-less featured subcategories
+  // gate their facets on the parent L1's allowlist (lib/catalog/facet-key.ts).
+  // Must match /api/catalog's resolveL1Source, which serves every page/filter/
+  // sort click after this render.
+  const facetKey = resolveCategoryFacetKey(slug, summaries.length > 0 ? l2Nodes : null)
   const subcategories = l1
     ? getSubcategoriesForParent(l1.tag, l2Nodes).map((n) => ({ label: humanizeTag(n.tag), slug: n.tag }))
     : []
@@ -240,15 +246,22 @@ export async function CategoryPageView({ slug }: { slug: string }) {
   const displayName = l1?.displayName ?? featured?.displayName ?? collection.title
 
   // Breadcrumb: a featured subcategory sits under its L1 parent
-  // (Home › Surgery & Procedure › Trocars & Trocar Kits); everything else is a
-  // single level below Home, which the Breadcrumb component supplies.
-  const breadcrumb: { label: string; href?: string }[] =
-    featured && featuredParent
-      ? [
-          { label: featuredParent.displayName, href: ROUTES.category(getCategorySlug(featuredParent)) },
-          { label: displayName },
-        ]
-      : [{ label: displayName }]
+  // (Home › Surgery & Procedure › Trocars & Trocar Kits), and so does the flat
+  // canonical of a duplicate subcategory (Home › Sterilization › Sterilization
+  // Pouches) — the nested URL redirects here, so without this the parent level
+  // was lost entirely. An L1 is a single level below Home, which the
+  // Breadcrumb component supplies.
+  const flatParentTag = !l1 && !featured
+    ? l2Nodes.find((n) => n.tag === shopifyHandle)?.parentTag
+    : undefined
+  const breadcrumbParent =
+    featuredParent ?? (flatParentTag ? CATEGORY_TREE_L1.find((c) => c.tag === flatParentTag) : undefined)
+  const breadcrumb: { label: string; href?: string }[] = breadcrumbParent
+    ? [
+        { label: breadcrumbParent.displayName, href: ROUTES.category(getCategorySlug(breadcrumbParent)) },
+        { label: displayName },
+      ]
+    : [{ label: displayName }]
 
   // Route-level subcategory links pinned ahead of the Category facet pills.
   // These NAVIGATE (they are their own collection pages) rather than filter, so
@@ -312,7 +325,7 @@ export async function CategoryPageView({ slug }: { slug: string }) {
     <CategoryResults
       source={productSource}
       baseUrl={ROUTES.category(slug)}
-      facetKey={slug}
+      facetKey={facetKey}
       facetKind="category"
       pageSize={DEFAULT_PAGE_SIZE}
       cacheTags={cacheTags}
@@ -371,7 +384,7 @@ export async function CategoryPageView({ slug }: { slug: string }) {
             tabsAllLabel={`All ${displayName}`}
             tabsLeadingLinks={featuredChildren}
             sourceKindIsTag={productSource.kind === 'tag'}
-            facetKey={slug}
+            facetKey={facetKey}
             defaultGrid={defaultGrid}
           />
         </Suspense>
