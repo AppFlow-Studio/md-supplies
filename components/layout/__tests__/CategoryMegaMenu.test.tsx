@@ -36,6 +36,24 @@ const CATEGORIES: MegaMenuCategory[] = [
       { displayName: 'Scalpels', href: '/category/surgery-procedure/scalpels' },
     ],
   },
+  {
+    tag: 'testing',
+    displayName: 'Testing',
+    href: '/category/testing-screening',
+    children: [
+      { displayName: 'Drug Tests', href: '/category/drug-test-cups', featured: true },
+      {
+        displayName: 'Respiratory Testing',
+        href: '/category/respiratory-testing',
+        featured: true,
+        children: [
+          { displayName: 'COVID-19', href: '/category/covid-19', featured: true },
+          { displayName: 'RSV', href: '/category/rsv', featured: true },
+        ],
+      },
+      { displayName: 'Specimen Collection', href: '/category/testing-screening/specimen-collection' },
+    ],
+  },
   // A department with no live subcategories — Room Furniture and Face Masks
   // are in this state on the QA store.
   { tag: 'room-furniture', displayName: 'Room Furniture', href: '/category/room-furniture', children: [] },
@@ -273,16 +291,16 @@ describe('CategoryMegaMenu — Trocars prominence', () => {
     expect(footerLink[0].textContent).toBe('Trocars & Trocar Kits')
   })
 
-  it('pins and badges it first inside its parent department’s panel', () => {
+  it('pins it first inside its parent department’s panel, without a badge', () => {
+    // The "Popular" pill went on every featured child — ten in a row on
+    // Testing — so it stopped meaning anything (2026-10-03 redesign). Pinning
+    // first plus the footer link carry the prominence now.
     const { container } = renderMenu()
     const panel = container.querySelector<HTMLElement>('#mega-panel-surgery-procedure')!
     const items = Array.from(panel.querySelectorAll('li'))
-    // "Browse All Surgery & Procedure" leads, then the featured child ahead
-    // of the tag-derived ones.
     expect(items[0].textContent).toBe('Browse All Surgery & Procedure')
-    expect(items[1].textContent).toContain('Trocars & Trocar Kits')
-    expect(items[1].textContent).toContain('Popular')
-    // The badge must not become part of the link's accessible name.
+    expect(items[1].textContent).toBe('Trocars & Trocar Kits')
+    expect(container.textContent).not.toContain('Popular')
     expect(within(panel).getByRole('link', { name: 'Trocars & Trocar Kits' })).toHaveAttribute(
       'href',
       '/category/trocars-trocar-kits',
@@ -294,5 +312,35 @@ describe('CategoryMegaMenu — Trocars prominence', () => {
       <CategoryMegaMenu categories={CATEGORIES} allHref="/categories" />,
     )
     expect(container.textContent).not.toContain('Featured')
+  })
+})
+
+describe('CategoryMegaMenu — nested groups (old-nav third level)', () => {
+  it('lists a group’s children inside the group, under a link to the group’s own page', () => {
+    const { container } = renderMenu()
+    const panel = container.querySelector<HTMLElement>('#mega-panel-testing')!
+    const head = within(panel).getByRole('link', { name: 'Respiratory Testing', hidden: true })
+    expect(head).toHaveAttribute('href', '/category/respiratory-testing')
+
+    const groupList = panel.querySelector<HTMLElement>(`[aria-labelledby="${head.id}"]`)
+    expect(groupList).not.toBeNull()
+    expect(groupList!.tagName).toBe('UL')
+    expect(
+      within(groupList!).getAllByRole('link', { hidden: true }).map((a) => a.getAttribute('href')),
+    ).toEqual(['/category/covid-19', '/category/rsv'])
+  })
+
+  it('keeps siblings of the group outside it, in order', () => {
+    const { container } = renderMenu()
+    const panel = container.querySelector<HTMLElement>('#mega-panel-testing')!
+    const hrefs = Array.from(panel.querySelectorAll('a')).map((a) => a.getAttribute('href'))
+    expect(hrefs).toEqual([
+      '/category/testing-screening',
+      '/category/drug-test-cups',
+      '/category/respiratory-testing',
+      '/category/covid-19',
+      '/category/rsv',
+      '/category/testing-screening/specimen-collection',
+    ])
   })
 })

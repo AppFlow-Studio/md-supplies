@@ -311,3 +311,21 @@ input[type="range"]::-moz-range-thumb {
     transition: none;
   }
 }
+
+/* Nav redesign (2026-10-03): the desktop dropdowns and mega-menu panel fade in
+   when shown, and mobile drill-down levels slide in from the side. Used only
+   behind `motion-safe:` and played on display:none -> block, so a hidden panel
+   being revealed is the only trigger — nothing animates on page load. */
+@keyframes nav-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes nav-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}

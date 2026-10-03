@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { flushSync } from 'react-dom'
 import Link from 'next/link'
-import { ChevronLeft, ChevronDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { AnimatedArrow } from '@/components/ui/AnimatedArrow'
 import type { MegaMenuCategory } from '@/components/layout/CategoryMegaMenu'
+import { NavChildList } from '@/components/layout/NavChildList'
 
 // The mobile half of the same two-stage idea, expressed the way a touch screen
 // wants it: a drill-down, not a hover.
@@ -25,6 +27,16 @@ import type { MegaMenuCategory } from '@/components/layout/CategoryMegaMenu'
 // a single tag, not a set. Every panel stays mounted and CSS-hidden so the
 // drawer's links remain in the server HTML, matching the desktop panel and the
 // crawlable-nav rule Header documents.
+//
+// 2026-10-03 redesign (Bilal's compact navbar pass): the drill-in chevron is a
+// ChevronRight — this control replaces the view with the next level rather
+// than expanding in place, and ChevronDown promised the latter. Each level has
+// a sticky back bar, focus moves to the new level's heading on the way in and
+// back to the chevron that opened it on the way out, and the level slides in
+// (motion-safe only). Level one can carry a "‹ Menu" back button of its own
+// when the drawer drills into this component (Header passes `onBack`).
+// Children render through NavChildList, so the old nav's third level
+// (Respiratory Testing > COVID-19 …) appears as an indented group here too.
 
 type Props = {
   categories: MegaMenuCategory[]
@@ -40,11 +52,20 @@ type Props = {
    * itself.
    */
   resetKey: string
+  /** Back to the drawer's main menu. Omitted, level one has no back button. */
+  onBack?: () => void
 }
 
-const ROW_CLASS = 'group w-full flex items-center gap-2 text-left text-sm py-3 transition-colors'
+const toggleId = (tag: string) => `mobile-cat-${tag}-toggle`
+const headingId = (tag: string) => `mobile-cat-${tag}-heading`
 
-export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }: Props) {
+const BACK_BAR = 'sticky top-0 z-10 bg-white flex items-center border-b border-gray-100'
+const BACK_BUTTON =
+  'flex items-center gap-1 text-gray-500 text-sm py-3 pr-3 hover:text-navy-900 transition-colors'
+const HEADING = 'text-navy-900 text-base font-semibold pt-3 pb-1 m-0 outline-none'
+const LEVEL_IN = 'block motion-safe:animate-[nav-slide-in_200ms_ease-out]'
+
+export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey, onBack }: Props) {
   const [openTag, setOpenTag] = useState<string | null>(null)
   const [lastResetKey, setLastResetKey] = useState(resetKey)
   if (resetKey !== lastResetKey) {
@@ -53,9 +74,33 @@ export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }:
   }
   const open = openTag ? categories.find((c) => c.tag === openTag) : undefined
 
+  // Focus follows the drill: flushSync commits the new level before focusing,
+  // so the target is no longer display:none when .focus() runs.
+  const drillIn = (tag: string) => {
+    flushSync(() => setOpenTag(tag))
+    document.getElementById(headingId(tag))?.focus()
+  }
+  const drillOut = (tag: string) => {
+    flushSync(() => setOpenTag(null))
+    document.getElementById(toggleId(tag))?.focus()
+  }
+
   return (
     <div className="flex flex-col">
-      {/* ── Level one: departments (selects, never navigates) ───────────── */}
+      {/* ── Level one: departments ─────────────────────────────────────── */}
+      {onBack && (
+        <div className={open ? 'hidden' : 'block'}>
+          <div className={BACK_BAR}>
+            <button type="button" onClick={onBack} aria-label="Back to Menu" className={BACK_BUTTON}>
+              <ChevronLeft size={16} aria-hidden="true" />
+              Menu
+            </button>
+          </div>
+          <h2 id="mobile-cat-heading" tabIndex={-1} className={HEADING}>
+            Categories
+          </h2>
+        </div>
+      )}
       <ul className={`${open ? 'hidden' : 'flex'} list-none m-0 p-0 flex-col`}>
         {categories.map((cat) => (
           <li key={cat.tag} className="border-b border-gray-100 last:border-b-0">
@@ -65,7 +110,7 @@ export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }:
               <Link
                 href={cat.href}
                 onClick={onNavigate}
-                className={`${ROW_CLASS} text-gray-500 hover:text-navy-900`}
+                className="group w-full flex items-center gap-2 text-left text-sm py-3 text-gray-500 hover:text-navy-900 transition-colors"
               >
                 <span className="flex-1 min-w-0">{cat.displayName}</span>
                 <AnimatedArrow size={16} className="text-gray-400" />
@@ -86,13 +131,14 @@ export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }:
                 </Link>
                 <button
                   type="button"
+                  id={toggleId(cat.tag)}
                   aria-expanded={open?.tag === cat.tag}
                   aria-controls={`mobile-cat-${cat.tag}`}
                   aria-label={`${cat.displayName} subcategories`}
-                  onClick={() => setOpenTag(cat.tag)}
-                  className="shrink-0 p-3 text-gray-400 hover:text-navy-900 transition-colors"
+                  onClick={() => drillIn(cat.tag)}
+                  className="shrink-0 p-3 -mr-3 text-gray-400 hover:text-navy-900 transition-colors"
                 >
-                  <ChevronDown size={16} />
+                  <ChevronRight size={16} aria-hidden="true" />
                 </button>
               </div>
             )}
@@ -112,21 +158,22 @@ export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }:
       {/* ── Level two: one department at a time (navigates, never selects) ─ */}
       {categories.map((cat) => {
         const isOpen = open?.tag === cat.tag
-        const sortedChildren = [
-          ...cat.children.filter((c) => c.featured),
-          ...cat.children.filter((c) => !c.featured),
-        ]
         return (
-          <div key={cat.tag} id={`mobile-cat-${cat.tag}`} className={isOpen ? 'block' : 'hidden'}>
-            <button
-              type="button"
-              onClick={() => setOpenTag(null)}
-              className="flex items-center gap-1 text-gray-500 text-sm py-3 hover:text-navy-900 transition-colors"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              Categories
-            </button>
-            <p className="text-navy-900 text-sm font-semibold py-1 m-0">{cat.displayName}</p>
+          <div key={cat.tag} id={`mobile-cat-${cat.tag}`} className={isOpen ? LEVEL_IN : 'hidden'}>
+            <div className={BACK_BAR}>
+              <button
+                type="button"
+                onClick={() => drillOut(cat.tag)}
+                aria-label="Back to Categories"
+                className={BACK_BUTTON}
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+                Categories
+              </button>
+            </div>
+            <h2 id={headingId(cat.tag)} tabIndex={-1} className={HEADING}>
+              {cat.displayName}
+            </h2>
             <ul className="list-none m-0 p-0 flex flex-col">
               {/* Primary action, exactly as on desktop — same "Browse All"
                   wording so the CTA reads the same on both surfaces. */}
@@ -140,27 +187,7 @@ export function MobileCategoryNav({ categories, allHref, onNavigate, resetKey }:
                   <AnimatedArrow size={16} />
                 </Link>
               </li>
-              {sortedChildren.map((child) => (
-                // Badge outside the anchor — same reason as the desktop panel:
-                // it must not change the link's accessible name.
-                <li
-                  key={child.href}
-                  className="flex items-center gap-1 border-b border-gray-100 last:border-b-0"
-                >
-                  <Link
-                    href={child.href}
-                    onClick={onNavigate}
-                    className="flex-1 min-w-0 text-gray-500 text-sm py-3 hover:text-navy-900 transition-colors"
-                  >
-                    {child.displayName}
-                  </Link>
-                  {child.featured && (
-                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-teal-500 border border-teal-500/40 rounded-full px-1.5 py-px">
-                      Popular
-                    </span>
-                  )}
-                </li>
-              ))}
+              <NavChildList items={cat.children} variant="touch" onNavigate={onNavigate} />
             </ul>
           </div>
         )

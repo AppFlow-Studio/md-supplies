@@ -604,3 +604,54 @@ describe('getAllowedHandles', () => {
     expect(allowed.has('exam-tables')).toBe(false)
   })
 })
+import { getFeaturedSubcategoryNavTree } from '../category-tree'
+
+describe('getFeaturedSubcategoryNavTree (nav-only grouping, 2026-10-03 navbar redesign)', () => {
+  // The old Shopify nav nested COVID-19 / COVID+Flu / Flu A&B / RSV / Strep a
+  // level below Respiratory Testing. The registry keeps them as siblings under
+  // Testing (parentTag) so routes, breadcrumbs, sitemap and the /categories
+  // hub are untouched; `navGroupUnder` only regroups them in menus.
+  const RESPIRATORY_CHILDREN = ['covid-19', 'covid-19-flu-a-b-combo-tests', 'flu-a-b-influenza', 'rsv', 'strep-tests']
+
+  it('every navGroupUnder points at a same-parent featured row that is not itself grouped', () => {
+    const bySlug = new Map(FEATURED_SUBCATEGORIES.map((s) => [s.slug, s]))
+    for (const sub of FEATURED_SUBCATEGORIES) {
+      if (!sub.navGroupUnder) continue
+      const head = bySlug.get(sub.navGroupUnder)
+      expect(head, `${sub.slug} groups under unknown ${sub.navGroupUnder}`).toBeDefined()
+      expect(head!.parentTag).toBe(sub.parentTag)
+      expect(head!.navGroupUnder).toBeUndefined()
+    }
+  })
+
+  it('leaves parentTag alone — grouped rows still belong to Testing', () => {
+    for (const slug of RESPIRATORY_CHILDREN) {
+      expect(getFeaturedSubcategoryBySlug(slug)?.parentTag).toBe('testing')
+    }
+  })
+
+  it('nests the five respiratory tests under Respiratory Testing, in registry order', () => {
+    const tree = getFeaturedSubcategoryNavTree('testing')
+    expect(tree.map((n) => n.def.slug)).toEqual([
+      'diagnostic-tests', 'drug-test-cups', 'respiratory-testing', 'std-testing', 'testing-monitors',
+    ])
+    const respiratory = tree.find((n) => n.def.slug === 'respiratory-testing')!
+    expect(respiratory.children.map((c) => c.slug)).toEqual(RESPIRATORY_CHILDREN)
+  })
+
+  it('drops rows that are not live, and promotes children whose group head is not live', () => {
+    const tree = getFeaturedSubcategoryNavTree('testing', (s) => s.slug !== 'respiratory-testing' && s.slug !== 'rsv')
+    const slugs = tree.map((n) => n.def.slug)
+    expect(slugs).not.toContain('respiratory-testing')
+    expect(slugs).not.toContain('rsv')
+    // Still reachable, just flat — a missing parent collection must not hide its children.
+    expect(slugs).toContain('covid-19')
+    expect(tree.every((n) => n.children.length === 0)).toBe(true)
+  })
+
+  it('returns ungrouped parents as flat single nodes', () => {
+    expect(getFeaturedSubcategoryNavTree('surgery-procedure')).toEqual([
+      { def: getFeaturedSubcategoryBySlug('trocars-trocar-kits'), children: [] },
+    ])
+  })
+})

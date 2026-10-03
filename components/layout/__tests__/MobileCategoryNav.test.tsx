@@ -30,6 +30,19 @@ const CATEGORIES: MegaMenuCategory[] = [
     href: '/category/mobility',
     children: [{ displayName: 'Transport Chairs', href: '/category/mobility/transport-chairs' }],
   },
+  {
+    tag: 'testing',
+    displayName: 'Testing',
+    href: '/category/testing-screening',
+    children: [
+      {
+        displayName: 'Respiratory Testing',
+        href: '/category/respiratory-testing',
+        featured: true,
+        children: [{ displayName: 'COVID-19', href: '/category/covid-19', featured: true }],
+      },
+    ],
+  },
   { tag: 'face-masks', displayName: 'Face Masks', href: '/category/face-masks', children: [] },
 ]
 
@@ -41,13 +54,14 @@ function panel(container: HTMLElement, tag: string) {
   return container.querySelector<HTMLElement>(`#mobile-cat-${tag}`)
 }
 
-function renderNav(onNavigate: () => void = vi.fn(), resetKey = '/') {
+function renderNav(onNavigate: () => void = vi.fn(), resetKey = '/', onBack?: () => void) {
   return render(
     <MobileCategoryNav
       categories={CATEGORIES}
       allHref="/categories"
       onNavigate={onNavigate}
       resetKey={resetKey}
+      onBack={onBack}
     />,
   )
 }
@@ -181,5 +195,46 @@ describe('MobileCategoryNav — one meaning per control, not per row (2026-09-04
 
     fireEvent.click(within(list).getByRole('link', { name: 'Home Care' }))
     expect(onNavigate).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('MobileCategoryNav — drill-down focus and levels (2026-10-03 redesign)', () => {
+  it('moves focus to the department heading on drill-in, and back to its chevron on return', () => {
+    const { container } = renderNav()
+    const chevron = screen.getByRole('button', { name: 'Home Care subcategories' })
+    fireEvent.click(chevron)
+    const heading = within(panel(container, 'home-care')!).getByRole('heading', { name: 'Home Care', hidden: true })
+    expect(document.activeElement).toBe(heading)
+
+    fireEvent.click(within(panel(container, 'home-care')!).getByRole('button', { name: /Categories/ }))
+    expect(document.activeElement).toBe(chevron)
+  })
+
+  it('offers a way back to the main menu from level one when the drawer provides one', () => {
+    const onBack = vi.fn()
+    renderNav(vi.fn(), '/', onBack)
+    fireEvent.click(screen.getByRole('button', { name: /Menu/ }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders no main-menu back button when there is nowhere to go back to', () => {
+    renderNav()
+    expect(screen.queryByRole('button', { name: /Menu/ })).toBeNull()
+  })
+
+  it('lists a group’s children beneath the group’s own link', () => {
+    const { container } = renderNav()
+    const p = panel(container, 'testing')!
+    const head = within(p).getByRole('link', { name: 'Respiratory Testing', hidden: true })
+    const groupList = p.querySelector<HTMLElement>(`[aria-labelledby="${head.id}"]`)!
+    expect(within(groupList).getByRole('link', { name: 'COVID-19', hidden: true })).toHaveAttribute(
+      'href',
+      '/category/covid-19',
+    )
+  })
+
+  it('shows no Popular badge', () => {
+    const { container } = renderNav()
+    expect(container.textContent).not.toContain('Popular')
   })
 })

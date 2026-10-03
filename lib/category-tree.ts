@@ -184,6 +184,14 @@ export type FeaturedSubcategoryDef = {
    * instruments", which is not what the page shows.
    */
   imageAlt: string
+  /**
+   * Nav-only grouping: the `slug` of a sibling featured row (same parentTag)
+   * this row is listed BENEATH in menus. Restores the old Shopify nav's third
+   * level (Testing > Respiratory Testing > COVID-19 …) visually without
+   * changing what the row is: `parentTag`, the route, breadcrumbs, sitemap and
+   * the /categories hub all ignore this field. See getFeaturedSubcategoryNavTree.
+   */
+  navGroupUnder?: string
 }
 
 export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
@@ -246,11 +254,11 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
   // fly-out (Testing > Respiratory Testing > COVID-19 / COVID+Flu / Flu / RSV
   // / Strep), confirmed live by Izzy 2026-10-02 (STRUCTURE-FOR-SARDOR.md) —
   // all 5 are real Shopify smart collections, not reconstructed tag queries.
-  // Flattened to siblings of Respiratory Testing under Testing rather than a
-  // 3rd nav level: this registry's L1 -> featured-subcategory shape is two
-  // levels only, and Diagnostic Tests/Drug Tests/STD Testing/Testing Monitors
-  // already sit at this same level beside Respiratory Testing in the old nav,
-  // so this is a flattening, not a demotion.
+  // Registered as siblings of Respiratory Testing under Testing (parentTag),
+  // because this registry's L1 -> featured-subcategory shape is two levels
+  // only — routes, breadcrumbs, sitemap and the hub treat them as Testing
+  // children. `navGroupUnder` restores the old third level in MENUS only, so
+  // the nav lists them beneath Respiratory Testing as the old fly-out did.
   //
   // Analyzers (the old nav's 6th child) is deliberately OMITTED: Izzy's flag A
   // found 5 of its 8 products are alcohol breath testers, not respiratory —
@@ -263,6 +271,7 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
     parentTag: 'testing',
     shortDescription: 'COVID-19 rapid and combo tests for clinical and point-of-care use.',
     imageAlt: 'COVID-19 test kits',
+    navGroupUnder: 'respiratory-testing',
   },
   {
     slug: 'covid-19-flu-a-b-combo-tests',
@@ -271,6 +280,7 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
     parentTag: 'testing',
     shortDescription: 'Combination rapid tests detecting COVID-19 and Flu A&B in a single sample.',
     imageAlt: 'COVID-19 and Flu A&B combination test kits',
+    navGroupUnder: 'respiratory-testing',
   },
   {
     slug: 'flu-a-b-influenza',
@@ -279,6 +289,7 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
     parentTag: 'testing',
     shortDescription: 'Rapid influenza A and B tests for clinical and point-of-care use.',
     imageAlt: 'Flu A and B influenza test kits',
+    navGroupUnder: 'respiratory-testing',
   },
   {
     slug: 'rsv',
@@ -287,6 +298,7 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
     parentTag: 'testing',
     shortDescription: 'Rapid RSV (respiratory syncytial virus) tests for clinical and point-of-care use.',
     imageAlt: 'RSV test kits',
+    navGroupUnder: 'respiratory-testing',
   },
   {
     slug: 'strep-tests',
@@ -295,6 +307,7 @@ export const FEATURED_SUBCATEGORIES: readonly FeaturedSubcategoryDef[] = [
     parentTag: 'testing',
     shortDescription: 'Rapid group A strep tests for clinical and point-of-care use.',
     imageAlt: 'Strep test kits',
+    navGroupUnder: 'respiratory-testing',
   },
   // STD Testing and Testing Monitors close out the old nav's Testing column
   // (Izzy 2026-10-02: 8 and 10 active). Women's Health Testing, the last old
@@ -323,6 +336,30 @@ export function getFeaturedSubcategoryBySlug(slug: string): FeaturedSubcategoryD
 
 export function getFeaturedSubcategoriesForParent(parentTag: string): FeaturedSubcategoryDef[] {
   return FEATURED_SUBCATEGORIES.filter((s) => s.parentTag === parentTag)
+}
+
+export type FeaturedSubcategoryNavNode = {
+  def: FeaturedSubcategoryDef
+  /** Rows whose `navGroupUnder` is this row, in registry order. */
+  children: FeaturedSubcategoryDef[]
+}
+
+/**
+ * A parent's featured subcategories shaped for menus: `navGroupUnder` rows
+ * nested beneath their group head, everything else flat, registry order kept.
+ * `isLive` filters out rows whose collection is not live; a grouped row whose
+ * head is not live is promoted to the top level rather than hidden with it.
+ */
+export function getFeaturedSubcategoryNavTree(
+  parentTag: string,
+  isLive: (sub: FeaturedSubcategoryDef) => boolean = () => true,
+): FeaturedSubcategoryNavNode[] {
+  const live = getFeaturedSubcategoriesForParent(parentTag).filter(isLive)
+  const liveSlugs = new Set(live.map((s) => s.slug))
+  const isNested = (s: FeaturedSubcategoryDef) => Boolean(s.navGroupUnder && liveSlugs.has(s.navGroupUnder))
+  return live
+    .filter((s) => !isNested(s))
+    .map((def) => ({ def, children: live.filter((s) => isNested(s) && s.navGroupUnder === def.slug) }))
 }
 
 // Confirmed live on 2026-07-16 (see plan Global Constraints) — 3 of the 5
