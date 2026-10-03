@@ -12,10 +12,11 @@ import { WholesalePricing } from '@/components/home/WholesalePricing'
 import { ShopifyProductCard } from '@/components/store/ShopifyProductCard'
 import { CategorySort } from '@/components/category/CategorySort'
 import type { CollectionProduct, PageInfo } from '@/lib/shopify/types'
+import { fetchPartnerCategories, partnerProductQuery } from '@/lib/partners-data.server'
 
 interface Props {
   params: Promise<{ 'partner-slug': string }>
-  searchParams: Promise<{ sort?: string; after?: string }>
+  searchParams: Promise<{ sort?: string; after?: string; category?: string }>
 }
 
 function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
@@ -24,7 +25,9 @@ function parseSortKey(sort?: string): { sortKey: string; reverse: boolean } {
     case 'PRICE_DESC':   return { sortKey: 'PRICE', reverse: true }
     case 'BEST_SELLING': return { sortKey: 'BEST_SELLING', reverse: false }
     case 'CREATED':      return { sortKey: 'CREATED', reverse: true }
-    default:             return { sortKey: 'RELEVANCE', reverse: false }
+    // Best sellers first by default (was RELEVANCE, which with no search
+    // term is an arbitrary order).
+    default:             return { sortKey: 'BEST_SELLING', reverse: false }
   }
 }
 
@@ -98,10 +101,16 @@ async function PartnerProducts({ searchParams, partner, slug }: {
   const sp = await searchParams
   const { sortKey, reverse } = parseSortKey(sp.sort)
 
+  // Category pills come from this partner's own product tags, so only a
+  // category the partner really has products in can be selected; anything
+  // else in the URL is ignored rather than producing an empty grid.
+  const categories = await fetchPartnerCategories(partner.vendorName)
+  const activeCategory = categories.find((c) => c.tag === sp.category)
+
   const data = await storefrontFetch<{
     products: { nodes: CollectionProduct[]; pageInfo: PageInfo }
   }>(GET_PRODUCTS_BY_VENDOR, {
-    query: `vendor:"${partner.vendorName}"`,
+    query: partnerProductQuery(partner.vendorName, activeCategory?.tag),
     first: 24,
     after: sp.after ?? null,
     sortKey,
@@ -113,19 +122,60 @@ async function PartnerProducts({ searchParams, partner, slug }: {
 
   const buildPageUrl = (cursor: string | null | undefined) => {
     const p = new URLSearchParams()
+    if (activeCategory) p.set('category', activeCategory.tag)
     if (sp.sort) p.set('sort', sp.sort)
     if (cursor) p.set('after', cursor)
     const qs = p.toString()
     return qs ? `/partners/${slug}/products?${qs}` : `/partners/${slug}/products`
   }
 
+  const categoryHref = (tag?: string) => {
+    const p = new URLSearchParams()
+    if (tag) p.set('category', tag)
+    if (sp.sort) p.set('sort', sp.sort)
+    const qs = p.toString()
+    return qs ? `/partners/${slug}/products?${qs}` : `/partners/${slug}/products`
+  }
+  const totalCount = categories.reduce((n, c) => n + c.count, 0)
+
   return (
     <div className="max-w-360 mx-auto px-4 sm:px-8 lg:px-14 py-8">
+      {categories.length > 1 && (
+        <nav aria-label={`${partner.name} categories`} className="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
+          <ul className="flex sm:flex-wrap gap-2 w-max sm:w-auto">
+            {[{ tag: undefined, label: 'All', count: totalCount }, ...categories].map((c) => {
+              const active = c.tag === activeCategory?.tag
+              return (
+                <li key={c.tag ?? 'all'}>
+                  <Link
+                    href={categoryHref(c.tag)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`inline-flex items-center gap-1.5 h-10 px-4 border text-[14px] font-medium whitespace-nowrap transition-colors ${
+                      active
+                        ? 'bg-navy-900 border-navy-900 text-white'
+                        : 'bg-white border-navy-900/20 text-navy-900 hover:border-navy-900'
+                    }`}
+                  >
+                    {c.label}
+                    {c.tag && <span className={active ? 'text-white/70' : 'text-gray-500'}>{c.count}</span>}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <p className="text-gray-500 text-[15px]">
           {pageInfo.hasNextPage ? '24+' : products.length} products
         </p>
-        <CategorySort currentSort={sp.sort} activeFilters={[]} />
+        <CategorySort
+          currentSort={sp.sort}
+          activeFilters={[]}
+          defaultSort="BEST_SELLING"
+          preserveParams={activeCategory ? { category: activeCategory.tag } : undefined}
+        />
       </div>
 
       {products.length > 0 ? (
